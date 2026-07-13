@@ -4,12 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Štěpán Chrast — data analysis, research and mathematical logic.">
-  <title>Štěpán Chrast — Data Analyst & Researcher</title>
+  <meta property="og:title" content="Štěpán Chrast — Data Analysis & Research">
+  <meta property="og:description" content="Selected work in data analysis, research, automation and data modelling.">
+  <meta property="og:type" content="website">
+  <title>Štěpán Chrast — Data Analysis & Research</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header class="site-header">
-    <a class="brand" href="#top" aria-label="Home"><span>ŠC</span><small>Data & Research</small></a>
+  <header class="site-header wrap">
+    <a class="brand" href="#top" aria-label="Home"><span>ŠC</span><small>Data · Research · Logic</small></a>
     <button class="menu-button" type="button" aria-expanded="false" aria-controls="main-nav">Menu</button>
     <nav id="main-nav" aria-label="Primary navigation">
       <a href="#work">Work</a>
@@ -22,181 +26,170 @@
   <main id="top">
     <section class="hero wrap">
       <div class="hero-copy">
-        <p class="kicker">Data analysis · Research · Formal reasoning</p>
-        <h1>Complex questions.<br><span>Clear evidence.</span></h1>
-        <p class="intro">I’m Štěpán Chrast, a Prague-based junior data analyst and researcher with a background in mathematical logic. I turn messy information into structured analysis, useful tools, and understandable outputs.</p>
-        <div class="hero-actions">
-          <a class="button primary" href="#work">Selected work</a>
-          <a class="button secondary" href="mailto:chraststepan@gmail.com">Get in touch</a>
+        <p class="eyebrow">Data Analysis · Research · Mathematical Logic</p>
+        <h1>Štěpán<br>Chrast</h1>
+        <p class="intro">Junior data analyst and researcher based in Prague. I work with structured and messy data, build reproducible analytical outputs, and bring a formal background in mathematical logic to applied research questions.</p>
+        <div class="inline-links" aria-label="Primary links">
+          <a href="#work">Selected work</a>
+          <a href="mailto:chraststepan@gmail.com">Email</a>
+          <a href="https://github.com/Chrasts" target="_blank" rel="noreferrer">GitHub ↗</a>
         </div>
       </div>
-      <aside class="status-card" aria-label="Current status">
-        <div class="status-top"><span class="pulse"></span>Currently</div>
-        <strong>Data Analyst &<br>Junior Researcher</strong>
-        <p>Paid internship at České priority</p>
-        <span>Prague · since July 2026</span>
-      </aside>
-    </section>
 
-    <section class="statement">
-      <div class="wrap statement-grid">
-        <span class="section-index">01</span>
-        <p>I work at the intersection of <strong>data, evidence and decision-making</strong> — with the precision of formal training and an eye for practical use.</p>
+      <div class="hero-visual">
+        <svg class="lattice" viewBox="0 0 800 430" aria-hidden="true">
+          <g class="lattice-edges">
+            <path d="M400 390 160 310M400 390 320 310M400 390 480 310M400 390 640 310"/>
+            <path d="M160 310 100 225M160 310 220 225M160 310 340 225M320 310 100 225M320 310 460 225M320 310 580 225M480 310 220 225M480 310 460 225M480 310 700 225M640 310 340 225M640 310 580 225M640 310 700 225"/>
+            <path d="M100 225 160 135M100 225 320 135M220 225 160 135M220 225 480 135M340 225 320 135M340 225 480 135M460 225 160 135M460 225 640 135M580 225 320 135M580 225 640 135M700 225 480 135M700 225 640 135"/>
+            <path d="M160 135 400 40M320 135 400 40M480 135 400 40M640 135 400 40"/>
+          </g>
+          <path class="lattice-chain" d="M400 390 160 310 100 225 160 135 400 40"/>
+          <g class="lattice-nodes">
+            <circle cx="400" cy="390" r="7"/><circle cx="160" cy="310" r="7"/><circle cx="320" cy="310" r="7"/><circle cx="480" cy="310" r="7"/><circle cx="640" cy="310" r="7"/>
+            <circle cx="100" cy="225" r="7"/><circle cx="220" cy="225" r="7"/><circle cx="340" cy="225" r="7"/><circle cx="460" cy="225" r="7"/><circle cx="580" cy="225" r="7"/><circle cx="700" cy="225" r="7"/>
+            <circle cx="160" cy="135" r="7"/><circle cx="320" cy="135" r="7"/><circle cx="480" cy="135" r="7"/><circle cx="640" cy="135" r="7"/><circle cx="400" cy="40" r="7"/>
+          </g>
+        </svg>
+        <figure class="portrait">
+          <img src="assets/stepan-chrast.jpg" alt="Portrait of Štěpán Chrast" width="2048" height="1536">
+        </figure>
       </div>
     </section>
 
     <section class="section wrap" id="work">
-      <div class="section-head">
-        <div><span class="section-index">02</span><h2>Selected work</h2></div>
-        <p>Public and portfolio-safe projects demonstrating analysis, data modelling and automation.</p>
-      </div>
+      <header class="section-head">
+        <h2>Selected work</h2>
+        <p>Projects demonstrating data analysis, relational modelling and practical automation.</p>
+      </header>
 
-      <div class="featured-project">
-        <div class="featured-visual chart-visual" aria-hidden="true">
-          <div class="chart-label">event history → outcome</div>
-          <svg viewBox="0 0 760 420" role="img">
-            <line x1="70" y1="350" x2="700" y2="350"/><line x1="70" y1="50" x2="70" y2="350"/>
-            <path d="M70 315 C160 310 170 245 255 260 S360 150 445 190 S555 110 700 75"/>
-            <circle cx="70" cy="315" r="7"/><circle cx="255" cy="260" r="7"/><circle cx="445" cy="190" r="7"/><circle cx="700" cy="75" r="7"/>
+      <article class="project-featured">
+        <div class="project-visual chart-visual" aria-hidden="true">
+          <span>Event history → person-level outcome</span>
+          <svg viewBox="0 0 720 350">
+            <line x1="55" y1="295" x2="670" y2="295"/><line x1="55" y1="45" x2="55" y2="295"/>
+            <path d="M55 270 C145 265 165 218 240 225 S345 135 425 170 S535 105 670 68"/>
+            <circle cx="55" cy="270" r="6"/><circle cx="240" cy="225" r="6"/><circle cx="425" cy="170" r="6"/><circle cx="670" cy="68" r="6"/>
           </svg>
         </div>
-        <article class="featured-copy">
-          <div class="project-meta"><span>01 / Data analysis</span><span>Completed</span></div>
-          <h3>Insolvency<br>Event-Log Analysis</h3>
-          <p>An end-to-end analysis that derives case outcomes from event histories, links them to person-level attributes and compares results across groups, courts and time.</p>
-          <ul class="project-points">
-            <li>Cleaning and linking relational data</li>
-            <li>Transparent rule-based outcome inference</li>
-            <li>Aggregate analysis, visualisation and reporting</li>
+        <div class="project-body">
+          <p class="project-type">Data analysis</p>
+          <h3>Insolvency Event-Log Analysis</h3>
+          <p>An end-to-end Python analysis that derives case outcomes from event histories, links them to person-level attributes, and compares results across groups, courts and time.</p>
+          <ul>
+            <li>Cleaned and linked two relational source tables</li>
+            <li>Defined a transparent, rule-based outcome label</li>
+            <li>Produced aggregate tables, a time-series figure and a short report</li>
           </ul>
-          <div class="tags"><span>Python</span><span>pandas</span><span>Matplotlib</span><span>LaTeX</span></div>
-        </article>
-      </div>
+          <div class="project-bottom">
+            <div class="tags"><span>Python</span><span>pandas</span><span>Matplotlib</span><span>LaTeX</span></div>
+            <a class="project-link" href="https://github.com/Chrasts?tab=repositories" target="_blank" rel="noreferrer">View on GitHub ↗</a>
+          </div>
+        </div>
+      </article>
 
       <div class="project-grid">
-        <article class="project-card teal-card">
-          <div class="project-meta"><span>02 / Data modelling</span><span>Completed</span></div>
-          <div class="schema-art" aria-hidden="true"><i></i><i></i><i></i><i></i><b></b></div>
-          <h3>Algebraic Logic<br>SQL Schema</h3>
-          <p>A relational MySQL schema for structured exploration of logical systems, algebraic classes, axioms, properties and subclass relations.</p>
-          <div class="tags"><span>MySQL</span><span>Data modelling</span><span>SQL</span></div>
+        <article class="project-card">
+          <p class="project-type">Data modelling</p>
+          <h3>Algebraic Logic SQL Schema</h3>
+          <p>A MySQL schema for structured exploration of logical systems, algebraic classes, axioms, properties and subclass relations.</p>
+          <div class="project-card-bottom">
+            <div class="tags"><span>MySQL</span><span>Relational design</span><span>SQL</span></div>
+            <a class="project-link" href="https://github.com/Chrasts?tab=repositories" target="_blank" rel="noreferrer">View on GitHub ↗</a>
+          </div>
         </article>
 
-        <article class="project-card cream-card">
-          <div class="project-meta"><span>03 / Automation</span><span>Completed</span></div>
-          <div class="sheet-art" aria-hidden="true"><div>MASTER</div><span>→</span><div>CHARACTER<br>FILES</div></div>
-          <h3>Film Scene<br>Character Splitter</h3>
-          <p>A practical production tool that transforms one master scene list into ordered, character-specific Excel workbooks.</p>
-          <div class="tags"><span>Python</span><span>pandas</span><span>openpyxl</span></div>
+        <article class="project-card accent-card">
+          <p class="project-type">Automation</p>
+          <h3>Film Scene Character Splitter</h3>
+          <p>A production utility that transforms a master scene list into chronologically ordered, character-specific Excel workbooks.</p>
+          <div class="project-card-bottom">
+            <div class="tags"><span>Python</span><span>pandas</span><span>openpyxl</span></div>
+            <a class="project-link" href="https://github.com/Chrasts?tab=repositories" target="_blank" rel="noreferrer">View on GitHub ↗</a>
+          </div>
         </article>
       </div>
 
-      <aside class="side-project">
-        <div><span class="section-index">Side project</span><h3>The Congruence Lattice Problem</h3></div>
-        <p>A concise historical survey of a major problem in lattice theory — an example of my mathematical reading and technical writing outside applied data work.</p>
-        <div class="tags"><span>Research</span><span>Mathematical writing</span><span>LaTeX</span></div>
-      </aside>
+      <article class="side-project">
+        <div><p class="project-type">Academic side project</p><h3>The Congruence Lattice Problem</h3></div>
+        <p>A concise historical survey of a major problem in lattice theory, included as an example of mathematical reading and technical writing.</p>
+        <a class="project-link" href="https://github.com/Chrasts/The-Congruence-Lattice-Problem-A-Historical-Survey" target="_blank" rel="noreferrer">View repository ↗</a>
+      </article>
     </section>
 
-    <section class="section experience-section" id="experience">
+    <section class="section muted-section" id="experience">
       <div class="wrap">
-        <div class="section-head light">
-          <div><span class="section-index">03</span><h2>Experience</h2></div>
-          <p>Analysis and research supported by hands-on operational experience.</p>
-        </div>
-
-        <div class="experience-list">
-          <article class="experience-item current-item">
-            <div class="experience-date">Jul 2026 — Present</div>
-            <div class="experience-main">
-              <div class="role-line"><h3>Data Analyst & Junior Researcher</h3><span>Current</span></div>
-              <h4>České priority · Paid part-time internship</h4>
-              <p>Analytical and research support for evidence-informed public-interest projects. Current work includes data quality and analysis for research on social workers, alongside exploratory technical research for a participatory Minecraft workshop in Tachov.</p>
-              <p class="discretion">Ongoing internal work — described at a high level only.</p>
-            </div>
+        <header class="section-head">
+          <h2>Experience</h2>
+        </header>
+        <div class="timeline">
+          <article>
+            <time>Jul 2026 — Present</time>
+            <div><h3>Data Analysis & Research Intern</h3><h4>České priority · Part-time</h4><p>Analytical and research support for evidence-informed public-interest projects. Current work includes questionnaire data processing and quality review, plus supporting research and technical exploration for other project work.</p></div>
           </article>
-
-          <article class="experience-item">
-            <div class="experience-date">Nov 2019 — May 2023</div>
-            <div class="experience-main">
-              <h3>Game Master</h3>
-              <h4>EscapeTheRoom.cz · Part-time</h4>
-              <p>Real-time incident triage and troubleshooting, structured issue logging, and clear communication with non-technical customers under time pressure.</p>
-            </div>
+          <article>
+            <time>Nov 2019 — May 2023</time>
+            <div><h3>Game Master</h3><h4>EscapeTheRoom.cz · Part-time</h4><p>Real-time incident triage, structured issue logging and clear communication with customers under time pressure.</p></div>
           </article>
-
-          <article class="experience-item">
-            <div class="experience-date">Mar 2020 — Jul 2021</div>
-            <div class="experience-main">
-              <h3>Event Co-lead · Student Ball</h3>
-              <h4>Self-organised project · Two-person team</h4>
-              <p>End-to-end event planning including sponsorship, budgeting and cash-flow modelling, scenario analysis, transaction reconciliation and operations.</p>
-            </div>
+          <article>
+            <time>Mar 2020 — Jul 2021</time>
+            <div><h3>Event Co-lead · Student Ball</h3><h4>Self-organised project · Two-person team</h4><p>Budgeting and cash-flow modelling, scenario analysis, transaction reconciliation and event operations.</p></div>
           </article>
         </div>
       </div>
     </section>
 
     <section class="section wrap" id="education">
-      <div class="section-head">
-        <div><span class="section-index">04</span><h2>Education & development</h2></div>
+      <header class="section-head">
+        <h2>Education</h2>
         <p>Formal foundations in logic, extended toward AI, computation and applied research.</p>
-      </div>
-
-      <div class="education-grid">
-        <article class="education-primary">
-          <div class="edu-top"><span>Charles University</span><span>2022 — 2026</span></div>
-          <h3>Bachelor’s degree in Logic</h3>
-          <p>Primary focus on algebraic logic, universal algebra and lattice theory. My bachelor’s research studies algebraic structures related to quantum logic and establishes results about associated residuated ortholattices and their subvarieties.</p>
-          <p class="private-note">Thesis not linked — currently awaiting defence.</p>
-          <div class="focus-list"><span>Algebraic logic</span><span>Universal algebra</span><span>Lattice theory</span><span>Formal reasoning</span></div>
+      </header>
+      <div class="education-list">
+        <article class="education-main">
+          <div class="item-meta"><span>Charles University</span><span>2022 — 2026</span></div>
+          <h3>Bachelor’s programme in Logic</h3>
+          <p>Focus on algebraic logic, universal algebra and lattice theory. Bachelor’s thesis on algebraic structures related to quantum logic, including associated residuated ortholattices and their subvarieties; defence scheduled for 2026.</p>
         </article>
-
-        <div class="education-secondary">
-          <article>
-            <div class="edu-top"><span>prg.ai Minor</span><span>2026/27</span></div>
-            <h3>Admitted student · Artificial Intelligence</h3>
-            <p>Accepted in 2026 to the inter-university AI programme connecting courses across Charles University and Czech Technical University.</p>
-            <a href="https://prg.ai/minor/" target="_blank" rel="noreferrer">Programme website ↗</a>
-          </article>
-          <article>
-            <div class="edu-top"><span>ESSLLI 2026</span><span>3—14 Aug 2026</span></div>
-            <h3>Programme participant & volunteer</h3>
-            <p>Selected for the European Summer School in Logic, Language and Information in Prague, with a planned focus on logic and AI, formal methods, and algebraic approaches in computer science.</p>
-            <a href="https://2026.esslli.eu/" target="_blank" rel="noreferrer">Event website ↗</a>
-          </article>
-        </div>
+        <article>
+          <div class="item-meta"><span>prg.ai Minor</span><span>2026/27</span></div>
+          <h3>Admitted student · Artificial Intelligence</h3>
+          <p>Inter-university AI programme connecting courses across Charles University and Czech Technical University.</p>
+          <a href="https://prg.ai/minor/" target="_blank" rel="noreferrer">Programme website ↗</a>
+        </article>
+        <article>
+          <div class="item-meta"><span>ESSLLI 2026</span><span>3—14 Aug 2026</span></div>
+          <h3>Incoming participant & volunteer</h3>
+          <p>Selected for the European Summer School in Logic, Language and Information in Prague, with planned coursework in logic for AI, SAT/SMT solving, higher-order logic and algebraic methods.</p>
+          <a href="https://2026.esslli.eu/" target="_blank" rel="noreferrer">Event website ↗</a>
+        </article>
       </div>
     </section>
 
-    <section class="section skills-section">
-      <div class="wrap skills-grid">
-        <div><span class="section-index">05</span><h2>Capabilities</h2></div>
-        <div class="skills-list">
-          <div><h3>Analysis</h3><p>Data cleaning · Exploratory analysis · Data quality · Descriptive statistics · Visualisation · Structured reporting</p></div>
-          <div><h3>Tools</h3><p>Python · pandas · SQL · MySQL · Excel · GitHub · LaTeX</p></div>
-          <div><h3>Research</h3><p>Literature review · Source evaluation · Evidence synthesis · Formal reasoning · Technical writing</p></div>
+    <section class="section methods-section">
+      <div class="wrap methods-grid">
+        <div>
+          <h2>Methods & tools</h2>
+          <p>Skills used across the projects above and current analytical work.</p>
         </div>
+        <dl>
+          <div><dt>Analysis</dt><dd>Data cleaning, relational joins, missing-data handling, descriptive analysis, questionnaire quality checks and reproducible reporting.</dd></div>
+          <div><dt>Tools</dt><dd>Python, pandas, SQL, MySQL, Excel, Matplotlib, Git and LaTeX.</dd></div>
+        </dl>
       </div>
-    </section>
-
-    <section class="section wrap credentials-section">
-      <div class="section-head compact"><div><span class="section-index">06</span><h2>Credentials</h2></div></div>
-      <div class="credentials-grid">
-        <article><span>University of Helsinki · 2024</span><h3>Ethics of AI</h3></article>
-        <article><span>University of Helsinki · 2024</span><h3>Introduction to Artificial Intelligence</h3></article>
-        <article><span>Cambridge English · 2021</span><h3>B2 First · Score 170</h3></article>
+      <div class="wrap credentials">
+        <span>Ethics of AI · University of Helsinki, 2024</span>
+        <span>Introduction to Artificial Intelligence · University of Helsinki, 2024</span>
+        <span>Cambridge English B2 First · Score 170, 2021</span>
       </div>
     </section>
 
     <section class="contact-section" id="contact">
       <div class="wrap contact-grid">
-        <div><span class="section-index">07</span><h2>Let’s work with<br>the evidence.</h2></div>
-        <div class="contact-details">
-          <p>I’m interested in opportunities across data analysis, data science and research — especially work that turns complex information into useful decisions.</p>
+        <div><p class="eyebrow">Contact</p><h2>Open to analytical and research opportunities.</h2></div>
+        <div class="contact-links">
           <a href="mailto:chraststepan@gmail.com">chraststepan@gmail.com</a>
-          <a href="tel:+420773026902">+420 773 026 902</a>
-          <span>Prague, Czech Republic</span>
+          <a href="https://www.linkedin.com/in/stepan-chrast" target="_blank" rel="noreferrer">LinkedIn ↗</a>
+          <a href="https://github.com/Chrasts" target="_blank" rel="noreferrer">GitHub ↗</a>
         </div>
       </div>
     </section>

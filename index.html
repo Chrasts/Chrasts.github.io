@@ -7,20 +7,33 @@
   <meta property="og:title" content="Štěpán Chrast — Data Analysis & Research">
   <meta property="og:description" content="Selected work in data analysis, research, automation and data modelling.">
   <meta property="og:type" content="website">
+  <meta name="theme-color" content="#f7f3eb">
   <title>Štěpán Chrast — Data Analysis & Research</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <script>
+    (() => {
+      try {
+        const savedTheme = localStorage.getItem('theme');
+        const systemTheme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.dataset.theme = savedTheme || systemTheme;
+      } catch (_) {}
+    })();
+  </script>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header class="site-header wrap">
     <a class="brand" href="#top" aria-label="Home"><span>ŠC</span><small>Data · Research · Logic</small></a>
-    <button class="menu-button" type="button" aria-expanded="false" aria-controls="main-nav">Menu</button>
-    <nav id="main-nav" aria-label="Primary navigation">
-      <a href="#work">Work</a>
-      <a href="#experience">Experience</a>
-      <a href="#education">Education</a>
-      <a href="#contact">Contact</a>
-    </nav>
+    <div class="header-actions">
+      <nav id="main-nav" aria-label="Primary navigation">
+        <a href="#work">Work</a>
+        <a href="#experience">Experience</a>
+        <a href="#education">Education</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <button class="theme-toggle" type="button" aria-label="Switch to dark mode" title="Switch to dark mode"><span aria-hidden="true">☾</span></button>
+      <button class="menu-button" type="button" aria-expanded="false" aria-controls="main-nav">Menu</button>
+    </div>
   </header>
 
   <main id="top">

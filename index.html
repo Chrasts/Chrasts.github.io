@@ -8,7 +8,7 @@
   <meta name="application-name" content="Štěpán Chrast">
   <meta name="apple-mobile-web-app-title" content="Štěpán Chrast">
   <link rel="canonical" href="https://chrasts.github.io/">
-  <meta property="og:title" content="Štěpán Chrast — Data Analysis, Research & Mathematical Logic">
+  <meta property="og:title" content="Štěpán Chrast - Data Analysis, Research & Mathematical Logic">
   <meta property="og:description" content="Selected work in data analysis, research and mathematical logic.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://chrasts.github.io/">
@@ -16,11 +16,11 @@
   <meta property="og:image:alt" content="Portrait of Štěpán Chrast">
   <meta property="og:site_name" content="Štěpán Chrast">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Štěpán Chrast — Data Analysis, Research & Mathematical Logic">
+  <meta name="twitter:title" content="Štěpán Chrast - Data Analysis, Research & Mathematical Logic">
   <meta name="twitter:description" content="Selected work in data analysis, research and mathematical logic.">
   <meta name="twitter:image" content="https://chrasts.github.io/assets/stepan-chrast.jpg">
   <meta name="theme-color" content="#f7f3eb">
-  <title>Štěpán Chrast — Data Analysis, Research & Mathematical Logic</title>
+  <title>Štěpán Chrast - Data Analysis, Research & Mathematical Logic</title>
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" href="/favicon-48x48.png" sizes="48x48">
   <link rel="icon" type="image/png" href="/favicon-192x192.png" sizes="192x192">
@@ -118,68 +118,40 @@
     <section class="section wrap" id="work">
       <div class="section-title"><span>01</span><h2>Selected work</h2></div>
 
-      <div class="project-list">
-        <article class="project-row project-major">
-          <div class="project-number">01</div>
-          <div class="project-main">
-            <p class="project-type">Data analysis</p>
-            <h3>Insolvency Event-Log Analysis</h3>
-            <p>An end-to-end Python analysis deriving case outcomes from event histories, linking them to person-level attributes and comparing results across groups, courts and time.</p>
-          </div>
-          <div class="project-meta">
-            <p>Python · pandas · Matplotlib · LaTeX</p>
-            <a href="https://github.com/Chrasts/insolvency-success-analysis/blob/main/report/report.pdf" target="_blank" rel="noreferrer">Report ↗</a>
-            <a href="https://github.com/Chrasts/insolvency-success-analysis" target="_blank" rel="noreferrer">GitHub ↗</a>
-          </div>
-        </article>
+      <div class="work-explorer">
+        <aside class="work-side-panel work-side-context" aria-label="Work context filters">
+          <p class="work-side-title">Context</p>
+          <div id="work-context-filters" class="work-context-filters"></div>
+        </aside>
 
-        <article class="project-row project-major">
-          <div class="project-number">02</div>
-          <div class="project-main">
-            <p class="project-type">Interactive mathematical logic</p>
-            <h3>Modal Logic Lab</h3>
-            <p>An interactive environment for constructing finite Kripke models, evaluating modal formulas, solving guided challenges and experimenting with frame properties.</p>
+        <div class="work-lattice-shell">
+          <div class="work-lattice-viewport">
+            <div id="work-lattice"></div>
           </div>
-          <div class="project-meta">
-            <p>React · TypeScript · Modal logic · Vitest</p>
-            <a href="https://chrasts.github.io/Modal_Logic_Educational_Game/" target="_blank" rel="noreferrer">Play ↗</a>
-            <a href="https://github.com/Chrasts/Modal_Logic_Educational_Game" target="_blank" rel="noreferrer">GitHub ↗</a>
-          </div>
-        </article>
-
-        <article class="project-row">
-          <div class="project-number">03</div>
-          <div class="project-main">
-            <p class="project-type">Data modelling</p>
-            <h3>Algebraic Logic SQL Schema</h3>
-            <p>A relational MySQL schema for logical systems, algebraic classes, axioms, properties and subclass relations.</p>
-          </div>
-          <div class="project-meta">
-            <p>MySQL · SQL · Relational design</p>
-            <a href="https://github.com/Chrasts/algebraic_logic-SQL_database" target="_blank" rel="noreferrer">GitHub ↗</a>
-          </div>
-        </article>
-
-        <article class="project-row">
-          <div class="project-number">04</div>
-          <div class="project-main">
-            <p class="project-type">Automation</p>
-            <h3>Film Scene Character Splitter</h3>
-            <p>A production utility transforming a master scene list into chronologically ordered character-specific Excel workbooks.</p>
-          </div>
-          <div class="project-meta">
-            <p>Python · pandas · openpyxl</p>
-            <a href="https://github.com/Chrasts/Filming-project-scene-Splitter" target="_blank" rel="noreferrer">GitHub ↗</a>
-          </div>
-        </article>
-      </div>
-
-      <div class="other-work">
-        <span>Other work</span>
-        <div>
-          <a href="https://github.com/Chrasts/The-Congruence-Lattice-Problem-A-Historical-Survey" target="_blank" rel="noreferrer">The Congruence Lattice Problem — historical survey ↗</a>
+          <div class="sr-only" id="lattice-status" aria-live="polite"></div>
         </div>
+
+        <aside class="work-side-panel work-side-themes" aria-label="Work theme filters">
+          <p class="work-side-title">Themes</p>
+          <div id="work-theme-filters" class="work-theme-filters"></div>
+
+          <div class="theme-match-control" aria-label="Theme matching mode">
+            <span class="theme-match-label">Match projects with</span>
+            <div class="theme-match-buttons">
+              <div class="theme-match-choice">
+                <button type="button" class="theme-match-button" data-theme-mode="any" aria-pressed="true" title="Show projects matching at least one selected theme">Any selected</button>
+                <span class="theme-logic-symbol" aria-hidden="true">∨</span>
+              </div>
+              <div class="theme-match-choice">
+                <button type="button" class="theme-match-button" data-theme-mode="all" aria-pressed="false" title="Show only projects matching every selected theme">All selected</button>
+                <span class="theme-logic-symbol" aria-hidden="true">∧</span>
+              </div>
+            </div>
+          </div>
+        </aside>
       </div>
+
+      <div class="work-project-list" id="work-project-list"></div>
     </section>
 
     <section class="section background-section" id="background">
@@ -190,15 +162,15 @@
             <h3 class="column-title">Experience</h3>
             <div class="record-list">
               <article>
-                <div class="record-meta">Jul 2026 — Present</div>
+                <div class="record-meta">Jul 2026 - Present</div>
                 <div><h4>Data Analysis & Research Intern</h4><p class="record-org">České priority · Part-time</p><p>Analytical and research support for evidence-informed public-interest projects, including questionnaire data processing and quality review.</p></div>
               </article>
               <article>
-                <div class="record-meta">Nov 2019 — May 2023</div>
+                <div class="record-meta">Nov 2019 - May 2023</div>
                 <div><h4>Game Master</h4><p class="record-org">EscapeTheRoom.cz · Part-time</p><p>Customer-facing operations, incident handling and structured issue logging under time pressure.</p></div>
               </article>
               <article>
-                <div class="record-meta">Mar 2020 — Jul 2021</div>
+                <div class="record-meta">Mar 2020 - Jul 2021</div>
                 <div><h4>Event Co-lead · Student Ball</h4><p class="record-org">Self-organised project · Two-person team</p><p>Budgeting, cash-flow planning, sponsorship, transaction reconciliation and event operations.</p></div>
               </article>
             </div>
@@ -208,7 +180,7 @@
             <h3 class="column-title">Education</h3>
             <div class="record-list">
               <article>
-                <div class="record-meta">2022 — 2026</div>
+                <div class="record-meta">2022 - 2026</div>
                 <div><h4>Bachelor’s programme in Logic</h4><p class="record-org">Charles University</p><p>Algebraic logic, universal algebra and lattice theory. Thesis on algebraic structures related to quantum logic.</p></div>
               </article>
               <article>
@@ -216,7 +188,7 @@
                 <div><h4>prg.ai Minor</h4><p class="record-org">Admitted</p><p>Inter-university AI programme connecting courses across Charles University and Czech Technical University.</p><a href="https://prg.ai/minor/" target="_blank" rel="noreferrer">Programme ↗</a></div>
               </article>
               <article>
-                <div class="record-meta">3—14 Aug 2026</div>
+                <div class="record-meta">3-14 Aug 2026</div>
                 <div><h4>ESSLLI 2026</h4><p class="record-org">Participant & volunteer</p><p>Coursework in logic for AI, SAT/SMT solving, higher-order logic, language models and algebraic methods.</p><a href="https://2026.esslli.eu/" target="_blank" rel="noreferrer">ESSLLI ↗</a></div>
               </article>
             </div>
@@ -259,6 +231,8 @@
   </main>
 
   <footer class="wrap"><span>© <span id="year"></span> Štěpán Chrast</span><a href="#top">Back to top ↑</a></footer>
+
+  <script src="portfolio-data.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

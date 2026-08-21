@@ -1,0 +1,38 @@
+/* ========================================================================== 
+   Profile graph V9 — structural route transitions
+   ========================================================================== */
+
+.v9-transition-overlay,
+.v9-transition-overlay *{
+  pointer-events:none!important;
+}
+
+.v9-transition-overlay .site-graph-node{
+  transition:none!important;
+}
+
+.v9-transition-overlay .site-graph-dot,
+.v9-transition-overlay .site-graph-label,
+.v9-transition-overlay .site-graph-meta,
+.v9-transition-overlay .site-graph-edges path,
+.v9-transition-overlay .work-project-anchor-v5,
+.v9-transition-overlay .work-theme-label-v5{
+  transition:none!important;
+}
+
+.v9-transition-overlay .site-graph-edges path{
+  vector-effect:non-scaling-stroke;
+}
+
+body.is-v9-transitioning #site-graph{
+  cursor:default;
+}
+
+body.is-v9-transitioning .graph-routebar,
+body.is-v9-transitioning .integrated-work-controls{
+  pointer-events:none;
+}
+
+@media(prefers-reduced-motion:reduce){
+  .v9-transition-overlay{display:none!important}
+}

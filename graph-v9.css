@@ -7,6 +7,20 @@
   pointer-events:none!important;
 }
 
+.v9-transition-overlay{
+  opacity:1!important;
+  visibility:visible!important;
+}
+
+/* The live/base renderer is still present while the custom transition overlay
+   animates. Keep only that base camera hidden so its old nodes cannot remain
+   visible underneath the animated clones. The overlay itself is a sibling and
+   is explicitly excluded, so the route animation remains fully visible. */
+body.is-v9-transitioning #site-graph .site-graph-svg > g:not(.v9-transition-overlay){
+  opacity:0!important;
+  visibility:hidden!important;
+}
+
 .v9-transition-overlay .site-graph-node{
   transition:none!important;
 }

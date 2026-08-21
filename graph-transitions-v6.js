@@ -456,6 +456,8 @@
     const nodeElement = target.closest?.('.site-graph-node[data-node-id]');
     if (nodeElement) {
       const id = nodeElement.dataset.nodeId;
+      // Work concept nodes are local filter controls, not route changes.
+      if (id.startsWith('work-concept:')) return null;
       if (id === rootId) return 'overview';
       if (id === 'work') return 'work';
       return routeForNode(nodeMap.get(id));
@@ -468,6 +470,10 @@
     const nodeElement = event.target.closest?.('.site-graph-node[data-node-id]');
     const route = routeFromControl(event.target);
     if (!route) return;
+    const currentRoute = normaliseRoute(document.body.dataset.graphRoute || location.hash);
+    // Clicking the currently focused root may alter filters, but it does not
+    // move to another graph depth and therefore must not start a route guard.
+    if (nodeElement && route === currentRoute) return;
     prepare({
       targetId: nodeElement?.dataset.nodeId || routeTargetId(route),
       targetRoute: route,
@@ -479,7 +485,10 @@
     if (event.key === 'Enter' || event.key === ' ') {
       const nodeElement = event.target.closest?.('.site-graph-node[data-node-id]');
       const route = routeFromControl(event.target);
-      if (route) prepare({ targetId: nodeElement?.dataset.nodeId || routeTargetId(route), targetRoute: route, trigger: 'keyboard' });
+      const currentRoute = normaliseRoute(document.body.dataset.graphRoute || location.hash);
+      if (route && !(nodeElement && route === currentRoute)) {
+        prepare({ targetId: nodeElement?.dataset.nodeId || routeTargetId(route), targetRoute: route, trigger: 'keyboard' });
+      }
       return;
     }
 

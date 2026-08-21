@@ -119,6 +119,12 @@ body.is-v8-route-transition #site-graph .v7-static-guard .site-graph-timeline{
   opacity:0!important
 }
 
+/* When leaving Work, the frozen guard must not keep the old project/theme
+   labels visible. V8 renders a separate fading ghost for those labels instead. */
+body.is-v8-departing-work #site-graph .v7-static-guard .site-graph-decorations{
+  opacity:0!important
+}
+
 @media(max-width:900px){
   body[data-graph-mode="work"] .scene-detail.is-work-concept-detail{
     top:auto!important;

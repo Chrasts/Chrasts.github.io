@@ -79,6 +79,11 @@
     element.dataset.y = point.y;
   };
 
+  const setTransitionOpacity = (element, value) => {
+    if (!element) return;
+    element.style.setProperty('opacity', String(value), 'important');
+  };
+
   const edgePath = (from, to, key, straight = false) => {
     if (!from || !to) return '';
     if (straight || Math.abs(from.x - to.x) < 4) {
@@ -385,7 +390,7 @@
       const clone = element.cloneNode(true);
       clone.removeAttribute('tabindex');
       clone.style.pointerEvents = 'none';
-      clone.style.opacity = '1';
+      setTransitionOpacity(clone, 1);
       const point = pointOf(element);
       setPoint(clone, point);
       overlayNodes.appendChild(clone);
@@ -541,7 +546,7 @@
       const clone = source.cloneNode(true);
       clone.removeAttribute('tabindex');
       clone.style.pointerEvents = 'none';
-      clone.style.opacity = '0';
+      setTransitionOpacity(clone, 0);
       const origin = current.direction === 'down'
         ? (targetBefore || targetAfter)
         : targetAfter;
@@ -553,7 +558,9 @@
     const finalEdges = edgeElements();
     const transitionEdges = finalEdges.map(source => {
       const clone = source.cloneNode(true);
-      clone.style.opacity = '0';
+      clone.classList.remove('is-upstream', 'is-downstream', 'is-lateral', 'is-muted-soft', 'is-work-soft', 'is-work-strong', 'is-selected-downset');
+      clone.style.visibility = 'hidden';
+      setTransitionOpacity(clone, 0);
       current.overlayEdges.appendChild(clone);
       return clone;
     });
@@ -561,7 +568,7 @@
     const finalDecorations = [...camera.querySelectorAll(':scope > .site-graph-decorations > *')];
     finalDecorations.forEach(source => {
       const clone = source.cloneNode(true);
-      clone.style.opacity = '0';
+      setTransitionOpacity(clone, 0);
       clone.style.pointerEvents = 'none';
       current.overlayDecorations.appendChild(clone);
     });
@@ -597,20 +604,20 @@
           const point = lerpPoint(item.from, movingTarget, collapseP);
           setPoint(item.element, point);
           const fade = clamp01((collapseRaw - .58) / .42);
-          item.element.style.opacity = String(1 - ease(fade));
+          setTransitionOpacity(item.element, 1 - ease(fade));
         });
       } else if (current.direction === 'down') {
-        const fadeRaw = clamp01(raw / .20);
+        const fadeRaw = clamp01(raw / .12);
         leaving.forEach(item => {
           const away = outwardPoint(item.from, targetBefore || targetAfter, item.id);
           setPoint(item.element, lerpPoint(item.from, away, ease(fadeRaw)));
-          item.element.style.opacity = String(1 - ease(fadeRaw));
+          setTransitionOpacity(item.element, 1 - ease(fadeRaw));
         });
       } else {
         const fadeRaw = clamp01(raw / .48);
         leaving.forEach(item => {
           setPoint(item.element, item.from);
-          item.element.style.opacity = String(1 - ease(fadeRaw));
+          setTransitionOpacity(item.element, 1 - ease(fadeRaw));
         });
       }
 
@@ -622,7 +629,7 @@
         const origin = current.direction === 'down' ? movingTarget : targetAfter;
         const point = lerpPoint(origin, item.to, enterP);
         setPoint(item.element, point);
-        item.element.style.opacity = String(clamp01(enterRaw * 1.35));
+        setTransitionOpacity(item.element, clamp01(enterRaw * 1.35));
         currentPoints.set(item.id, point);
       });
 
@@ -643,13 +650,14 @@
           'd',
           edgePath(source, target, `${edge.dataset.source}|${edge.dataset.target}`, straight)
         );
-        edge.style.opacity = String(ease(edgeRaw));
+        edge.style.visibility = edgeRaw > 0 ? 'visible' : 'hidden';
+        setTransitionOpacity(edge, ease(edgeRaw));
       });
 
       const decorationStart = .60;
       const decorationRaw = clamp01((raw - decorationStart) / (1 - decorationStart));
       [...current.overlayDecorations.children].forEach(element => {
-        element.style.opacity = String(ease(decorationRaw));
+        setTransitionOpacity(element, ease(decorationRaw));
       });
 
       if (raw < 1) {

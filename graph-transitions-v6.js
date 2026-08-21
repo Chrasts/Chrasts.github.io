@@ -8,9 +8,8 @@
   const nodeMap = new Map(graph.nodes.map(node => [node.id, node]));
   const rootId = graph.rootId;
   const rootNode = nodeMap.get(rootId);
-  const workData = site.work;
   const svgNS = 'http://www.w3.org/2000/svg';
-  const realReduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
 
   const childrenFor = id => graph.nodes.filter(node => node.parentIds?.includes(id));
   const routeForNode = node => node?.route || 'overview';
@@ -46,8 +45,18 @@
     return false;
   };
 
+  const stableNumber = value => {
+    let number = 2166136261;
+    for (const character of String(value)) number = Math.imul(number ^ character.charCodeAt(0), 16777619);
+    return number >>> 0;
+  };
+
   const graphSvg = () => document.querySelector('#site-graph .site-graph-svg');
-  const graphCamera = () => graphSvg()?.querySelector('.profile-map-viewport');
+  const graphCamera = () => {
+    const svg = graphSvg();
+    if (!svg) return null;
+    return svg.querySelector('.site-graph-edges')?.parentElement || svg.firstElementChild;
+  };
   const nodeElements = () => [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')];
   const edgeElements = () => [...document.querySelectorAll('#site-graph .site-graph-edges path[data-source][data-target]')];
 
@@ -63,85 +72,6 @@
     element.dataset.y = point.y;
   };
 
-  const snapshot = () => {
-    const svg = graphSvg();
-    const camera = graphCamera();
-    if (!svg || !camera) return null;
-
-    const nodes = new Map();
-    nodeElements().forEach(element => {
-      nodes.set(element.dataset.nodeId, {
-        point: pointOf(element),
-        clone: element.cloneNode(true)
-      });
-    });
-
-    return {
-      svg,
-      camera,
-      mode: document.body.dataset.graphMode || 'overview',
-      route: normaliseRoute(document.body.dataset.graphRoute || location.hash),
-      nodes,
-      cameraClone: camera.cloneNode(true)
-    };
-  };
-
-  let pending = null;
-  let transitionFrame = 0;
-  let guardOverlay = null;
-
-  const removeGuard = () => {
-    guardOverlay?.remove();
-    guardOverlay = null;
-    const camera = graphCamera();
-    if (camera) camera.style.opacity = '';
-  };
-
-  const prepare = ({ targetId = null, targetRoute = null, trigger = 'click' } = {}) => {
-    if (document.body.dataset.graphMode === 'atlas') return;
-    const before = snapshot();
-    if (!before) return;
-
-    cancelAnimationFrame(transitionFrame);
-    removeGuard();
-
-    const currentRoute = before.route;
-    const currentNode = routeNode(currentRoute) ||
-      (currentRoute.startsWith('work') ? nodeMap.get('work') : rootNode);
-    const resolvedTargetRoute = normaliseRoute(
-      targetRoute || routeForNode(nodeMap.get(targetId)) || location.hash
-    );
-    const targetNode = targetId ? nodeMap.get(targetId) : routeNode(resolvedTargetRoute);
-
-    let direction = 'lateral';
-    if (targetNode && currentNode) {
-      if (isAncestor(targetNode.id, currentNode.id) || targetNode.id === rootId) direction = 'up';
-      else if (isAncestor(currentNode.id, targetNode.id)) direction = 'down';
-    }
-    if (currentRoute.startsWith('work') && resolvedTargetRoute === 'overview') direction = 'up';
-    if (currentRoute === 'overview' && resolvedTargetRoute.startsWith('work')) direction = 'down';
-
-    pending = {
-      before,
-      targetId: targetNode?.id || targetId || null,
-      targetRoute: resolvedTargetRoute,
-      currentId: currentNode?.id || null,
-      direction,
-      trigger
-    };
-
-    guardOverlay = before.cameraClone;
-    guardOverlay.classList.add('v7-static-guard');
-    guardOverlay.style.pointerEvents = 'none';
-    guardOverlay.style.opacity = '1';
-    before.svg.appendChild(guardOverlay);
-    before.camera.style.opacity = '0';
-
-    // The underlying graph renderer should jump directly to its new layout;
-    // this layer performs the visible transition from the captured state.
-    window.__GRAPH_V6_FORCE_SNAP__ = true;
-  };
-
   const edgePath = (from, to, key, straight = false) => {
     if (!from || !to) return '';
     if (straight || Math.abs(from.x - to.x) < 4) {
@@ -150,9 +80,7 @@
     const dx = to.x - from.x;
     const dy = to.y - from.y;
     const distance = Math.max(1, Math.hypot(dx, dy));
-    let seed = 0;
-    for (const character of key) seed = (seed * 31 + character.charCodeAt(0)) >>> 0;
-    const bend = Math.max(-40, Math.min(40, ((seed % 37) - 18) + Math.min(12, Math.abs(dx) * .027)));
+    const bend = Math.max(-34, Math.min(34, ((stableNumber(key) % 37) - 18) + Math.min(10, Math.abs(dx) * .023)));
     const nx = -dy / distance;
     const ny = dx / distance;
     const control = {
@@ -162,8 +90,31 @@
     return `M ${from.x.toFixed(1)} ${from.y.toFixed(1)} Q ${control.x.toFixed(1)} ${control.y.toFixed(1)} ${to.x.toFixed(1)} ${to.y.toFixed(1)}`;
   };
 
+  const routeTargetId = route => {
+    if (route === 'overview') return rootId;
+    if (route === 'work' || route.startsWith('work/')) return 'work';
+    return routeNode(route)?.id || null;
+  };
+
+  const routeFromControl = target => {
+    const routeElement = target.closest?.('[data-route]');
+    if (routeElement) return normaliseRoute(routeElement.dataset.route || routeElement.getAttribute('href'));
+
+    const nodeElement = target.closest?.('.site-graph-node[data-node-id]');
+    if (!nodeElement) return null;
+    const id = nodeElement.dataset.nodeId;
+    if (id.startsWith('work-concept:')) return null;
+    if (id === rootId) return 'overview';
+    if (id === 'work') return 'work';
+    return routeForNode(nodeMap.get(id));
+  };
+
   /* ------------------------------------------------------------------------
-     Compact focus layout
+     Focus layout
+
+     Ancestors occupy a short corridor above-left. The displayed downset uses
+     rank-aware placement and barycentric ordering, with small offsets that stop
+     parent/child chains from stacking directly behind one another.
      ------------------------------------------------------------------------ */
   const resetLabelGeometry = () => {
     nodeElements().forEach(element => {
@@ -176,17 +127,86 @@
     });
   };
 
-  const placeTier = (items, y, left = 165, right = 1035, stagger = 0) => {
-    const result = new Map();
-    if (!items.length) return result;
-    items.forEach((node, index) => {
-      const t = items.length === 1 ? .5 : index / (items.length - 1);
-      result.set(node.id, {
-        x: left + t * (right - left),
-        y: y + (stagger ? (index % 2 ? stagger : -stagger) : 0)
-      });
+  const enforceSpacing = (items, left, right, gap) => {
+    if (!items.length) return items;
+    items.sort((a, b) => a.x - b.x || a.id.localeCompare(b.id));
+
+    for (let i = 1; i < items.length; i += 1) {
+      items[i].x = Math.max(items[i].x, items[i - 1].x + gap);
+    }
+    if (items.at(-1).x > right) {
+      const shift = items.at(-1).x - right;
+      items.forEach(item => item.x -= shift);
+    }
+    for (let i = items.length - 2; i >= 0; i -= 1) {
+      items[i].x = Math.min(items[i].x, items[i + 1].x - gap);
+    }
+    if (items[0].x < left) {
+      const shift = left - items[0].x;
+      items.forEach(item => item.x += shift);
+    }
+    return items;
+  };
+
+  const arrangeDirect = (nodes, current) => {
+    if (!nodes.length) return [];
+    const left = nodes.length <= 3 ? 235 : 150;
+    const right = nodes.length <= 3 ? 1020 : 1050;
+    const items = nodes.map((node, index) => {
+      const t = nodes.length === 1 ? .5 : index / (nodes.length - 1);
+      let x = left + t * (right - left);
+
+      if (nodes.length === 1) {
+        x = current.x + (stableNumber(node.id) % 2 ? 125 : -125);
+      } else if (Math.abs(x - current.x) < 92) {
+        const direction = stableNumber(`${node.id}:fan`) % 2 ? 1 : -1;
+        x += direction * 105;
+      }
+
+      return {
+        id: node.id,
+        node,
+        x,
+        y: 448 + (index % 2 ? 10 : -8)
+      };
     });
-    return result;
+    return enforceSpacing(items, 145, 1055, nodes.length > 5 ? 132 : 165);
+  };
+
+  const arrangeSecondRank = (nodes, directItems, visibleIds) => {
+    const directPosition = new Map(directItems.map(item => [item.id, item]));
+    const secondMap = new Map();
+
+    nodes.forEach(parent => {
+      childrenFor(parent.id)
+        .filter(child => visibleIds.has(child.id))
+        .forEach(child => {
+          if (!secondMap.has(child.id)) secondMap.set(child.id, { node: child, parentIds: [] });
+          secondMap.get(child.id).parentIds.push(parent.id);
+        });
+    });
+
+    const items = [...secondMap.values()].map(({ node, parentIds }, index) => {
+      const parentXs = parentIds.map(id => directPosition.get(id)?.x).filter(Number.isFinite);
+      let x = parentXs.length
+        ? parentXs.reduce((sum, value) => sum + value, 0) / parentXs.length
+        : 600;
+
+      if (parentXs.length === 1 && Math.abs(x - parentXs[0]) < 62) {
+        x += stableNumber(`${node.id}:branch`) % 2 ? 74 : -74;
+      }
+
+      return {
+        id: node.id,
+        node,
+        x,
+        y: 610 + (index % 2 ? 8 : -8),
+        barycentre: parentXs.length ? parentXs.reduce((sum, value) => sum + value, 0) / parentXs.length : x
+      };
+    });
+
+    items.sort((a, b) => a.barycentre - b.barycentre || a.node.label.localeCompare(b.node.label));
+    return enforceSpacing(items, 125, 1075, items.length > 6 ? 126 : 145);
   };
 
   const reflowFocus = () => {
@@ -204,24 +224,21 @@
 
     const positions = new Map();
     const current = { x: 620, y: 270 };
-    const ancestorCount = Math.max(0, path.length - 1);
+    const ancestors = path.slice(0, -1);
 
-    // The root path occupies a compact diagonal corridor above-left of the
-    // active node. Its total footprint is capped, so deeper navigation does not
-    // stretch the whole scene or intrude into the current downset.
-    if (ancestorCount) {
-      const startX = current.x - Math.min(150, 42 + ancestorCount * 27);
-      const startY = 112;
-      const endX = current.x - 46;
-      const endY = 214;
+    if (ancestors.length) {
+      const totalRise = Math.min(118, 76 + ancestors.length * 12);
+      const start = { x: current.x - Math.min(158, 70 + ancestors.length * 22), y: current.y - totalRise - 48 };
+      const end = { x: current.x - 54, y: current.y - 58 };
 
-      path.slice(0, -1).forEach((node, index) => {
-        const t = ancestorCount === 1 ? 1 : index / Math.max(1, ancestorCount - 1);
-        const easeT = Math.pow(t, .9);
-        positions.set(node.id, {
-          x: startX + (endX - startX) * easeT,
-          y: startY + (endY - startY) * t
-        });
+      ancestors.forEach((node, index) => {
+        const t = ancestors.length === 1 ? 1 : index / Math.max(1, ancestors.length - 1);
+        const point = {
+          x: start.x + (end.x - start.x) * Math.pow(t, .88),
+          y: start.y + (end.y - start.y) * t
+        };
+        positions.set(node.id, point);
+
         const label = elements.get(node.id)?.querySelector('.site-graph-label');
         if (label) {
           label.setAttribute('text-anchor', 'end');
@@ -236,250 +253,329 @@
     const direct = childrenFor(target.id)
       .filter(node => visibleIds.has(node.id))
       .sort((a, b) => a.label.localeCompare(b.label));
+    const directItems = arrangeDirect(direct, current);
+    directItems.forEach(item => positions.set(item.id, { x: item.x, y: item.y }));
 
-    const directY = target.id === 'experience' ? 458 : 448;
-    const directPositions = placeTier(
-      direct,
-      directY,
-      direct.length <= 3 ? 245 : 165,
-      direct.length <= 3 ? 995 : 1035,
-      direct.length > 5 ? 9 : 0
-    );
-    directPositions.forEach((point, id) => positions.set(id, point));
-
-    // The next visible rank is always below its direct parent. This prevents a
-    // newly opened subgraph from appearing above or inside the ancestor chain.
-    const byParent = new Map();
-    direct.forEach(parent => {
-      const group = childrenFor(parent.id)
-        .filter(node => visibleIds.has(node.id) && !positions.has(node.id));
-      if (group.length) byParent.set(parent.id, group);
-    });
-
-    byParent.forEach((group, parentId) => {
-      const parent = positions.get(parentId);
-      if (!parent) return;
-      const span = Math.min(260, Math.max(120, 86 * group.length));
-      group.forEach((node, index) => {
-        const t = group.length === 1 ? .5 : index / (group.length - 1);
-        positions.set(node.id, {
-          x: Math.max(115, Math.min(1085, parent.x - span / 2 + t * span)),
-          y: 610 + (index % 2 ? 7 : -7)
-        });
-      });
-    });
+    const secondItems = arrangeSecondRank(direct, directItems, visibleIds)
+      .filter(item => !positions.has(item.id));
+    secondItems.forEach(item => positions.set(item.id, { x: item.x, y: item.y }));
 
     const unplaced = [...visibleIds]
       .filter(id => !positions.has(id))
       .map(id => nodeMap.get(id))
       .filter(Boolean)
       .sort((a, b) => a.label.localeCompare(b.label));
-    placeTier(unplaced, 610, 180, 1020, 7).forEach((point, id) => positions.set(id, point));
+
+    const fallback = unplaced.map((node, index) => ({
+      id: node.id,
+      node,
+      x: 180 + (index + .5) * (840 / Math.max(1, unplaced.length)),
+      y: 615 + (index % 2 ? 8 : -8)
+    }));
+    enforceSpacing(fallback, 130, 1070, fallback.length > 6 ? 122 : 142)
+      .forEach(item => positions.set(item.id, { x: item.x, y: item.y }));
 
     positions.forEach((point, id) => setPoint(elements.get(id), point));
 
     const pathIds = new Set(path.map(node => node.id));
     edgeElements().forEach(edge => {
-      const sourceId = edge.dataset.source;
-      const targetId = edge.dataset.target;
-      const source = positions.get(sourceId) || pointOf(elements.get(sourceId));
-      const targetPoint = positions.get(targetId) || pointOf(elements.get(targetId));
+      const source = positions.get(edge.dataset.source) || pointOf(elements.get(edge.dataset.source));
+      const targetPoint = positions.get(edge.dataset.target) || pointOf(elements.get(edge.dataset.target));
       if (!source || !targetPoint) return;
-      const straight = pathIds.has(sourceId) && pathIds.has(targetId);
-      edge.setAttribute('d', edgePath(source, targetPoint, `${sourceId}|${targetId}`, straight));
+      const straight = pathIds.has(edge.dataset.source) && pathIds.has(edge.dataset.target);
+      edge.setAttribute('d', edgePath(source, targetPoint, `${edge.dataset.source}|${edge.dataset.target}`, straight));
     });
 
     const timeline = document.querySelector('#site-graph .site-graph-timeline');
     if (timeline && target.id === 'experience') {
-      timeline.setAttribute('x1', '165');
-      timeline.setAttribute('x2', '1035');
-      timeline.setAttribute('y1', String(directY));
-      timeline.setAttribute('y2', String(directY));
+      timeline.setAttribute('x1', '155');
+      timeline.setAttribute('x2', '1045');
+      timeline.setAttribute('y1', '450');
+      timeline.setAttribute('y2', '450');
     }
-  };
-
-  const routeTargetId = route => {
-    if (route === 'overview') return rootId;
-    if (route === 'work' || route.startsWith('work/')) return 'work';
-    return routeNode(route)?.id || null;
-  };
-
-  const incomingParent = id => {
-    const edge = edgeElements().find(item => item.dataset.target === id);
-    return edge?.dataset.source || null;
   };
 
   /* ------------------------------------------------------------------------
-     Direction-aware transition
+     Transition snapshot and preparation
      ------------------------------------------------------------------------ */
-  const startTransition = () => {
-    if (!pending) {
-      window.__GRAPH_V6_FORCE_SNAP__ = false;
-      removeGuard();
-      return;
-    }
+  let pending = null;
+  let transitionFrame = 0;
+  let lastStableRoute = normaliseRoute(document.body.dataset.graphRoute || location.hash);
 
-    const current = pending;
-    pending = null;
+  const currentRouteNode = route => routeNode(route) || (route.startsWith('work') ? nodeMap.get('work') : rootNode);
 
-    resetLabelGeometry();
-    reflowFocus();
+  const prepare = ({ targetId = null, targetRoute = null, trigger = 'click' } = {}) => {
+    if (document.body.dataset.graphMode === 'atlas' || document.body.classList.contains('is-v9-transitioning')) return;
 
     const svg = graphSvg();
     const camera = graphCamera();
-    if (!svg || !camera) {
-      window.__GRAPH_V6_FORCE_SNAP__ = false;
-      removeGuard();
-      return;
+    if (!svg || !camera) return;
+
+    const currentRoute = normaliseRoute(document.body.dataset.graphRoute || location.hash);
+    const resolvedTargetRoute = normaliseRoute(targetRoute || routeForNode(nodeMap.get(targetId)) || location.hash);
+    if (resolvedTargetRoute === currentRoute) return;
+
+    const currentNode = currentRouteNode(currentRoute);
+    const targetNode = targetId ? nodeMap.get(targetId) : currentRouteNode(resolvedTargetRoute);
+
+    let direction = 'lateral';
+    if (targetNode && currentNode) {
+      if (isAncestor(targetNode.id, currentNode.id) || targetNode.id === rootId) direction = 'up';
+      else if (isAncestor(currentNode.id, targetNode.id)) direction = 'down';
     }
+    if (currentRoute.startsWith('work') && resolvedTargetRoute === 'overview') direction = 'up';
+    if (currentRoute === 'overview' && resolvedTargetRoute.startsWith('work')) direction = 'down';
 
-    const afterElements = new Map(nodeElements().map(element => [element.dataset.nodeId, element]));
-    const after = new Map([...afterElements].map(([id, element]) => [id, pointOf(element)]));
-    const before = current.before.nodes;
+    cancelAnimationFrame(transitionFrame);
 
-    const finalTargetId = current.targetId && after.has(current.targetId)
-      ? current.targetId
-      : routeTargetId(normaliseRoute(document.body.dataset.graphRoute || location.hash));
-    const finalAnchor = after.get(finalTargetId) || after.get('work') || after.get(rootId) || { x: 620, y: 270 };
-    const clickedBefore = before.get(current.targetId)?.point || before.get(finalTargetId)?.point || finalAnchor;
+    const overlay = document.createElementNS(svgNS, 'g');
+    overlay.classList.add('v9-transition-overlay');
+    const overlayEdges = document.createElementNS(svgNS, 'g');
+    overlayEdges.classList.add('site-graph-edges', 'v9-new-edges');
+    const overlayDecorations = document.createElementNS(svgNS, 'g');
+    overlayDecorations.classList.add('site-graph-decorations', 'v9-new-decorations');
+    const overlayNodes = document.createElementNS(svgNS, 'g');
+    overlayNodes.classList.add('site-graph-nodes', 'v9-transition-nodes');
+    overlay.append(overlayEdges, overlayDecorations, overlayNodes);
+    svg.appendChild(overlay);
 
-    const leavingLayer = document.createElementNS(svgNS, 'g');
-    leavingLayer.classList.add('v7-leaving-layer');
-    leavingLayer.style.pointerEvents = 'none';
-    camera.appendChild(leavingLayer);
+    const before = new Map();
+    const leavingWork = document.body.dataset.graphMode === 'work' && !resolvedTargetRoute.startsWith('work');
 
-    const leaving = [];
-    before.forEach((item, id) => {
-      if (after.has(id)) return;
-      const clone = item.clone;
+    nodeElements().forEach(element => {
+      const id = element.dataset.nodeId;
+      if (leavingWork && id.startsWith('work-concept:')) return;
+      const clone = element.cloneNode(true);
       clone.removeAttribute('tabindex');
       clone.style.pointerEvents = 'none';
       clone.style.opacity = '1';
-      setPoint(clone, item.point);
-      leavingLayer.appendChild(clone);
-      leaving.push({ id, element: clone, from: item.point });
+      const point = pointOf(element);
+      setPoint(clone, point);
+      overlayNodes.appendChild(clone);
+      before.set(id, { point, clone });
     });
 
+    // No old edge is copied. The previous segment therefore loses all of its
+    // edges at the exact start of navigation. Work decorations are intentionally
+    // omitted as well, so the Work lattice disappears immediately on exit.
+    camera.style.opacity = '0';
+    document.body.classList.add('is-v9-transitioning');
+    window.__GRAPH_V6_FORCE_SNAP__ = true;
+
+    pending = {
+      currentRoute,
+      targetRoute: resolvedTargetRoute,
+      currentId: currentNode?.id || null,
+      targetId: targetNode?.id || targetId || routeTargetId(resolvedTargetRoute),
+      direction,
+      trigger,
+      before,
+      overlay,
+      overlayEdges,
+      overlayDecorations,
+      overlayNodes,
+      camera
+    };
+  };
+
+  const lerpPoint = (from, to, t) => ({
+    x: from.x + (to.x - from.x) * t,
+    y: from.y + (to.y - from.y) * t
+  });
+  const clamp01 = value => Math.max(0, Math.min(1, value));
+  const ease = t => t < .5
+    ? 4 * t * t * t
+    : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+  const outwardPoint = (from, anchor, id) => {
+    let dx = from.x - anchor.x;
+    let dy = from.y - anchor.y;
+    if (Math.abs(dx) < 20) dx = stableNumber(id) % 2 ? 1 : -1;
+    const length = Math.max(1, Math.hypot(dx, dy));
+    const horizontal = Math.abs(dx) / length;
+    const distance = 52 + (stableNumber(`${id}:out`) % 19);
+    return {
+      x: from.x + Math.sign(dx) * distance * (.72 + horizontal * .28),
+      y: from.y + (dy / length) * distance * .22 - 4
+    };
+  };
+
+  const finishTransition = current => {
+    current.overlay.remove();
+    current.camera.style.opacity = '';
+    document.body.classList.remove('is-v9-transitioning');
+    window.__GRAPH_V6_FORCE_SNAP__ = false;
+    lastStableRoute = normaliseRoute(document.body.dataset.graphRoute || location.hash);
+  };
+
+  const startTransition = () => {
+    if (!pending) return;
+    const current = pending;
+    pending = null;
+
+    // site-graph.js has already rendered the destination while its camera was
+    // hidden. Reflow that destination before reading final positions.
+    resetLabelGeometry();
+    reflowFocus();
+
+    const camera = graphCamera();
+    if (!camera) {
+      finishTransition(current);
+      return;
+    }
+    current.camera = camera;
+    camera.style.opacity = '0';
+
+    const afterElements = new Map(nodeElements().map(element => [element.dataset.nodeId, element]));
+    const after = new Map([...afterElements].map(([id, element]) => [id, pointOf(element)]));
+    const finalTargetId = current.targetId && after.has(current.targetId)
+      ? current.targetId
+      : routeTargetId(normaliseRoute(document.body.dataset.graphRoute || location.hash));
+
+    const targetBefore = current.before.get(finalTargetId)?.point || current.before.get(current.targetId)?.point;
+    const targetAfter = after.get(finalTargetId) || after.get('work') || after.get(rootId) || { x: 620, y: 270 };
+
     const persistent = [];
-    after.forEach((to, id) => {
-      const element = afterElements.get(id);
-      const from = before.get(id)?.point;
-      if (!element || !from) return;
-      setPoint(element, from);
-      persistent.push({ id, element, from, to });
+    const leaving = [];
+    current.before.forEach((item, id) => {
+      if (after.has(id)) {
+        persistent.push({ id, element: item.clone, from: item.point, to: after.get(id) });
+      } else {
+        leaving.push({ id, element: item.clone, from: item.point });
+      }
     });
+
+    const persistentMap = new Map(persistent.map(item => [item.id, item]));
+    const targetPersistent = persistentMap.get(finalTargetId) || persistentMap.get(current.targetId) || null;
 
     const entering = [];
     after.forEach((to, id) => {
-      if (before.has(id)) return;
-      const element = afterElements.get(id);
-      if (!element) return;
+      if (current.before.has(id)) return;
+      const source = afterElements.get(id);
+      if (!source) return;
+      const clone = source.cloneNode(true);
+      clone.removeAttribute('tabindex');
+      clone.style.pointerEvents = 'none';
+      clone.style.opacity = '0';
 
-      let origin = finalAnchor;
-      if (current.direction === 'down') {
-        // Every newly revealed descendant grows out of the node the user chose.
-        origin = clickedBefore;
-      } else if (current.direction === 'up') {
-        // New siblings in the broader segment emerge only after the old downset
-        // has collapsed into the selected ancestor.
-        origin = finalAnchor;
-      } else {
-        const parentId = incomingParent(id);
-        origin = parentId && after.has(parentId) ? after.get(parentId) : finalAnchor;
-      }
-
-      setPoint(element, origin);
-      element.style.opacity = '0';
-      entering.push({ id, element, from: origin, to });
+      const origin = current.direction === 'down'
+        ? (targetBefore || targetAfter)
+        : current.direction === 'up'
+          ? targetAfter
+          : targetAfter;
+      setPoint(clone, origin);
+      current.overlayNodes.appendChild(clone);
+      entering.push({ id, element: clone, from: origin, to });
     });
 
-    const finalEdges = edgeElements();
-    finalEdges.forEach(edge => edge.style.opacity = '0');
+    const finalEdgeElements = edgeElements();
+    const transitionEdges = finalEdgeElements.map(source => {
+      const clone = source.cloneNode(true);
+      clone.style.opacity = '0';
+      current.overlayEdges.appendChild(clone);
+      return clone;
+    });
 
-    camera.style.opacity = '1';
-    removeGuard();
-    camera.style.opacity = '1';
+    const finalDecorations = [...camera.querySelectorAll(':scope > .site-graph-decorations > *')];
+    finalDecorations.forEach(source => {
+      const clone = source.cloneNode(true);
+      clone.style.opacity = '0';
+      clone.style.pointerEvents = 'none';
+      current.overlayDecorations.appendChild(clone);
+    });
 
-    if (realReduced.matches) {
-      persistent.forEach(item => setPoint(item.element, item.to));
-      entering.forEach(item => {
-        setPoint(item.element, item.to);
-        item.element.style.opacity = '';
-      });
-      finalEdges.forEach(edge => edge.style.opacity = '');
-      leavingLayer.remove();
-      window.__GRAPH_V6_FORCE_SNAP__ = false;
+    if (reduced.matches) {
+      finishTransition(current);
       return;
     }
 
-    const duration = current.direction === 'up' ? 980 : current.direction === 'down' ? 900 : 820;
+    const duration = current.direction === 'up' ? 1160 : current.direction === 'down' ? 1080 : 980;
     const started = performance.now();
-    const cubic = t => t < .5
-      ? 4 * t * t * t
-      : 1 - Math.pow(-2 * t + 2, 3) / 2;
-    const clamp01 = value => Math.max(0, Math.min(1, value));
-    const lerpPoint = (from, to, t) => ({
-      x: from.x + (to.x - from.x) * t,
-      y: from.y + (to.y - from.y) * t
-    });
-
-    const targetPersistent = persistent.find(item => item.id === finalTargetId);
 
     const frame = now => {
       const raw = clamp01((now - started) / duration);
-      const moveP = cubic(raw);
+      const moveP = ease(raw);
 
-      persistent.forEach(item => setPoint(item.element, lerpPoint(item.from, item.to, moveP)));
+      const currentPoints = new Map();
 
-      // Going UP: the old downset visibly folds back into the selected ancestor.
-      // Going DOWN: the old surrounding segment simply dissolves in place.
+      persistent.forEach(item => {
+        const point = lerpPoint(item.from, item.to, moveP);
+        setPoint(item.element, point);
+        currentPoints.set(item.id, point);
+      });
+
+      const movingTarget = targetPersistent
+        ? lerpPoint(targetPersistent.from, targetPersistent.to, moveP)
+        : targetAfter;
+
       if (current.direction === 'up') {
-        const collapseRaw = clamp01(raw / .68);
-        const collapseP = cubic(collapseRaw);
+        const collapseRaw = clamp01(raw / .66);
+        const collapseP = ease(collapseRaw);
         leaving.forEach(item => {
-          setPoint(item.element, lerpPoint(item.from, finalAnchor, collapseP));
-          item.element.style.opacity = String(1 - clamp01((collapseRaw - .66) / .34));
+          // Collapse follows the selected ancestor while that ancestor itself
+          // moves into its broader-fragment position.
+          const point = lerpPoint(item.from, movingTarget, collapseP);
+          setPoint(item.element, point);
+          const fade = clamp01((collapseRaw - .58) / .42);
+          item.element.style.opacity = String(1 - ease(fade));
+        });
+      } else if (current.direction === 'down') {
+        const fadeRaw = clamp01(raw / .38);
+        leaving.forEach(item => {
+          // Siblings from the old fragment never collapse into the node chosen
+          // by the user. They leave quickly, with a small outward drift.
+          const away = outwardPoint(item.from, targetBefore || targetAfter, item.id);
+          setPoint(item.element, lerpPoint(item.from, away, ease(fadeRaw)));
+          item.element.style.opacity = String(1 - ease(fadeRaw));
         });
       } else {
-        const fadeRaw = current.direction === 'down'
-          ? clamp01(raw / .48)
-          : clamp01(raw / .58);
+        const fadeRaw = clamp01(raw / .48);
         leaving.forEach(item => {
-          // Intentionally no spatial movement here. Siblings and their labels
-          // fade away instead of nonsensically collapsing into a deeper node.
           setPoint(item.element, item.from);
-          item.element.style.opacity = String(1 - cubic(fadeRaw));
+          item.element.style.opacity = String(1 - ease(fadeRaw));
         });
       }
 
-      const enterStart = current.direction === 'up' ? .46 : current.direction === 'down' ? .20 : .28;
+      const enterStart = current.direction === 'up' ? .57 : current.direction === 'down' ? .25 : .34;
       const enterRaw = clamp01((raw - enterStart) / (1 - enterStart));
-      const enterP = cubic(enterRaw);
-
-      let movingOrigin = current.direction === 'down' && targetPersistent
-        ? lerpPoint(targetPersistent.from, targetPersistent.to, moveP)
-        : current.direction === 'down'
-          ? clickedBefore
-          : finalAnchor;
+      const enterP = ease(enterRaw);
 
       entering.forEach(item => {
-        const origin = current.direction === 'down' ? movingOrigin : item.from;
-        setPoint(item.element, lerpPoint(origin, item.to, enterP));
-        item.element.style.opacity = String(clamp01(enterRaw * 1.28));
+        const origin = current.direction === 'down'
+          ? movingTarget
+          : current.direction === 'up'
+            ? movingTarget
+            : item.from;
+        const point = lerpPoint(origin, item.to, enterP);
+        setPoint(item.element, point);
+        item.element.style.opacity = String(clamp01(enterRaw * 1.35));
+        currentPoints.set(item.id, point);
       });
 
-      const currentPoints = new Map([...afterElements].map(([id, element]) => [id, pointOf(element)]));
-      finalEdges.forEach(edge => {
+      // Persistent nodes not touched above still need a point for edge drawing.
+      after.forEach((point, id) => {
+        if (!currentPoints.has(id) && !entering.some(item => item.id === id)) currentPoints.set(id, point);
+      });
+
+      const edgeStart = current.direction === 'up' ? .62 : current.direction === 'down' ? .36 : .48;
+      const edgeRaw = clamp01((raw - edgeStart) / (1 - edgeStart));
+      const activeRoute = normaliseRoute(document.body.dataset.graphRoute || location.hash);
+      const activeNode = routeNode(activeRoute);
+      const pathIds = activeNode ? new Set(primaryPath(activeNode).map(node => node.id)) : new Set();
+
+      transitionEdges.forEach(edge => {
         const source = currentPoints.get(edge.dataset.source);
         const targetPoint = currentPoints.get(edge.dataset.target);
         if (!source || !targetPoint) return;
-        const route = normaliseRoute(document.body.dataset.graphRoute || location.hash);
-        const activeNode = routeNode(route);
-        const pathIds = activeNode ? new Set(primaryPath(activeNode).map(node => node.id)) : new Set();
         const straight = pathIds.has(edge.dataset.source) && pathIds.has(edge.dataset.target);
         edge.setAttribute('d', edgePath(source, targetPoint, `${edge.dataset.source}|${edge.dataset.target}`, straight));
-        const touchesEntering = entering.some(item => item.id === edge.dataset.source || item.id === edge.dataset.target);
-        edge.style.opacity = String(touchesEntering ? enterRaw : Math.max(.18, moveP));
+        edge.style.opacity = String(ease(edgeRaw));
+      });
+
+      const decorationStart = current.direction === 'work' ? .5 : .60;
+      const decorationRaw = clamp01((raw - decorationStart) / (1 - decorationStart));
+      [...current.overlayDecorations.children].forEach(element => {
+        element.style.opacity = String(ease(decorationRaw));
       });
 
       if (raw < 1) {
@@ -487,14 +583,7 @@
         return;
       }
 
-      persistent.forEach(item => setPoint(item.element, item.to));
-      entering.forEach(item => {
-        setPoint(item.element, item.to);
-        item.element.style.opacity = '';
-      });
-      finalEdges.forEach(edge => edge.style.opacity = '');
-      leavingLayer.remove();
-      window.__GRAPH_V6_FORCE_SNAP__ = false;
+      finishTransition(current);
     };
 
     transitionFrame = requestAnimationFrame(frame);
@@ -505,152 +594,18 @@
   };
 
   /* ------------------------------------------------------------------------
-     Work concept inspection — graph nodes never change theme filters
+     Navigation capture
      ------------------------------------------------------------------------ */
-  const detailPanel = () => document.querySelector('#site-detail-panel');
-
-  const closeConceptDetail = () => {
-    const panel = detailPanel();
-    if (!panel) return;
-    panel.classList.remove('is-open');
-    setTimeout(() => {
-      if (!panel.classList.contains('is-open')) panel.hidden = true;
-    }, realReduced.matches ? 0 : 180);
-  };
-
-  const openWorkConceptDetail = intent => {
-    const panel = detailPanel();
-    if (!panel || !workData) return;
-
-    const attributeMap = new Map(workData.attributes.map(attribute => [attribute.id, attribute]));
-    const themeIds = [...intent].filter(id => attributeMap.has(id));
-    if (!themeIds.length) return;
-
-    const projects = workData.projects
-      .filter(project => themeIds.every(id => project.lattice.includes(id)))
-      .sort((a, b) => a.order - b.order);
-    const labels = themeIds.map(id => attributeMap.get(id).label);
-
-    panel.innerHTML = '';
-
-    const close = document.createElement('button');
-    close.type = 'button';
-    close.className = 'detail-close';
-    close.setAttribute('aria-label', 'Close Work concept detail');
-    close.textContent = '×';
-    close.addEventListener('click', closeConceptDetail);
-
-    const eyebrow = document.createElement('p');
-    eyebrow.className = 'detail-eyebrow';
-    eyebrow.textContent = themeIds.length === 1 ? 'Work theme' : 'Work theme intersection';
-
-    const heading = document.createElement('h2');
-    heading.textContent = labels.join(' ∩ ');
-
-    const summary = document.createElement('p');
-    summary.className = 'detail-summary';
-    summary.textContent = themeIds.length === 1
-      ? `Projects classified under ${labels[0]}. Theme filters are changed only from the controls on the right.`
-      : `Projects lying in the intersection of ${labels.join(', ')}. Theme filters are changed only from the controls on the right.`;
-
-    panel.append(close, eyebrow, heading, summary);
-
-    const listHeading = document.createElement('p');
-    listHeading.className = 'detail-list-title';
-    listHeading.textContent = projects.length
-      ? `Projects in this ${themeIds.length === 1 ? 'theme' : 'intersection'}`
-      : 'Projects';
-    panel.appendChild(listHeading);
-
-    if (projects.length) {
-      const list = document.createElement('div');
-      list.className = 'detail-node-list is-secondary';
-      projects.forEach(project => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.textContent = project.graphLabel || project.title;
-        button.addEventListener('click', () => {
-          location.hash = `#work/project/${project.id}`;
-        });
-        list.appendChild(button);
-      });
-      panel.appendChild(list);
-    } else {
-      const empty = document.createElement('p');
-      empty.className = 'detail-meta';
-      empty.textContent = 'No project is currently assigned to this intersection.';
-      panel.appendChild(empty);
-    }
-
-    panel.hidden = false;
-    requestAnimationFrame(() => panel.classList.add('is-open'));
-  };
-
-  const workConceptIntentFromNode = element => {
-    const id = element?.dataset.nodeId || '';
-    if (!id.startsWith('work-concept:')) return null;
-    const key = id.slice('work-concept:'.length);
-    return key && key !== 'top' ? key.split('|').filter(Boolean) : [];
-  };
-
-  const interceptWorkGraphControl = (event, keyboard = false) => {
-    if (document.body.dataset.graphMode !== 'work') return false;
-
-    const conceptNode = event.target.closest?.('.site-graph-node[data-node-id^="work-concept:"]');
-    if (conceptNode) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      const intent = workConceptIntentFromNode(conceptNode);
-      if (intent?.length) openWorkConceptDetail(intent);
-      return true;
-    }
-
-    const themeLabel = event.target.closest?.('.work-theme-label-v5[data-theme-id]');
-    if (themeLabel) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      openWorkConceptDetail([themeLabel.dataset.themeId]);
-      return true;
-    }
-
-    // The active Work top node is no longer a filter-reset control.
-    const workNode = event.target.closest?.('.site-graph-node[data-node-id="work"]');
-    if (workNode) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      return true;
-    }
-
-    return false;
-  };
-
-  const routeFromControl = target => {
-    const routeElement = target.closest?.('[data-route]');
-    if (routeElement) return normaliseRoute(routeElement.dataset.route || routeElement.getAttribute('href'));
-
-    const nodeElement = target.closest?.('.site-graph-node[data-node-id]');
-    if (nodeElement) {
-      const id = nodeElement.dataset.nodeId;
-      if (id.startsWith('work-concept:')) return null;
-      if (id === rootId) return 'overview';
-      if (id === 'work') return 'work';
-      return routeForNode(nodeMap.get(id));
-    }
-    return null;
-  };
-
   document.addEventListener('click', event => {
-    if (event.button !== 0) return;
-    if (interceptWorkGraphControl(event)) return;
-
-    const nodeElement = event.target.closest?.('.site-graph-node[data-node-id]');
+    if (event.button !== 0 || event.defaultPrevented) return;
     const route = routeFromControl(event.target);
     if (!route) return;
     const currentRoute = normaliseRoute(document.body.dataset.graphRoute || location.hash);
-    if (nodeElement && route === currentRoute) return;
+    if (route === currentRoute) return;
 
+    const node = event.target.closest?.('.site-graph-node[data-node-id]');
     prepare({
-      targetId: nodeElement?.dataset.nodeId || routeTargetId(route),
+      targetId: node?.dataset.nodeId || routeTargetId(route),
       targetRoute: route,
       trigger: 'click'
     });
@@ -658,27 +613,27 @@
 
   document.addEventListener('keydown', event => {
     if (event.key === 'Enter' || event.key === ' ') {
-      if (interceptWorkGraphControl(event, true)) return;
-      const nodeElement = event.target.closest?.('.site-graph-node[data-node-id]');
+      if (event.defaultPrevented) return;
       const route = routeFromControl(event.target);
+      if (!route) return;
       const currentRoute = normaliseRoute(document.body.dataset.graphRoute || location.hash);
-      if (route && !(nodeElement && route === currentRoute)) {
-        prepare({
-          targetId: nodeElement?.dataset.nodeId || routeTargetId(route),
-          targetRoute: route,
-          trigger: 'keyboard'
-        });
-      }
+      if (route === currentRoute) return;
+      const node = event.target.closest?.('.site-graph-node[data-node-id]');
+      prepare({
+        targetId: node?.dataset.nodeId || routeTargetId(route),
+        targetRoute: route,
+        trigger: 'keyboard'
+      });
       return;
     }
 
     if (event.key === 'Escape') {
-      const panel = detailPanel();
+      const panel = document.querySelector('#site-detail-panel');
       if (panel && !panel.hidden) return;
       const mode = document.body.dataset.graphMode;
       if (mode === 'atlas') return;
       const currentRoute = normaliseRoute(document.body.dataset.graphRoute || location.hash);
-      const current = routeNode(currentRoute) || (currentRoute.startsWith('work') ? nodeMap.get('work') : rootNode);
+      const current = currentRouteNode(currentRoute);
       const target = mode === 'work'
         ? rootNode
         : nodeMap.get(current?.parentIds?.[0]) || rootNode;
@@ -688,13 +643,15 @@
 
   window.addEventListener('popstate', () => {
     if (pending || document.body.dataset.graphMode === 'atlas') return;
-    const route = normaliseRoute(location.hash);
-    prepare({ targetId: routeTargetId(route), targetRoute: route, trigger: 'history' });
+    const targetRoute = normaliseRoute(location.hash);
+    const currentRoute = normaliseRoute(document.body.dataset.graphRoute || lastStableRoute);
+    if (targetRoute === currentRoute) return;
+    prepare({ targetId: routeTargetId(targetRoute), targetRoute, trigger: 'history' });
   }, true);
 
   window.addEventListener('hashchange', () => {
-    if (!pending) return;
-    scheduleTransition();
+    if (pending) scheduleTransition();
+    else lastStableRoute = normaliseRoute(document.body.dataset.graphRoute || location.hash);
   });
 
   window.addEventListener('load', () => {
@@ -708,7 +665,7 @@
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
-      if (document.body.dataset.graphMode === 'focus') reflowFocus();
+      if (!document.body.classList.contains('is-v9-transitioning')) reflowFocus();
     }, 140);
   });
 })();

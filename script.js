@@ -360,7 +360,7 @@ if (copyEmailButton) {
     }
   };
 
-  const selectProject = (projectId, { focusDetail = false } = {}) => {
+  const selectProject = (projectId, { focusDetail = false, updateRoute = true } = {}) => {
     const project = projectMap.get(projectId);
     if (!project || !projectMatchesFilters(project)) return;
 
@@ -372,6 +372,11 @@ if (copyEmailButton) {
       anchor.classList.toggle('is-active', anchor.dataset.projectAnchor === selectedProjectId);
     });
     renderProjectDetail();
+
+    if (updateRoute) {
+      const route = `#work/project/${encodeURIComponent(projectId)}`;
+      if (location.hash !== route) location.hash = route;
+    }
 
     if (focusDetail) {
       projectDetail.querySelector('h3')?.focus({ preventScroll: true });
@@ -1046,4 +1051,15 @@ if (copyEmailButton) {
   renderLattice();
   syncThemeControls();
   applyFilters();
+
+  const openWorkProjectFromRoute = event => {
+    const projectId = event.detail?.projectId;
+    if (!projectId) return;
+    selectProject(projectId, { focusDetail: true, updateRoute: false });
+  };
+
+  window.addEventListener('site:open-work-project', openWorkProjectFromRoute);
+  if (window.SITE_GRAPH_PENDING_WORK_PROJECT) {
+    openWorkProjectFromRoute({ detail: { projectId: window.SITE_GRAPH_PENDING_WORK_PROJECT } });
+  }
 })();

@@ -71,14 +71,19 @@
 <body id="top">
   <a class="skip-link" href="#main-content">Skip to content</a>
   <header class="site-header wrap">
-    <a class="brand" href="#top" aria-label="Home">ŠC</a>
+    <a class="brand" href="#overview" data-route="overview" aria-label="Overview">ŠC</a>
     <div class="header-actions">
       <nav id="main-nav" aria-label="Primary navigation">
-        <a href="#work">Work</a>
-        <a href="#background">Background</a>
-        <a href="#methods">Methods</a>
-        <a href="#contact">Contact</a>
+        <a href="#overview" data-route="overview">Overview</a>
+        <a href="#work" data-route="work">Work</a>
+        <a href="#knowledge" data-route="knowledge">Knowledge</a>
+        <a href="#experience" data-route="experience">Experience</a>
+        <a href="#education" data-route="education">Education</a>
+        <a href="#about" data-route="about">About</a>
+        <a href="#atlas" data-route="atlas">Atlas</a>
       </nav>
+      <a class="header-utility" href="mailto:chraststepan@gmail.com">Email</a>
+      <a class="header-utility" href="https://github.com/Chrasts" target="_blank" rel="noreferrer">GitHub ↗</a>
       <button class="theme-toggle" type="button" aria-label="Switch to dark mode" title="Switch to dark mode"><span aria-hidden="true">☾</span></button>
       <button class="menu-button" type="button" aria-expanded="false" aria-controls="main-nav">Menu</button>
     </div>
@@ -91,7 +96,7 @@
         <h1>Štěpán<br>Chrast</h1>
         <p class="intro">Junior data analyst and researcher in Prague, working with data, reproducible analysis and applied research alongside a background in mathematical logic.</p>
         <nav class="inline-links" aria-label="Primary links">
-          <a href="#work">Selected work</a>
+          <a href="#work" data-route="work">Explore profile</a>
           <a href="mailto:chraststepan@gmail.com">Email</a>
           <a href="https://github.com/Chrasts" target="_blank" rel="noreferrer">GitHub ↗</a>
           <a href="https://www.linkedin.com/in/stepan-chrast" target="_blank" rel="noreferrer">LinkedIn ↗</a>
@@ -118,7 +123,51 @@
       </div>
     </section>
 
-    <section class="section wrap" id="work">
+    <section class="site-explorer wrap" id="site-explorer" aria-label="Interactive profile graph">
+      <div class="graph-routebar">
+        <nav class="graph-breadcrumb" id="graph-breadcrumb" aria-label="Graph path"></nav>
+        <button class="atlas-button" type="button" data-route="atlas" aria-label="Open Atlas, the full profile graph">Atlas <span>Full graph</span></button>
+      </div>
+      <div class="graph-workspace">
+        <section class="site-graph-panel" aria-labelledby="site-graph-title">
+          <div class="site-graph-heading">
+            <p class="work-side-title" id="site-graph-kicker">Profile graph</p>
+            <h2 id="site-graph-title">Explore the profile</h2>
+          </div>
+          <div class="atlas-controls" id="atlas-controls" aria-label="Atlas structure controls" hidden>
+            <span class="atlas-controls-title">Structure</span>
+            <label><input type="checkbox" id="atlas-hierarchy" checked> Hierarchy</label>
+            <label><input type="checkbox" id="atlas-crosslinks" checked> Cross-links</label>
+            <label><input type="checkbox" id="atlas-secondary"> Secondary relations</label>
+            <button class="atlas-show-all" id="atlas-show-all" type="button">Show everything</button>
+            <button class="atlas-overview" type="button" data-route="overview">Back to overview</button>
+          </div>
+          <div class="site-graph-viewport">
+            <div id="site-graph"></div>
+          </div>
+          <p class="site-graph-help" id="site-graph-help">Select an area to explore its local structure.</p>
+          <div class="sr-only" id="site-graph-status" aria-live="polite"></div>
+        </section>
+        <aside class="site-detail-panel" id="site-detail-panel" aria-live="polite"></aside>
+      </div>
+    </section>
+
+    <noscript>
+      <section class="section wrap no-js-profile-summary" aria-labelledby="profile-summary-title">
+        <div class="section-title"><h2 id="profile-summary-title">Profile map</h2></div>
+        <section><h3>Work</h3><p>Selected analytical, research and software projects are listed below.</p></section>
+        <section><h3>Knowledge</h3><p>Mathematics and logic, data and computing, and research practice.</p></section>
+        <section><h3>Experience</h3><p>Research support, customer-facing operations and event coordination.</p></section>
+        <section><h3>Education</h3><p>Logic at Charles University, ESSLLI, the prg.ai Minor and additional credentials.</p></section>
+        <section><h3>About</h3><p>Research interests, philosophy, games and RPG, music, and evidence-oriented inquiry.</p></section>
+      </section>
+    </noscript>
+
+    <section class="section wrap route-view" id="work">
+      <div class="route-view-header" id="work-route-header" hidden>
+        <nav class="graph-breadcrumb" id="work-breadcrumb" aria-label="Graph path"></nav>
+        <button class="route-back" type="button" data-route="overview">Back to overview</button>
+      </div>
       <div class="section-title"><h2>Selected work</h2></div>
 
       <div class="work-intro">
@@ -199,7 +248,7 @@
       </noscript>
     </section>
 
-    <section class="section background-section" id="background">
+    <section class="section background-section legacy-section" id="background">
       <div class="wrap">
         <div class="section-title"><h2>Background</h2></div>
         <div class="background-grid">
@@ -242,7 +291,7 @@
       </div>
     </section>
 
-    <section class="section wrap methods-section" id="methods">
+    <section class="section wrap methods-section legacy-section" id="methods">
       <div class="section-title"><h2>Methods</h2></div>
       <div class="methods-grid">
         <div class="methods-item">
@@ -260,7 +309,7 @@
       </div>
     </section>
 
-    <section class="contact-section" id="contact">
+    <section class="contact-section legacy-section" id="contact">
       <div class="wrap contact-grid">
         <div>
           <div class="section-title contact-title"><h2>Contact</h2></div>
@@ -281,6 +330,7 @@
   <footer class="wrap"><span>© <span id="year"></span> Štěpán Chrast</span><a href="#top">Back to top ↑</a></footer>
 
   <script src="site-data.js"></script>
+  <script src="site-graph.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

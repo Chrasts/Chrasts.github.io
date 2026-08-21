@@ -47,6 +47,135 @@ body.is-v9-transitioning .integrated-work-controls{
   pointer-events:none;
 }
 
+/* --------------------------------------------------------------------------
+   Mode-specific surrounding UI
+   --------------------------------------------------------------------------
+   The graph itself has the structural SVG transition. Mode-specific chrome now
+   participates as well: Overview identity, Work rails and Atlas controls fade
+   and drift in/out when their hidden state changes instead of popping on/off.
+   Modern Chromium supports discrete display transitions, which lets this stay
+   independent of the graph timing code. */
+.hero,
+.integrated-work-controls,
+.atlas-controls{
+  transition:
+    opacity .30s cubic-bezier(.22,.72,.24,1),
+    transform .42s cubic-bezier(.2,.78,.22,1),
+    display .42s allow-discrete!important;
+  transition-behavior:allow-discrete;
+}
+
+.hero[hidden],
+.integrated-work-controls[hidden],
+.atlas-controls[hidden]{
+  opacity:0!important;
+}
+.hero[hidden]{transform:translateX(-14px) scale(.992)}
+.integrated-work-controls[hidden]{transform:translateY(9px)}
+.atlas-controls[hidden]{transform:translateY(10px)}
+
+@starting-style{
+  .hero:not([hidden]){
+    opacity:0;
+    transform:translateX(-12px) scale(.992)
+  }
+  .integrated-work-controls:not([hidden]){
+    opacity:0;
+    transform:translateY(9px)
+  }
+  .atlas-controls:not([hidden]){
+    opacity:0;
+    transform:translateY(10px)
+  }
+}
+
+/* The generic focus-view hint adds little once the graph interaction is clear
+   and competes with the lower rank of nodes. */
+body[data-graph-mode="focus"] .site-graph-help{
+  display:none!important;
+}
+
+/* --------------------------------------------------------------------------
+   Atlas controls
+   -------------------------------------------------------------------------- */
+/* Reserve a real lower lane for the toolbar instead of laying it directly over
+   the graph. This also keeps the lowest Atlas nodes away from the viewport
+   clipping edge. */
+body[data-graph-mode="atlas"] .site-graph-viewport{
+  bottom:88px!important;
+}
+
+body[data-graph-mode="atlas"] .atlas-controls{
+  right:max(18px,calc((100vw - 1400px)/2))!important;
+  bottom:12px!important;
+  max-width:min(620px,calc(100vw - 36px))!important;
+  margin:0!important;
+  padding:9px 11px!important;
+  gap:7px 9px!important;
+  border:1px solid var(--line);
+  border-radius:7px;
+  background:var(--paper);
+  box-shadow:0 7px 22px color-mix(in srgb,var(--ink) 7%,transparent);
+}
+
+.atlas-controls button{
+  appearance:none;
+  min-height:26px!important;
+  border:1px solid var(--line);
+  border-radius:4px!important;
+  background:transparent;
+  color:var(--text-soft);
+  padding:5px 8px;
+  font:700 9px/1 var(--sans);
+  cursor:pointer;
+  transition:border-color .15s ease,color .15s ease,background .15s ease;
+}
+
+.atlas-controls button:hover,
+.atlas-controls button:focus-visible{
+  border-color:var(--teal);
+  color:var(--teal);
+  background:color-mix(in srgb,var(--teal) 6%,transparent);
+}
+
+.atlas-controls #atlas-zoom-in,
+.atlas-controls #atlas-zoom-out{
+  width:28px;
+  padding-inline:0;
+  font-size:13px;
+}
+
+/* These remain lightweight text actions rather than boxed controls. */
+.atlas-controls .atlas-show-all,
+.atlas-controls .atlas-overview{
+  min-height:auto!important;
+  border:0;
+  border-bottom:1px solid currentColor;
+  border-radius:0!important;
+  background:transparent!important;
+  color:var(--teal);
+  padding:2px 0;
+}
+.atlas-controls .atlas-overview{color:var(--muted)}
+.atlas-controls .atlas-show-all:hover,
+.atlas-controls .atlas-overview:hover{color:var(--brown)}
+
+@media(max-width:900px){
+  body[data-graph-mode="atlas"] .site-graph-viewport{
+    bottom:122px!important;
+  }
+  body[data-graph-mode="atlas"] .atlas-controls{
+    right:10px!important;
+    bottom:10px!important;
+    max-width:calc(100vw - 20px)!important;
+  }
+}
+
 @media(prefers-reduced-motion:reduce){
   .v9-transition-overlay{display:none!important}
+  .hero,
+  .integrated-work-controls,
+  .atlas-controls{
+    transition:none!important;
+  }
 }

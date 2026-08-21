@@ -48,51 +48,158 @@ body.is-v9-transitioning .integrated-work-controls{
 }
 
 /* --------------------------------------------------------------------------
-   Mode-specific surrounding UI
+   Segment-specific surrounding UI
    --------------------------------------------------------------------------
-   The graph itself has the structural SVG transition. Mode-specific chrome now
-   participates as well: Overview identity, Work rails and Atlas controls fade
-   and drift in/out when their hidden state changes instead of popping on/off.
-   Modern Chromium supports discrete display transitions, which lets this stay
-   independent of the graph timing code. */
+   Mode-specific objects now travel with the route transition instead of
+   merely blinking between visible and hidden states. The parent containers
+   keep a discrete display transition while their individual objects use
+   asymmetric trajectories. This is intentionally extensible: future segment
+   chrome can use the same pattern instead of being tied to the SVG renderer. */
 .hero,
 .integrated-work-controls,
 .atlas-controls{
-  transition:
-    opacity .30s cubic-bezier(.22,.72,.24,1),
-    transform .42s cubic-bezier(.2,.78,.22,1),
-    display .42s allow-discrete!important;
-  transition-behavior:allow-discrete;
+  transition:display .96s allow-discrete!important;
+  transition-behavior:allow-discrete!important;
 }
 
-.hero[hidden],
-.integrated-work-controls[hidden],
+.hero-copy,
+.hero-visual.profile-identity,
+.integrated-work-rail,
+.atlas-controls{
+  will-change:transform,opacity;
+}
+
+/* Overview: copy leaves to the left while the portrait peels away to the
+   right. The two paths are deliberately slightly different so the scene feels
+   assembled rather than uniformly faded. */
+.hero-copy{
+  transition:
+    opacity .32s cubic-bezier(.16,.72,.22,1),
+    transform .88s cubic-bezier(.16,.76,.18,1)!important;
+}
+.hero-visual.profile-identity{
+  transition:
+    opacity .36s cubic-bezier(.16,.72,.22,1),
+    transform .96s cubic-bezier(.16,.76,.18,1)!important;
+}
+.hero[hidden] .hero-copy{
+  opacity:0!important;
+  transform:translate3d(-155px,14px,0) scale(.975) rotate(-1.1deg)!important;
+}
+.hero[hidden] .hero-visual.profile-identity{
+  opacity:0!important;
+  transform:translate3d(150px,-18px,0) scale(.94) rotate(2.4deg)!important;
+}
+
+/* Work rails behave like two physical side panels: each leaves through its
+   nearest side rather than collapsing vertically. */
+.integrated-work-rail{
+  transition:
+    opacity .28s cubic-bezier(.18,.7,.22,1),
+    transform .78s cubic-bezier(.16,.76,.18,1)!important;
+}
+.integrated-work-controls[hidden] .integrated-work-rail.is-left{
+  opacity:0!important;
+  transform:translate3d(-92px,8px,0) scale(.985)!important;
+}
+.integrated-work-controls[hidden] .integrated-work-rail.is-right{
+  opacity:0!important;
+  transform:translate3d(92px,8px,0) scale(.985)!important;
+}
+
+/* Atlas toolbar drops away as one compact utility object. */
+.atlas-controls{
+  transition:
+    opacity .26s cubic-bezier(.18,.7,.22,1),
+    transform .72s cubic-bezier(.16,.76,.18,1),
+    display .82s allow-discrete!important;
+}
 .atlas-controls[hidden]{
   opacity:0!important;
+  transform:translate3d(0,42px,0) scale(.975)!important;
 }
-.hero[hidden]{transform:translateX(-14px) scale(.992)}
-.integrated-work-controls[hidden]{transform:translateY(9px)}
-.atlas-controls[hidden]{transform:translateY(10px)}
 
 @starting-style{
-  .hero:not([hidden]){
+  .hero:not([hidden]) .hero-copy{
     opacity:0;
-    transform:translateX(-12px) scale(.992)
+    transform:translate3d(-155px,14px,0) scale(.975) rotate(-1.1deg)
   }
-  .integrated-work-controls:not([hidden]){
+  .hero:not([hidden]) .hero-visual.profile-identity{
     opacity:0;
-    transform:translateY(9px)
+    transform:translate3d(150px,-18px,0) scale(.94) rotate(2.4deg)
+  }
+  .integrated-work-controls:not([hidden]) .integrated-work-rail.is-left{
+    opacity:0;
+    transform:translate3d(-92px,8px,0) scale(.985)
+  }
+  .integrated-work-controls:not([hidden]) .integrated-work-rail.is-right{
+    opacity:0;
+    transform:translate3d(92px,8px,0) scale(.985)
   }
   .atlas-controls:not([hidden]){
     opacity:0;
-    transform:translateY(10px)
+    transform:translate3d(0,42px,0) scale(.975)
   }
 }
 
-/* The generic focus-view hint adds little once the graph interaction is clear
-   and competes with the lower rank of nodes. */
-body[data-graph-mode="focus"] .site-graph-help{
+/* The generic explanatory footer text is unnecessary in local graph views and
+   Work; the graph and controls already communicate the interaction. */
+body[data-graph-mode="focus"] .site-graph-help,
+body[data-graph-mode="work"] .site-graph-help{
   display:none!important;
+}
+
+/* --------------------------------------------------------------------------
+   Work lattice scale / hierarchy
+   --------------------------------------------------------------------------
+   Keep the existing FCA geometry, but make the lattice itself more visually
+   substantial. Principal (one-theme) concepts are strongest, followed by the
+   remaining concept nodes, while project labels are now easier to scan. */
+body[data-graph-mode="work"] .site-graph-node.is-work-concept .site-graph-dot{
+  r:6.7px;
+  stroke-width:1.8;
+}
+body[data-graph-mode="work"] .site-graph-node.is-work-concept .site-graph-hit{
+  r:22px;
+}
+body[data-graph-mode="work"] .site-graph-node.is-work-root .site-graph-dot{
+  r:11.5px;
+}
+
+body[data-graph-mode="work"] .site-graph-node[data-node-id="work-concept:logic"] .site-graph-dot,
+body[data-graph-mode="work"] .site-graph-node[data-node-id="work-concept:computing-data"] .site-graph-dot,
+body[data-graph-mode="work"] .site-graph-node[data-node-id="work-concept:research"] .site-graph-dot,
+body[data-graph-mode="work"] .site-graph-node[data-node-id="work-concept:education"] .site-graph-dot{
+  r:8.3px;
+  stroke-width:2.05;
+}
+body[data-graph-mode="work"] .site-graph-node[data-node-id="work-concept:logic"] .site-graph-hit,
+body[data-graph-mode="work"] .site-graph-node[data-node-id="work-concept:computing-data"] .site-graph-hit,
+body[data-graph-mode="work"] .site-graph-node[data-node-id="work-concept:research"] .site-graph-hit,
+body[data-graph-mode="work"] .site-graph-node[data-node-id="work-concept:education"] .site-graph-hit{
+  r:25px;
+}
+
+body[data-graph-mode="work"] .work-theme-label-v5 rect{
+  transform-box:fill-box;
+  transform-origin:center;
+  transform:scale(1.12,1.18);
+}
+body[data-graph-mode="work"] .work-theme-label-v5 text{
+  font-size:11.2px;
+  font-weight:790;
+  letter-spacing:.025em;
+}
+body[data-graph-mode="work"] .work-project-anchor-v5 text{
+  font-size:11.8px;
+  font-weight:650;
+  stroke-width:5.5px;
+}
+body[data-graph-mode="work"] .work-project-anchor-v5.is-selected text{
+  font-size:12.5px;
+}
+body[data-graph-mode="work"] .site-graph-edges path.is-work-lattice{
+  stroke-width:1.4;
 }
 
 /* --------------------------------------------------------------------------
@@ -169,12 +276,22 @@ body[data-graph-mode="atlas"] .atlas-controls{
     bottom:10px!important;
     max-width:calc(100vw - 20px)!important;
   }
+
+  .hero[hidden] .hero-copy{
+    transform:translate3d(-92px,10px,0) scale(.98)!important;
+  }
+  .hero[hidden] .hero-visual.profile-identity{
+    transform:translate3d(88px,-10px,0) scale(.95)!important;
+  }
 }
 
 @media(prefers-reduced-motion:reduce){
   .v9-transition-overlay{display:none!important}
   .hero,
+  .hero-copy,
+  .hero-visual.profile-identity,
   .integrated-work-controls,
+  .integrated-work-rail,
   .atlas-controls{
     transition:none!important;
   }

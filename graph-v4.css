@@ -2,8 +2,10 @@
 
 :root{--graph-upstream:var(--brown);--graph-downstream:var(--teal);--graph-soft-opacity:.58}
 .profile-app{height:calc(100dvh - 62px)!important;min-height:620px!important;overflow:hidden!important}
+.site-explorer{position:relative!important;width:100%!important;height:100%!important;min-height:0!important;margin:0!important;padding:0!important}
 .profile-scene,.site-explorer,.scene-canvas,.site-graph-panel,.site-graph-viewport,#site-graph{min-height:0!important}
-.scene-canvas{overflow:hidden!important}
+.scene-canvas{position:relative!important;width:100%!important;height:100%!important;overflow:hidden!important}
+.site-graph-panel{position:relative!important;width:100%!important;height:100%!important}
 .site-graph-viewport{position:absolute!important;inset:0!important;width:auto!important;height:auto!important;overflow:hidden!important}
 #site-graph{width:100%!important;height:100%!important;min-width:0!important;padding:0!important}
 .site-graph-svg{display:block!important;width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;overflow:visible!important;user-select:none}

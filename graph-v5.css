@@ -1,0 +1,423 @@
+/* ========================================================================== 
+   Profile Graph V5 — single renderer, integrated Work lattice
+   ========================================================================== */
+
+:root{
+  --graph-upstream:var(--brown);
+  --graph-downstream:var(--teal);
+  --graph-soft-opacity:.56;
+}
+
+.profile-app{
+  height:calc(100dvh - 62px)!important;
+  min-height:620px!important;
+  overflow:hidden!important;
+}
+.site-explorer{
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  padding:0!important;
+  margin:0!important;
+}
+.scene-canvas,
+.site-graph-panel,
+.site-graph-viewport,
+#site-graph{
+  min-height:0!important;
+}
+.scene-canvas{
+  position:relative!important;
+  width:100%!important;
+  height:100%!important;
+  overflow:hidden!important;
+}
+.site-graph-panel{
+  position:relative!important;
+  width:100%!important;
+  height:100%!important;
+  padding:0!important;
+  background:transparent!important;
+}
+.site-graph-viewport{
+  position:absolute!important;
+  inset:0!important;
+  width:auto!important;
+  height:auto!important;
+  overflow:hidden!important;
+}
+#site-graph{
+  width:100%!important;
+  height:100%!important;
+  min-width:0!important;
+  padding:0!important;
+}
+.site-graph-svg{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  overflow:visible!important;
+  user-select:none;
+}
+.profile-map-svg-v5,
+.profile-map-svg-v5 .site-graph-edges{animation:none!important}
+
+.graph-routebar{z-index:30!important}
+.site-graph-heading{z-index:12!important}
+.site-graph-help{
+  z-index:13!important;
+  bottom:14px!important;
+  padding:4px 7px;
+  border-radius:3px;
+  background:color-mix(in srgb,var(--paper) 85%,transparent)
+}
+
+/* Shared nodes */
+.site-graph-node{
+  cursor:pointer;
+  outline:none;
+  transition:opacity .16s ease
+}
+.site-graph-dot{
+  fill:var(--paper);
+  stroke:var(--brown);
+  stroke-width:1.8;
+  vector-effect:non-scaling-stroke;
+  transform-box:fill-box;
+  transform-origin:center;
+  transition:fill .16s ease,stroke .16s ease,stroke-width .16s ease,transform .16s ease
+}
+.site-graph-label{
+  fill:var(--ink);
+  font-family:var(--sans);
+  font-size:11px;
+  font-weight:670;
+  paint-order:stroke;
+  stroke:var(--paper);
+  stroke-width:4px;
+  stroke-linejoin:round;
+  pointer-events:none;
+  transition:fill .16s ease,opacity .16s ease
+}
+.site-graph-meta{
+  fill:var(--muted);
+  font-family:var(--sans);
+  font-size:8.5px;
+  font-weight:650;
+  pointer-events:none
+}
+.site-graph-node.is-section .site-graph-label{fill:var(--teal);font-weight:760}
+.site-graph-node.is-project .site-graph-label{font-size:9.5px;font-weight:610}
+.site-graph-node:hover .site-graph-dot,
+.site-graph-node:focus-visible .site-graph-dot{stroke:var(--teal);transform:scale(1.2)}
+.site-graph-node:hover .site-graph-label,
+.site-graph-node:focus-visible .site-graph-label{fill:var(--teal)}
+.site-graph-node.is-selected .site-graph-dot{
+  fill:color-mix(in srgb,var(--teal) 9%,var(--paper));
+  stroke:var(--teal);
+  stroke-width:2.35;
+  transform:scale(1.28)
+}
+.site-graph-node.is-selected .site-graph-label{fill:var(--teal);font-weight:780}
+.site-graph-node.is-upstream .site-graph-dot{stroke:var(--graph-upstream);transform:scale(1.12)}
+.site-graph-node.is-upstream .site-graph-label{fill:var(--graph-upstream)}
+.site-graph-node.is-downstream .site-graph-dot{stroke:var(--graph-downstream);transform:scale(1.12)}
+.site-graph-node.is-downstream .site-graph-label{fill:var(--graph-downstream)}
+.site-graph-node.is-lateral .site-graph-dot{stroke:var(--teal)}
+.site-graph-node.is-lateral .site-graph-label{fill:var(--teal)}
+.site-graph-node.is-muted-soft{opacity:var(--graph-soft-opacity)!important}
+
+/* Shared edges */
+.site-graph-edges path{
+  fill:none;
+  stroke:var(--line);
+  stroke-width:1.2;
+  vector-effect:non-scaling-stroke;
+  transition:stroke .16s ease,stroke-width .16s ease,opacity .16s ease
+}
+.site-graph-edges path.is-hierarchy-alt{stroke-dasharray:1.5 4;opacity:.62}
+.site-graph-edges path.is-cross-link{stroke-dasharray:3 4;opacity:.62}
+.site-graph-edges path.is-secondary{opacity:.46}
+.site-graph-edges path.is-upstream{
+  stroke:var(--graph-upstream)!important;
+  stroke-width:2!important;
+  opacity:1!important;
+  stroke-dasharray:none!important
+}
+.site-graph-edges path.is-downstream{
+  stroke:var(--graph-downstream)!important;
+  stroke-width:2!important;
+  opacity:1!important;
+  stroke-dasharray:none!important
+}
+.site-graph-edges path.is-lateral{
+  stroke:var(--teal)!important;
+  stroke-width:1.7!important;
+  opacity:.92!important;
+  stroke-dasharray:3 4!important
+}
+.site-graph-edges path.is-muted-soft{opacity:.2!important}
+.site-graph-timeline{
+  stroke:var(--brown)!important;
+  stroke-width:1.1!important;
+  opacity:.45!important;
+  vector-effect:non-scaling-stroke
+}
+
+/* Work becomes a real graph mode, not a second scene. */
+body[data-graph-mode="work"] .site-graph-heading{top:76px!important}
+body[data-graph-mode="work"] .site-graph-help{
+  left:50%!important;
+  transform:translateX(-50%);
+  max-width:520px!important;
+  text-align:center
+}
+body[data-graph-mode="work"] .hero{display:none!important}
+body[data-graph-mode="work"] #work.legacy-work-source{display:none!important}
+.site-graph-node.is-work-concept .site-graph-dot{
+  fill:var(--paper);
+  stroke:var(--brown);
+  stroke-width:1.55
+}
+.site-graph-node.is-work-concept:hover .site-graph-dot,
+.site-graph-node.is-work-concept:focus-visible .site-graph-dot{stroke:var(--teal);transform:scale(1.25)}
+.site-graph-node.is-work-root .site-graph-dot{
+  stroke:var(--teal);
+  stroke-width:2.35;
+  fill:color-mix(in srgb,var(--teal) 6%,var(--paper))
+}
+.site-graph-node.is-work-root .site-graph-label{
+  fill:var(--teal);
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.09em
+}
+.site-graph-node.is-work-soft .site-graph-dot{stroke:var(--teal);transform:scale(1.12)}
+.site-graph-node.is-work-strong .site-graph-dot{
+  stroke:var(--teal);
+  stroke-width:2.5;
+  transform:scale(1.35)
+}
+.site-graph-node.is-selected-downset .site-graph-dot{
+  stroke:var(--teal);
+  stroke-width:2.15;
+  fill:color-mix(in srgb,var(--teal) 8%,var(--paper));
+  transform:scale(1.16)
+}
+.site-graph-node.is-filtered-work{opacity:.28}
+
+.site-graph-edges path.is-work-lattice{
+  stroke:var(--line);
+  stroke-width:1.25;
+  opacity:.9
+}
+.site-graph-edges path.is-work-soft{stroke:var(--teal)!important;stroke-width:1.65!important;opacity:.95!important}
+.site-graph-edges path.is-work-strong{stroke:var(--teal)!important;stroke-width:2.15!important;opacity:1!important}
+.site-graph-edges path.is-selected-downset{stroke:var(--teal)!important;stroke-width:1.55!important;opacity:.9!important}
+
+/* Work project labels are decorations attached to concept nodes. */
+.work-project-anchor-v5{
+  cursor:pointer;
+  outline:none;
+  transition:opacity .16s ease,transform .16s ease
+}
+.work-project-anchor-v5 text{
+  fill:var(--text-soft);
+  font-family:var(--sans);
+  font-size:10px;
+  font-weight:620;
+  paint-order:stroke;
+  stroke:var(--paper);
+  stroke-width:5px;
+  stroke-linejoin:round;
+  transition:fill .16s ease,font-size .16s ease,font-weight .16s ease
+}
+.work-project-anchor-v5:hover text,
+.work-project-anchor-v5:focus-visible text,
+.work-project-anchor-v5.is-work-strong text,
+.work-project-anchor-v5.is-selected text{
+  fill:var(--teal);
+  font-weight:760
+}
+.work-project-anchor-v5.is-selected text{font-size:10.8px}
+.work-project-anchor-v5.is-filtered-out{opacity:.18;pointer-events:none}
+.work-project-anchor-v5.is-muted-soft{opacity:.44}
+.work-project-anchor-v5.match-1 text{opacity:.7}
+.work-project-anchor-v5.match-2 text{opacity:.82}
+.work-project-anchor-v5.match-3 text{opacity:.93}
+.work-project-anchor-v5.match-4 text{opacity:1}
+
+/* Theme labels stay on the Work top edges and remain interactive. */
+.work-theme-label-v5{
+  cursor:pointer;
+  outline:none;
+  transition:opacity .16s ease
+}
+.work-theme-label-v5 rect{
+  fill:var(--paper);
+  stroke:var(--line);
+  stroke-width:1;
+  vector-effect:non-scaling-stroke;
+  transition:fill .16s ease,stroke .16s ease,stroke-width .16s ease
+}
+.work-theme-label-v5 text{
+  fill:var(--brown);
+  font-family:var(--sans);
+  font-size:9px;
+  font-weight:760;
+  letter-spacing:.035em;
+  paint-order:stroke;
+  stroke:var(--paper);
+  stroke-width:3px;
+  pointer-events:none;
+  transition:fill .16s ease
+}
+.work-theme-label-v5:hover rect,
+.work-theme-label-v5:focus-visible rect,
+.work-theme-label-v5.is-work-strong rect,
+.work-theme-label-v5.is-selected rect,
+.work-theme-label-v5.is-upstream rect{
+  stroke:var(--teal);
+  stroke-width:1.4
+}
+.work-theme-label-v5:hover text,
+.work-theme-label-v5:focus-visible text,
+.work-theme-label-v5.is-work-strong text,
+.work-theme-label-v5.is-selected text,
+.work-theme-label-v5.is-upstream text{fill:var(--teal)}
+.work-theme-label-v5.is-selected rect{fill:color-mix(in srgb,var(--teal) 7%,var(--paper))}
+.work-theme-label-v5.is-muted-soft{opacity:.48}
+
+/* Existing Work controls are physically moved into the common scene. */
+.integrated-work-controls{
+  position:absolute;
+  z-index:24;
+  inset:0;
+  pointer-events:none
+}
+.integrated-work-controls[hidden]{display:none!important}
+.integrated-work-rail{
+  position:absolute;
+  top:116px;
+  width:190px;
+  pointer-events:auto;
+  color:var(--ink)
+}
+.integrated-work-rail.is-left{left:max(24px,calc((100vw - 1440px)/2))}
+.integrated-work-rail.is-right{right:max(24px,calc((100vw - 1440px)/2))}
+.integrated-work-rail .work-control-group{
+  margin:0 0 22px!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important
+}
+.integrated-work-rail .work-side-title{
+  margin:0 0 8px!important;
+  color:var(--brown);
+  font-size:9px;
+  font-weight:760;
+  letter-spacing:.1em;
+  text-transform:uppercase
+}
+.integrated-work-rail .work-context-filters,
+.integrated-work-rail .work-theme-filters,
+.integrated-work-rail .theme-match-buttons{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:2px!important
+}
+.integrated-work-rail .work-filter{font-size:10px;padding-block:6px}
+.integrated-work-rail .theme-filter-option{font-size:10px}
+.integrated-work-rail .theme-match-control{
+  margin-top:20px!important;
+  padding-top:16px!important;
+  border-top:1px solid var(--line)!important
+}
+.integrated-work-reset{
+  margin-top:8px!important;
+  pointer-events:auto
+}
+
+/* Atlas */
+body[data-graph-mode="atlas"] .site-graph-viewport{touch-action:none}
+body[data-graph-mode="atlas"] .site-graph-svg{cursor:grab}
+.site-graph-svg.is-dragging{cursor:grabbing!important}
+.site-graph-node.is-atlas-origin .site-graph-dot{
+  stroke:var(--teal);
+  fill:color-mix(in srgb,var(--teal) 9%,var(--paper));
+  stroke-width:2.35;
+  transform:scale(1.32)
+}
+.site-graph-node.is-atlas-origin .site-graph-label{fill:var(--teal);font-weight:780}
+.atlas-controls{
+  z-index:28!important;
+  max-width:540px!important;
+  gap:7px 10px!important
+}
+.atlas-controls label{white-space:nowrap}
+.atlas-controls button{min-height:24px}
+
+/* Shared detail drawer */
+.scene-detail{
+  z-index:40!important;
+  overscroll-behavior:contain;
+  scrollbar-width:thin;
+  scrollbar-color:var(--line) transparent
+}
+.scene-detail .detail-node-list a{
+  display:inline-flex;
+  align-items:center;
+  border:1px solid var(--line);
+  border-radius:4px;
+  color:var(--teal);
+  padding:6px 7px;
+  text-decoration:none;
+  font:650 10px/1.25 var(--sans)
+}
+.scene-detail .detail-node-list a:hover{border-color:var(--teal)}
+.scene-detail .detail-note{margin-top:14px}
+.scene-detail .atlas-facts{margin-top:18px}
+.scene-detail .atlas-open-local{margin-top:26px}
+
+/* Old standalone Work renderer stays in DOM only as a data/control source. */
+#work.legacy-work-source{display:none!important}
+
+/* Keep all graph content inside the usable desktop viewport. */
+body[data-graph-mode="overview"] .site-graph-heading,
+body[data-graph-mode="focus"] .site-graph-heading{top:82px!important}
+
+@media(min-width:901px){
+  .profile-app{height:calc(100dvh - 62px)!important}
+}
+
+@media(max-width:900px){
+  .profile-app{height:calc(100dvh - 64px)!important;min-height:560px!important}
+  .integrated-work-rail{
+    top:auto;
+    bottom:18px;
+    width:180px;
+    padding:8px;
+    border:1px solid var(--line);
+    background:color-mix(in srgb,var(--paper) 94%,transparent)
+  }
+  .integrated-work-rail.is-left{left:12px}
+  .integrated-work-rail.is-right{right:12px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .site-graph-node,
+  .site-graph-dot,
+  .site-graph-label,
+  .site-graph-edges path,
+  .work-project-anchor-v5,
+  .work-project-anchor-v5 text,
+  .work-theme-label-v5,
+  .work-theme-label-v5 rect,
+  .work-theme-label-v5 text,
+  .scene-detail{
+    transition:none!important;
+    animation:none!important
+  }
+}

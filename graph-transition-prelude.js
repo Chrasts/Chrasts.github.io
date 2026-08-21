@@ -17,7 +17,12 @@
 
   window.__GRAPH_V6_REAL_MATCH_MEDIA__ = realMatchMedia;
   window.__GRAPH_V6_RESTORE_MATCH_MEDIA__ = () => {
-    window.matchMedia = realMatchMedia;
+    // site-graph.js boots from a zero-delay timer. Queue the restore after that
+    // timer so the graph renderer keeps the dynamic reduced-motion proxy, while
+    // later scripts receive the real matchMedia implementation.
+    setTimeout(() => {
+      window.matchMedia = realMatchMedia;
+    }, 0);
   };
   window.matchMedia = query =>
     query === '(prefers-reduced-motion: reduce)'

@@ -412,3 +412,24 @@ Object.entries(educationTopicParents).forEach(([programmeId, topicIds]) => {
     if (topic && !topic.parentIds.includes(programmeId)) topic.parentIds.push(programmeId);
   });
 });
+
+// Work has one canonical project entity in SITE_DATA.work. These lightweight
+// theme nodes make the same entities legible as a subgraph inside Atlas.
+const workThemeGraphNodes = window.SITE_DATA.work.attributes.map(attribute => ({
+  id: `work-theme-${attribute.id}`,
+  type: "work-theme",
+  label: attribute.label,
+  parentIds: ["work"],
+  route: `work/theme/${attribute.id}`,
+  summary: "A Work theme used by the concept-lattice view."
+}));
+window.SITE_DATA.graph.nodes.push(...workThemeGraphNodes);
+const finalGraphNodeById = new Map(window.SITE_DATA.graph.nodes.map(node => [node.id, node]));
+window.SITE_DATA.work.projects.forEach(project => {
+  const projectNode = finalGraphNodeById.get(`project-${project.id}`);
+  if (!projectNode) return;
+  project.lattice.forEach(themeId => {
+    const themeNodeId = `work-theme-${themeId}`;
+    if (!projectNode.parentIds.includes(themeNodeId)) projectNode.parentIds.push(themeNodeId);
+  });
+});

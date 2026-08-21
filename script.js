@@ -336,7 +336,14 @@ if (copyEmailButton) {
     tech.className = 'work-project-tech';
     tech.textContent = project.tech.join(' · ');
 
-    projectDetail.append(type, title, description, tech);
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'detail-close';
+    close.setAttribute('aria-label', 'Close project detail');
+    close.textContent = 'x';
+    close.addEventListener('click', () => document.querySelector('#work')?.classList.remove('is-project-open'));
+
+    projectDetail.append(close, type, title, description, tech);
 
     if (project.note) {
       const note = document.createElement('span');
@@ -365,6 +372,8 @@ if (copyEmailButton) {
     if (!project || !projectMatchesFilters(project)) return;
 
     selectedProjectId = projectId;
+    const workScene = document.querySelector('#work');
+    if (!workScene?.hidden) workScene.classList.add('is-project-open');
     projectTabs.querySelectorAll('.work-project-tab').forEach(button => {
       button.setAttribute('aria-pressed', String(button.dataset.projectId === selectedProjectId));
     });
@@ -1058,8 +1067,32 @@ if (copyEmailButton) {
     selectProject(projectId, { focusDetail: true, updateRoute: false });
   };
 
+  const openWorkThemeFromRoute = event => {
+    const themeId = event.detail?.themeId;
+    if (!themeId || !attributeMap.has(themeId)) return;
+    activeContext = 'all';
+    selectedThemes = new Set([themeId]);
+    themeMode = 'any';
+    contextRoot.querySelectorAll('.work-filter').forEach(item => {
+      item.setAttribute('aria-pressed', String(item.dataset.context === 'all'));
+    });
+    applyFilters();
+    if (status) status.textContent = `${attributeMap.get(themeId).label} theme opened from the profile graph.`;
+  };
+
   window.addEventListener('site:open-work-project', openWorkProjectFromRoute);
+  window.addEventListener('site:open-work-theme', openWorkThemeFromRoute);
+  document.addEventListener('keydown', event => {
+    const workScene = document.querySelector('#work');
+    if (event.key !== 'Escape' || !workScene?.classList.contains('is-project-open')) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    workScene.classList.remove('is-project-open');
+  }, true);
   if (window.SITE_GRAPH_PENDING_WORK_PROJECT) {
     openWorkProjectFromRoute({ detail: { projectId: window.SITE_GRAPH_PENDING_WORK_PROJECT } });
+  }
+  if (window.SITE_GRAPH_PENDING_WORK_THEME) {
+    openWorkThemeFromRoute({ detail: { themeId: window.SITE_GRAPH_PENDING_WORK_THEME } });
   }
 })();

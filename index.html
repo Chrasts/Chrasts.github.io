@@ -70,7 +70,7 @@
 </head>
 <body id="top">
   <a class="skip-link" href="#main-content">Skip to content</a>
-  <header class="site-header wrap">
+  <header class="site-header app-header wrap">
     <a class="brand" href="#overview" data-route="overview" aria-label="Overview">ŠC</a>
     <div class="header-actions">
       <nav id="main-nav" aria-label="Primary navigation">
@@ -84,12 +84,13 @@
       </nav>
       <a class="header-utility" href="mailto:chraststepan@gmail.com">Email</a>
       <a class="header-utility" href="https://github.com/Chrasts" target="_blank" rel="noreferrer">GitHub ↗</a>
+      <a class="header-utility" href="https://www.linkedin.com/in/stepan-chrast" target="_blank" rel="noreferrer">LinkedIn ↗</a>
       <button class="theme-toggle" type="button" aria-label="Switch to dark mode" title="Switch to dark mode"><span aria-hidden="true">☾</span></button>
       <button class="menu-button" type="button" aria-expanded="false" aria-controls="main-nav">Menu</button>
     </div>
   </header>
 
-  <main id="main-content" tabindex="-1">
+  <main id="main-content" class="profile-app" tabindex="-1">
     <section class="hero wrap">
       <div class="hero-copy">
         <p class="eyebrow">Data analysis · Research · Mathematical logic</p>
@@ -103,23 +104,11 @@
         </nav>
       </div>
 
-      <div class="hero-visual">
-        <svg class="lattice" viewBox="0 0 720 430" aria-hidden="true">
-          <g class="lattice-edges">
-            <path d="M360 30 55 145M360 30 205 145M360 30 360 145M360 30 515 145M360 30 665 145"/>
-            <path d="M55 145 55 285M55 145 360 285M205 145 205 285M205 145 515 285M360 145 55 285M360 145 360 285M360 145 665 285M515 145 205 285M515 145 515 285M665 145 360 285M665 145 665 285"/>
-            <path d="M55 285 360 400M205 285 360 400M360 285 360 400M515 285 360 400M665 285 360 400"/>
-          </g>
-          <g class="lattice-nodes">
-            <circle cx="360" cy="30" r="8"/>
-            <circle cx="55" cy="145" r="8"/><circle cx="205" cy="145" r="8"/><circle cx="360" cy="145" r="8"/><circle cx="515" cy="145" r="8"/><circle cx="665" cy="145" r="8"/>
-            <circle cx="55" cy="285" r="8"/><circle cx="205" cy="285" r="8"/><circle cx="360" cy="285" r="8"/><circle cx="515" cy="285" r="8"/><circle cx="665" cy="285" r="8"/>
-            <circle cx="360" cy="400" r="8"/>
-          </g>
-        </svg>
+      <div class="hero-visual profile-identity" aria-label="Profile identity">
         <figure class="portrait">
-          <img src="assets/stepan-chrast.jpg" alt="Portrait of Štěpán Chrast" width="720" height="540">
+          <img src="assets/stepan-chrast.jpg" alt="Portrait of Stepan Chrast" width="720" height="540">
         </figure>
+        <span class="identity-ring" aria-hidden="true"></span>
       </div>
     </section>
 
@@ -128,7 +117,7 @@
         <nav class="graph-breadcrumb" id="graph-breadcrumb" aria-label="Graph path"></nav>
         <button class="atlas-button" type="button" data-route="atlas" aria-label="Open Atlas, the full profile graph">Atlas <span>Full graph</span></button>
       </div>
-      <div class="graph-workspace">
+      <div class="scene-canvas">
         <section class="site-graph-panel" aria-labelledby="site-graph-title">
           <div class="site-graph-heading">
             <p class="work-side-title" id="site-graph-kicker">Profile graph</p>
@@ -140,6 +129,10 @@
             <label><input type="checkbox" id="atlas-crosslinks" checked> Cross-links</label>
             <label><input type="checkbox" id="atlas-secondary"> Secondary relations</label>
             <button class="atlas-show-all" id="atlas-show-all" type="button">Show everything</button>
+            <button id="atlas-fit" type="button">Fit all</button>
+            <button id="atlas-zoom-out" type="button" aria-label="Zoom out">-</button>
+            <button id="atlas-zoom-in" type="button" aria-label="Zoom in">+</button>
+            <button id="atlas-reset" type="button">Reset view</button>
             <button class="atlas-overview" type="button" data-route="overview">Back to overview</button>
           </div>
           <div class="site-graph-viewport">
@@ -148,7 +141,7 @@
           <p class="site-graph-help" id="site-graph-help">Select an area to explore its local structure.</p>
           <div class="sr-only" id="site-graph-status" aria-live="polite"></div>
         </section>
-        <aside class="site-detail-panel" id="site-detail-panel" aria-live="polite"></aside>
+        <aside class="site-detail-panel scene-detail" id="site-detail-panel" aria-live="polite" aria-label="Profile detail" hidden></aside>
       </div>
     </section>
 
@@ -166,7 +159,7 @@
     <section class="section wrap route-view" id="work">
       <div class="route-view-header" id="work-route-header" hidden>
         <nav class="graph-breadcrumb" id="work-breadcrumb" aria-label="Graph path"></nav>
-        <button class="route-back" type="button" data-route="overview">Back to overview</button>
+        <button class="route-back" id="work-route-back" type="button" data-route="overview">Back to profile graph</button>
       </div>
       <div class="section-title"><h2>Selected work</h2></div>
 

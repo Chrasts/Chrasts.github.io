@@ -41,6 +41,45 @@
   ensureStylesheet('graph-v9.css', 'data-profile-graph-v9');
 
   /* ------------------------------------------------------------------------
+     Mobile scene
+
+     The desktop renderer deliberately uses a wide logical coordinate space.
+     On a phone, fitting that whole space into the viewport makes labels and
+     hit targets too small. The mobile stylesheet instead keeps a wider canvas
+     and lets the graph viewport pan natively. It is loaded after V5 has booted
+     so its phone-only rules are the final layout layer.
+     ------------------------------------------------------------------------ */
+  const mobileViewport = window.matchMedia('(max-width: 900px)');
+  const ensureMobileStyles = () => {
+    if (!mobileViewport.matches) return;
+    setTimeout(() => setTimeout(() => {
+      ensureStylesheet('mobile.css', 'data-profile-mobile');
+    }, 0), 0);
+  };
+  ensureMobileStyles();
+
+  const centreMobileGraph = () => {
+    if (!mobileViewport.matches || document.body?.dataset.graphMode === 'atlas') return;
+    const viewport = document.querySelector('.site-graph-viewport');
+    if (!viewport || viewport.scrollWidth <= viewport.clientWidth) return;
+    viewport.scrollLeft = Math.max(0, (viewport.scrollWidth - viewport.clientWidth) / 2);
+  };
+  const scheduleMobileCentre = () => {
+    if (!mobileViewport.matches) return;
+    [40, 180, 1120].forEach(delay => setTimeout(centreMobileGraph, delay));
+  };
+  mobileViewport.addEventListener?.('change', event => {
+    if (event.matches) {
+      ensureMobileStyles();
+      scheduleMobileCentre();
+    }
+  });
+  window.addEventListener('orientationchange', scheduleMobileCentre);
+  window.addEventListener('load', scheduleMobileCentre);
+  window.addEventListener('hashchange', scheduleMobileCentre);
+  setTimeout(scheduleMobileCentre, 0);
+
+  /* ------------------------------------------------------------------------
      Transition query isolation.
 
      graph-transitions-v6.js intentionally renders a temporary SVG overlay

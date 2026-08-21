@@ -43,9 +43,12 @@
   /* ------------------------------------------------------------------------
      Reduced-motion bridge.
 
-     site-graph.js keeps the returned MediaQueryList object. The transition
-     layer can temporarily make that object report reduced motion so the base
-     renderer jumps to its target state while V9 performs the visible motion.
+     site-graph.js stores this MediaQueryList-like object at boot. During a
+     structural route transition we deliberately keep forceSnap=true for the
+     ENTIRE transition, not merely for two animation frames. This guarantees
+     that the hidden base renderer reaches the destination geometry instantly
+     and cannot continue its own animation behind the transition overlay.
+     The transition layer releases the flag only after the final handoff.
      ------------------------------------------------------------------------ */
   const realMatchMedia = window.matchMedia.bind(window);
   const realReduced = realMatchMedia('(prefers-reduced-motion: reduce)');
@@ -56,10 +59,6 @@
     get: () => forceSnap,
     set: value => {
       forceSnap = Boolean(value);
-      if (!forceSnap) return;
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        forceSnap = false;
-      }));
     }
   });
 

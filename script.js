@@ -34,32 +34,77 @@ systemTheme.addEventListener('change', event => {
 
 updateThemeControl();
 
-menuButton.addEventListener('click', () => {
-  const open = navigation.classList.toggle('open');
+const setMenuOpen = open => {
+  navigation.classList.toggle('open', open);
   menuButton.setAttribute('aria-expanded', String(open));
+  menuButton.textContent = open ? 'Close' : 'Menu';
+};
+
+menuButton.addEventListener('click', () => {
+  setMenuOpen(!navigation.classList.contains('open'));
 });
 
 navigation.querySelectorAll('a').forEach(link => link.addEventListener('click', () => {
-  navigation.classList.remove('open');
-  menuButton.setAttribute('aria-expanded', 'false');
+  setMenuOpen(false);
 }));
 
+document.addEventListener('click', event => {
+  if (!navigation.classList.contains('open')) return;
+  if (navigation.contains(event.target) || menuButton.contains(event.target)) return;
+  setMenuOpen(false);
+});
+
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Escape' || !navigation.classList.contains('open')) return;
+  setMenuOpen(false);
+  menuButton.focus();
+});
+
 document.querySelector('#year').textContent = new Date().getFullYear();
+
+const copyEmailButton = document.querySelector('.copy-email');
+if (copyEmailButton) {
+  copyEmailButton.addEventListener('click', async () => {
+    const email = copyEmailButton.dataset.email;
+    try {
+      await navigator.clipboard.writeText(email);
+      copyEmailButton.textContent = 'Copied';
+    } catch (_) {
+      const input = document.createElement('textarea');
+      input.value = email;
+      input.setAttribute('readonly', '');
+      input.style.position = 'fixed';
+      input.style.opacity = '0';
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      input.remove();
+      copyEmailButton.textContent = 'Copied';
+    }
+    window.setTimeout(() => { copyEmailButton.textContent = 'Copy'; }, 1600);
+  });
+}
 
 /* --------------------------------------------------------------------------
    WORK CONCEPT LATTICE
    -------------------------------------------------------------------------- */
 
 (() => {
-  const data = window.PORTFOLIO_DATA?.work;
+  const data = window.SITE_DATA?.work;
   const latticeRoot = document.querySelector('#work-lattice');
-  const projectList = document.querySelector('#work-project-list');
+  const projectTabs = document.querySelector('#work-project-tabs');
+  const projectDetail = document.querySelector('#work-project-detail');
   const contextRoot = document.querySelector('#work-context-filters');
   const themeRoot = document.querySelector('#work-theme-filters');
   const modeButtons = [...document.querySelectorAll('[data-theme-mode]')];
   const status = document.querySelector('#lattice-status');
+  const resultCount = document.querySelector('#work-result-count');
+  const resetButton = document.querySelector('#work-reset');
+  const mapToggle = document.querySelector('#work-map-toggle');
+  const mapContent = document.querySelector('#work-map-content');
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
-  if (!data || !latticeRoot || !projectList || !contextRoot || !themeRoot) return;
+  if (!data || !latticeRoot || !projectTabs || !projectDetail || !contextRoot || !themeRoot) return;
 
   const projects = [...data.projects].sort((a, b) => a.order - b.order);
   const attributes = data.attributes;
@@ -70,6 +115,7 @@ document.querySelector('#year').textContent = new Date().getFullYear();
   let activeContext = 'all';
   let selectedThemes = new Set();
   let themeMode = 'any';
+  let selectedProjectId = projects[0]?.id || null;
 
   const subset = (left, right) => left.every(value => right.includes(value));
   const intersection = arrays => {
@@ -211,6 +257,7 @@ document.querySelector('#year').textContent = new Date().getFullYear();
 
     modeButtons.forEach(button => {
       button.setAttribute('aria-pressed', String(button.dataset.themeMode === themeMode));
+      button.disabled = selectedThemes.size < 2;
     });
 
     latticeRoot.querySelectorAll('.attribute-edge-label').forEach(label => {
@@ -221,6 +268,7 @@ document.querySelector('#year').textContent = new Date().getFullYear();
   const toggleTheme = themeId => {
     if (selectedThemes.has(themeId)) selectedThemes.delete(themeId);
     else selectedThemes.add(themeId);
+    if (selectedThemes.size < 2) themeMode = 'any';
     syncThemeControls();
     applyFilters();
   };
@@ -259,34 +307,47 @@ document.querySelector('#year').textContent = new Date().getFullYear();
     });
   };
 
-  const renderProjects = () => {
-    projectList.innerHTML = '';
+  const renderProjectDetail = () => {
+    const project = projectMap.get(selectedProjectId);
+    projectDetail.innerHTML = '';
 
-    projects.forEach(project => {
-      const article = document.createElement('article');
-      article.className = 'work-project-row';
-      article.id = `project-${project.id}`;
-      article.dataset.projectId = project.id;
-      article.dataset.contexts = project.contexts.join(' ');
+    if (!project || !projectMatchesFilters(project)) {
+      const empty = document.createElement('p');
+      empty.className = 'work-empty';
+      empty.textContent = 'No projects match these filters. Reset them or choose a broader combination.';
+      projectDetail.appendChild(empty);
+      return;
+    }
 
-      const number = String(project.order).padStart(2, '0');
-      const meta = project.tech.join(' · ');
+    const type = document.createElement('p');
+    type.className = 'project-type';
+    type.textContent = project.type;
 
-      article.innerHTML = `
-        <div class="project-number">${number}</div>
-        <div class="project-main">
-          <p class="project-type">${project.type}</p>
-          <h3>${project.title}</h3>
-          <p>${project.description}</p>
-        </div>
-        <div class="work-project-meta">
-          <p>${meta}</p>
-          <div class="work-project-links"></div>
-          ${project.note ? `<span class="project-note">${project.note}</span>` : ''}
-        </div>
-      `;
+    const title = document.createElement('h3');
+    title.id = 'active-project-title';
+    title.tabIndex = -1;
+    title.textContent = project.title;
 
-      const links = article.querySelector('.work-project-links');
+    const description = document.createElement('p');
+    description.className = 'work-project-description';
+    description.textContent = project.description;
+
+    const tech = document.createElement('p');
+    tech.className = 'work-project-tech';
+    tech.textContent = project.tech.join(' · ');
+
+    projectDetail.append(type, title, description, tech);
+
+    if (project.note) {
+      const note = document.createElement('span');
+      note.className = 'project-note';
+      note.textContent = project.note;
+      projectDetail.appendChild(note);
+    }
+
+    if (project.links.length) {
+      const links = document.createElement('div');
+      links.className = 'work-project-links';
       project.links.forEach(link => {
         const anchor = document.createElement('a');
         anchor.href = link.href;
@@ -295,9 +356,58 @@ document.querySelector('#year').textContent = new Date().getFullYear();
         anchor.textContent = link.label;
         links.appendChild(anchor);
       });
+      projectDetail.appendChild(links);
+    }
+  };
 
-      projectList.appendChild(article);
+  const selectProject = (projectId, { focusDetail = false } = {}) => {
+    const project = projectMap.get(projectId);
+    if (!project || !projectMatchesFilters(project)) return;
+
+    selectedProjectId = projectId;
+    projectTabs.querySelectorAll('.work-project-tab').forEach(button => {
+      button.setAttribute('aria-pressed', String(button.dataset.projectId === selectedProjectId));
     });
+    latticeRoot.querySelectorAll('[data-project-anchor]').forEach(anchor => {
+      anchor.classList.toggle('is-active', anchor.dataset.projectAnchor === selectedProjectId);
+    });
+    renderProjectDetail();
+
+    if (focusDetail) {
+      projectDetail.querySelector('h3')?.focus({ preventScroll: true });
+      if (matchMedia('(max-width: 900px)').matches) {
+        projectDetail.scrollIntoView({
+          behavior: reducedMotion.matches ? 'auto' : 'smooth',
+          block: 'nearest'
+        });
+      }
+    }
+  };
+
+  const renderProjects = () => {
+    projectTabs.innerHTML = '';
+
+    projects.forEach(project => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'work-project-tab';
+      button.dataset.projectId = project.id;
+      button.setAttribute('aria-pressed', String(project.id === selectedProjectId));
+      button.setAttribute('aria-label', `Select ${project.title}`);
+
+      const label = document.createElement('span');
+      label.textContent = project.graphLabel;
+
+      button.append(label);
+      button.addEventListener('click', () => selectProject(project.id));
+      button.addEventListener('mouseenter', () => focusProject(project.id));
+      button.addEventListener('mouseleave', clearFocus);
+      button.addEventListener('focus', () => focusProject(project.id));
+      button.addEventListener('blur', clearFocus);
+      projectTabs.appendChild(button);
+    });
+
+    renderProjectDetail();
   };
 
   const themeMatchCount = project =>
@@ -355,17 +465,26 @@ document.querySelector('#year').textContent = new Date().getFullYear();
   };
 
   const applyFilters = () => {
-    const visibleIds = new Set(visibleProjects().map(project => project.id));
+    const visible = visibleProjects();
+    const visibleIds = new Set(visible.map(project => project.id));
     const selectedCount = selectedThemes.size;
 
-    projectList.querySelectorAll('.work-project-row').forEach(row => {
-      row.hidden = !visibleIds.has(row.dataset.projectId);
+    projectTabs.querySelectorAll('.work-project-tab').forEach(button => {
+      button.hidden = !visibleIds.has(button.dataset.projectId);
+    });
+
+    if (!visibleIds.has(selectedProjectId)) selectedProjectId = visible[0]?.id || null;
+
+    projectTabs.querySelectorAll('.work-project-tab').forEach(button => {
+      button.setAttribute('aria-pressed', String(button.dataset.projectId === selectedProjectId));
+    });
+    latticeRoot.querySelectorAll('[data-project-anchor]').forEach(anchor => {
+      anchor.classList.toggle('is-active', anchor.dataset.projectAnchor === selectedProjectId);
     });
 
     latticeRoot.querySelectorAll('[data-project-anchor]').forEach(anchor => {
       const project = projectMap.get(anchor.dataset.projectAnchor);
       const visible = visibleIds.has(project.id);
-      const count = themeMatchCount(project);
       const text = anchor.querySelector('text');
       const baseLabel = anchor.dataset.baseLabel;
 
@@ -376,12 +495,7 @@ document.querySelector('#year').textContent = new Date().getFullYear();
         anchor.classList.add(`theme-match-${Math.min(count, 4)}`);
       }
 
-      if (text) {
-        text.textContent =
-          visible && selectedCount > 1 && themeMode === 'any'
-            ? `${baseLabel}  · ${count}/${selectedCount}`
-            : baseLabel;
-      }
+      if (text) text.textContent = baseLabel;
     });
 
     latticeRoot.querySelectorAll('[data-concept-key]').forEach(node => {
@@ -396,13 +510,57 @@ document.querySelector('#year').textContent = new Date().getFullYear();
       label.classList.toggle('is-filtered-out', !hasVisibleExtent);
     });
 
+    const countLabel = `${visible.length} of ${projects.length} ${visible.length === 1 ? 'project' : 'projects'}`;
+    if (resultCount) resultCount.textContent = countLabel;
+    if (resetButton) resetButton.disabled = activeContext === 'all' && !selectedThemes.size && themeMode === 'any';
+
     syncThemeControls();
     clearFocus();
+    renderProjectDetail();
   };
+
+  if (resetButton) {
+    resetButton.addEventListener('click', () => {
+      activeContext = 'all';
+      selectedThemes = new Set();
+      themeMode = 'any';
+      contextRoot.querySelectorAll('.work-filter').forEach(item => {
+        item.setAttribute('aria-pressed', String(item.dataset.context === 'all'));
+      });
+      applyFilters();
+    });
+  }
+
+  const setMapExpanded = expanded => {
+    if (!mapToggle || !mapContent) return;
+    mapContent.classList.toggle('is-collapsed', !expanded);
+    mapToggle.setAttribute('aria-expanded', String(expanded));
+    mapToggle.textContent = expanded ? 'Hide map' : 'Show map';
+  };
+
+  if (mapToggle && mapContent) {
+    const mobileMap = matchMedia('(max-width: 900px)');
+    setMapExpanded(!mobileMap.matches);
+    mapToggle.addEventListener('click', () => {
+      setMapExpanded(mapToggle.getAttribute('aria-expanded') !== 'true');
+    });
+    mobileMap.addEventListener('change', event => setMapExpanded(!event.matches));
+  }
 
   const conceptLabel = concept => {
     if (concept.key === topConcept.key) return 'All work';
     return concept.intent.map(id => attributeMap.get(id)?.label || id).join(' ∩ ');
+  };
+
+  const activateConcept = concept => {
+    selectedThemes = new Set(concept.key === topConcept.key ? [] : concept.intent);
+    themeMode = selectedThemes.size > 1 ? 'all' : 'any';
+    applyFilters();
+    if (status) {
+      status.textContent = concept.key === topConcept.key
+        ? 'Theme filters cleared.'
+        : `${conceptLabel(concept)} filters selected.`;
+    }
   };
 
   const hashKey = key => {
@@ -612,7 +770,7 @@ document.querySelector('#year').textContent = new Date().getFullYear();
       group.setAttribute('transform', `translate(${position.x} ${position.y})`);
       group.setAttribute('tabindex', '0');
       group.setAttribute('role', 'button');
-      group.setAttribute('aria-label', `${conceptLabel(concept)}. ${concept.extent.length} related projects.`);
+      group.setAttribute('aria-label', `${conceptLabel(concept)}. ${concept.extent.length} related projects. Activate to filter.`);
 
       const circle = document.createElementNS(svgNS, 'circle');
       circle.setAttribute('r', concept.extent.length ? '5.6' : '4.2');
@@ -636,10 +794,10 @@ document.querySelector('#year').textContent = new Date().getFullYear();
           const anchor = document.createElementNS(svgNS, 'g');
           anchor.classList.add('concept-project-anchor');
           anchor.dataset.projectAnchor = project.id;
-          anchor.dataset.baseLabel = `${String(project.order).padStart(2, '0')}  ${project.graphLabel}`;
+          anchor.dataset.baseLabel = project.graphLabel;
           anchor.setAttribute('tabindex', '0');
           anchor.setAttribute('role', 'link');
-          anchor.setAttribute('aria-label', `${project.title}. Jump to project details.`);
+          anchor.setAttribute('aria-label', `${project.title}. Show project details.`);
 
           const yBase = 22 + projectIndex * 22;
           const text = document.createElementNS(svgNS, 'text');
@@ -663,12 +821,13 @@ document.querySelector('#year').textContent = new Date().getFullYear();
           anchor.addEventListener('blur', clearFocus);
           anchor.addEventListener('click', event => {
             event.stopPropagation();
-            scrollToProject(project.id);
+            selectProject(project.id, { focusDetail: true });
           });
           anchor.addEventListener('keydown', event => {
             if (event.key === 'Enter' || event.key === ' ') {
               event.preventDefault();
-              scrollToProject(project.id);
+              event.stopPropagation();
+              selectProject(project.id, { focusDetail: true });
             }
           });
 
@@ -682,6 +841,13 @@ document.querySelector('#year').textContent = new Date().getFullYear();
       group.addEventListener('mouseleave', clearFocus);
       group.addEventListener('focus', () => focusNode(concept.key));
       group.addEventListener('blur', clearFocus);
+      group.addEventListener('click', () => activateConcept(concept));
+      group.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          activateConcept(concept);
+        }
+      });
 
       nodesGroup.appendChild(group);
     });
@@ -703,17 +869,13 @@ document.querySelector('#year').textContent = new Date().getFullYear();
     latticeRoot.querySelectorAll('.concept-project-anchor').forEach(anchor => {
       anchor.classList.remove('is-focus', 'is-related', 'is-muted');
     });
+    projectTabs.querySelectorAll('.work-project-tab').forEach(tab => {
+      tab.classList.remove('is-focus', 'is-muted');
+    });
     latticeRoot.querySelectorAll('.attribute-edge-label').forEach(label => {
       label.classList.remove(
         'is-focus', 'is-path-soft', 'is-path-strong', 'is-project-related', 'is-node-related', 'is-muted'
       );
-    });
-  };
-
-  const highlightEdgesInside = (keys, strength) => {
-    latticeRoot.querySelectorAll('.concept-edges line').forEach(edge => {
-      const inPath = keys.has(edge.dataset.edgeUpper) && keys.has(edge.dataset.edgeLower);
-      edge.classList.toggle(strength, inPath);
     });
   };
 
@@ -773,20 +935,32 @@ document.querySelector('#year').textContent = new Date().getFullYear();
     const upstreamKeys = upstreamKeysForConcept(objectConcept);
 
     latticeRoot.querySelectorAll('.concept-node').forEach(node => {
-      node.classList.toggle('is-path-soft', upstreamKeys.has(node.dataset.conceptKey));
       node.classList.toggle('is-origin-soft', node.dataset.conceptKey === objectConceptKey);
     });
 
-    highlightEdgesInside(upstreamKeys, 'is-path-soft');
+    latticeRoot.querySelectorAll('.concept-edges line').forEach(edge => {
+      const onThemePath = upstreamKeys.has(edge.dataset.edgeUpper) && upstreamKeys.has(edge.dataset.edgeLower);
+      edge.classList.toggle('is-path-soft', onThemePath);
+      edge.classList.toggle('is-muted', !onThemePath);
+    });
 
     latticeRoot.querySelectorAll('.concept-project-anchor').forEach(anchor => {
-      anchor.classList.toggle('is-focus', anchor.dataset.projectAnchor === projectId);
+      const focused = anchor.dataset.projectAnchor === projectId;
+      anchor.classList.toggle('is-focus', focused);
+      anchor.classList.toggle('is-muted', !focused);
+    });
+
+    projectTabs.querySelectorAll('.work-project-tab').forEach(tab => {
+      const focused = tab.dataset.projectId === projectId;
+      tab.classList.toggle('is-focus', focused);
+      tab.classList.toggle('is-muted', !focused);
     });
 
     latticeRoot.querySelectorAll('.attribute-edge-label').forEach(label => {
       const related = project.lattice.includes(label.dataset.attributeId);
       label.classList.toggle('is-project-related', related);
       label.classList.toggle('is-path-soft', related);
+      label.classList.toggle('is-muted', !related);
     });
 
     if (status) {
@@ -864,14 +1038,6 @@ document.querySelector('#year').textContent = new Date().getFullYear();
     syncThemeControls();
     applySelectedThemeHighlight();
     if (status) status.textContent = '';
-  };
-
-  const scrollToProject = projectId => {
-    const target = document.querySelector(`#project-${CSS.escape(projectId)}`);
-    if (!target || target.hidden) return;
-    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    target.classList.add('is-jump-target');
-    window.setTimeout(() => target.classList.remove('is-jump-target'), 1100);
   };
 
   renderContextFilters();

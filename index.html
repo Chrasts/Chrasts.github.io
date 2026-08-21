@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Portfolio of Štěpán Chrast: selected work in data analysis, research and mathematical logic.">
+  <meta name="description" content="Personal site of Štěpán Chrast: selected work in data analysis, research and mathematical logic.">
   <meta name="author" content="Štěpán Chrast">
   <meta name="application-name" content="Štěpán Chrast">
   <meta name="apple-mobile-web-app-title" content="Štěpán Chrast">
@@ -14,8 +14,10 @@
   <meta property="og:url" content="https://chrasts.github.io/">
   <meta property="og:image" content="https://chrasts.github.io/assets/stepan-chrast.jpg">
   <meta property="og:image:alt" content="Portrait of Štěpán Chrast">
+  <meta property="og:image:width" content="720">
+  <meta property="og:image:height" content="540">
   <meta property="og:site_name" content="Štěpán Chrast">
-  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="Štěpán Chrast - Data Analysis, Research & Mathematical Logic">
   <meta name="twitter:description" content="Selected work in data analysis, research and mathematical logic.">
   <meta name="twitter:image" content="https://chrasts.github.io/assets/stepan-chrast.jpg">
@@ -34,7 +36,7 @@
           "@id": "https://chrasts.github.io/#website",
           "url": "https://chrasts.github.io/",
           "name": "Štěpán Chrast",
-          "alternateName": ["Štěpán Chrast Portfolio", "Stepan Chrast"],
+          "alternateName": ["Štěpán Chrast Personal Site", "Stepan Chrast"],
           "inLanguage": "en",
           "author": {"@id": "https://chrasts.github.io/#person"}
         },
@@ -66,7 +68,8 @@
   <script defer src="https://cloud.umami.is/script.js" data-website-id="8dd5c849-df0f-40a5-b4e1-3fbcb38f425b"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body id="top">
+  <a class="skip-link" href="#main-content">Skip to content</a>
   <header class="site-header wrap">
     <a class="brand" href="#top" aria-label="Home">ŠC</a>
     <div class="header-actions">
@@ -81,18 +84,18 @@
     </div>
   </header>
 
-  <main id="top">
+  <main id="main-content" tabindex="-1">
     <section class="hero wrap">
       <div class="hero-copy">
         <p class="eyebrow">Data analysis · Research · Mathematical logic</p>
         <h1>Štěpán<br>Chrast</h1>
         <p class="intro">Junior data analyst and researcher in Prague, working with data, reproducible analysis and applied research alongside a background in mathematical logic.</p>
-        <div class="inline-links" aria-label="Primary links">
+        <nav class="inline-links" aria-label="Primary links">
           <a href="#work">Selected work</a>
           <a href="mailto:chraststepan@gmail.com">Email</a>
           <a href="https://github.com/Chrasts" target="_blank" rel="noreferrer">GitHub ↗</a>
           <a href="https://www.linkedin.com/in/stepan-chrast" target="_blank" rel="noreferrer">LinkedIn ↗</a>
-        </div>
+        </nav>
       </div>
 
       <div class="hero-visual">
@@ -116,47 +119,89 @@
     </section>
 
     <section class="section wrap" id="work">
-      <div class="section-title"><span>01</span><h2>Selected work</h2></div>
+      <div class="section-title"><h2>Selected work</h2></div>
 
-      <div class="work-explorer">
-        <aside class="work-side-panel work-side-context" aria-label="Work context filters">
-          <p class="work-side-title">Context</p>
+      <div class="work-intro">
+        <p id="work-help">Choose a context or theme, then select a project to inspect it. The map shows how the work relates.</p>
+        <div class="work-summary">
+          <span id="work-result-count" aria-live="polite">9 projects</span>
+          <button id="work-reset" class="work-reset" type="button" disabled>Reset filters</button>
+        </div>
+      </div>
+
+      <div class="work-controls" role="region" aria-label="Work filters" aria-describedby="work-help">
+        <div class="work-control-group work-context-control" role="group" aria-labelledby="work-context-title">
+          <p class="work-side-title" id="work-context-title">Context</p>
           <div id="work-context-filters" class="work-context-filters"></div>
-        </aside>
-
-        <div class="work-lattice-shell">
-          <div class="work-lattice-viewport">
-            <div id="work-lattice"></div>
-          </div>
-          <div class="sr-only" id="lattice-status" aria-live="polite"></div>
         </div>
 
-        <aside class="work-side-panel work-side-themes" aria-label="Work theme filters">
-          <p class="work-side-title">Themes</p>
+        <div class="work-control-group work-theme-control" role="group" aria-labelledby="work-theme-title">
+          <p class="work-side-title" id="work-theme-title">Themes</p>
           <div id="work-theme-filters" class="work-theme-filters"></div>
+        </div>
 
-          <div class="theme-match-control" aria-label="Theme matching mode">
-            <span class="theme-match-label">Match projects with</span>
-            <div class="theme-match-buttons">
-              <div class="theme-match-choice">
-                <button type="button" class="theme-match-button" data-theme-mode="any" aria-pressed="true" title="Show projects matching at least one selected theme">Any selected</button>
-                <span class="theme-logic-symbol" aria-hidden="true">∨</span>
-              </div>
-              <div class="theme-match-choice">
-                <button type="button" class="theme-match-button" data-theme-mode="all" aria-pressed="false" title="Show only projects matching every selected theme">All selected</button>
-                <span class="theme-logic-symbol" aria-hidden="true">∧</span>
-              </div>
+        <div class="work-control-group theme-match-control" role="group" aria-labelledby="theme-match-title">
+          <span class="theme-match-label" id="theme-match-title">Match projects with</span>
+          <div class="theme-match-buttons">
+            <div class="theme-match-choice">
+              <button type="button" class="theme-match-button" data-theme-mode="any" aria-pressed="true" title="Show projects matching at least one selected theme" disabled>Any selected</button>
+              <span class="theme-logic-symbol" aria-hidden="true">∨</span>
+            </div>
+            <div class="theme-match-choice">
+              <button type="button" class="theme-match-button" data-theme-mode="all" aria-pressed="false" title="Show only projects matching every selected theme" disabled>All selected</button>
+              <span class="theme-logic-symbol" aria-hidden="true">∧</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div class="work-stage">
+        <section class="work-map-panel" aria-labelledby="work-map-title">
+          <div class="work-panel-heading">
+            <div>
+              <p class="work-side-title">Concept map</p>
+              <h3 id="work-map-title">Relationships between projects</h3>
+              <p class="work-map-note">Projects share a position when their themes overlap; this does not imply a direct relationship between them.</p>
+            </div>
+            <button class="work-map-toggle" id="work-map-toggle" type="button" aria-expanded="true" aria-controls="work-map-content">Hide map</button>
+          </div>
+          <div id="work-map-content" class="work-map-content">
+            <div class="work-lattice-shell">
+              <div class="work-lattice-viewport">
+                <div id="work-lattice"></div>
+              </div>
+              <div class="sr-only" id="lattice-status" aria-live="polite"></div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="work-detail-panel" aria-label="Project explorer">
+          <div class="work-detail-heading">
+            <p class="work-side-title">Projects</p>
+            <span class="work-detail-hint">Select to inspect</span>
+          </div>
+          <div class="work-project-tabs" id="work-project-tabs"></div>
+          <div class="work-project-detail" id="work-project-detail"></div>
         </aside>
       </div>
 
-      <div class="work-project-list" id="work-project-list"></div>
+      <noscript>
+        <div class="work-noscript">
+          <p>The interactive project explorer requires JavaScript. Public work remains available here:</p>
+          <ul>
+            <li><a href="https://github.com/Chrasts/insolvency-success-analysis">Insolvency Event-Log Analysis</a></li>
+            <li><a href="https://chrasts.github.io/Modal_Logic_Educational_Game/">Modal Logic Lab</a></li>
+            <li><a href="https://github.com/Chrasts/algebraic_logic-SQL_database">Algebraic Logic SQL Schema</a></li>
+            <li><a href="https://github.com/Chrasts/Filming-project-scene-Splitter">Film Scene Character Splitter</a></li>
+            <li><a href="https://github.com/Chrasts/The-Congruence-Lattice-Problem-A-Historical-Survey">The Congruence Lattice Problem — Historical Survey</a></li>
+          </ul>
+        </div>
+      </noscript>
     </section>
 
     <section class="section background-section" id="background">
       <div class="wrap">
-        <div class="section-title"><span>02</span><h2>Background</h2></div>
+        <div class="section-title"><h2>Background</h2></div>
         <div class="background-grid">
           <div>
             <h3 class="column-title">Experience</h3>
@@ -198,7 +243,7 @@
     </section>
 
     <section class="section wrap methods-section" id="methods">
-      <div class="section-title"><span>03</span><h2>Methods</h2></div>
+      <div class="section-title"><h2>Methods</h2></div>
       <div class="methods-grid">
         <div class="methods-item">
           <h3>Analysis</h3>
@@ -218,11 +263,14 @@
     <section class="contact-section" id="contact">
       <div class="wrap contact-grid">
         <div>
-          <div class="section-title contact-title"><span>04</span><h2>Contact</h2></div>
+          <div class="section-title contact-title"><h2>Contact</h2></div>
           <p>Open to analytical and research opportunities.</p>
         </div>
         <div class="contact-links">
-          <a href="mailto:chraststepan@gmail.com">chraststepan@gmail.com</a>
+          <div class="contact-email">
+            <a href="mailto:chraststepan@gmail.com">chraststepan@gmail.com</a>
+            <button class="copy-email" type="button" data-email="chraststepan@gmail.com">Copy</button>
+          </div>
           <a href="https://github.com/Chrasts" target="_blank" rel="noreferrer">GitHub ↗</a>
           <a href="https://www.linkedin.com/in/stepan-chrast" target="_blank" rel="noreferrer">LinkedIn ↗</a>
         </div>
@@ -232,7 +280,7 @@
 
   <footer class="wrap"><span>© <span id="year"></span> Štěpán Chrast</span><a href="#top">Back to top ↑</a></footer>
 
-  <script src="portfolio-data.js"></script>
+  <script src="site-data.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

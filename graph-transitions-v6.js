@@ -62,8 +62,10 @@
     const edges = svg.querySelector(':scope > g > .site-graph-edges');
     return edges?.parentElement || svg.firstElementChild;
   };
-  const nodeElements = () => [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')];
-  const edgeElements = () => [...document.querySelectorAll('#site-graph .site-graph-edges path[data-source][data-target]')];
+  const nodeElements = () => [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')]
+    .filter(element => !element.closest('.v9-transition-overlay'));
+  const edgeElements = () => [...document.querySelectorAll('#site-graph .site-graph-edges path[data-source][data-target]')]
+    .filter(element => !element.closest('.v9-transition-overlay'));
 
   const pointOf = element => ({
     x: Number(element?.dataset.x || 0),
@@ -377,11 +379,9 @@
     svg.appendChild(overlay);
 
     const before = new Map();
-    const leavingWork = document.body.dataset.graphMode === 'work' && !resolvedTargetRoute.startsWith('work');
 
     nodeElements().forEach(element => {
       const id = element.dataset.nodeId;
-      if (leavingWork && id.startsWith('work-concept:')) return;
       const clone = element.cloneNode(true);
       clone.removeAttribute('tabindex');
       clone.style.pointerEvents = 'none';
@@ -600,7 +600,7 @@
           item.element.style.opacity = String(1 - ease(fade));
         });
       } else if (current.direction === 'down') {
-        const fadeRaw = clamp01(raw / .38);
+        const fadeRaw = clamp01(raw / .20);
         leaving.forEach(item => {
           const away = outwardPoint(item.from, targetBefore || targetAfter, item.id);
           setPoint(item.element, lerpPoint(item.from, away, ease(fadeRaw)));

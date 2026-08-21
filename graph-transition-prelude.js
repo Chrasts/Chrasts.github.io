@@ -41,6 +41,38 @@
   ensureStylesheet('graph-v9.css', 'data-profile-graph-v9');
 
   /* ------------------------------------------------------------------------
+     Transition query isolation.
+
+     graph-transitions-v6.js intentionally renders a temporary SVG overlay
+     containing clones of the currently visible nodes. Its helper selectors
+     were broad enough to start selecting those clones as if they were the
+     real graph on the next animation frame. That creates duplicate node IDs,
+     makes the overlay overwrite the base-node positions in Maps, and produces
+     the visible teleport/blink and the occasional final-layout jump.
+
+     Keep the original transition animation completely unchanged; only make
+     those two base-graph queries ignore elements living inside the temporary
+     transition overlay while a route transition is active.
+     ------------------------------------------------------------------------ */
+  const nativeDocumentQuerySelectorAll = Document.prototype.querySelectorAll;
+  const transitionBaseSelectors = new Set([
+    '#site-graph .site-graph-node[data-node-id]',
+    '#site-graph .site-graph-edges path[data-source][data-target]'
+  ]);
+
+  Document.prototype.querySelectorAll = function(selector) {
+    const result = nativeDocumentQuerySelectorAll.call(this, selector);
+    if (
+      this !== document ||
+      !document.body?.classList.contains('is-v9-transitioning') ||
+      !transitionBaseSelectors.has(selector)
+    ) {
+      return result;
+    }
+    return [...result].filter(element => !element.closest('.v9-transition-overlay'));
+  };
+
+  /* ------------------------------------------------------------------------
      Reduced-motion bridge.
 
      site-graph.js keeps the returned MediaQueryList object. The transition

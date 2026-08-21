@@ -1,0 +1,400 @@
+/* ========================================================================== 
+   Mobile profile graph
+   Loaded only for viewports <= 900px. Desktop geometry and styling are left
+   untouched. The mobile scene keeps the graph large enough to read and uses
+   the graph viewport itself as the pan surface.
+   ========================================================================== */
+
+@media (max-width:900px){
+  html,
+  body{
+    overscroll-behavior:none;
+  }
+
+  .app-header{
+    width:100%!important;
+    height:60px!important;
+    padding-inline:max(12px,env(safe-area-inset-left)) max(12px,env(safe-area-inset-right));
+    background:color-mix(in srgb,var(--paper) 95%,transparent)!important;
+    backdrop-filter:blur(12px)!important;
+  }
+  .app-header::after{opacity:.9!important}
+  .header-actions{gap:8px!important}
+  .theme-toggle,
+  .menu-button{
+    min-width:38px;
+    min-height:38px;
+  }
+  .site-header nav{
+    z-index:80!important;
+    top:60px!important;
+    left:0!important;
+    right:0!important;
+    max-height:calc(100dvh - 60px);
+    overflow:auto;
+    padding:16px max(16px,env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))!important;
+    background:color-mix(in srgb,var(--paper) 98%,transparent)!important;
+    box-shadow:0 14px 30px color-mix(in srgb,var(--ink) 9%,transparent);
+  }
+  .site-header nav a{
+    display:flex;
+    align-items:center;
+    min-height:38px;
+    font-size:13px!important;
+  }
+
+  .profile-app{
+    height:calc(100dvh - 60px)!important;
+    min-height:0!important;
+    overflow:hidden!important;
+  }
+  .site-explorer,
+  .scene-canvas,
+  .site-graph-panel{
+    height:100%!important;
+    min-height:0!important;
+  }
+
+  .graph-routebar{
+    top:7px!important;
+    left:max(11px,env(safe-area-inset-left))!important;
+    right:max(11px,env(safe-area-inset-right))!important;
+    gap:9px!important;
+  }
+  .graph-breadcrumb{
+    max-width:calc(100vw - 86px);
+    min-height:35px;
+    padding:0!important;
+  }
+  .graph-crumb{
+    min-height:34px;
+    display:inline-flex;
+    align-items:center;
+    font-size:10.5px!important;
+  }
+  .graph-crumb-edge{
+    flex-basis:18px!important;
+    margin-inline:4px!important;
+  }
+  .atlas-button{
+    min-width:58px;
+    min-height:34px;
+    padding:5px 3px!important;
+    font-size:10px!important;
+  }
+  .atlas-button span{display:none!important}
+
+  .site-graph-heading{
+    top:49px!important;
+    left:max(14px,env(safe-area-inset-left))!important;
+    right:14px;
+  }
+  .site-graph-heading h2{
+    max-width:78vw!important;
+    font-size:9px!important;
+    letter-spacing:.085em!important;
+  }
+  body[data-graph-mode="overview"] .site-graph-heading{display:none!important}
+  .site-graph-help{display:none!important}
+
+  /* The local graph is deliberately wider than the phone. It therefore stays
+     legible and can be explored with native one-finger panning instead of being
+     shrunk into an unreadable thumbnail. */
+  .site-graph-viewport{
+    position:absolute!important;
+    left:0!important;
+    right:0!important;
+    width:100%!important;
+    height:auto!important;
+    overflow:auto!important;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    touch-action:pan-x pan-y!important;
+    scrollbar-width:none!important;
+  }
+  .site-graph-viewport::-webkit-scrollbar{display:none}
+
+  body[data-graph-mode="overview"] .site-graph-viewport{
+    top:248px!important;
+    bottom:4px!important;
+  }
+  body[data-graph-mode="focus"] .site-graph-viewport{
+    top:78px!important;
+    bottom:4px!important;
+  }
+  body[data-graph-mode="work"] .site-graph-viewport{
+    top:70px!important;
+    bottom:202px!important;
+  }
+  body[data-graph-mode="atlas"] .site-graph-viewport{
+    top:62px!important;
+    bottom:62px!important;
+    overflow:hidden!important;
+    touch-action:none!important;
+  }
+
+  body:not([data-graph-mode="atlas"]) #site-graph{
+    width:860px!important;
+    min-width:860px!important;
+    height:auto!important;
+    min-height:0!important;
+    padding:0!important;
+  }
+  body:not([data-graph-mode="atlas"]) .site-graph-svg{
+    display:block!important;
+    width:860px!important;
+    min-width:860px!important;
+    height:auto!important;
+    min-height:0!important;
+    overflow:visible!important;
+  }
+  body[data-graph-mode="overview"] .site-graph-svg,
+  body[data-graph-mode="focus"] .site-graph-svg{
+    aspect-ratio:5/3;
+  }
+  body[data-graph-mode="work"] .site-graph-svg{
+    aspect-ratio:30/19;
+  }
+
+  body[data-graph-mode="atlas"] #site-graph,
+  body[data-graph-mode="atlas"] .site-graph-svg{
+    width:100%!important;
+    min-width:0!important;
+    height:100%!important;
+    min-height:0!important;
+  }
+
+  /* Mobile graph typography and hit areas. These values are in SVG user units;
+     after the wider mobile canvas is scaled they resolve to normal readable
+     screen sizes and roughly 40–44px touch targets. */
+  body:not([data-graph-mode="atlas"]) .site-graph-label{
+    font-size:14.5px!important;
+    stroke-width:5px!important;
+  }
+  body:not([data-graph-mode="atlas"]) .site-graph-node.is-section .site-graph-label{
+    font-size:15.5px!important;
+  }
+  body:not([data-graph-mode="atlas"]) .site-graph-meta{
+    font-size:10.5px!important;
+  }
+  body:not([data-graph-mode="atlas"]) .site-graph-hit{r:30px!important}
+  body:not([data-graph-mode="atlas"]) .site-graph-node[data-node-id="stepan-chrast"] .site-graph-hit{r:34px!important}
+  body:not([data-graph-mode="atlas"]) .site-graph-node[data-node-id="stepan-chrast"] .site-graph-dot{r:17px!important}
+  body:not([data-graph-mode="atlas"]) .site-graph-node.is-section .site-graph-dot{r:10px!important}
+  body:not([data-graph-mode="atlas"]) .site-graph-node:not(.is-section):not(.is-profile):not(.is-work-concept) .site-graph-dot{r:7px!important}
+
+  /* Compact Overview objects occupy their own upper band. The graph begins
+     below them instead of competing for the same pixels. */
+  body[data-graph-mode="overview"] .hero-copy{
+    top:54px!important;
+    left:max(16px,env(safe-area-inset-left))!important;
+    width:min(292px,calc(100vw - 94px))!important;
+  }
+  body[data-graph-mode="overview"] .hero .eyebrow{
+    font-size:8px!important;
+    letter-spacing:.105em!important;
+  }
+  body[data-graph-mode="overview"] .hero h1{
+    margin:7px 0 8px!important;
+    font-size:36px!important;
+    line-height:.88!important;
+  }
+  body[data-graph-mode="overview"] .hero .intro{
+    max-width:270px!important;
+    font-size:11.5px!important;
+    line-height:1.42!important;
+  }
+  body[data-graph-mode="overview"] .hero .inline-links{
+    gap:8px 11px!important;
+    margin-top:9px!important;
+  }
+  body[data-graph-mode="overview"] .hero .inline-links a{
+    min-height:28px;
+    display:inline-flex;
+    align-items:center;
+    font-size:9.5px!important;
+  }
+  body[data-graph-mode="overview"] .hero-visual.profile-identity{
+    top:64px!important;
+    right:max(14px,env(safe-area-inset-right))!important;
+    width:68px!important;
+    height:68px!important;
+  }
+  body[data-graph-mode="overview"] .profile-identity .portrait{
+    width:60px!important;
+    height:60px!important;
+    border-width:2px!important;
+  }
+
+  /* Work controls become one contained lower utility tray. The graph receives
+     the remaining screen instead of having two floating rails cover it. */
+  body[data-graph-mode="work"] .integrated-work-controls{
+    position:absolute!important;
+    z-index:26!important;
+    inset:auto 0 0 0!important;
+    display:grid!important;
+    grid-template-columns:minmax(118px,.72fr) minmax(185px,1.28fr)!important;
+    gap:10px!important;
+    height:198px!important;
+    padding:10px max(11px,env(safe-area-inset-right)) calc(9px + env(safe-area-inset-bottom)) max(11px,env(safe-area-inset-left))!important;
+    overflow:hidden!important;
+    border-top:1px solid var(--line);
+    background:color-mix(in srgb,var(--paper) 96%,transparent)!important;
+    backdrop-filter:blur(12px);
+    pointer-events:auto!important;
+  }
+  body[data-graph-mode="work"] .integrated-work-controls[hidden]{display:none!important}
+  body[data-graph-mode="work"] .integrated-work-rail{
+    position:relative!important;
+    inset:auto!important;
+    top:auto!important;
+    right:auto!important;
+    bottom:auto!important;
+    left:auto!important;
+    width:auto!important;
+    max-height:176px!important;
+    margin:0!important;
+    padding:0 3px 0 0!important;
+    overflow:auto!important;
+    border:0!important;
+    background:transparent!important;
+    scrollbar-width:thin;
+  }
+  body[data-graph-mode="work"] .integrated-work-rail.is-right{padding-left:4px!important}
+  body[data-graph-mode="work"] .integrated-work-rail .work-control-group{
+    margin:0 0 9px!important;
+  }
+  body[data-graph-mode="work"] .integrated-work-rail .work-side-title{
+    margin-bottom:4px!important;
+    font-size:8px!important;
+  }
+  body[data-graph-mode="work"] .integrated-work-rail .work-filter,
+  body[data-graph-mode="work"] .integrated-work-rail .theme-filter-option,
+  body[data-graph-mode="work"] .integrated-work-rail .theme-match-button{
+    min-height:31px;
+    font-size:9.5px!important;
+  }
+  body[data-graph-mode="work"] .integrated-work-rail .work-filter{padding-block:7px!important}
+  body[data-graph-mode="work"] .integrated-work-rail .theme-filter-option{align-items:center;padding-block:5px!important}
+  body[data-graph-mode="work"] .integrated-work-rail .theme-filter-option input{
+    width:14px!important;
+    height:14px!important;
+  }
+  body[data-graph-mode="work"] .integrated-work-rail .theme-match-control{
+    margin-top:7px!important;
+    padding-top:7px!important;
+  }
+  body[data-graph-mode="work"] .integrated-work-reset{
+    min-height:31px;
+    margin-top:3px!important;
+  }
+
+  body[data-graph-mode="work"] .work-theme-label-v5 text{
+    font-size:14.2px!important;
+  }
+  body[data-graph-mode="work"] .work-project-anchor-v5 text{
+    font-size:14.4px!important;
+    stroke-width:6px!important;
+  }
+  body[data-graph-mode="work"] .work-project-anchor-v5.is-selected text{
+    font-size:15px!important;
+  }
+  body[data-graph-mode="work"] .site-graph-node.is-work-concept .site-graph-hit{r:31px!important}
+
+  /* Every detail view is a genuine mobile bottom sheet, with safe-area padding
+     and enough height for project/Atlas information without covering the whole
+     navigation chrome. */
+  .scene-detail,
+  body[data-graph-mode="work"] .scene-detail.is-work-concept-detail{
+    z-index:50!important;
+    top:auto!important;
+    right:8px!important;
+    bottom:0!important;
+    left:8px!important;
+    width:auto!important;
+    max-height:74dvh!important;
+    padding:20px 16px calc(20px + env(safe-area-inset-bottom))!important;
+    border-radius:14px 14px 0 0!important;
+    box-shadow:0 -12px 38px color-mix(in srgb,var(--ink) 13%,transparent)!important;
+    transform-origin:bottom center!important;
+  }
+  .scene-detail .detail-close{
+    top:11px!important;
+    right:12px!important;
+    width:34px!important;
+    height:34px!important;
+  }
+
+  /* Atlas keeps its dedicated drag/zoom camera. Controls are one horizontal
+     touch rail instead of a wrapped panel that covers the lower graph. */
+  body[data-graph-mode="atlas"] .atlas-controls{
+    left:max(8px,env(safe-area-inset-left))!important;
+    right:max(8px,env(safe-area-inset-right))!important;
+    bottom:7px!important;
+    width:auto!important;
+    max-width:none!important;
+    min-height:46px;
+    margin:0!important;
+    padding:5px 7px calc(5px + env(safe-area-inset-bottom))!important;
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    justify-content:flex-start!important;
+    gap:6px!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    white-space:nowrap;
+    scrollbar-width:none;
+    border:1px solid var(--line)!important;
+    border-radius:7px!important;
+    background:color-mix(in srgb,var(--paper) 97%,transparent)!important;
+    box-shadow:0 6px 22px color-mix(in srgb,var(--ink) 8%,transparent)!important;
+  }
+  body[data-graph-mode="atlas"] .atlas-controls::-webkit-scrollbar{display:none}
+  body[data-graph-mode="atlas"] .atlas-controls-title{display:none!important}
+  body[data-graph-mode="atlas"] .atlas-controls label,
+  body[data-graph-mode="atlas"] .atlas-controls button{
+    flex:0 0 auto!important;
+    min-height:34px!important;
+  }
+  body[data-graph-mode="atlas"] .atlas-controls label{
+    padding-inline:4px;
+    font-size:9px!important;
+  }
+  body[data-graph-mode="atlas"] .atlas-controls input{
+    width:15px;
+    height:15px;
+  }
+  body[data-graph-mode="atlas"] .atlas-controls button{
+    padding:6px 9px!important;
+    font-size:9px!important;
+  }
+  body[data-graph-mode="atlas"] .atlas-controls #atlas-zoom-in,
+  body[data-graph-mode="atlas"] .atlas-controls #atlas-zoom-out{
+    width:36px!important;
+    font-size:15px!important;
+  }
+}
+
+@media (max-width:520px){
+  body:not([data-graph-mode="atlas"]) #site-graph,
+  body:not([data-graph-mode="atlas"]) .site-graph-svg{
+    width:820px!important;
+    min-width:820px!important;
+  }
+
+  body[data-graph-mode="overview"] .hero-copy{
+    width:calc(100vw - 88px)!important;
+  }
+  body[data-graph-mode="overview"] .hero .intro{
+    max-width:255px!important;
+  }
+
+  body[data-graph-mode="work"] .integrated-work-controls{
+    grid-template-columns:minmax(108px,.68fr) minmax(170px,1.32fr)!important;
+    gap:7px!important;
+  }
+}
+
+@media (max-width:900px) and (prefers-reduced-motion:reduce){
+  .site-graph-viewport{scroll-behavior:auto!important}
+}

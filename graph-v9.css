@@ -28,14 +28,6 @@ body.is-v9-transitioning #site-graph{
   cursor:default;
 }
 
-/* While the transition overlay owns the visible animation, the real renderer
-   must remain completely hidden. Inline opacity already does this in JS, but
-   this CSS guard prevents any late renderer frame from flashing nodes at its
-   own intermediate coordinates. */
-body.is-v9-transitioning #site-graph .profile-map-svg-v5 > g:not(.v9-transition-overlay){
-  opacity:0!important;
-}
-
 body.is-v9-transitioning .graph-routebar,
 body.is-v9-transitioning .integrated-work-controls{
   pointer-events:none;

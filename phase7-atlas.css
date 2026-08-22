@@ -1,4 +1,40 @@
-/* Phase 7 — Atlas semantic zoom, stable camera, Atlas entry affordance. */
+/* Phase 7 — semantic zoom, stable Atlas camera and interaction emphasis. */
+
+/* --------------------------------------------------------------------------
+   Overview: make the five primary destinations read as navigation, not dots.
+   -------------------------------------------------------------------------- */
+body[data-graph-mode="overview"] #site-graph .site-graph-node.is-section .site-graph-dot{
+  transform:scale(1.52);
+  stroke-width:2.15
+}
+body[data-graph-mode="overview"] #site-graph .site-graph-node.is-section:hover .site-graph-dot,
+body[data-graph-mode="overview"] #site-graph .site-graph-node.is-section:focus-visible .site-graph-dot{
+  transform:scale(1.82)
+}
+body[data-graph-mode="overview"] #site-graph .site-graph-node.is-section .site-graph-hit{
+  r:31px
+}
+body[data-graph-mode="overview"] #site-graph .site-graph-node.is-section .site-graph-label{
+  font-size:14.5px;
+  font-weight:800;
+  letter-spacing:-.012em
+}
+body[data-graph-mode="overview"] #site-graph .site-graph-node[data-node-id="stepan-chrast"] .site-graph-dot{
+  transform:scale(1.22);
+  stroke-width:2.35
+}
+body[data-graph-mode="overview"] #site-graph .site-graph-node[data-node-id="stepan-chrast"] .site-graph-label{
+  font-size:13px;
+  font-weight:790
+}
+/* Work sits close to the lower scene boundary; place its label above the dot. */
+body[data-graph-mode="overview"] #site-graph .site-graph-node[data-node-id="work"] .site-graph-label{
+  transform:translateY(-47px)
+}
+
+/* --------------------------------------------------------------------------
+   Atlas semantic LOD.
+   -------------------------------------------------------------------------- */
 body[data-graph-mode="atlas"] #site-graph .site-graph-node,
 body[data-graph-mode="atlas"] #site-graph .site-graph-edges path{
   transition:opacity .18s ease,filter .18s ease
@@ -7,9 +43,19 @@ body[data-graph-mode="atlas"] #site-graph .is-atlas-lod-hidden{
   opacity:0!important;
   pointer-events:none!important
 }
-body[data-graph-mode="atlas"][data-atlas-lod="near"] #site-graph .site-graph-edges path.is-cross-link.is-lateral.is-atlas-lod-hidden{
-  opacity:1!important;
-  pointer-events:auto!important
+/* At near zoom, primary cross-connections remain faintly visible so the
+   Connections toggle has an immediate, legible effect without recreating a
+   hairball. Focused connections still become strong through .is-lateral. */
+body[data-graph-mode="atlas"][data-atlas-lod="near"] #site-graph .site-graph-edges path.is-cross-link.is-atlas-lod-hidden:not(.is-secondary){
+  opacity:.16!important;
+  pointer-events:stroke!important
+}
+body[data-graph-mode="atlas"][data-atlas-lod="near"] #site-graph .site-graph-edges path.is-cross-link:not(.is-secondary):not(.is-lateral){
+  opacity:.16!important
+}
+body[data-graph-mode="atlas"] #site-graph .site-graph-edges path.is-cross-link.is-lateral{
+  opacity:.96!important;
+  stroke-width:1.9!important
 }
 body[data-graph-mode="atlas"][data-atlas-lod="far"] #site-graph .is-atlas-territory-node .site-graph-label,
 body[data-graph-mode="atlas"][data-atlas-lod="medium"] #site-graph .is-atlas-territory-node .site-graph-label,
@@ -19,39 +65,31 @@ body[data-graph-mode="atlas"][data-atlas-lod="near"] #site-graph .site-graph-met
   opacity:0!important
 }
 body[data-graph-mode="atlas"][data-atlas-lod="far"] #site-graph .site-graph-node[data-atlas-depth="1"] .site-graph-dot{
-  transform:scale(1.28);
+  transform:scale(1.32);
   transform-origin:center;
   transform-box:fill-box
 }
 body[data-graph-mode="atlas"][data-atlas-lod="medium"] #site-graph .site-graph-node[data-atlas-depth="1"] .site-graph-dot{
-  transform:scale(1.16);
+  transform:scale(1.2);
   transform-origin:center;
   transform-box:fill-box
 }
+
+/* Territory labels are screen-legible labels, not ordinary graph labels. */
 #site-graph .atlas-territory-label-layer{
   opacity:0;
   pointer-events:none
 }
-.profile-intro-graph .atlas-territory-label-layer{
-  display:none!important
-}
-body[data-graph-mode="atlas"] #site-graph .atlas-territory-label-layer{
-  opacity:1
-}
+.profile-intro-graph .atlas-territory-label-layer{display:none!important}
+body[data-graph-mode="atlas"] #site-graph .atlas-territory-label-layer{opacity:1}
 body[data-graph-mode="atlas"] #site-graph .atlas-territory-label{
   opacity:0;
   transition:opacity .18s ease
 }
 body[data-graph-mode="atlas"][data-atlas-lod="far"] #site-graph .atlas-territory-label,
-body[data-graph-mode="atlas"][data-atlas-lod="medium"] #site-graph .atlas-territory-label{
-  opacity:1
-}
-body[data-graph-mode="atlas"][data-atlas-lod="near"] #site-graph .atlas-territory-label{
-  opacity:.22
-}
-body[data-graph-mode="atlas"][data-atlas-lod="detail"] #site-graph .atlas-territory-label{
-  opacity:0
-}
+body[data-graph-mode="atlas"][data-atlas-lod="medium"] #site-graph .atlas-territory-label{opacity:1}
+body[data-graph-mode="atlas"][data-atlas-lod="near"] #site-graph .atlas-territory-label{opacity:.16}
+body[data-graph-mode="atlas"][data-atlas-lod="detail"] #site-graph .atlas-territory-label{opacity:0}
 .atlas-territory-title{
   fill:var(--ink);
   font:800 14px/1 var(--sans);
@@ -63,31 +101,166 @@ body[data-graph-mode="atlas"][data-atlas-lod="detail"] #site-graph .atlas-territ
 }
 .atlas-territory-count{
   fill:var(--muted);
-  font:700 8.5px/1 var(--sans);
-  letter-spacing:.08em;
+  font:700 8px/1 var(--sans);
+  letter-spacing:.075em;
   text-transform:uppercase;
   paint-order:stroke;
   stroke:var(--paper);
   stroke-width:4px
 }
-body[data-graph-mode="atlas"] #site-graph .site-graph-svg{
-  cursor:grab
+
+/* --------------------------------------------------------------------------
+   Atlas focus readability.
+   -------------------------------------------------------------------------- */
+body[data-graph-mode="atlas"] #site-graph .site-graph-label{
+  transition:fill .12s ease,opacity .12s ease,font-size .12s ease
 }
-body[data-graph-mode="atlas"] #site-graph .site-graph-svg.is-phase7-dragging{
-  cursor:grabbing
+body[data-graph-mode="atlas"] #site-graph .site-graph-node:hover .site-graph-label,
+body[data-graph-mode="atlas"] #site-graph .site-graph-node:focus-visible .site-graph-label,
+body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-atlas-origin .site-graph-label,
+body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-previewed .site-graph-label{
+  font-size:15.5px!important;
+  font-weight:820!important;
+  fill:var(--teal)!important
+}
+body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-upstream .site-graph-label,
+body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-downstream .site-graph-label,
+body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-lateral .site-graph-label{
+  font-size:12.7px;
+  font-weight:760
+}
+body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-muted-soft .site-graph-label{
+  opacity:.48
+}
+body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-atlas-origin .site-graph-dot,
+body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-previewed .site-graph-dot{
+  transform:scale(1.48)
 }
 
-/* Larger Atlas entry control: the glyph is deliberately a tiny tangled graph,
-   not a generic map icon, so it previews the actual interaction model. */
-.atlas-button.atlas-entry-v7{
-  min-width:205px;
-  min-height:68px;
-  display:grid!important;
-  grid-template-columns:88px 1fr;
+/* --------------------------------------------------------------------------
+   Atlas camera cursor.
+   -------------------------------------------------------------------------- */
+body[data-graph-mode="atlas"] #site-graph .site-graph-svg{cursor:grab}
+body[data-graph-mode="atlas"] #site-graph .site-graph-svg.is-phase7-dragging{cursor:grabbing}
+
+/* --------------------------------------------------------------------------
+   Atlas controls: layers first, camera second.
+   -------------------------------------------------------------------------- */
+body[data-graph-mode="atlas"] .atlas-controls{
+  max-width:610px!important;
+  gap:7px 9px!important;
+  padding:8px 10px!important;
+  border:1px solid color-mix(in srgb,var(--line) 88%,transparent)!important;
+  border-radius:8px!important;
+  background:color-mix(in srgb,var(--paper) 94%,transparent)!important;
+  box-shadow:0 7px 24px color-mix(in srgb,var(--ink) 6%,transparent)
+}
+body[data-graph-mode="atlas"] .atlas-controls-title{
+  color:var(--brown);
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.11em;
+  text-transform:uppercase
+}
+body[data-graph-mode="atlas"] .atlas-controls label{
+  display:inline-flex;
   align-items:center;
-  gap:10px;
-  padding:8px 14px 8px 9px!important;
-  border-radius:15px!important;
+  gap:4px;
+  min-height:26px;
+  white-space:nowrap;
+  color:var(--text-soft);
+  font-size:9px;
+  font-weight:680
+}
+body[data-graph-mode="atlas"] .atlas-controls input{
+  accent-color:var(--teal)
+}
+body[data-graph-mode="atlas"] .atlas-controls button{
+  min-height:26px;
+  padding:4px 7px;
+  border:1px solid transparent;
+  border-radius:5px!important;
+  background:transparent;
+  color:var(--muted);
+  font-size:9px
+}
+body[data-graph-mode="atlas"] .atlas-controls button:hover,
+body[data-graph-mode="atlas"] .atlas-controls button:focus-visible{
+  border-color:var(--line);
+  color:var(--teal)
+}
+body[data-graph-mode="atlas"] .atlas-controls .atlas-structure-only,
+body[data-graph-mode="atlas"] .atlas-controls #atlas-show-all{
+  color:var(--teal)
+}
+body[data-graph-mode="atlas"] .atlas-controls #atlas-fit{
+  margin-left:4px;
+  border-left-color:var(--line)
+}
+
+/* --------------------------------------------------------------------------
+   Compact Atlas inspector: content determines height on desktop.
+   -------------------------------------------------------------------------- */
+@media(min-width:901px){
+  body[data-graph-mode="atlas"] .scene-detail{
+    top:82px!important;
+    right:max(18px,calc((100vw - 1390px)/2))!important;
+    bottom:auto!important;
+    width:min(342px,calc(100vw - 36px))!important;
+    max-height:calc(100% - 126px)!important;
+    min-height:0!important;
+    padding:19px 20px 18px!important;
+    overflow:auto!important
+  }
+  body[data-graph-mode="atlas"] .scene-detail h2{
+    margin-top:3px;
+    margin-bottom:8px;
+    font-size:23px
+  }
+  body[data-graph-mode="atlas"] .scene-detail .detail-summary{
+    font-size:11.5px;
+    line-height:1.5
+  }
+  body[data-graph-mode="atlas"] .scene-detail .atlas-facts{
+    margin-top:13px
+  }
+  body[data-graph-mode="atlas"] .scene-detail .detail-list-title{
+    margin-top:15px
+  }
+  body[data-graph-mode="atlas"] .scene-detail .detail-node-list{
+    margin-top:6px;
+    gap:5px
+  }
+  body[data-graph-mode="atlas"] .scene-detail .detail-node-list button{
+    padding:5px 6px;
+    font-size:9px
+  }
+  body[data-graph-mode="atlas"] .scene-detail .detail-route-action{
+    margin-top:14px!important;
+    padding-top:4px
+  }
+}
+.atlas-repeat-click-hint{
+  margin:13px 0 0;
+  color:var(--muted);
+  font-size:9px;
+  line-height:1.4
+}
+
+/* --------------------------------------------------------------------------
+   Larger Atlas entry control. The icon previews the actual graph model.
+   -------------------------------------------------------------------------- */
+.atlas-button.atlas-entry-v7{
+  min-width:188px;
+  min-height:66px;
+  display:grid!important;
+  grid-template-columns:88px minmax(54px,1fr);
+  align-items:center;
+  gap:9px;
+  padding:7px 15px 7px 9px!important;
+  border:1px solid color-mix(in srgb,var(--line) 92%,transparent)!important;
+  border-radius:14px!important;
+  background:color-mix(in srgb,var(--paper) 90%,transparent)!important;
   text-align:left!important;
   overflow:hidden;
   position:relative;
@@ -98,8 +271,8 @@ body[data-graph-mode="atlas"] #site-graph .site-graph-svg.is-phase7-dragging{
   position:absolute;
   inset:0;
   z-index:-1;
-  background:radial-gradient(circle at 28% 48%,color-mix(in srgb,var(--teal) 10%,transparent),transparent 46%);
-  opacity:.55;
+  background:radial-gradient(circle at 28% 48%,color-mix(in srgb,var(--teal) 10%,transparent),transparent 48%);
+  opacity:.52;
   transition:opacity .18s ease,transform .24s cubic-bezier(.2,.72,.2,1)
 }
 .atlas-button.atlas-entry-v7:hover::before,
@@ -109,20 +282,13 @@ body[data-graph-mode="atlas"] #site-graph .site-graph-svg.is-phase7-dragging{
 }
 .atlas-entry-copy{
   display:flex;
-  min-width:0;
-  flex-direction:column;
-  gap:4px
+  align-items:center;
+  min-width:0
 }
 .atlas-entry-copy strong{
   color:var(--ink);
-  font:820 15px/1 var(--sans);
-  letter-spacing:-.02em
-}
-.atlas-entry-copy small{
-  color:var(--muted);
-  font:700 9px/1.15 var(--sans);
-  letter-spacing:.05em;
-  white-space:nowrap
+  font:820 16px/1 var(--sans);
+  letter-spacing:-.025em
 }
 .atlas-entry-glyph{
   width:88px;
@@ -167,28 +333,27 @@ body[data-graph-mode="atlas"] #site-graph .site-graph-svg.is-phase7-dragging{
 
 @media(max-width:900px){
   .atlas-button.atlas-entry-v7{
-    min-width:154px;
-    min-height:56px;
+    min-width:148px;
+    min-height:54px;
     grid-template-columns:58px 1fr;
     gap:7px;
     padding:6px 10px!important
   }
   .atlas-entry-glyph{width:58px;height:40px}
   .atlas-entry-copy strong{font-size:13px}
-  .atlas-entry-copy small{font-size:8px}
   .atlas-territory-title{font-size:12px}
   .atlas-territory-count{font-size:7.5px}
+  body[data-graph-mode="overview"] #site-graph .site-graph-node.is-section .site-graph-label{font-size:12.8px}
 }
 
 @media(prefers-reduced-motion:reduce){
   body[data-graph-mode="atlas"] #site-graph .site-graph-node,
   body[data-graph-mode="atlas"] #site-graph .site-graph-edges path,
   body[data-graph-mode="atlas"] #site-graph .atlas-territory-label,
+  body[data-graph-mode="atlas"] #site-graph .site-graph-label,
   .atlas-button.atlas-entry-v7::before{
     transition-duration:.01ms!important
   }
   .atlas-entry-glyph-edges line,
-  .atlas-entry-glyph-nodes circle{
-    animation:none!important
-  }
+  .atlas-entry-glyph-nodes circle{animation:none!important}
 }

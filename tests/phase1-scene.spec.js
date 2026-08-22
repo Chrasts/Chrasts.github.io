@@ -1,7 +1,10 @@
 const { test, expect } = require('@playwright/test');
 
 const settle = async page => {
-  await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
+  await page.waitForFunction(() =>
+    !document.body.classList.contains('is-v9-transitioning') &&
+    !document.body.classList.contains('is-atlas-handoff')
+  );
   await page.waitForTimeout(220);
 };
 

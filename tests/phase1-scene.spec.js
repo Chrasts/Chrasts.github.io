@@ -6,6 +6,7 @@ const settle = async page => {
 };
 
 const boot = async page => {
+  await page.addInitScript(() => sessionStorage.setItem('profileIntroSeen', 'true'));
   await page.route('https://cloud.umami.is/**', route => route.abort());
   await page.goto('/#overview');
   await page.waitForFunction(() => Boolean(window.ProfileScene?.manager));

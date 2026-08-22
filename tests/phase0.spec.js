@@ -14,6 +14,14 @@ const waitReady = async page => {
   await settle(page);
 };
 
+const unfoldRoot = async page => {
+  if (await page.evaluate(() => window.ProfileRootLanding?.isActive?.())) {
+    await page.locator('.root-node-trigger').click();
+    await page.waitForFunction(() => window.ProfileRootLanding.isActive() === false);
+    await page.waitForTimeout(120);
+  }
+};
+
 const invariants = async page => page.evaluate(() => window.ProfilePhase0.checkGraphInvariants());
 
 const expectHealthyGraph = async page => {
@@ -56,6 +64,7 @@ test.describe('Phase 0 desktop stability', () => {
 
     expect((await invariants(page)).mode).toBe('overview');
     await expectHealthyGraph(page);
+    await unfoldRoot(page);
 
     for (const route of ['work', 'knowledge', 'experience', 'education', 'about', 'overview', 'knowledge', 'overview']) {
       await goRoute(page, route);
@@ -68,6 +77,7 @@ test.describe('Phase 0 desktop stability', () => {
 
   test('second route activation is ignored while transition owns the scene', async ({ page }) => {
     await waitReady(page);
+    await unfoldRoot(page);
 
     await page.locator('#main-nav [data-route="knowledge"]').first().click({ force: true });
     await page.waitForFunction(() => document.body.classList.contains('is-v9-transitioning'));
@@ -80,6 +90,7 @@ test.describe('Phase 0 desktop stability', () => {
 
   test('Atlas has a non-collapsed graph and working fit/zoom/pan controls', async ({ page }) => {
     await waitReady(page);
+    await unfoldRoot(page);
     await goRoute(page, 'atlas');
 
     const before = await expectHealthyGraph(page);
@@ -119,6 +130,7 @@ test.describe('Phase 0 reduced motion', () => {
 
   test('route handoff never blanks the live renderer', async ({ page }) => {
     await waitReady(page);
+    await unfoldRoot(page);
     await page.locator('#main-nav [data-route="knowledge"]').first().click({ force: true });
     await page.waitForFunction(() => document.body.classList.contains('is-v9-transitioning'));
 
@@ -148,9 +160,7 @@ test.describe('Phase 0 mobile stability', () => {
     page.on('pageerror', error => pageErrors.push(error.message));
     await waitReady(page);
     await page.waitForFunction(() => Boolean(window.MobileProfileScene));
-    await page.locator('.root-node-trigger').click();
-    await page.waitForFunction(() => window.ProfileRootLanding.isActive() === false);
-    await page.waitForTimeout(180);
+    await unfoldRoot(page);
 
     const snapshot = await expectHealthyGraph(page);
     expect(snapshot.mobileBreakpoint).toBe(true);

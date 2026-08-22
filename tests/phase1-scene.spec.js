@@ -16,6 +16,14 @@ const boot = async page => {
   await page.waitForFunction(() => window.ProfileScene.manager.snapshot().objects.length >= 5);
 };
 
+const unfoldRoot = async page => {
+  if (await page.evaluate(() => window.ProfileRootLanding?.isActive?.())) {
+    await page.locator('.root-node-trigger').click();
+    await page.waitForFunction(() => window.ProfileRootLanding.isActive() === false);
+    await page.waitForTimeout(120);
+  }
+};
+
 const goRoute = async (page, route) => {
   await page.locator(`#main-nav [data-route="${route}"]`).first().click({ force: true });
   await page.waitForFunction(expected => document.body.dataset.graphRoute === expected, route);
@@ -68,6 +76,7 @@ test.describe('Phase 1 scene architecture — desktop', () => {
 
   test('Work and Atlas select their declared objects and camera adapters', async ({ page }) => {
     await boot(page);
+    await unfoldRoot(page);
 
     await goRoute(page, 'work');
     let snapshot = await page.evaluate(() => window.ProfileScene.manager.snapshot());
@@ -87,6 +96,7 @@ test.describe('Phase 1 scene architecture — desktop', () => {
 
   test('legacy graph transition is surfaced through TransitionCoordinator hooks', async ({ page }) => {
     await boot(page);
+    await unfoldRoot(page);
 
     const phases = [];
     await page.exposeFunction('recordScenePhase', phase => phases.push(phase));
@@ -113,6 +123,7 @@ test.describe('Phase 1 scene architecture — desktop', () => {
 
   test('Phase 0 graph invariants remain healthy with the scene layer active', async ({ page }) => {
     await boot(page);
+    await unfoldRoot(page);
     for (const route of ['knowledge', 'overview', 'work', 'overview', 'atlas', 'overview']) {
       await goRoute(page, route);
       const state = await page.evaluate(() => window.ProfilePhase0.checkGraphInvariants());
@@ -142,7 +153,11 @@ test.describe('Phase 1 scene architecture — mobile', () => {
     await expect(page.locator('.hero-copy')).toHaveAttribute('data-scene-placement', 'identity-copy-centre');
     await expect(page.locator('.hero-visual.profile-identity')).toHaveAttribute('data-scene-placement', 'identity-portrait-top');
 
-    await page.locator('#main-nav [data-route="work"]').first().click({ force: true });
+    await unfoldRoot(page);
+    await expect(page.locator('.menu-button')).toBeVisible();
+    await page.locator('.menu-button').click();
+    await expect(page.locator('#main-nav')).toHaveClass(/open/);
+    await page.locator('#main-nav [data-route="work"]').first().click();
     await page.waitForFunction(() => document.body.dataset.graphMode === 'work');
     await settle(page);
     await expect(page.locator('.integrated-work-controls')).toHaveAttribute('data-scene-placement', 'control-sheet');

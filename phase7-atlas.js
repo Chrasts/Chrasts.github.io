@@ -319,11 +319,7 @@
     const nextScale = clamp(oldScale * factor, 0.48, 2.8);
     const graphX = (px - camera.targetX) / oldScale;
     const graphY = (py - camera.targetY) / oldScale;
-    setCamera({
-      x: px - graphX * nextScale,
-      y: py - graphY * nextScale,
-      scale: nextScale
-    }, { immediate });
+    setCamera({ x: px - graphX * nextScale, y: py - graphY * nextScale, scale: nextScale }, { immediate });
   };
   const zoomCentre = factor => {
     const svg = graphSvg();
@@ -364,10 +360,7 @@
     preservedCamera = { x: camera.x, y: camera.y, scale: camera.scale };
     preserveCameraUntil = performance.now() + duration;
   };
-  const restorePreservedCamera = () => {
-    if (!preservedCamera) return;
-    setCamera(preservedCamera, { immediate: true });
-  };
+  const restorePreservedCamera = () => preservedCamera && setCamera(preservedCamera, { immediate: true });
 
   /* --------------------------------------------------------------------
      Atlas relation semantics and controls.
@@ -391,7 +384,10 @@
       });
     }
     liveNodes().forEach(node => {
-      if (node.classList.contains('is-lateral') && !allowed.has(node.dataset.nodeId)) node.classList.remove('is-lateral');
+      const lateral = allowed.has(node.dataset.nodeId);
+      if (node.classList.contains('is-lateral') && !lateral) node.classList.remove('is-lateral');
+      const relevant = node === origin || node.classList.contains('is-upstream') || node.classList.contains('is-downstream') || lateral;
+      node.classList.toggle('is-muted-soft', !relevant);
     });
     liveEdges().forEach(edge => {
       if (!crossEnabled && edge.classList.contains('is-lateral')) edge.classList.remove('is-lateral');
@@ -430,7 +426,6 @@
     const overview = controls.querySelector('.atlas-overview');
     if (overview) overview.textContent = 'Overview';
   };
-
   const updateAtlasHelp = () => {
     if (document.body?.dataset.graphMode !== 'atlas') return;
     const help = document.querySelector('#site-graph-help');
@@ -438,7 +433,7 @@
   };
 
   /* --------------------------------------------------------------------
-     Inspector wording / click-away / second-click focus.
+     Inspector wording / click-away / second-activation focus.
      -------------------------------------------------------------------- */
   const clearAtlasSelection = () => {
     const detail = document.querySelector('#site-detail-panel');
@@ -446,7 +441,6 @@
     if (!selected && (detail?.hidden ?? true)) return false;
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     liveNodes().forEach(node => node.classList.remove('is-previewed'));
-    scrubLateralHighlight();
     return true;
   };
   const decorateInspector = () => {
@@ -461,21 +455,20 @@
       else if (text === 'Cross-links') title.textContent = 'Connections';
     });
     const action = detail.querySelector('.atlas-open-local');
-    if (action) {
-      const selectedId = document.querySelector('#site-graph .site-graph-node.is-previewed[data-node-id]')?.dataset.nodeId;
-      action.textContent = selectedId === rootId ? 'Back to overview' : selectedId === 'work' ? 'Open Work' : 'Explore this section';
-      if (!detail.querySelector('.atlas-repeat-click-hint')) {
-        const hint = document.createElement('p');
-        hint.className = 'atlas-repeat-click-hint';
-        hint.textContent = 'Click the selected node again to centre and zoom.';
-        detail.insertBefore(hint, action);
-      }
+    if (!action) return;
+    const selectedId = document.querySelector('#site-graph .site-graph-node.is-previewed[data-node-id]')?.dataset.nodeId;
+    action.textContent = selectedId === rootId ? 'Back to overview' : selectedId === 'work' ? 'Open Work' : 'Explore this section';
+    if (!detail.querySelector('.atlas-repeat-click-hint')) {
+      const hint = document.createElement('p');
+      hint.className = 'atlas-repeat-click-hint';
+      hint.textContent = 'Click the selected node again to centre and zoom.';
+      detail.insertBefore(hint, action);
     }
   };
 
   /* --------------------------------------------------------------------
-     Atlas label collision pass. Coordinates stay canonical; only text gets
-     small deterministic local offsets when labels overlap.
+     Atlas label collision pass. Canonical node coordinates stay untouched;
+     only text receives small local offsets when bounding boxes intersect.
      -------------------------------------------------------------------- */
   let collisionFrame = 0;
   const clearAtlasLabelOffsets = () => {
@@ -498,14 +491,12 @@
       return;
     }
     clearAtlasLabelOffsets();
+    const priority = item => item.node.classList.contains('is-previewed') ? -2 : item.node.dataset.nodeId === rootId ? -1 : sections.includes(item.node.dataset.nodeId) ? 0 : (depth.get(item.node.dataset.nodeId) ?? 99);
     const candidates = liveNodes()
       .filter(node => !node.classList.contains('is-atlas-lod-hidden'))
       .map(node => ({ node, label: node.querySelector('.site-graph-label') }))
       .filter(item => item.label && getComputedStyle(item.label).opacity !== '0')
-      .sort((a, b) => {
-        const priority = item => item.node.classList.contains('is-previewed') ? -2 : item.node.dataset.nodeId === rootId ? -1 : sections.includes(item.node.dataset.nodeId) ? 0 : (depth.get(item.node.dataset.nodeId) ?? 99);
-        return priority(a) - priority(b) || a.node.dataset.nodeId.localeCompare(b.node.dataset.nodeId);
-      });
+      .sort((a, b) => priority(a) - priority(b) || a.node.dataset.nodeId.localeCompare(b.node.dataset.nodeId));
     const placed = [];
     candidates.forEach(({ node, label }) => {
       let rect = label.getBoundingClientRect();
@@ -517,9 +508,8 @@
       const section = geometry.sectionFor(node.dataset.nodeId);
       const vector = geometry.compass[section] || { x: 1, y: 0 };
       const perpendicular = { x: -vector.y, y: vector.x };
-      const offsets = [
-        16, -16, 30, -30, 44, -44
-      ].map(amount => ({ x: perpendicular.x * amount, y: perpendicular.y * amount }))
+      const offsets = [16, -16, 30, -30, 44, -44]
+        .map(amount => ({ x: perpendicular.x * amount, y: perpendicular.y * amount }))
         .concat([
           { x: vector.x * 18, y: vector.y * 18 },
           { x: -vector.x * 18, y: -vector.y * 18 },
@@ -559,7 +549,6 @@
     button.classList.add('atlas-entry-v7');
     button.setAttribute('aria-label', 'Open Atlas, the full profile map');
     button.replaceChildren();
-
     const glyph = document.createElementNS(svgNS, 'svg');
     glyph.classList.add('atlas-entry-glyph');
     glyph.setAttribute('viewBox', '0 0 88 52');
@@ -638,7 +627,7 @@
   }
 
   const detail = document.querySelector('#site-detail-panel');
-  if (detail) new MutationObserver(() => requestAnimationFrame(decorateInspector)).observe(detail, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'class'] });
+  if (detail) new MutationObserver(decorateInspector).observe(detail, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'class'] });
 
   const cameraObserver = new MutationObserver(() => {
     if (cameraWriting || !desktop.matches || document.body?.dataset.graphMode !== 'atlas') return;
@@ -666,8 +655,7 @@
   addEventListener('resize', scheduleLabelCollisionPass);
 
   document.addEventListener('change', event => {
-    if (document.body?.dataset.graphMode !== 'atlas') return;
-    if (!event.target.closest?.('#atlas-controls input')) return;
+    if (document.body?.dataset.graphMode !== 'atlas' || !event.target.closest?.('#atlas-controls input')) return;
     freezeCameraForRerender();
     requestAnimationFrame(() => {
       decorateAtlasControls();
@@ -677,6 +665,13 @@
 
   document.addEventListener('click', event => {
     if (document.body?.dataset.graphMode !== 'atlas') return;
+
+    const mapTarget = event.target.closest?.('#site-graph .site-graph-svg');
+    if (mapTarget && performance.now() < suppressAtlasClickUntil) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return;
+    }
 
     const controlsPreset = event.target.closest?.('.atlas-structure-only,#atlas-show-all');
     if (controlsPreset) {
@@ -701,13 +696,7 @@
       return;
     }
 
-    const svg = event.target.closest?.('#site-graph .site-graph-svg');
-    if (svg && !node) {
-      if (performance.now() < suppressAtlasClickUntil) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        return;
-      }
+    if (mapTarget && !node) {
       clearAtlasSelection();
       return;
     }
@@ -721,9 +710,17 @@
     else zoomCentre(1 / 1.28);
   }, true);
 
+  document.addEventListener('keydown', event => {
+    if (document.body?.dataset.graphMode !== 'atlas' || (event.key !== 'Enter' && event.key !== ' ')) return;
+    const node = event.target.closest?.('#site-graph .site-graph-node.is-previewed[data-node-id]');
+    if (!node) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    focusNode(node.dataset.nodeId);
+  }, true);
+
   document.addEventListener('wheel', event => {
-    if (!desktop.matches || document.body?.dataset.graphMode !== 'atlas') return;
-    if (!event.target.closest?.('#site-graph .site-graph-svg')) return;
+    if (!desktop.matches || document.body?.dataset.graphMode !== 'atlas' || !event.target.closest?.('#site-graph .site-graph-svg')) return;
     event.preventDefault();
     event.stopImmediatePropagation();
     const delta = Math.max(-180, Math.min(180, event.deltaMode === 1 ? event.deltaY * 16 : event.deltaY));

@@ -1,8 +1,6 @@
-name: Phase 0 browser smoke
+name: Profile browser smoke
 
 on:
-  push:
-    branches: [phase0-stability-hardening]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -31,16 +29,16 @@ jobs:
 
       - name: Start static site
         run: |
-          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/phase0-http.log 2>&1 &
-          echo $! > /tmp/phase0-http.pid
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/profile-http.log 2>&1 &
+          echo $! > /tmp/profile-http.pid
           for i in {1..30}; do
             if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then
               exit 0
             fi
             sleep 1
           done
-          cat /tmp/phase0-http.log
+          cat /tmp/profile-http.log
           exit 1
 
-      - name: Run Phase 0 smoke tests
+      - name: Run browser smoke tests
         run: npx playwright test

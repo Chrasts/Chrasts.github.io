@@ -49,7 +49,7 @@
           "image": "https://chrasts.github.io/assets/stepan-chrast.jpg",
           "jobTitle": "Junior Data Analyst and Researcher",
           "homeLocation": {"@type": "Place", "name": "Prague, Czechia"},
-          "alumniOf": {"@type": "CollegeOrUniversity", "name": "Charles University", "sameAs": "https://cuni.cz/"},
+          "alumniOf": {"@type":"CollegeOrUniversity", "name":"Charles University", "sameAs":"https://cuni.cz/"},
           "sameAs": ["https://github.com/Chrasts", "https://www.linkedin.com/in/stepan-chrast"],
           "knowsAbout": ["Data analysis", "Research", "Mathematical logic", "Python", "SQL"]
         }
@@ -63,10 +63,20 @@
         const systemTheme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         document.documentElement.dataset.theme = savedTheme || systemTheme;
       } catch (_) {}
+
+      try {
+        const route = (location.hash || '#overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
+        const seen = sessionStorage.getItem('profileIntroSeen') === 'true';
+        document.documentElement.dataset.profileIntro = route === 'overview' && !seen ? 'pending' : 'bypass';
+      } catch (_) {
+        document.documentElement.dataset.profileIntro = 'bypass';
+      }
     })();
   </script>
   <script defer src="https://cloud.umami.is/script.js" data-website-id="8dd5c849-df0f-40a5-b4e1-3fbcb38f425b"></script>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="root-landing.css">
+  <link rel="stylesheet" href="intro-animation.css">
 </head>
 <body id="top">
   <a class="skip-link" href="#main-content">Skip to content</a>

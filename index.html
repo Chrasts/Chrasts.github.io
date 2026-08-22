@@ -79,6 +79,7 @@
   <link rel="stylesheet" href="intro-animation.css">
   <link rel="stylesheet" href="cross-link-travel.css">
   <link rel="stylesheet" href="radial-geometry.css">
+  <link rel="stylesheet" href="mobile.css">
 </head>
 <body id="top">
   <a class="skip-link" href="#main-content">Skip to content</a>
@@ -118,139 +119,84 @@
 
       <div class="hero-visual profile-identity" aria-label="Profile identity">
         <figure class="portrait">
-          <img src="assets/stepan-chrast.jpg" alt="Portrait of Stepan Chrast" width="720" height="540">
+          <img src="assets/stepan-chrast.jpg" alt="Portrait of Štěpán Chrast">
         </figure>
-        <span class="identity-ring" aria-hidden="true"></span>
       </div>
     </section>
 
-    <section class="site-explorer wrap" id="site-explorer" aria-label="Interactive profile graph">
-      <div class="graph-routebar">
-        <nav class="graph-breadcrumb" id="graph-breadcrumb" aria-label="Graph path"></nav>
-        <button class="atlas-button" type="button" data-route="atlas" aria-label="Open Atlas, the full profile graph">Atlas <span>Full graph</span></button>
-      </div>
+    <section class="site-explorer" id="site-explorer" aria-label="Interactive profile map">
       <div class="scene-canvas">
-        <section class="site-graph-panel" aria-labelledby="site-graph-title">
+        <div class="graph-routebar">
+          <nav class="graph-breadcrumb" id="graph-breadcrumb" aria-label="Current location"></nav>
+          <button class="atlas-button" type="button" data-route="atlas">Atlas</button>
+        </div>
+        <section class="site-graph-panel">
           <div class="site-graph-heading">
-            <p class="work-side-title" id="site-graph-kicker">Profile graph</p>
-            <h2 id="site-graph-title">Explore the profile</h2>
+            <p id="site-graph-kicker"></p>
+            <h2 id="site-graph-title"></h2>
           </div>
-          <div class="atlas-controls" id="atlas-controls" aria-label="Atlas structure controls" hidden>
-            <span class="atlas-controls-title">Structure</span>
-            <label><input type="checkbox" id="atlas-hierarchy" checked> Hierarchy</label>
-            <label><input type="checkbox" id="atlas-crosslinks" checked> Cross-links</label>
-            <label><input type="checkbox" id="atlas-secondary"> Secondary relations</label>
-            <button class="atlas-show-all" id="atlas-show-all" type="button">Show everything</button>
-            <button id="atlas-fit" type="button">Fit all</button>
-            <button id="atlas-zoom-out" type="button" aria-label="Zoom out">-</button>
-            <button id="atlas-zoom-in" type="button" aria-label="Zoom in">+</button>
-            <button id="atlas-reset" type="button">Reset view</button>
-            <button class="atlas-overview" type="button" data-route="overview">Back to overview</button>
-          </div>
+          <p class="site-graph-help" id="site-graph-help"></p>
           <div class="site-graph-viewport">
             <div id="site-graph"></div>
           </div>
-          <p class="site-graph-help" id="site-graph-help">Select an area to explore its local structure.</p>
-          <div class="sr-only" id="site-graph-status" aria-live="polite"></div>
+          <div class="atlas-controls" id="atlas-controls" hidden>
+            <span class="atlas-controls-title">Layers</span>
+            <label><input type="checkbox" id="atlas-hierarchy" checked> Hierarchy</label>
+            <label><input type="checkbox" id="atlas-crosslinks" checked> Cross-links</label>
+            <label><input type="checkbox" id="atlas-secondary"> Secondary</label>
+            <button type="button" id="atlas-show-all">Show all</button>
+            <button type="button" id="atlas-fit">Fit</button>
+            <button type="button" id="atlas-zoom-in">+</button>
+            <button type="button" id="atlas-zoom-out">−</button>
+            <button type="button" id="atlas-reset">Reset</button>
+          </div>
+          <p class="sr-only" id="site-graph-status" aria-live="polite"></p>
         </section>
-        <aside class="site-detail-panel scene-detail" id="site-detail-panel" aria-live="polite" aria-label="Profile detail" hidden></aside>
+        <aside class="scene-detail" id="site-detail-panel" hidden></aside>
       </div>
     </section>
 
-    <noscript>
-      <section class="section wrap no-js-profile-summary" aria-labelledby="profile-summary-title">
-        <div class="section-title"><h2 id="profile-summary-title">Profile map</h2></div>
-        <section><h3>Work</h3><p>Selected analytical, research and software projects are listed below.</p></section>
-        <section><h3>Knowledge</h3><p>Mathematics and logic, data and computing, and research practice.</p></section>
-        <section><h3>Experience</h3><p>Research support, customer-facing operations and event coordination.</p></section>
-        <section><h3>Education</h3><p>Logic at Charles University, ESSLLI, the prg.ai Minor and additional credentials.</p></section>
-        <section><h3>About</h3><p>Research interests, philosophy, games and RPG, music, and evidence-oriented inquiry.</p></section>
-      </section>
-    </noscript>
-
-    <section class="section wrap route-view" id="work">
-      <div class="route-view-header" id="work-route-header" hidden>
-        <nav class="graph-breadcrumb" id="work-breadcrumb" aria-label="Graph path"></nav>
-        <button class="route-back" id="work-route-back" type="button" data-route="overview">Back to profile graph</button>
-      </div>
-      <div class="section-title"><h2>Selected work</h2></div>
-
+    <section class="section wrap work-section legacy-section" id="work">
+      <div class="section-title"><h2>Work</h2></div>
       <div class="work-intro">
-        <p id="work-help">Choose a context or theme, then select a project to inspect it. The map shows how the work relates.</p>
-        <div class="work-summary">
-          <span id="work-result-count" aria-live="polite">9 projects</span>
-          <button id="work-reset" class="work-reset" type="button" disabled>Reset filters</button>
-        </div>
+        <p>Selected projects grouped by the themes and working contexts they share.</p>
+        <div class="work-summary"><span id="work-result-count"></span><button class="work-reset" id="work-reset" type="button">Reset filters</button></div>
       </div>
 
-      <div class="work-controls" role="region" aria-label="Work filters" aria-describedby="work-help">
-        <div class="work-control-group work-context-control" role="group" aria-labelledby="work-context-title">
-          <p class="work-side-title" id="work-context-title">Context</p>
-          <div id="work-context-filters" class="work-context-filters"></div>
+      <div class="work-controls" aria-label="Work filters">
+        <div class="work-control-group work-context-control">
+          <p class="work-side-title">Context</p>
+          <div class="work-context-filters" id="work-context-filters"></div>
         </div>
-
-        <div class="work-control-group work-theme-control" role="group" aria-labelledby="work-theme-title">
-          <p class="work-side-title" id="work-theme-title">Themes</p>
-          <div id="work-theme-filters" class="work-theme-filters"></div>
+        <div class="work-control-group work-theme-control">
+          <p class="work-side-title">Themes</p>
+          <div class="work-theme-filters" id="work-theme-filters"></div>
         </div>
-
-        <div class="work-control-group theme-match-control" role="group" aria-labelledby="theme-match-title">
-          <span class="theme-match-label" id="theme-match-title">Match projects with</span>
+        <div class="work-control-group theme-match-control">
+          <span class="theme-match-label">Match</span>
           <div class="theme-match-buttons">
-            <div class="theme-match-choice">
-              <button type="button" class="theme-match-button" data-theme-mode="any" aria-pressed="true" title="Show projects matching at least one selected theme" disabled>Any selected</button>
-              <span class="theme-logic-symbol" aria-hidden="true">∨</span>
-            </div>
-            <div class="theme-match-choice">
-              <button type="button" class="theme-match-button" data-theme-mode="all" aria-pressed="false" title="Show only projects matching every selected theme" disabled>All selected</button>
-              <span class="theme-logic-symbol" aria-hidden="true">∧</span>
-            </div>
+            <div class="theme-match-choice"><button type="button" class="theme-match-button" data-theme-mode="any" aria-pressed="true">Any selected</button><span class="theme-logic-symbol" aria-hidden="true">∨</span></div>
+            <div class="theme-match-choice"><button type="button" class="theme-match-button" data-theme-mode="all" aria-pressed="false">All selected</button><span class="theme-logic-symbol" aria-hidden="true">∧</span></div>
           </div>
         </div>
       </div>
 
       <div class="work-stage">
-        <section class="work-map-panel" aria-labelledby="work-map-title">
+        <div class="work-map-panel">
           <div class="work-panel-heading">
-            <div>
-              <p class="work-side-title">Concept map</p>
-              <h3 id="work-map-title">Relationships between projects</h3>
-              <p class="work-map-note">Projects share a position when their themes overlap; this does not imply a direct relationship between them.</p>
-            </div>
-            <button class="work-map-toggle" id="work-map-toggle" type="button" aria-expanded="true" aria-controls="work-map-content">Hide map</button>
+            <div><p class="work-side-title">Concept lattice</p><h3>Shared themes</h3><p class="work-map-note">Nodes group projects by common theme combinations.</p></div>
+            <button class="work-map-toggle" id="work-map-toggle" type="button" aria-expanded="true">Hide map</button>
           </div>
-          <div id="work-map-content" class="work-map-content">
-            <div class="work-lattice-shell">
-              <div class="work-lattice-viewport">
-                <div id="work-lattice"></div>
-              </div>
-              <div class="sr-only" id="lattice-status" aria-live="polite"></div>
-            </div>
-          </div>
-        </section>
-
-        <aside class="work-detail-panel" aria-label="Project explorer">
-          <div class="work-detail-heading">
-            <p class="work-side-title">Projects</p>
-            <span class="work-detail-hint">Select to inspect</span>
-          </div>
+          <div class="work-map-content" id="work-map-content"><div id="work-lattice"></div></div>
+          <p class="sr-only" id="lattice-status" aria-live="polite"></p>
+        </div>
+        <aside class="work-detail-panel">
+          <div class="work-detail-heading"><p class="work-side-title">Projects</p><span class="work-detail-hint">Select a project</span></div>
           <div class="work-project-tabs" id="work-project-tabs"></div>
           <div class="work-project-detail" id="work-project-detail"></div>
         </aside>
       </div>
-
-      <noscript>
-        <div class="work-noscript">
-          <p>The interactive project explorer requires JavaScript. Public work remains available here:</p>
-          <ul>
-            <li><a href="https://github.com/Chrasts/insolvency-success-analysis">Insolvency Event-Log Analysis</a></li>
-            <li><a href="https://chrasts.github.io/Modal_Logic_Educational_Game/">Modal Logic Lab</a></li>
-            <li><a href="https://github.com/Chrasts/algebraic_logic-SQL_database">Algebraic Logic SQL Schema</a></li>
-            <li><a href="https://github.com/Chrasts/Filming-project-scene-Splitter">Film Scene Character Splitter</a></li>
-            <li><a href="https://github.com/Chrasts/The-Congruence-Lattice-Problem-A-Historical-Survey">The Congruence Lattice Problem — Historical Survey</a></li>
-          </ul>
-        </div>
-      </noscript>
+      <noscript class="work-noscript"><p>JavaScript is required for the interactive Work explorer.</p></noscript>
     </section>
 
     <section class="section background-section legacy-section" id="background">
@@ -260,36 +206,17 @@
           <div>
             <h3 class="column-title">Experience</h3>
             <div class="record-list">
-              <article>
-                <div class="record-meta">Jul 2026 - Present</div>
-                <div><h4>Data Analysis & Research Intern</h4><p class="record-org">České priority · Part-time</p><p>Analytical and research support for evidence-informed public-interest projects, including questionnaire data processing and quality review.</p></div>
-              </article>
-              <article>
-                <div class="record-meta">Nov 2019 - May 2023</div>
-                <div><h4>Game Master</h4><p class="record-org">EscapeTheRoom.cz · Part-time</p><p>Customer-facing operations, incident handling and structured issue logging under time pressure.</p></div>
-              </article>
-              <article>
-                <div class="record-meta">Mar 2020 - Jul 2021</div>
-                <div><h4>Event Co-lead · Student Ball</h4><p class="record-org">Self-organised project · Two-person team</p><p>Budgeting, cash-flow planning, sponsorship, transaction reconciliation and event operations.</p></div>
-              </article>
+              <article><div class="record-meta">Jul 2026 - Present</div><div><h4>Data Analysis & Research Intern</h4><p class="record-org">České priority · Part-time</p><p>Analytical and research support for evidence-informed public-interest projects, including questionnaire data processing and quality review.</p></div></article>
+              <article><div class="record-meta">Nov 2019 - May 2023</div><div><h4>Game Master</h4><p class="record-org">EscapeTheRoom.cz · Part-time</p><p>Customer-facing operations, incident handling and structured issue logging under time pressure.</p></div></article>
+              <article><div class="record-meta">Mar 2020 - Jul 2021</div><div><h4>Event Co-lead · Student Ball</h4><p class="record-org">Self-organised project · Two-person team</p><p>Budgeting, cash-flow planning, sponsorship, transaction reconciliation and event operations.</p></div></article>
             </div>
           </div>
-
           <div>
             <h3 class="column-title">Education</h3>
             <div class="record-list">
-              <article>
-                <div class="record-meta">2022 - 2026</div>
-                <div><h4>Bachelor’s programme in Logic</h4><p class="record-org">Charles University</p><p>Algebraic logic, universal algebra and lattice theory. Thesis on algebraic structures related to quantum logic.</p></div>
-              </article>
-              <article>
-                <div class="record-meta">2026/27</div>
-                <div><h4>prg.ai Minor</h4><p class="record-org">Admitted</p><p>Inter-university AI programme connecting courses across Charles University and Czech Technical University.</p><a href="https://prg.ai/minor/" target="_blank" rel="noreferrer">Programme ↗</a></div>
-              </article>
-              <article>
-                <div class="record-meta">3-14 Aug 2026</div>
-                <div><h4>ESSLLI 2026</h4><p class="record-org">Participant & volunteer</p><p>Coursework in logic for AI, SAT/SMT solving, higher-order logic, language models and algebraic methods.</p><a href="https://2026.esslli.eu/" target="_blank" rel="noreferrer">ESSLLI ↗</a></div>
-              </article>
+              <article><div class="record-meta">2022 - 2026</div><div><h4>Bachelor’s programme in Logic</h4><p class="record-org">Charles University</p><p>Algebraic logic, universal algebra and lattice theory. Thesis on algebraic structures related to quantum logic.</p></div></article>
+              <article><div class="record-meta">2026/27</div><div><h4>prg.ai Minor</h4><p class="record-org">Admitted</p><p>Inter-university AI programme connecting courses across Charles University and Czech Technical University.</p><a href="https://prg.ai/minor/" target="_blank" rel="noreferrer">Programme ↗</a></div></article>
+              <article><div class="record-meta">3-14 Aug 2026</div><div><h4>ESSLLI 2026</h4><p class="record-org">Participant & volunteer</p><p>Coursework in logic for AI, SAT/SMT solving, higher-order logic, language models and algebraic methods.</p><a href="https://2026.esslli.eu/" target="_blank" rel="noreferrer">ESSLLI ↗</a></div></article>
             </div>
           </div>
         </div>
@@ -299,32 +226,17 @@
     <section class="section wrap methods-section legacy-section" id="methods">
       <div class="section-title"><h2>Methods</h2></div>
       <div class="methods-grid">
-        <div class="methods-item">
-          <h3>Analysis</h3>
-          <p>Data cleaning · relational joins · missing-data handling · descriptive analysis · questionnaire quality checks · reproducible reporting</p>
-        </div>
-        <div class="methods-item">
-          <h3>Tools</h3>
-          <p>Python · pandas · SQL · MySQL · Excel · Matplotlib · Git · LaTeX</p>
-        </div>
-        <div class="methods-item credentials-item">
-          <h3>Selected credentials</h3>
-          <p>Ethics of AI, University of Helsinki · Introduction to Artificial Intelligence, University of Helsinki · Cambridge English B2 First</p>
-        </div>
+        <div class="methods-item"><h3>Analysis</h3><p>Data cleaning · relational joins · missing-data handling · descriptive analysis · questionnaire quality checks · reproducible reporting</p></div>
+        <div class="methods-item"><h3>Tools</h3><p>Python · pandas · SQL · MySQL · Excel · Matplotlib · Git · LaTeX</p></div>
+        <div class="methods-item credentials-item"><h3>Selected credentials</h3><p>Ethics of AI, University of Helsinki · Introduction to Artificial Intelligence, University of Helsinki · Cambridge English B2 First</p></div>
       </div>
     </section>
 
     <section class="contact-section legacy-section" id="contact">
       <div class="wrap contact-grid">
-        <div>
-          <div class="section-title contact-title"><h2>Contact</h2></div>
-          <p>Open to analytical and research opportunities.</p>
-        </div>
+        <div><div class="section-title contact-title"><h2>Contact</h2></div><p>Open to analytical and research opportunities.</p></div>
         <div class="contact-links">
-          <div class="contact-email">
-            <a href="mailto:chraststepan@gmail.com">chraststepan@gmail.com</a>
-            <button class="copy-email" type="button" data-email="chraststepan@gmail.com">Copy</button>
-          </div>
+          <div class="contact-email"><a href="mailto:chraststepan@gmail.com">chraststepan@gmail.com</a><button class="copy-email" type="button" data-email="chraststepan@gmail.com">Copy</button></div>
           <a href="https://github.com/Chrasts" target="_blank" rel="noreferrer">GitHub ↗</a>
           <a href="https://www.linkedin.com/in/stepan-chrast" target="_blank" rel="noreferrer">LinkedIn ↗</a>
         </div>
@@ -345,5 +257,6 @@
   <script src="cross-link-travel-v2.js"></script>
   <script src="scene-legacy-bridge.js"></script>
   <script src="script.js"></script>
+  <script src="mobile-app.js"></script>
 </body>
 </html>

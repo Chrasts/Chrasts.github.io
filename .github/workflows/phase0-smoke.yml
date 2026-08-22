@@ -1,8 +1,8 @@
-name: Phase 0 browser smoke
+name: Portfolio browser smoke
 
 on:
   push:
-    branches: [phase0-stability-hardening]
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -31,16 +31,16 @@ jobs:
 
       - name: Start static site
         run: |
-          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/phase0-http.log 2>&1 &
-          echo $! > /tmp/phase0-http.pid
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/portfolio-http.log 2>&1 &
+          echo $! > /tmp/portfolio-http.pid
           for i in {1..30}; do
             if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then
               exit 0
             fi
             sleep 1
           done
-          cat /tmp/phase0-http.log
+          cat /tmp/portfolio-http.log
           exit 1
 
-      - name: Run Phase 0 smoke tests
+      - name: Run portfolio smoke tests
         run: npx playwright test

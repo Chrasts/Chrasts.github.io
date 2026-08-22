@@ -33,16 +33,20 @@
       '.work-theme-label-v5',
       '.work-project-anchor-v5',
       '.integrated-work-controls',
-      '.atlas-controls'
+      '.atlas-controls',
+      '.scene-detail',
+      '.mobile-graph-dock',
+      '.mobile-control-sheet'
     ].join(','))
   );
 
   /*
    * The current graph transition implementation owns one route transition at a
-   * time. Route controls as well as Work/Atlas controls can mutate the graph,
-   * so none of them may change renderer state while the transition overlay owns
-   * the scene. Otherwise location/hash or underlying geometry can move beneath
-   * an in-flight transition and make the final handoff inconsistent.
+   * time. Route controls, detail actions, Work/Atlas controls and mobile camera
+   * controls can mutate the graph or its camera, so none of them may change
+   * renderer state while the transition overlay owns the scene. Otherwise
+   * location/hash or underlying geometry can move beneath an in-flight
+   * transition and make the final handoff inconsistent.
    */
   const blockDuringTransition = event => {
     if (!document.body?.classList.contains('is-v9-transitioning')) return;

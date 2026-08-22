@@ -30,6 +30,7 @@
     target?.closest?.([
       '[data-route]',
       '.site-graph-node[data-node-id]',
+      '.site-graph-viewport',
       '.work-theme-label-v5',
       '.work-project-anchor-v5',
       '.integrated-work-controls',
@@ -42,11 +43,11 @@
 
   /*
    * The current graph transition implementation owns one route transition at a
-   * time. Route controls, detail actions, Work/Atlas controls and mobile camera
-   * controls can mutate the graph or its camera, so none of them may change
-   * renderer state while the transition overlay owns the scene. Otherwise
-   * location/hash or underlying geometry can move beneath an in-flight
-   * transition and make the final handoff inconsistent.
+   * time. Route controls, detail actions, Work/Atlas controls and camera
+   * controls/gestures can mutate the graph or its camera, so none of them may
+   * change renderer state while the transition overlay owns the scene.
+   * Otherwise location/hash or underlying geometry can move beneath an
+   * in-flight transition and make the final handoff inconsistent.
    */
   const blockDuringTransition = event => {
     if (!document.body?.classList.contains('is-v9-transitioning')) return;
@@ -57,6 +58,8 @@
 
   window.addEventListener('click', blockDuringTransition, true);
   window.addEventListener('change', blockDuringTransition, true);
+  window.addEventListener('pointerdown', blockDuringTransition, true);
+  window.addEventListener('wheel', blockDuringTransition, { capture: true, passive: false });
   window.addEventListener('keydown', event => {
     if (event.key !== 'Enter' && event.key !== ' ') return;
     blockDuringTransition(event);

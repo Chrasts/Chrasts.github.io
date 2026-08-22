@@ -56,6 +56,11 @@
     poll();
   });
 
+  const stylesheetReady = filename => [...document.styleSheets].some(sheet => {
+    try { return Boolean(sheet.href && new URL(sheet.href, location.href).pathname.endsWith(`/${filename}`)); }
+    catch (_) { return false; }
+  });
+
   const setUnderlyingInert = value => {
     const elements = [
       document.querySelector('.site-header'),
@@ -119,6 +124,7 @@
     depth <= 0 ? 'root' : depth === 1 ? 'section' : depth === 2 ? 'cluster' : 'deep';
 
   const cleanClone = clone => {
+    clone.removeAttribute('id');
     clone.querySelectorAll('[id]').forEach(element => element.removeAttribute('id'));
     clone.querySelectorAll('[tabindex]').forEach(element => element.removeAttribute('tabindex'));
     clone.querySelectorAll('.v9-transition-overlay').forEach(element => element.remove());
@@ -345,16 +351,20 @@
     window.addEventListener('keydown', interrupt, true);
   };
 
+  const failSafe = reason => {
+    emit('fallback', { reason });
+    if (!finalising) finish('skipped', { quick: true });
+  };
+
   const play = async id => {
     const ready = await waitFor(() =>
       Boolean(window.ProfileRootLanding) &&
       Boolean(document.body?.dataset.graphMode) &&
-      Boolean(document.querySelector('#site-graph .site-graph-svg')),
+      Boolean(document.querySelector('#site-graph .site-graph-svg')) &&
+      stylesheetReady('intro-animation.css'),
     5000);
-    if (!ready || id !== runId || finalising) {
-      if (!finalising) finish('skipped', { quick: true });
-      return;
-    }
+    if (!ready) return failSafe('setup-timeout');
+    if (id !== runId || finalising) return;
 
     state.running = true;
     document.documentElement.dataset.profileIntro = 'running';
@@ -363,26 +373,32 @@
     bindInterrupts();
     emit('started');
 
-    await internalRoute('atlas');
+    const atlasRouteReady = await internalRoute('atlas');
+    if (!atlasRouteReady) return failSafe('atlas-route-timeout');
+    if (id !== runId || finalising) return;
+
     const atlasReady = await waitFor(() => {
       if (document.body?.dataset.graphMode !== 'atlas') return false;
       const count = document.querySelectorAll('#site-graph .site-graph-node[data-node-id]').length;
       return count >= (graph?.nodes?.length || 1);
     }, 5000);
-    if (!atlasReady || id !== runId || finalising) return;
+    if (!atlasReady) return failSafe('atlas-render-timeout');
+    if (id !== runId || finalising) return;
 
     await wait(reducedMotion ? 40 : 520);
     if (id !== runId || finalising) return;
     const sourceSvg = document.querySelector('#site-graph .site-graph-svg');
-    if (!sourceSvg) return finish('skipped', { quick: true });
+    if (!sourceSvg) return failSafe('atlas-svg-missing');
 
     const clone = buildOverlay(sourceSvg);
     const targets = viewBoxTargets(clone);
     setViewBox(clone, targets.full);
     setStage('atlas');
 
-    await internalRoute('overview');
-    await waitFor(() => window.ProfileRootLanding?.isActive?.() === true, 2200);
+    const overviewReady = await internalRoute('overview');
+    if (!overviewReady) return failSafe('overview-route-timeout');
+    const landingReady = await waitFor(() => window.ProfileRootLanding?.isActive?.() === true, 2200);
+    if (!landingReady) return failSafe('root-landing-timeout');
     restoreInitialOverviewURL();
     if (id !== runId || finalising) return;
 

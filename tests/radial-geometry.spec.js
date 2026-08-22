@@ -5,7 +5,7 @@ const prepare = async page => {
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
 };
 const waitFan = page => page.waitForFunction(() => window.ProfileGeometry?.snapshot?.().compassVersion === 'fan-v3');
-const point = (page, id) => page.locator(`#site-graph .site-graph-node[data-node-id="${id}"]`).evaluate(el => ({x:Number(el.dataset.x),y:Number(el.dataset.y)}));
+const point = (page, id) => page.locator(`#site-graph .site-graph-svg > g:not(.v9-transition-overlay) .site-graph-node[data-node-id="${id}"]`).evaluate(el => ({x:Number(el.dataset.x),y:Number(el.dataset.y)}));
 const project = (root,target,vector) => (target.x-root.x)*vector.x + (target.y-root.y)*vector.y;
 
 test.describe('Global fan v3 geometry', () => {

@@ -49,6 +49,32 @@
   );
   window.__PROFILE_REDUCED_MOTION__ = reducedMatches();
 
+  /* Phase 7's inspector observer decorates the same action node it observes.
+     Ignore a same-value textContent write only for that node so the observer
+     cannot generate an endless childList feedback loop. */
+  const textContentDescriptor = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
+  if (textContentDescriptor?.get && textContentDescriptor?.set && !Node.prototype.__profileAtlasTextGuard) {
+    Object.defineProperty(Node.prototype, '__profileAtlasTextGuard', {
+      value: true,
+      configurable: false,
+      enumerable: false,
+      writable: false
+    });
+    Object.defineProperty(Node.prototype, 'textContent', {
+      configurable: textContentDescriptor.configurable,
+      enumerable: textContentDescriptor.enumerable,
+      get: textContentDescriptor.get,
+      set(value) {
+        if (
+          this instanceof Element &&
+          this.matches?.('#site-detail-panel .atlas-open-local') &&
+          textContentDescriptor.get.call(this) === String(value ?? '')
+        ) return;
+        textContentDescriptor.set.call(this, value);
+      }
+    });
+  }
+
   proto.setPointerCapture = function(pointerId) {
     if (
       document.body?.dataset.graphMode === 'atlas' &&
@@ -223,6 +249,7 @@
     cameraGuard: true,
     crossLinkGuard: true,
     idempotentMutationGuards: true,
+    inspectorTextGuard: true,
     reducedMotion: reducedMatches(),
     reason: 'Keep SVG nodes clickable without mutation feedback loops and keep transition ownership disjoint.'
   });

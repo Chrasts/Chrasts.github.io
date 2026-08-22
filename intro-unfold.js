@@ -79,6 +79,23 @@
     return `M ${from.x.toFixed(1)} ${from.y.toFixed(1)} Q ${(mid.x + ox * push).toFixed(1)} ${(mid.y + oy * push).toFixed(1)} ${to.x.toFixed(1)} ${to.y.toFixed(1)}`;
   };
 
+  const installSnapshotGate = () => {
+    const base = window.ProfileIntro;
+    if (!base || base.__autoUnfoldGate) return;
+    window.ProfileIntro = Object.freeze({
+      ...base,
+      __autoUnfoldGate: true,
+      snapshot: () => {
+        const snapshot = base.snapshot();
+        if (!state.completed && state.stage !== 'idle' && snapshot.stage === 'atlas') {
+          return { ...snapshot, stage: 'unfolding', waiting: false, autoUnfoldStage: state.stage };
+        }
+        return { ...snapshot, autoUnfoldStage: state.stage };
+      }
+    });
+  };
+  installSnapshotGate();
+
   const run = async shell => {
     if (!shell || shell.dataset.autoUnfoldPrepared === 'true') return;
     const svg = shell.querySelector('.profile-intro-graph');

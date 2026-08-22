@@ -4,11 +4,9 @@
 
   const originalSet = proto.setPointerCapture;
   const originalRelease = proto.releasePointerCapture;
-  const initialMatchMedia = window.matchMedia.bind(window);
-  const reduced = initialMatchMedia('(prefers-reduced-motion: reduce)');
-  const desktop = initialMatchMedia('(min-width: 901px)');
-  const normaliseRoute = value =>
-    (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
+  const nativeMatchMedia = window.__GRAPH_V6_REAL_MATCH_MEDIA__ || window.matchMedia.bind(window);
+  const desktop = nativeMatchMedia('(min-width: 901px)');
+  const reducedQuery = nativeMatchMedia('(prefers-reduced-motion: reduce)');
 
   Object.defineProperty(proto, '__profileAtlasPointerCaptureHotfix', {
     value: true,
@@ -35,37 +33,21 @@
     document.head.appendChild(style);
   }
 
-  const cssReduced = (() => {
+  const cssReduced = () => {
     try {
       return getComputedStyle(document.documentElement)
         .getPropertyValue('--profile-reduced-motion-probe').trim() === '1';
     } catch (_) {
-      return reduced.matches;
+      return false;
     }
-  })();
-  const reducedMatches = () => cssReduced || reduced.matches;
+  };
+  const reducedMatches = () => Boolean(
+    window.__PROFILE_INTRO_BOOTSTRAP__?.reducedMotion ||
+    window.__PROFILE_REDUCED_MOTION__ ||
+    reducedQuery.matches ||
+    cssReduced()
+  );
   window.__PROFILE_REDUCED_MOTION__ = reducedMatches();
-
-  if (cssReduced && !reduced.matches) {
-    window.matchMedia = query => {
-      const result = initialMatchMedia(query);
-      if (query !== '(prefers-reduced-motion: reduce)' || result.matches) return result;
-      return new Proxy(result, {
-        get(target, property) {
-          if (property === 'matches') return true;
-          const value = Reflect.get(target, property, target);
-          return typeof value === 'function' ? value.bind(target) : value;
-        }
-      });
-    };
-  }
-
-  if (cssReduced && window.__PROFILE_INTRO_BOOTSTRAP__ && !window.__PROFILE_INTRO_BOOTSTRAP__.reducedMotion) {
-    window.__PROFILE_INTRO_BOOTSTRAP__ = Object.freeze({
-      ...window.__PROFILE_INTRO_BOOTSTRAP__,
-      reducedMotion: true
-    });
-  }
 
   proto.setPointerCapture = function(pointerId) {
     if (
@@ -83,140 +65,119 @@
     return originalRelease?.call(this, pointerId);
   };
 
-  let replayingBoundary = false;
-  const routeFromControl = target => {
-    const control = target?.closest?.('[data-route]');
-    if (!control) return null;
-    return normaliseRoute(control.dataset.route || control.getAttribute('href'));
-  };
-  const isAtlasBoundary = targetRoute => {
-    if (!targetRoute || document.querySelector('.profile-intro-overlay')) return false;
-    const currentRoute = normaliseRoute(document.body?.dataset.graphRoute || location.hash);
-    if (targetRoute === currentRoute) return false;
-    return targetRoute === 'atlas' || document.body?.dataset.graphMode === 'atlas';
-  };
-  const replayWhenReady = control => {
-    if (!control || replayingBoundary) return;
-    replayingBoundary = true;
-    const started = performance.now();
-    const poll = () => {
-      if (window.ProfileIntroFixesV3?.snapshot) {
-        replayingBoundary = false;
-        control.click();
-        return;
-      }
-      if (performance.now() - started > 1800) {
-        replayingBoundary = false;
-        return;
-      }
-      requestAnimationFrame(poll);
-    };
-    requestAnimationFrame(poll);
-  };
-
-  addEventListener('click', event => {
-    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    const route = routeFromControl(event.target);
-    if (!isAtlasBoundary(route)) return;
-    event.preventDefault();
-    if (window.ProfileIntroFixesV3?.snapshot) return;
-    const control = event.target.closest?.('[data-route]');
-    event.stopImmediatePropagation();
-    replayWhenReady(control);
-  }, true);
-
-  addEventListener('keydown', event => {
-    if (event.key !== 'Enter' && event.key !== ' ') return;
-    const route = routeFromControl(event.target);
-    if (!isAtlasBoundary(route)) return;
-    event.preventDefault();
-    if (window.ProfileIntroFixesV3?.snapshot) return;
-    const control = event.target.closest?.('[data-route]');
-    event.stopImmediatePropagation();
-    replayWhenReady(control);
-  }, true);
-
   const baseCamera = () => document.querySelector('#site-graph .site-graph-svg > g:not(.v9-transition-overlay)');
-  const exclusiveTransitionOwner = () =>
+  const exclusiveTransitionOwner = () => Boolean(
     document.body?.classList.contains('is-atlas-handoff') ||
-    document.body?.classList.contains('is-crosslink-travelling');
+    document.body?.classList.contains('is-crosslink-travelling')
+  );
+
+  const setImportant = (element, name, value) => {
+    if (!element) return false;
+    if (element.style.getPropertyValue(name) === value && element.style.getPropertyPriority(name) === 'important') return false;
+    element.style.setProperty(name, value, 'important');
+    return true;
+  };
+  const removeInline = (element, name) => {
+    if (!element?.style.getPropertyValue(name)) return false;
+    element.style.removeProperty(name);
+    return true;
+  };
 
   const keepExclusiveBaseVisible = () => {
     const camera = baseCamera();
-    if (!camera) return;
+    if (!camera) return false;
+    let changed = false;
     if (exclusiveTransitionOwner()) {
-      camera.dataset.exclusiveVisibilityGuard = 'true';
-      camera.style.setProperty('opacity', '1', 'important');
-      camera.style.setProperty('visibility', 'visible', 'important');
-      return;
+      if (camera.dataset.exclusiveVisibilityGuard !== 'true') {
+        camera.dataset.exclusiveVisibilityGuard = 'true';
+        changed = true;
+      }
+      changed = setImportant(camera, 'opacity', '1') || changed;
+      changed = setImportant(camera, 'visibility', 'visible') || changed;
+      return changed;
     }
     if (camera.dataset.exclusiveVisibilityGuard === 'true') {
       delete camera.dataset.exclusiveVisibilityGuard;
-      camera.style.removeProperty('opacity');
-      camera.style.removeProperty('visibility');
+      changed = true;
+      changed = removeInline(camera, 'opacity') || changed;
+      changed = removeInline(camera, 'visibility') || changed;
     }
+    return changed;
   };
 
   const cancelConcurrentV9 = () => {
     if (!exclusiveTransitionOwner()) return false;
-    document.querySelectorAll('#site-graph .v9-transition-overlay').forEach(element => element.remove());
-    document.body.classList.remove('is-v9-transitioning');
-    try { window.__GRAPH_V6_FORCE_SNAP__ = false; } catch (_) {}
-    keepExclusiveBaseVisible();
-    return true;
+    let changed = false;
+    document.querySelectorAll('#site-graph .v9-transition-overlay').forEach(element => {
+      element.remove();
+      changed = true;
+    });
+    if (document.body.classList.contains('is-v9-transitioning')) {
+      document.body.classList.remove('is-v9-transitioning');
+      changed = true;
+    }
+    if (window.__GRAPH_V6_FORCE_SNAP__) {
+      try { window.__GRAPH_V6_FORCE_SNAP__ = false; } catch (_) {}
+      changed = true;
+    }
+    return keepExclusiveBaseVisible() || changed;
   };
 
   const keepReducedBaseVisible = target => {
     const camera = target?.matches?.('#site-graph .site-graph-svg > g:not(.v9-transition-overlay)')
       ? target
       : baseCamera();
-    if (!camera) return;
-    if (exclusiveTransitionOwner()) {
-      keepExclusiveBaseVisible();
-      return;
-    }
+    if (!camera) return false;
+    if (exclusiveTransitionOwner()) return keepExclusiveBaseVisible();
+
+    let changed = false;
     if (reducedMatches() && document.body?.classList.contains('is-v9-transitioning')) {
-      camera.dataset.reducedVisibilityGuard = 'true';
-      camera.style.setProperty('opacity', '1', 'important');
-      camera.style.setProperty('visibility', 'visible', 'important');
-      return;
+      if (camera.dataset.reducedVisibilityGuard !== 'true') {
+        camera.dataset.reducedVisibilityGuard = 'true';
+        changed = true;
+      }
+      changed = setImportant(camera, 'opacity', '1') || changed;
+      changed = setImportant(camera, 'visibility', 'visible') || changed;
+      return changed;
     }
     if (camera.dataset.reducedVisibilityGuard === 'true') {
       delete camera.dataset.reducedVisibilityGuard;
-      camera.style.removeProperty('opacity');
-      camera.style.removeProperty('visibility');
+      changed = true;
+      changed = removeInline(camera, 'opacity') || changed;
+      changed = removeInline(camera, 'visibility') || changed;
     }
+    return changed;
   };
 
   let cameraGuard = false;
   const expectedCameraTransform = () => {
-    const snap = window.ProfileAtlasLOD?.snapshot?.();
-    const state = snap?.camera;
+    const state = window.ProfileAtlasLOD?.snapshot?.()?.camera;
     if (!state || !Number.isFinite(state.x) || !Number.isFinite(state.y) || !Number.isFinite(state.scale)) return null;
     return `translate(${state.x.toFixed(2)} ${state.y.toFixed(2)}) scale(${state.scale.toFixed(4)})`;
   };
   const guardAtlasCamera = target => {
-    if (cameraGuard || !desktop.matches || document.body?.dataset.graphMode !== 'atlas' || !window.ProfileAtlasLOD) return;
+    if (cameraGuard || !desktop.matches || document.body?.dataset.graphMode !== 'atlas' || !window.ProfileAtlasLOD) return false;
     const camera = target?.matches?.('#site-graph .site-graph-svg > g:not(.v9-transition-overlay)')
       ? target
       : baseCamera();
     const expected = expectedCameraTransform();
-    if (!camera || !expected || camera.getAttribute('transform') === expected) return;
+    if (!camera || !expected || camera.getAttribute('transform') === expected) return false;
     cameraGuard = true;
     try {
       camera.setAttribute('transform', expected);
     } finally {
       cameraGuard = false;
     }
+    return true;
   };
 
   const graphRoot = document.querySelector('#site-graph');
   if (graphRoot) {
     new MutationObserver(mutations => {
-      if (exclusiveTransitionOwner()) cancelConcurrentV9();
+      const exclusive = exclusiveTransitionOwner();
       for (const mutation of mutations) {
-        if (mutation.type === 'childList' && exclusiveTransitionOwner()) {
-          cancelConcurrentV9();
+        if (mutation.type === 'childList') {
+          if (exclusive) cancelConcurrentV9();
           continue;
         }
         if (mutation.type !== 'attributes') continue;
@@ -261,7 +222,8 @@
     hitTargetGuard: true,
     cameraGuard: true,
     crossLinkGuard: true,
+    idempotentMutationGuards: true,
     reducedMotion: reducedMatches(),
-    reason: 'Keep SVG nodes clickable and make Atlas/cross-link/V9/camera ownership disjoint.'
+    reason: 'Keep SVG nodes clickable without mutation feedback loops and keep transition ownership disjoint.'
   });
 })();

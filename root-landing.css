@@ -6,6 +6,12 @@ body[data-root-landing="true"] #site-explorer{
   display:none!important;
 }
 
+body[data-root-landing="true"] #main-nav,
+body[data-root-landing="true"] .header-utility,
+body[data-root-landing="true"] .menu-button{
+  display:none!important;
+}
+
 body[data-root-landing="false"] .profile-app>.hero{
   display:none!important;
 }

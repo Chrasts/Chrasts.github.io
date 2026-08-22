@@ -2,61 +2,112 @@
    Motion polish — intro gateway, root morph and structural handoff
    ========================================================================== */
 
-/* Intro gateway: one clear action, stronger ring and an unmistakable hover. */
+/* The gateway is only a ring around the real Atlas root. It never paints over
+   the node itself. The action label sits above the ring, away from Work below. */
 .profile-intro-enter{
-  width:140px!important;
-  height:140px!important;
+  width:154px!important;
+  height:154px!important;
   color:var(--teal)!important;
-  background:color-mix(in srgb,var(--paper) 88%,transparent)!important;
-  box-shadow:0 0 0 1px color-mix(in srgb,var(--teal) 5%,transparent);
+  background:transparent!important;
+  box-shadow:none!important;
   transition:
     transform .28s cubic-bezier(.16,.76,.18,1),
     color .22s ease,
-    background-color .22s ease,
-    box-shadow .28s ease,
     opacity .2s ease!important
 }
 .profile-intro-enter::before{
-  inset:7px!important;
-  border:1.35px solid color-mix(in srgb,var(--teal) 58%,transparent)!important;
-  opacity:.9!important
+  inset:5px!important;
+  border:1.7px solid color-mix(in srgb,var(--teal) 64%,transparent)!important;
+  opacity:.96!important;
+  transition:transform .3s ease,opacity .3s ease,border-color .25s ease!important
 }
 .profile-intro-enter::after{
-  inset:-12px!important;
-  border:2px solid color-mix(in srgb,var(--teal) 34%,transparent)!important;
-  opacity:.82!important
+  inset:-14px!important;
+  border:2.4px solid color-mix(in srgb,var(--teal) 44%,transparent)!important;
+  opacity:.9!important;
+  transition:transform .3s ease,opacity .3s ease,border-color .25s ease,box-shadow .25s ease!important
 }
 .profile-intro-enter>small{display:none!important}
 .profile-intro-enter>span{
-  top:calc(100% + 18px)!important;
+  top:-46px!important;
+  padding:7px 10px 6px!important;
+  border:1px solid color-mix(in srgb,var(--teal) 38%,var(--line))!important;
+  border-bottom:1px solid color-mix(in srgb,var(--teal) 38%,var(--line))!important;
+  border-radius:999px;
+  background:color-mix(in srgb,var(--paper) 94%,transparent);
   color:currentColor;
-  border-bottom-color:currentColor!important;
-  transition:color .22s ease,border-color .22s ease,letter-spacing .22s ease
+  box-shadow:0 5px 18px color-mix(in srgb,var(--ink) 7%,transparent);
+  font-size:12.5px!important;
+  font-weight:850!important;
+  letter-spacing:.105em!important;
+  transition:
+    color .22s ease,
+    border-color .22s ease,
+    background-color .22s ease,
+    transform .22s ease,
+    letter-spacing .22s ease!important
 }
+
 .profile-intro-enter:hover,
-.profile-intro-enter:focus-visible{
+.profile-intro-enter:focus-visible,
+.profile-intro-overlay.is-enter-active .profile-intro-enter{
   color:var(--brown)!important;
-  background:color-mix(in srgb,var(--brown) 5%,var(--paper))!important;
-  box-shadow:0 0 0 5px color-mix(in srgb,var(--brown) 6%,transparent);
-  transform:translate(-50%,-50%) scale(1.075)!important
+  transform:translate(-50%,-50%) scale(1.08)!important
 }
 .profile-intro-enter:hover>span,
-.profile-intro-enter:focus-visible>span{letter-spacing:.105em}
+.profile-intro-enter:focus-visible>span,
+.profile-intro-overlay.is-enter-active .profile-intro-enter>span{
+  border-color:color-mix(in srgb,var(--brown) 58%,var(--line))!important;
+  background:color-mix(in srgb,var(--paper) 88%,var(--brown) 12%)!important;
+  letter-spacing:.12em!important;
+  transform:translateX(-50%) translateY(-2px)!important
+}
 .profile-intro-enter:hover::before,
-.profile-intro-enter:focus-visible::before{
-  transform:scale(1.06)!important;
-  border-color:color-mix(in srgb,var(--brown) 86%,transparent)!important;
+.profile-intro-enter:focus-visible::before,
+.profile-intro-overlay.is-enter-active .profile-intro-enter::before{
+  transform:scale(1.075)!important;
+  border-color:color-mix(in srgb,var(--brown) 88%,transparent)!important;
   opacity:1!important
 }
 .profile-intro-enter:hover::after,
-.profile-intro-enter:focus-visible::after{
-  transform:scale(1.13)!important;
-  border-color:color-mix(in srgb,var(--brown) 62%,transparent)!important;
-  opacity:1!important
+.profile-intro-enter:focus-visible::after,
+.profile-intro-overlay.is-enter-active .profile-intro-enter::after{
+  transform:scale(1.15)!important;
+  border-color:color-mix(in srgb,var(--brown) 72%,transparent)!important;
+  opacity:1!important;
+  box-shadow:0 0 0 5px color-mix(in srgb,var(--brown) 7%,transparent)
 }
 
-/* During the last condensation pass labels leave before their dots converge.
-   This prevents multiple names from briefly occupying the central root. */
+/* The actual root remains visible inside the ring and joins the gateway hover. */
+.profile-intro-overlay[data-stage="atlas"]
+.site-graph-node[data-intro-tier="root"]{
+  opacity:1!important;
+  visibility:visible!important
+}
+.profile-intro-overlay[data-stage="atlas"]
+.site-graph-node[data-intro-tier="root"] .site-graph-dot{
+  transition:transform .28s cubic-bezier(.16,.76,.18,1),stroke .22s ease,fill .22s ease!important
+}
+.profile-intro-overlay[data-stage="atlas"]
+.site-graph-node[data-intro-tier="root"] .site-graph-label{
+  transition:fill .22s ease,font-weight .22s ease!important
+}
+.profile-intro-overlay.is-enter-active[data-stage="atlas"]
+.site-graph-node[data-intro-tier="root"] .site-graph-dot,
+.profile-intro-overlay[data-stage="atlas"]:has(.profile-intro-enter:hover)
+.site-graph-node[data-intro-tier="root"] .site-graph-dot{
+  stroke:var(--brown)!important;
+  transform:scale(1.58)!important
+}
+.profile-intro-overlay.is-enter-active[data-stage="atlas"]
+.site-graph-node[data-intro-tier="root"] .site-graph-label,
+.profile-intro-overlay[data-stage="atlas"]:has(.profile-intro-enter:hover)
+.site-graph-node[data-intro-tier="root"] .site-graph-label{
+  fill:var(--brown)!important;
+  font-weight:850!important
+}
+
+/* During the last condensation pass labels leave before their dots converge. */
 .profile-intro-overlay.is-root-merge[data-stage="root"]
 .site-graph-node:not([data-intro-tier="root"]) .site-graph-label,
 .profile-intro-overlay.is-root-merge[data-stage="root"]
@@ -65,8 +116,7 @@
   transition-duration:.12s!important
 }
 
-/* Keep the actual central graph root visible during the root -> portrait morph.
-   The JS animation expands the root dot while the portrait grows from it. */
+/* Keep the actual central graph root visible during the root -> portrait morph. */
 .profile-intro-overlay.is-root-morphing[data-stage="identity"] .profile-intro-graph{
   opacity:1!important
 }
@@ -84,8 +134,7 @@
   transition:opacity .18s ease!important
 }
 
-/* The transition target is promoted at pointer/key activation and stays the
-   selected visual anchor for the entire structural animation. */
+/* The transition target stays selected throughout structural motion. */
 .v9-transition-overlay .site-graph-node[data-transition-focus="true"] .site-graph-dot{
   stroke:var(--teal)!important;
   transform:scale(1.28)!important
@@ -95,15 +144,20 @@
 }
 
 @media(max-width:900px){
-  .profile-intro-enter{width:110px!important;height:110px!important}
-  .profile-intro-enter>span{top:calc(100% + 14px)!important}
+  .profile-intro-enter{width:116px!important;height:116px!important}
+  .profile-intro-enter>span{
+    top:-38px!important;
+    padding:6px 8px 5px!important;
+    font-size:10px!important
+  }
 }
 
 @media(prefers-reduced-motion:reduce){
   .profile-intro-enter,
   .profile-intro-enter::before,
   .profile-intro-enter::after,
-  .profile-intro-enter>span{
+  .profile-intro-enter>span,
+  .profile-intro-overlay[data-stage="atlas"] .site-graph-node[data-intro-tier="root"] .site-graph-dot{
     transition-duration:.16s!important
   }
 }

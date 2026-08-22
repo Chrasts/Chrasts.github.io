@@ -28,8 +28,12 @@ body[data-graph-mode="atlas"][data-atlas-lod="medium"] #site-graph .site-graph-n
   transform-origin:center;
   transform-box:fill-box
 }
-body[data-graph-mode="atlas"] #site-graph .atlas-territory-label-layer{
+#site-graph .atlas-territory-label-layer{
+  opacity:0;
   pointer-events:none
+}
+body[data-graph-mode="atlas"] #site-graph .atlas-territory-label-layer{
+  opacity:1
 }
 body[data-graph-mode="atlas"] #site-graph .atlas-territory-label{
   opacity:0;

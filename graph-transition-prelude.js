@@ -40,6 +40,7 @@
   const ensureMobileLayer = () => {
     if (!mobileViewport.matches) return;
     setTimeout(() => setTimeout(() => {
+      if (!mobileViewport.matches) return;
       ensureStylesheet('mobile.css', 'data-profile-mobile');
       if (!document.querySelector('script[data-profile-mobile-app]')) {
         const script = document.createElement('script');

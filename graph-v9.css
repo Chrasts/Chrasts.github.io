@@ -287,6 +287,14 @@ body[data-graph-mode="atlas"] .atlas-controls{
 
 @media(prefers-reduced-motion:reduce){
   .v9-transition-overlay{display:none!important}
+  /* In reduced-motion mode the base renderer is already snapped to the target
+     geometry. Keep it visible while the transition coordinator performs its
+     two-frame handoff; otherwise the shared transition class causes a brief
+     blank flash even though the overlay itself is intentionally disabled. */
+  body.is-v9-transitioning #site-graph .site-graph-svg > g:not(.v9-transition-overlay){
+    opacity:1!important;
+    visibility:visible!important;
+  }
   .hero,
   .hero-copy,
   .hero-visual.profile-identity,

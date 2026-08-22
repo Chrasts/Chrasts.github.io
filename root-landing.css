@@ -14,12 +14,16 @@ body[data-root-landing="true"] .profile-app>.hero{
   min-height:calc(100dvh - 72px);
 }
 
+body[data-root-landing="true"] .hero h1{
+  margin-bottom:16px;
+}
+
 .root-node-trigger{
   appearance:none;
   display:inline-flex;
   align-items:center;
   gap:13px;
-  margin:24px 0 2px;
+  margin:0 0 24px;
   padding:7px 4px;
   border:0;
   background:transparent;

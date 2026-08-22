@@ -298,6 +298,7 @@
   };
 
   ensureScript('phase7-pointer-hotfix.js', 'data-profile-atlas-pointer-hotfix');
+  ensureScript('global-geometry-ownership.js', 'data-profile-global-geometry-ownership');
   ensureScript('root-landing.js', 'data-profile-root-landing');
   ensureScript('motion-polish.js', 'data-profile-motion-polish');
   ensureScript('intro-fixes-v3.js', 'data-profile-intro-fixes-v3');

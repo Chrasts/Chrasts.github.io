@@ -16,8 +16,8 @@ Temporary Phase 0 guard layer loaded immediately after `site-data.js` and before
 
 It does three deliberately narrow things:
 
-- prevents graph-mutating controls from changing state while the current route transition owns the scene;
-- prevents a booted/loaded mobile runtime from leaking into desktop by reloading once on the mobile -> desktop breakpoint crossing;
+- prevents graph-mutating controls from changing route/filter/layer/camera state while the current route transition owns the scene;
+- prevents a loaded/booted mobile runtime from leaking into desktop by reloading once on the mobile -> desktop breakpoint crossing;
 - exposes lightweight renderer diagnostics for smoke testing.
 
 This file is not intended to become the future scene lifecycle manager. Its temporary guards should be removed or absorbed when Phase 1 introduces explicit ownership.
@@ -38,6 +38,8 @@ Current graph modes are:
 ### `graph-transition-prelude.js`
 
 Compatibility/patch layer loaded before the shared renderer. It currently patches selected data labels, loads graph CSS layers, boots the mobile layer at `<= 900px`, and contains Work/Atlas interaction compatibility behaviour.
+
+The deferred mobile boot must re-check the breakpoint immediately before injecting the mobile layer; otherwise a rapid desktop -> mobile -> desktop resize can strand an inert mobile script marker.
 
 Do not move renderer ownership into this file during Phase 0.
 
@@ -63,18 +65,19 @@ Do not merge these files in Phase 0. CSS consolidation belongs to the later clea
 
 1. The live renderer is the source of truth after a transition finishes.
 2. `.v9-transition-overlay` never survives a completed transition.
-3. A user activation cannot mutate graph route/filter/layer state while a route transition is already running.
+3. A user activation cannot mutate graph route/filter/layer/camera state while a route transition is already running.
 4. Nodes in the live graph have unique `data-node-id` values.
 5. Every live edge references two currently rendered live nodes.
 6. Work remains an FCA-derived concept graph; filters do not mutate the underlying profile ontology.
 7. Atlas retains its own camera/pan/zoom semantics and is not passed through the local mobile projection.
 8. Mobile projection does not permanently modify desktop behaviour.
 9. Crossing from a loaded/booted mobile runtime back to desktop currently performs a clean reload. This is a temporary Phase 0 guard, to be replaced by explicit mount/unmount lifecycle in Phase 1.
-10. Reduced-motion users receive state changes without dependence on the animated overlay or a blank live-renderer handoff.
+10. A deferred mobile boot cannot inject after the viewport has already left the mobile breakpoint.
+11. Reduced-motion users receive state changes without dependence on the animated overlay or a blank live-renderer handoff.
 
 ## Automated browser smoke suite
 
-A Playwright smoke suite is included in `tests/phase0.spec.js` with configuration in `playwright.config.js`.
+The Playwright smoke suite lives in `tests/` with configuration in `playwright.config.js`.
 
 It covers the high-value machine-checkable parts of the Phase 0 acceptance criteria:
 
@@ -85,7 +88,8 @@ It covers the high-value machine-checkable parts of the Phase 0 acceptance crite
 - reduced-motion live-renderer visibility during the transition handoff;
 - mobile portrait graph spread and local camera controls;
 - mobile Atlas zoom/pan;
-- mobile -> desktop clean-runtime reload.
+- mobile -> desktop clean-runtime reload;
+- rapid desktop -> mobile -> desktop crossing followed by a later successful mobile boot.
 
 Run locally from the repository root:
 
@@ -93,7 +97,7 @@ Run locally from the repository root:
 npm install --no-save @playwright/test@1.55.0
 npx playwright install chromium
 python3 -m http.server 4173 --bind 127.0.0.1
-npx playwright test tests/phase0.spec.js
+npx playwright test
 ```
 
 `.github/workflows/phase0-smoke.yml` contains the equivalent GitHub Actions job.
@@ -109,7 +113,8 @@ Run these after changes to renderer, transitions, layout, routing, or mobile cod
 - Fresh load at `#overview`.
 - Overview -> each first-level branch -> Overview.
 - Deep Focus navigation down at least three levels, then back up.
-- Rapid repeated clicks during a transition: only the first graph-mutating activation should take effect until the transition completes.
+- Rapid repeated app clicks during a transition: only the first graph-mutating activation should take effect until the transition completes.
+- Browser Back/Forward after settled transitions preserves a valid route/layout.
 - Enter Work, change Context, select one Theme, select several Themes with Any/All, reset filters.
 - Open a Work concept and a project detail; close with the close button and Escape.
 - Enter Atlas, pan, zoom by wheel/buttons, Fit all, Reset view.
@@ -136,6 +141,8 @@ Test at a real narrow viewport rather than only CSS device emulation when possib
 ### Breakpoint crossing
 
 - Start desktop, narrow below 900px: mobile runtime should boot.
+- Rapidly cross below and back above 900px before deferred mobile boot completes: no inert mobile script should remain.
+- Narrow below 900px again after that rapid crossing: mobile runtime should still boot normally.
 - Start mobile or after mobile has loaded, widen above 900px: page should reload once into a clean desktop runtime.
 - After the reload, desktop graph pan/click behaviour must not be affected by mobile gesture handlers.
 
@@ -149,6 +156,7 @@ For down, up, and lateral navigation:
 - final live edges agree with final live node geometry;
 - there is no visible handoff jump when the overlay is removed;
 - reduced-motion navigation does not blank the graph during the handoff;
+- graph-mutating controls do not alter the scene until the transition has completed;
 - controls remain clickable after completion;
 - no `.v9-transition-overlay` remains in the DOM.
 
@@ -172,7 +180,9 @@ Run it in DevTools after representative navigation. Expected healthy values:
 
 Static review and diff review are complete for the Phase 0 hardening changes.
 
-The repository now contains an executable browser smoke suite, but this branch still requires an actual browser-suite run plus the short visual matrix above before Phase 0 should be called fully accepted. The current execution environment did not expose a running GitHub Actions check for the branch, so absence of a failing check must not be interpreted as a passing browser run.
+The repository now contains an executable browser smoke suite, but this branch still requires an actual browser-suite run plus the short visual matrix above before Phase 0 should be called fully accepted. The current execution environment did not expose a GitHub Actions result for the branch, so absence of a failing check must not be interpreted as a passing browser run.
+
+One deliberately unpatched edge case remains outside the Phase 0 app-level interaction lock: browser-chrome Back/Forward invoked *during* an already-running structural animation is not transactionally queued. Correctly serialising browser history with scene transitions belongs in the Phase 1 `TransitionCoordinator`; patching it independently here would reintroduce the kind of competing transition ownership Phase 0 is intended to eliminate.
 
 ## Deferred deliberately
 
@@ -182,6 +192,7 @@ The following are **not** Phase 0 work:
 - replacing the current renderer with SceneManager;
 - extracting a general Camera class;
 - rewriting transitions around a new coordinator;
+- transactionally queueing browser-history navigation during an active structural transition;
 - removing all legacy compatibility code;
 - building bespoke rich project scenes;
 - semantic Atlas LOD.

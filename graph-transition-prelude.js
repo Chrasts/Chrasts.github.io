@@ -36,15 +36,6 @@
   ensureStylesheet('graph-v8.css', 'data-profile-graph-v8');
   ensureStylesheet('graph-v9.css', 'data-profile-graph-v9');
 
-  const ensureScript = (src, marker) => {
-    if (document.querySelector(`script[${marker}]`)) return;
-    const script = document.createElement('script');
-    script.src = src;
-    script.setAttribute(marker, 'true');
-    document.head.appendChild(script);
-  };
-  ensureScript('phase0-stability.js', 'data-profile-phase0-stability');
-
   const mobileViewport = window.matchMedia('(max-width: 900px)');
   const ensureMobileLayer = () => {
     if (!mobileViewport.matches) return;

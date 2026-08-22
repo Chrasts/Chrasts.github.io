@@ -56,7 +56,7 @@ test.describe('Phase 1 scene architecture — desktop', () => {
     expect(snapshot.variant).toBe('desktop');
     expect(snapshot.graphState.mode).toBe('overview');
     expect(snapshot.graphState.route).toBe('overview');
-    expect(snapshot.camera.adapter).toBe('desktop-local');
+    expect(await page.evaluate(() => window.ProfileScene.camera.activeName)).toBe('desktop-local');
 
     await expect(page.locator('.hero-copy')).toHaveAttribute('data-scene-object', 'root-profile-copy');
     await expect(page.locator('.hero-copy')).toHaveAttribute('data-scene-placement', 'identity-copy-left');
@@ -70,7 +70,7 @@ test.describe('Phase 1 scene architecture — desktop', () => {
     await goRoute(page, 'work');
     let snapshot = await page.evaluate(() => window.ProfileScene.manager.snapshot());
     expect(snapshot.graphState.mode).toBe('work');
-    expect(snapshot.camera.adapter).toBe('desktop-local');
+    expect(await page.evaluate(() => window.ProfileScene.camera.activeName)).toBe('desktop-local');
     await expect(page.locator('.integrated-work-controls')).toHaveAttribute('data-scene-visible', 'true');
     await expect(page.locator('.integrated-work-controls')).toHaveAttribute('data-scene-placement', 'work-side-rails');
     await expect(page.locator('.hero')).toHaveAttribute('data-scene-visible', 'false');
@@ -78,7 +78,7 @@ test.describe('Phase 1 scene architecture — desktop', () => {
     await goRoute(page, 'atlas');
     snapshot = await page.evaluate(() => window.ProfileScene.manager.snapshot());
     expect(snapshot.graphState.mode).toBe('atlas');
-    expect(snapshot.camera.adapter).toBe('atlas');
+    expect(await page.evaluate(() => window.ProfileScene.camera.activeName)).toBe('atlas');
     await expect(page.locator('#atlas-controls')).toHaveAttribute('data-scene-visible', 'true');
     await expect(page.locator('#atlas-controls')).toHaveAttribute('data-scene-placement', 'atlas-bottom-toolbar');
   });
@@ -133,7 +133,7 @@ test.describe('Phase 1 scene architecture — mobile', () => {
     const snapshot = await page.evaluate(() => window.ProfileScene.manager.snapshot());
     expect(snapshot.variant).toBe('mobile');
     expect(snapshot.graphState.mode).toBe('overview');
-    expect(snapshot.camera.adapter).toBe('mobile-local');
+    expect(await page.evaluate(() => window.ProfileScene.camera.activeName)).toBe('mobile-local');
 
     await expect(page.locator('.hero-copy')).toHaveAttribute('data-scene-object', 'root-profile-copy');
     await expect(page.locator('.hero-copy')).toHaveAttribute('data-scene-placement', 'identity-copy-upper');

@@ -1,24 +1,33 @@
 /* ========================================================================== 
-   Phase 3 — Atlas condensation intro
+   Phase 3 — interaction-gated Atlas condensation intro
    ========================================================================== */
 
 html[data-profile-intro="pending"] body > .site-header,
 html[data-profile-intro="pending"] body > .profile-app,
 html[data-profile-intro="pending"] body > footer,
+html[data-profile-intro="waiting"] body > .site-header,
+html[data-profile-intro="waiting"] body > .profile-app,
+html[data-profile-intro="waiting"] body > footer,
 html[data-profile-intro="running"] body > .site-header,
 html[data-profile-intro="running"] body > .profile-app,
-html[data-profile-intro="running"] body > footer{
+html[data-profile-intro="running"] body > footer,
+html[data-profile-intro="identity"] body > .site-header,
+html[data-profile-intro="identity"] body > .profile-app,
+html[data-profile-intro="identity"] body > footer{
   opacity:0!important;
   visibility:hidden!important;
   pointer-events:none!important;
 }
 
+html[data-profile-intro="expanding"] body > .site-header,
+html[data-profile-intro="expanding"] body > .profile-app,
+html[data-profile-intro="expanding"] body > footer,
 html[data-profile-intro="handoff"] body > .site-header,
 html[data-profile-intro="handoff"] body > .profile-app,
 html[data-profile-intro="handoff"] body > footer{
   opacity:1;
   visibility:visible;
-  transition:opacity .38s cubic-bezier(.2,.72,.2,1);
+  transition:opacity .46s cubic-bezier(.2,.72,.2,1);
 }
 
 .profile-intro-overlay{
@@ -26,15 +35,14 @@ html[data-profile-intro="handoff"] body > footer{
   z-index:1000;
   inset:0;
   overflow:hidden;
-  background:var(--paper);
+  background-color:var(--paper);
   opacity:0;
-  transition:opacity .22s ease;
+  transition:opacity .24s ease,background-color .72s cubic-bezier(.2,.72,.2,1);
   touch-action:none;
 }
-
 .profile-intro-overlay.is-ready{opacity:1}
-.profile-intro-overlay.is-handoff{opacity:0;transition-duration:.38s}
 .profile-intro-overlay.is-skipping{opacity:0;transition-duration:.14s}
+.profile-intro-overlay.is-expanding-profile{background-color:transparent}
 
 .profile-intro-surface{
   position:absolute;
@@ -53,42 +61,40 @@ html[data-profile-intro="handoff"] body > footer{
   overflow:visible!important;
   pointer-events:none!important;
   user-select:none!important;
+  opacity:1;
+  transition:opacity .58s cubic-bezier(.18,.72,.2,1)!important;
 }
 
 .profile-intro-graph .site-graph-node,
 .profile-intro-graph .site-graph-edges path{
   pointer-events:none!important;
   transition:
-    opacity .48s cubic-bezier(.18,.72,.2,1),
-    filter .48s ease!important;
+    opacity .62s cubic-bezier(.18,.72,.2,1),
+    filter .62s ease!important;
 }
 
 .profile-intro-graph .site-graph-label,
 .profile-intro-graph .site-graph-meta,
 .profile-intro-graph .site-graph-dot{
   transition:
-    opacity .48s cubic-bezier(.18,.72,.2,1),
-    transform .48s cubic-bezier(.18,.72,.2,1),
-    fill .48s ease,
-    stroke .48s ease!important;
+    opacity .62s cubic-bezier(.18,.72,.2,1),
+    transform .62s cubic-bezier(.18,.72,.2,1),
+    fill .62s ease,
+    stroke .62s ease!important;
 }
 
 .profile-intro-overlay[data-stage="atlas"] [data-intro-tier]{opacity:1}
 
-.profile-intro-overlay[data-stage="territories"] [data-intro-tier="deep"]{opacity:.035!important}
-.profile-intro-overlay[data-stage="territories"] [data-intro-tier="cluster"]{opacity:.52!important}
+.profile-intro-overlay[data-stage="territories"] [data-intro-tier="deep"]{opacity:.08!important}
+.profile-intro-overlay[data-stage="territories"] [data-intro-tier="cluster"]{opacity:.58!important}
 .profile-intro-overlay[data-stage="territories"] [data-intro-tier="section"],
 .profile-intro-overlay[data-stage="territories"] [data-intro-tier="root"]{opacity:1!important}
-.profile-intro-overlay[data-stage="territories"] .site-graph-node[data-intro-tier="section"] .site-graph-dot{
-  transform:scale(1.18)
-}
-.profile-intro-overlay[data-stage="territories"] .site-graph-node[data-intro-tier="section"] .site-graph-label{
-  font-weight:790
-}
+.profile-intro-overlay[data-stage="territories"] .site-graph-node[data-intro-tier="section"] .site-graph-dot{transform:scale(1.2)}
+.profile-intro-overlay[data-stage="territories"] .site-graph-node[data-intro-tier="section"] .site-graph-label{font-weight:790}
 .profile-intro-overlay[data-stage="territories"] .site-graph-edges path[data-intro-tier="deep"]{opacity:.025!important}
-.profile-intro-overlay[data-stage="territories"] .site-graph-edges path[data-intro-tier="cluster"]{opacity:.14!important}
-.profile-intro-overlay[data-stage="territories"] .site-graph-edges path[data-intro-tier="section"]{opacity:.48!important}
-.profile-intro-overlay[data-stage="territories"] .site-graph-edges path.is-cross-link{opacity:.035!important}
+.profile-intro-overlay[data-stage="territories"] .site-graph-edges path[data-intro-tier="cluster"]{opacity:.16!important}
+.profile-intro-overlay[data-stage="territories"] .site-graph-edges path[data-intro-tier="section"]{opacity:.5!important}
+.profile-intro-overlay[data-stage="territories"] .site-graph-edges path.is-cross-link{opacity:.025!important}
 
 .profile-intro-overlay[data-stage="branches"] .site-graph-node[data-intro-tier="deep"],
 .profile-intro-overlay[data-stage="branches"] .site-graph-node[data-intro-tier="cluster"]{opacity:0!important}
@@ -96,16 +102,14 @@ html[data-profile-intro="handoff"] body > footer{
 .profile-intro-overlay[data-stage="branches"] .site-graph-node[data-intro-tier="root"]{opacity:1!important}
 .profile-intro-overlay[data-stage="branches"] .site-graph-edges path[data-intro-tier="deep"],
 .profile-intro-overlay[data-stage="branches"] .site-graph-edges path[data-intro-tier="cluster"]{opacity:0!important}
-.profile-intro-overlay[data-stage="branches"] .site-graph-edges path[data-intro-tier="section"]{opacity:.62!important}
+.profile-intro-overlay[data-stage="branches"] .site-graph-edges path[data-intro-tier="section"]{opacity:.48!important}
 .profile-intro-overlay[data-stage="branches"] .site-graph-edges path.is-cross-link{opacity:0!important}
 
 .profile-intro-overlay[data-stage="root"] .site-graph-node:not([data-intro-tier="root"]),
-.profile-intro-overlay[data-stage="root"] .site-graph-edges path{
-  opacity:0!important
-}
+.profile-intro-overlay[data-stage="root"] .site-graph-edges path{opacity:0!important}
 .profile-intro-overlay[data-stage="root"] .site-graph-node[data-intro-tier="root"]{opacity:1!important}
 .profile-intro-overlay[data-stage="root"] .site-graph-node[data-intro-tier="root"] .site-graph-dot{
-  transform:scale(1.55);
+  transform:scale(1.72);
   stroke:var(--teal)
 }
 .profile-intro-overlay[data-stage="root"] .site-graph-node[data-intro-tier="root"] .site-graph-label{
@@ -113,9 +117,53 @@ html[data-profile-intro="handoff"] body > footer{
   font-weight:800
 }
 
+.profile-intro-overlay[data-stage="identity"] .profile-intro-graph,
+.profile-intro-overlay[data-stage="expanding"] .profile-intro-graph{opacity:0}
+
+.profile-intro-enter{
+  position:absolute;
+  z-index:4;
+  left:50%;
+  bottom:max(30px,calc(env(safe-area-inset-bottom) + 18px));
+  transform:translateX(-50%);
+  display:flex;
+  align-items:baseline;
+  gap:10px;
+  min-height:44px;
+  padding:10px 16px 9px;
+  border:1px solid color-mix(in srgb,var(--teal) 38%,var(--line));
+  border-radius:999px;
+  background:color-mix(in srgb,var(--paper) 91%,transparent);
+  box-shadow:0 8px 26px color-mix(in srgb,var(--ink) 7%,transparent);
+  color:var(--teal);
+  cursor:pointer;
+  backdrop-filter:blur(8px);
+  transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease,opacity .2s ease;
+}
+.profile-intro-enter>span{
+  font:780 10px/1 var(--sans);
+  letter-spacing:.075em;
+  text-transform:uppercase
+}
+.profile-intro-enter>small{
+  color:var(--muted);
+  font:620 9px/1 var(--sans);
+  letter-spacing:.035em
+}
+.profile-intro-enter:hover,
+.profile-intro-enter:focus-visible{
+  transform:translateX(-50%) translateY(-2px);
+  border-color:var(--teal);
+  box-shadow:0 11px 30px color-mix(in srgb,var(--ink) 10%,transparent)
+}
+.profile-intro-enter:disabled{opacity:.25;pointer-events:none}
+.profile-intro-overlay.is-condensing .profile-intro-enter,
+.profile-intro-overlay[data-stage="identity"] .profile-intro-enter,
+.profile-intro-overlay[data-stage="expanding"] .profile-intro-enter{opacity:0;pointer-events:none}
+
 .profile-intro-skip{
   position:absolute;
-  z-index:3;
+  z-index:5;
   top:max(18px,env(safe-area-inset-top));
   right:max(20px,env(safe-area-inset-right));
   min-height:40px;
@@ -131,6 +179,7 @@ html[data-profile-intro="handoff"] body > footer{
 }
 .profile-intro-skip:hover,
 .profile-intro-skip:focus-visible{color:var(--teal);border-color:currentColor}
+.profile-intro-overlay[data-stage="expanding"] .profile-intro-skip{opacity:0;pointer-events:none}
 
 .profile-intro-caption{
   position:absolute;
@@ -143,26 +192,195 @@ html[data-profile-intro="handoff"] body > footer{
   letter-spacing:.12em;
   text-transform:uppercase;
   opacity:.72;
+  transition:opacity .25s ease
 }
+.profile-intro-overlay[data-stage="identity"] .profile-intro-caption,
+.profile-intro-overlay[data-stage="expanding"] .profile-intro-caption{opacity:0}
+
+.profile-intro-identity-anchor{
+  position:absolute;
+  z-index:6;
+  left:50%;
+  top:50%;
+  width:250px;
+  height:250px;
+  margin:-125px 0 0 -125px;
+  opacity:0;
+  transform:scale(.72);
+  transform-origin:center;
+  pointer-events:none;
+  transition:opacity .5s ease,transform .68s cubic-bezier(.16,.76,.18,1)
+}
+.profile-intro-identity-anchor.is-visible{opacity:1;transform:scale(1)}
+
+.profile-intro-identity{
+  appearance:none;
+  position:relative;
+  width:100%;
+  height:100%;
+  padding:0;
+  border:0;
+  border-radius:50%;
+  background:transparent;
+  color:var(--ink);
+  cursor:pointer;
+  pointer-events:auto;
+  outline:none;
+  transition:transform .28s cubic-bezier(.16,.76,.18,1)
+}
+.profile-intro-identity::before,
+.profile-intro-identity::after{
+  content:"";
+  position:absolute;
+  border-radius:50%;
+  pointer-events:none;
+  transition:transform .3s ease,opacity .3s ease,border-color .3s ease
+}
+.profile-intro-identity::before{
+  inset:-16px;
+  border:1px solid color-mix(in srgb,var(--teal) 34%,transparent);
+  opacity:.72
+}
+.profile-intro-identity::after{
+  inset:-33px;
+  border:1px solid color-mix(in srgb,var(--teal) 17%,transparent);
+  opacity:.48
+}
+.profile-intro-identity:hover,
+.profile-intro-identity:focus-visible{transform:scale(1.035)}
+.profile-intro-identity:hover::before,
+.profile-intro-identity:focus-visible::before{transform:scale(1.06);opacity:1;border-color:color-mix(in srgb,var(--teal) 60%,transparent)}
+.profile-intro-identity:hover::after,
+.profile-intro-identity:focus-visible::after{transform:scale(1.1);opacity:.72}
+
+.profile-intro-identity-portrait{
+  position:absolute;
+  inset:16px;
+  overflow:hidden;
+  border-radius:50%;
+  border:2px solid color-mix(in srgb,var(--teal) 60%,var(--paper));
+  background:var(--paper);
+  box-shadow:0 18px 46px color-mix(in srgb,var(--ink) 15%,transparent)
+}
+.profile-intro-identity-portrait img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+  transform:scale(1.02);
+  transition:transform .35s cubic-bezier(.16,.76,.18,1)
+}
+.profile-intro-identity:hover .profile-intro-identity-portrait img,
+.profile-intro-identity:focus-visible .profile-intro-identity-portrait img{transform:scale(1.06)}
+
+.profile-intro-identity-name{
+  position:absolute;
+  left:50%;
+  bottom:-58px;
+  transform:translateX(-50%);
+  width:max-content;
+  max-width:min(78vw,420px);
+  color:var(--ink);
+  font:760 17px/1.1 var(--sans);
+  letter-spacing:-.015em;
+  white-space:nowrap;
+  transition:opacity .2s ease,transform .25s ease
+}
+.profile-intro-identity-hint{
+  position:absolute;
+  left:50%;
+  bottom:-83px;
+  transform:translateX(-50%) translateY(3px);
+  width:max-content;
+  color:var(--teal);
+  font:760 9px/1 var(--sans);
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  opacity:.54;
+  transition:opacity .22s ease,transform .22s ease
+}
+.profile-intro-identity:hover .profile-intro-identity-hint,
+.profile-intro-identity:focus-visible .profile-intro-identity-hint{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.profile-intro-identity-orbit{
+  position:absolute;
+  inset:0;
+  pointer-events:none
+}
+.profile-intro-identity-tag{
+  position:absolute;
+  padding:5px 8px;
+  border:1px solid color-mix(in srgb,var(--line) 80%,transparent);
+  border-radius:999px;
+  background:color-mix(in srgb,var(--paper) 91%,transparent);
+  color:var(--muted);
+  font:680 9px/1 var(--sans);
+  letter-spacing:.025em;
+  white-space:nowrap;
+  backdrop-filter:blur(6px);
+  transition:transform .3s cubic-bezier(.16,.76,.18,1),color .2s ease,border-color .2s ease,opacity .2s ease
+}
+.profile-intro-identity-tag.is-1{left:-100px;top:31px}
+.profile-intro-identity-tag.is-2{right:-68px;top:88px}
+.profile-intro-identity-tag.is-3{left:-88px;bottom:28px}
+.profile-intro-identity:hover .profile-intro-identity-tag,
+.profile-intro-identity:focus-visible .profile-intro-identity-tag{color:var(--teal);border-color:color-mix(in srgb,var(--teal) 42%,var(--line))}
+.profile-intro-identity:hover .profile-intro-identity-tag.is-1,
+.profile-intro-identity:focus-visible .profile-intro-identity-tag.is-1{transform:translate(-7px,-4px)}
+.profile-intro-identity:hover .profile-intro-identity-tag.is-2,
+.profile-intro-identity:focus-visible .profile-intro-identity-tag.is-2{transform:translate(8px,-2px)}
+.profile-intro-identity:hover .profile-intro-identity-tag.is-3,
+.profile-intro-identity:focus-visible .profile-intro-identity-tag.is-3{transform:translate(-6px,5px)}
+
+.profile-intro-overlay.is-expanding-profile .profile-intro-identity-name,
+.profile-intro-overlay.is-expanding-profile .profile-intro-identity-hint,
+.profile-intro-overlay.is-expanding-profile .profile-intro-identity-orbit{opacity:0}
+.profile-intro-overlay.is-expanding-profile .profile-intro-identity::before,
+.profile-intro-overlay.is-expanding-profile .profile-intro-identity::after{opacity:0}
+.profile-intro-overlay.is-expanding-profile .profile-intro-identity-portrait{box-shadow:none}
 
 @media(max-width:900px){
-  .profile-intro-overlay{inset:0}
   .profile-intro-skip{top:max(12px,env(safe-area-inset-top));right:max(14px,env(safe-area-inset-right))}
   .profile-intro-caption{left:max(14px,env(safe-area-inset-left));bottom:max(12px,env(safe-area-inset-bottom))}
+  .profile-intro-enter{bottom:max(20px,calc(env(safe-area-inset-bottom) + 12px));gap:7px;padding-inline:13px}
+  .profile-intro-enter>small{display:none}
   .profile-intro-graph .site-graph-label{font-size:12px!important;stroke-width:4.5px!important}
   .profile-intro-graph .site-graph-meta{font-size:8.8px!important}
+
+  .profile-intro-identity-anchor{
+    width:190px;
+    height:190px;
+    margin:-105px 0 0 -95px
+  }
+  .profile-intro-identity-portrait{inset:12px}
+  .profile-intro-identity::before{inset:-13px}
+  .profile-intro-identity::after{inset:-25px}
+  .profile-intro-identity-name{bottom:-48px;font-size:15px}
+  .profile-intro-identity-hint{bottom:-70px}
+  .profile-intro-identity-tag{font-size:8px;padding:4px 6px}
+  .profile-intro-identity-tag.is-1{left:-65px;top:20px}
+  .profile-intro-identity-tag.is-2{right:-55px;top:68px}
+  .profile-intro-identity-tag.is-3{left:-59px;bottom:17px}
 }
 
 @media(prefers-reduced-motion:reduce){
   .profile-intro-overlay,
+  .profile-intro-graph,
   .profile-intro-graph .site-graph-node,
   .profile-intro-graph .site-graph-edges path,
   .profile-intro-graph .site-graph-label,
   .profile-intro-graph .site-graph-meta,
   .profile-intro-graph .site-graph-dot,
-  html[data-profile-intro="handoff"] body > .site-header,
-  html[data-profile-intro="handoff"] body > .profile-app,
-  html[data-profile-intro="handoff"] body > footer{
-    transition-duration:.2s!important
+  .profile-intro-identity-anchor,
+  .profile-intro-identity,
+  .profile-intro-identity::before,
+  .profile-intro-identity::after,
+  .profile-intro-identity-portrait img,
+  .profile-intro-identity-tag,
+  html[data-profile-intro="expanding"] body > .site-header,
+  html[data-profile-intro="expanding"] body > .profile-app,
+  html[data-profile-intro="expanding"] body > footer{
+    transition-duration:.16s!important
   }
 }

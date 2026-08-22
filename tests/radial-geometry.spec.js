@@ -5,6 +5,9 @@ const prepare = async page => {
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
 };
 
+const waitFan = page => page.waitForFunction(() =>
+  window.ProfileGeometry?.snapshot?.().compassVersion === 'fan-v2');
+
 const point = async (page, id) => page.locator(`#site-graph .site-graph-node[data-node-id="${id}"]`).evaluate(element => ({
   x: Number(element.dataset.x),
   y: Number(element.dataset.y)
@@ -13,15 +16,16 @@ const point = async (page, id) => page.locator(`#site-graph .site-graph-node[dat
 const dotFrom = (root, target, vector) =>
   (target.x - root.x) * vector.x + (target.y - root.y) * vector.y;
 
-test.describe('Global radial geometry', () => {
+test.describe('Global radial geometry — asymmetric fan', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('Overview keeps Štěpán central and Work exactly below the root', async ({ page }) => {
+  test('Overview keeps Work down, makes Knowledge the long right wing and puts Experience/Education above', async ({ page }) => {
     await prepare(page);
     await page.goto('/#overview');
     await page.waitForFunction(() => Boolean(window.ProfileGeometry && window.ProfileRootLanding));
+    await waitFan(page);
     await page.evaluate(() => window.ProfileRootLanding.activate({ focusGraph: false }));
-    await page.waitForFunction(() => document.body.dataset.globalGeometry === 'radial-overview');
+    await page.waitForFunction(() => document.body.dataset.globalGeometry === 'radial-overview' && document.body.dataset.globalCompass === 'fan-v2');
 
     const root = await point(page, 'stepan-chrast');
     const work = await point(page, 'work');
@@ -30,26 +34,37 @@ test.describe('Global radial geometry', () => {
     const education = await point(page, 'education');
     const about = await point(page, 'about');
 
-    expect(Math.abs(work.x - root.x)).toBeLessThan(5);
-    expect(work.y).toBeGreaterThan(root.y + 170);
-    expect(knowledge.x).toBeLessThan(root.x);
-    expect(knowledge.y).toBeLessThan(root.y - 170);
-    expect(experience.x).toBeGreaterThan(root.x + 170);
-    expect(experience.y).toBeLessThan(root.y);
-    expect(education.x).toBeGreaterThan(root.x + 100);
-    expect(education.y).toBeGreaterThan(root.y + 100);
-    expect(about.x).toBeLessThan(root.x - 170);
-    expect(about.y).toBeGreaterThan(root.y);
+    expect(Math.abs(work.x - root.x)).toBeLessThan(7);
+    expect(work.y).toBeGreaterThan(root.y + 260);
 
-    const vectors = await page.evaluate(() => window.ProfileGeometry.snapshot().sections);
-    expect(Math.abs(vectors.work.vector.x)).toBeLessThan(0.01);
-    expect(vectors.work.vector.y).toBeGreaterThan(0.99);
+    expect(knowledge.x).toBeGreaterThan(root.x + 320);
+    expect(Math.abs(knowledge.y - root.y)).toBeLessThan(55);
+
+    expect(experience.x).toBeLessThan(root.x - 190);
+    expect(experience.y).toBeLessThan(root.y - 190);
+
+    expect(education.x).toBeGreaterThan(root.x + 130);
+    expect(education.y).toBeLessThan(root.y - 245);
+
+    expect(about.x).toBeLessThan(root.x - 250);
+    expect(about.y).toBeGreaterThan(root.y + 55);
+
+    const sections = await page.evaluate(() => window.ProfileGeometry.snapshot().sections);
+    expect(Math.abs(sections.work.vector.x)).toBeLessThan(.01);
+    expect(sections.work.vector.y).toBeGreaterThan(.99);
+    expect(sections.knowledge.vector.x).toBeGreaterThan(.99);
+    expect(sections.experience.vector.x).toBeLessThan(-.68);
+    expect(sections.experience.vector.y).toBeLessThan(-.65);
+    expect(sections.education.vector.x).toBeGreaterThan(.45);
+    expect(sections.education.vector.y).toBeLessThan(-.85);
   });
 
-  test('Atlas is five outward-oriented trees with Work continuing downward', async ({ page }) => {
+  test('Atlas rotates each existing hierarchy as one outward tree and preserves Work downward', async ({ page }) => {
     await prepare(page);
     await page.goto('/#atlas');
     await page.waitForFunction(() => document.body.dataset.globalGeometry === 'radial-atlas');
+    await waitFan(page);
+    await page.waitForFunction(() => document.body.dataset.globalCompass === 'fan-v2');
     await page.waitForFunction(() => document.querySelectorAll('#site-graph .site-graph-node[data-node-id]').length === window.SITE_DATA.graph.nodes.length);
 
     const snapshot = await page.evaluate(() => window.ProfileGeometry.snapshot());
@@ -69,16 +84,18 @@ test.describe('Global radial geometry', () => {
       expect(dotFrom(root, child, vector)).toBeGreaterThan(dotFrom(root, section, vector) + 55);
     }
 
-    const atlasWork = await point(page, 'work');
-    expect(Math.abs(atlasWork.x - root.x)).toBeLessThan(6);
-    expect(atlasWork.y).toBeGreaterThan(root.y + 220);
-    expect(await page.locator('#site-graph .site-graph-node[data-node-id="work"]').getAttribute('data-global-sector')).toBe('work');
+    const work = await point(page, 'work');
+    const knowledge = await point(page, 'knowledge');
+    expect(Math.abs(work.x - root.x)).toBeLessThan(8);
+    expect(work.y).toBeGreaterThan(root.y + 300);
+    expect(knowledge.x).toBeGreaterThan(root.x + 330);
   });
 
-  test('entering Knowledge normalises its local graph back to top-to-bottom navigation', async ({ page }) => {
+  test('entering Knowledge still normalises the local graph back to top-to-bottom navigation', async ({ page }) => {
     await prepare(page);
     await page.goto('/#overview');
     await page.waitForFunction(() => Boolean(window.ProfileGeometry && window.ProfileRootLanding));
+    await waitFan(page);
     await page.evaluate(() => window.ProfileRootLanding.activate({ focusGraph: false }));
     await page.waitForFunction(() => document.body.dataset.globalGeometry === 'radial-overview');
 
@@ -98,6 +115,7 @@ test.describe('Global radial geometry', () => {
     await prepare(page);
     await page.goto('/#overview');
     await page.waitForFunction(() => Boolean(window.ProfileGeometry && window.ProfileRootLanding));
+    await waitFan(page);
     await page.evaluate(() => window.ProfileRootLanding.activate({ focusGraph: false }));
     await page.waitForFunction(() => document.body.dataset.globalGeometry === 'radial-overview');
 
@@ -121,10 +139,11 @@ test.describe('Global radial geometry', () => {
 test.describe('Radial intro source', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('the first-session intro captures the same centred radial Atlas with Work below root', async ({ page }) => {
+  test('first-session intro captures the same fan Atlas around the visible root', async ({ page }) => {
     await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
     await page.goto('/');
     await page.waitForFunction(() => window.ProfileIntro?.snapshot().stage === 'atlas' && window.ProfileIntro.snapshot().waiting, null, { timeout: 8_000 });
+    await waitFan(page);
 
     const points = await page.evaluate(() => {
       const node = id => {
@@ -141,11 +160,12 @@ test.describe('Radial intro source', () => {
       };
     });
 
-    expect(Math.abs(points.work.x - points.root.x)).toBeLessThan(8);
+    expect(Math.abs(points.work.x - points.root.x)).toBeLessThan(10);
     expect(points.work.y).toBeGreaterThan(points.root.y);
-    expect(points.knowledge.y).toBeLessThan(points.root.y);
-    expect(points.experience.x).toBeGreaterThan(points.root.x);
-    expect(points.education.y).toBeGreaterThan(points.root.y);
+    expect(points.knowledge.x).toBeGreaterThan(points.root.x);
+    expect(points.experience.x).toBeLessThan(points.root.x);
+    expect(points.experience.y).toBeLessThan(points.root.y);
+    expect(points.education.y).toBeLessThan(points.root.y);
     expect(points.about.x).toBeLessThan(points.root.x);
   });
 });

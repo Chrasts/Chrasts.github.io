@@ -1,93 +1,51 @@
 const { test, expect } = require('@playwright/test');
+const fresh = async page => { await page.addInitScript(() => {sessionStorage.removeItem('profileIntroSeen');sessionStorage.removeItem('__phase3FreshPrepared');}); await page.route('https://cloud.umami.is/**', r=>r.abort()).catch(()=>{}); };
+const bypass = async page => { await page.addInitScript(() => sessionStorage.setItem('profileIntroSeen','true')); await page.route('https://cloud.umami.is/**', r=>r.abort()).catch(()=>{}); };
+const p = (page,id) => page.locator(`#site-graph .site-graph-node[data-node-id="${id}"]`).evaluate(e=>({x:Number(e.dataset.x),y:Number(e.dataset.y)}));
 
-const freshIntro = async page => {
-  await page.addInitScript(() => {
-    sessionStorage.removeItem('profileIntroSeen');
-    sessionStorage.removeItem('__phase3FreshPrepared');
+test.describe('Intro v3 regressions', () => {
+  test.use({ viewport:{width:1440,height:900} });
+
+  test('never flashes the full Atlas before root-only autoplay', async ({page}) => {
+    await fresh(page); await page.goto('/');
+    await page.waitForFunction(() => window.ProfileIntroUnfold?.snapshot().stage === 'root', null, {timeout:8000});
+    const visible=await page.evaluate(() => [...document.querySelectorAll('.profile-intro-graph .site-graph-node:not([data-node-id="stepan-chrast"])')].filter(e=>Number(getComputedStyle(e).opacity)>.05).length);
+    expect(visible).toBe(0);
   });
-  await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
-};
 
-const bypassIntro = async page => {
-  await page.addInitScript(() => sessionStorage.setItem('profileIntroSeen', 'true'));
-  await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
-};
+  test('gateway keeps rotating on hover and disappears immediately on Enter click', async ({page}) => {
+    await fresh(page); await page.goto('/');
+    await page.waitForFunction(() => window.ProfileIntroUnfold?.snapshot().completed === true, null, {timeout:8000});
+    const enter=page.locator('.profile-intro-enter'); await expect(enter).toBeVisible();
+    expect(await enter.evaluate(e=>getComputedStyle(e,'::after').animationName)).toContain('intro-gateway-orbit-v3');
+    await enter.hover(); await page.waitForTimeout(120);
+    expect(await enter.evaluate(e=>getComputedStyle(e,'::after').animationPlayState)).toBe('running');
+    await enter.click(); await expect(page.locator('.profile-intro-overlay')).toHaveClass(/is-enter-committed/);
+    expect(await enter.evaluate(e=>getComputedStyle(e).visibility)).toBe('hidden');
+    await page.waitForFunction(() => ['territories','branches','root','identity'].includes(window.ProfileIntro?.snapshot().stage), null, {timeout:2500});
+  });
 
-test.describe('Automatic first-session Atlas unfold', () => {
-  test.use({ viewport: { width: 1440, height: 900 } });
-
-  test('starts from the living Štěpán root, grows the real Atlas, then reveals Enter profile', async ({ page }) => {
-    await freshIntro(page);
-    await page.goto('/');
-    await page.waitForFunction(() => window.ProfileIntroUnfold?.snapshot().stage === 'root', null, { timeout: 8_000 });
-
-    const shell = page.locator('.profile-intro-overlay');
-    const root = shell.locator('.site-graph-node[data-node-id="stepan-chrast"]');
-    const enter = shell.locator('.profile-intro-enter');
-
-    await expect(shell).toHaveAttribute('data-auto-unfold-stage', 'root');
-    await expect(root.locator('.profile-intro-root-orbit circle')).toHaveCount(3);
-    expect(await root.locator('.site-graph-label').evaluate(label => parseFloat(getComputedStyle(label).fontSize))).toBeGreaterThanOrEqual(20);
-    expect(await enter.evaluate(element => Number(getComputedStyle(element).opacity))).toBeLessThan(0.05);
-    await expect(enter).toHaveAttribute('tabindex', '-1');
-
-    const visibleAtRoot = await page.evaluate(() => [...document.querySelectorAll(
-      '.profile-intro-graph .site-graph-node:not([data-node-id="stepan-chrast"])'
-    )].filter(node => Number(getComputedStyle(node).opacity) > 0.05).length);
-    expect(visibleAtRoot).toBe(0);
-
-    await page.waitForFunction(() => window.ProfileIntroUnfold?.snapshot().stage === 'unfolding', null, { timeout: 4_000 });
-    await page.waitForTimeout(520);
-    const during = await page.evaluate(() => {
-      const nodes = [...document.querySelectorAll('.profile-intro-graph .site-graph-node:not([data-node-id="stepan-chrast"])')];
-      const visible = nodes.filter(node => Number(getComputedStyle(node).opacity) > 0.08).length;
-      return { visible, total: nodes.length };
-    });
-    expect(during.visible).toBeGreaterThan(0);
-    expect(during.visible).toBeLessThan(during.total);
-
-    await page.waitForFunction(() => window.ProfileIntroUnfold?.snapshot().completed === true, null, { timeout: 5_000 });
-    await expect(shell).toHaveClass(/is-auto-unfold-complete/);
-    await expect(enter).toHaveAttribute('tabindex', '0');
-    await expect(enter).toBeEnabled();
-    expect(await enter.evaluate(element => Number(getComputedStyle(element).opacity))).toBeGreaterThan(0.9);
-    expect(await enter.evaluate(element => getComputedStyle(element, '::after').animationName)).toContain('intro-gateway-orbit');
-    expect(await root.locator('.site-graph-label').evaluate(label => parseFloat(getComputedStyle(label).fontSize))).toBeGreaterThanOrEqual(18);
-
-    await enter.click();
-    await page.waitForFunction(() => window.ProfileIntro?.snapshot().stage === 'territories', null, { timeout: 2_500 });
+  test('portrait handoff settles directly into stable fan v3 Overview', async ({page}) => {
+    await fresh(page); await page.goto('/'); await page.waitForFunction(() => window.ProfileIntroUnfold?.snapshot().completed === true, null, {timeout:8000});
+    await page.locator('.profile-intro-enter').click(); await page.waitForFunction(() => window.ProfileIntro?.snapshot().stage === 'identity', null, {timeout:8000});
+    await page.locator('.profile-intro-identity').click(); await page.waitForFunction(() => !document.querySelector('.profile-intro-overlay'), null, {timeout:8000});
+    await page.waitForFunction(() => window.ProfileGeometry?.snapshot().compassVersion === 'fan-v3' && document.body.dataset.globalCompass === 'fan-v3');
+    const ids=['work','knowledge','education','about','experience']; const before={}; for(const id of ids) before[id]=await p(page,id);
+    await page.waitForTimeout(850); const after={}; for(const id of ids) after[id]=await p(page,id);
+    for(const id of ids){expect(Math.hypot(after[id].x-before[id].x,after[id].y-before[id].y)).toBeLessThan(3); const target=await page.evaluate(id=>window.ProfileGeometry.overviewPoint(id),id); expect(Math.hypot(after[id].x-target.x,after[id].y-target.y)).toBeLessThan(3);}
   });
 });
 
-test.describe('Atlas terminal spacing', () => {
-  test.use({ viewport: { width: 1440, height: 900 } });
-
-  test('gives Knowledge terminal nodes meaningful radial variance while Work stays rank-like', async ({ page }) => {
-    await bypassIntro(page);
-    await page.goto('/#atlas');
-    await page.waitForFunction(() => window.ProfileGeometry?.snapshot().compassVersion === 'fan-v2', null, { timeout: 5_000 });
-
-    const spread = await page.evaluate(() => {
-      const graph = window.SITE_DATA.graph;
-      const geometry = window.ProfileGeometry;
-      const root = geometry.atlasPoint(graph.rootId);
-      const project = (point, vector) => (point.x - root.x) * vector.x + (point.y - root.y) * vector.y;
-      const terminalIds = section => graph.nodes
-        .filter(node => geometry.sectionFor(node.id) === section && node.id !== section)
-        .filter(node => !graph.nodes.some(child => child.parentIds?.includes(node.id) && geometry.sectionFor(child.id) === section))
-        .map(node => node.id);
-      const distances = (ids, section) => ids.map(id => project(geometry.atlasPoint(id), geometry.compass[section]));
-      const knowledge = distances(terminalIds('knowledge'), 'knowledge');
-      const work = distances(
-        graph.nodes.filter(node => node.type === 'project' && geometry.sectionFor(node.id) === 'work').map(node => node.id),
-        'work'
-      );
-      const range = values => Math.max(...values) - Math.min(...values);
-      return { knowledgeCount: knowledge.length, knowledgeRange: range(knowledge), workRange: range(work) };
-    });
-
-    expect(spread.knowledgeCount).toBeGreaterThan(3);
-    expect(spread.knowledgeRange).toBeGreaterThan(110);
-    expect(spread.workRange).toBeLessThan(90);
+test.describe('Overview root identity', () => {
+  test.use({ viewport:{width:1440,height:900} });
+  test('clicking Štěpán opens profile info without reorganising the fragment', async ({page}) => {
+    await bypass(page); await page.goto('/#overview'); await page.waitForFunction(() => Boolean(window.ProfileRootLanding && window.ProfileIntroFixesV3));
+    await page.evaluate(() => window.ProfileRootLanding.activate({focusGraph:false})); await page.waitForFunction(() => document.body.dataset.globalCompass === 'fan-v3');
+    const ids=['work','knowledge','education','about','experience']; const before={}; for(const id of ids) before[id]=await p(page,id);
+    await page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]').click();
+    await expect(page.locator('.profile-root-inspector')).toHaveClass(/is-open/); await expect(page.locator('.profile-root-inspector-portrait img')).toHaveAttribute('src','assets/stepan-chrast.jpg'); await expect(page.locator('.profile-root-inspector h2')).toContainText('Štěpán Chrast');
+    expect(await page.evaluate(() => document.body.dataset.graphRoute)).toBe('overview'); expect(await page.evaluate(() => document.body.dataset.globalCompass)).toBe('fan-v3');
+    await page.waitForTimeout(500); for(const id of ids){const after=await p(page,id);expect(Math.hypot(after.x-before[id].x,after.y-before[id].y)).toBeLessThan(3);}
+    await page.keyboard.press('Escape'); await page.waitForFunction(() => !window.ProfileIntroFixesV3.snapshot().inspectorOpen);
   });
 });

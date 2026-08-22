@@ -15,7 +15,8 @@ const ready = async (page, path = '/') => {
 };
 
 const route = async (page, name) => {
-  await page.locator(`#main-nav [data-route="${name}"]`).first().click({ force: true });
+  const target = page.locator(`[data-route="${name}"]:visible`).first();
+  await target.click({ force: true });
   await page.waitForFunction(expected => document.body.dataset.graphRoute === expected, name);
   await settle(page);
 };
@@ -63,9 +64,14 @@ test.describe('Phase 1 scene architecture', () => {
       placement: 'hero-copy',
       enter: 'from-left',
       exit: 'to-left',
-      variant: 'desktop'
+      variant: 'desktop',
+      managesVisibility: false
     });
-    expect(byId['root-portrait']).toMatchObject({ visible: true, placement: 'hero-identity' });
+    expect(byId['root-portrait']).toMatchObject({
+      visible: true,
+      placement: 'hero-identity',
+      managesVisibility: false
+    });
     expect(byId['work-controls'].visible).toBe(false);
     expect(byId['atlas-controls'].visible).toBe(false);
 
@@ -76,7 +82,8 @@ test.describe('Phase 1 scene architecture', () => {
       visible: true,
       placement: 'scene-rails',
       enter: 'rails-in',
-      exit: 'rails-out'
+      exit: 'rails-out',
+      managesVisibility: true
     });
 
     await route(page, 'atlas');
@@ -86,7 +93,8 @@ test.describe('Phase 1 scene architecture', () => {
       visible: true,
       placement: 'atlas-toolbar',
       enter: 'toolbar-in',
-      exit: 'toolbar-out'
+      exit: 'toolbar-out',
+      managesVisibility: true
     });
   });
 
@@ -153,6 +161,7 @@ test.describe('Phase 1 scene architecture', () => {
     expect(hooks.map(hook => hook.type)).toEqual(['before', 'after']);
     expect(hooks[0].from).toBe('overview');
     expect(hooks[0].to).toBe('knowledge');
+    expect(hooks[0].trigger).toBe('click');
     expect(hooks[1].to).toBe('knowledge');
     expect(await page.evaluate(() => window.ProfileScene.transitions.active)).toBe(false);
   });
@@ -163,12 +172,14 @@ test.describe('Phase 1 scene architecture', () => {
     let camera = await page.evaluate(() => window.ProfileScene.camera.snapshot());
     expect(camera.adapter).toBe('desktop-local');
     expect(camera.kind).toBe('fixed');
+    expect(camera.writable).toBe(false);
 
     await route(page, 'atlas');
     camera = await page.evaluate(() => window.ProfileScene.camera.snapshot());
     expect(camera.adapter).toBe('atlas');
     expect(camera.kind).toBe('transform');
     expect(camera.scale).toBeGreaterThan(0);
+    expect(camera.writable).toBe(true);
     expect(await page.evaluate(() => window.ProfileScene.camera.fit())).toBe(true);
   });
 });

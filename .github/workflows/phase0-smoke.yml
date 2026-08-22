@@ -32,6 +32,7 @@ jobs:
           node --check intro-animation.js
           node --check motion-polish.js
           node --check intro-unfold.js
+          node --check intro-fixes-v3.js
           node --check radial-geometry.js
           node --check cross-link-travel-v2.js
           node --check phase0-stability.js

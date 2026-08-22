@@ -26,6 +26,7 @@
   scene.registry.register({
     id: 'root-profile-copy',
     selector: '.hero-copy',
+    managedVisibility: false,
     visible: overview,
     anchorNodeId: 'stepan-chrast',
     placement: 'identity-copy',
@@ -48,6 +49,7 @@
   scene.registry.register({
     id: 'portrait',
     selector: '.hero-visual.profile-identity',
+    managedVisibility: false,
     visible: overview,
     anchorNodeId: 'stepan-chrast',
     placement: 'identity-portrait',

@@ -17,17 +17,6 @@
     writable: false
   });
 
-  /*
-   * SVG groups have a bounding box that includes their labels. The labels used
-   * to opt out of hit testing, so the centre point chosen by Playwright (and a
-   * real pointer over the text) could fall through to the root <svg>. Make the
-   * visible node group itself a hit target and keep the explicit hit circle as
-   * a guaranteed fallback. Hidden Atlas LOD nodes remain non-interactive.
-   *
-   * The custom property is also a CSS-level reduced-motion probe. It is useful
-   * here because an older graph compatibility shim temporarily wraps
-   * window.matchMedia; CSS media evaluation remains native and authoritative.
-   */
   if (!document.querySelector('style[data-profile-node-hit-guard]')) {
     const style = document.createElement('style');
     style.dataset.profileNodeHitGuard = 'true';
@@ -57,7 +46,6 @@
   const reducedMatches = () => cssReduced || reduced.matches;
   window.__PROFILE_REDUCED_MOTION__ = reducedMatches();
 
-  /* Keep later consumers off the temporary compatibility false-negative. */
   if (cssReduced && !reduced.matches) {
     window.matchMedia = query => {
       const result = initialMatchMedia(query);
@@ -83,9 +71,7 @@
     if (
       document.body?.dataset.graphMode === 'atlas' &&
       this.matches?.('#site-graph .site-graph-svg')
-    ) {
-      return;
-    }
+    ) return;
     return originalSet?.call(this, pointerId);
   };
 
@@ -93,15 +79,10 @@
     if (
       document.body?.dataset.graphMode === 'atlas' &&
       this.matches?.('#site-graph .site-graph-svg')
-    ) {
-      return;
-    }
+    ) return;
     return originalRelease?.call(this, pointerId);
   };
 
-  /* ----------------------------------------------------------------------
-     Atlas boundary ownership
-     ---------------------------------------------------------------------- */
   let replayingBoundary = false;
   const routeFromControl = target => {
     const control = target?.closest?.('[data-route]');
@@ -156,25 +137,44 @@
   }, true);
 
   const baseCamera = () => document.querySelector('#site-graph .site-graph-svg > g:not(.v9-transition-overlay)');
-  const cancelConcurrentV9 = () => {
-    if (!document.body?.classList.contains('is-atlas-handoff')) return false;
-    document.querySelectorAll('#site-graph .v9-transition-overlay').forEach(element => element.remove());
+  const exclusiveTransitionOwner = () =>
+    document.body?.classList.contains('is-atlas-handoff') ||
+    document.body?.classList.contains('is-crosslink-travelling');
+
+  const keepExclusiveBaseVisible = () => {
     const camera = baseCamera();
-    camera?.style.removeProperty('opacity');
-    camera?.style.removeProperty('visibility');
+    if (!camera) return;
+    if (exclusiveTransitionOwner()) {
+      camera.dataset.exclusiveVisibilityGuard = 'true';
+      camera.style.setProperty('opacity', '1', 'important');
+      camera.style.setProperty('visibility', 'visible', 'important');
+      return;
+    }
+    if (camera.dataset.exclusiveVisibilityGuard === 'true') {
+      delete camera.dataset.exclusiveVisibilityGuard;
+      camera.style.removeProperty('opacity');
+      camera.style.removeProperty('visibility');
+    }
+  };
+
+  const cancelConcurrentV9 = () => {
+    if (!exclusiveTransitionOwner()) return false;
+    document.querySelectorAll('#site-graph .v9-transition-overlay').forEach(element => element.remove());
     document.body.classList.remove('is-v9-transitioning');
     try { window.__GRAPH_V6_FORCE_SNAP__ = false; } catch (_) {}
+    keepExclusiveBaseVisible();
     return true;
   };
 
-  /* ----------------------------------------------------------------------
-     Reduced-motion live-renderer visibility
-     ---------------------------------------------------------------------- */
   const keepReducedBaseVisible = target => {
     const camera = target?.matches?.('#site-graph .site-graph-svg > g:not(.v9-transition-overlay)')
       ? target
       : baseCamera();
     if (!camera) return;
+    if (exclusiveTransitionOwner()) {
+      keepExclusiveBaseVisible();
+      return;
+    }
     if (reducedMatches() && document.body?.classList.contains('is-v9-transitioning')) {
       camera.dataset.reducedVisibilityGuard = 'true';
       camera.style.setProperty('opacity', '1', 'important');
@@ -188,9 +188,6 @@
     }
   };
 
-  /* ----------------------------------------------------------------------
-     Phase-7 desktop camera ownership
-     ---------------------------------------------------------------------- */
   let cameraGuard = false;
   const expectedCameraTransform = () => {
     const snap = window.ProfileAtlasLOD?.snapshot?.();
@@ -216,13 +213,19 @@
   const graphRoot = document.querySelector('#site-graph');
   if (graphRoot) {
     new MutationObserver(mutations => {
+      if (exclusiveTransitionOwner()) cancelConcurrentV9();
       for (const mutation of mutations) {
+        if (mutation.type === 'childList' && exclusiveTransitionOwner()) {
+          cancelConcurrentV9();
+          continue;
+        }
         if (mutation.type !== 'attributes') continue;
         if (mutation.attributeName === 'style') keepReducedBaseVisible(mutation.target);
         if (mutation.attributeName === 'transform') guardAtlasCamera(mutation.target);
       }
     }).observe(graphRoot, {
       subtree: true,
+      childList: true,
       attributes: true,
       attributeFilter: ['style', 'transform']
     });
@@ -231,6 +234,7 @@
   if (document.body) {
     new MutationObserver(() => {
       cancelConcurrentV9();
+      keepExclusiveBaseVisible();
       keepReducedBaseVisible();
       guardAtlasCamera();
     }).observe(document.body, {
@@ -239,13 +243,16 @@
     });
   }
 
+  addEventListener('profile:crosslink-start', () => {
+    cancelConcurrentV9();
+    keepExclusiveBaseVisible();
+  });
+  addEventListener('profile:crosslink-complete', () => {
+    document.querySelectorAll('#site-graph .v9-transition-overlay').forEach(element => element.remove());
+    keepExclusiveBaseVisible();
+  });
   addEventListener('profile:atlas-lod-change', () => guardAtlasCamera());
   addEventListener('profile:geometry-applied', () => guardAtlasCamera());
-  addEventListener('profile:crosslink-complete', () => {
-    if (!document.body?.classList.contains('is-v9-transitioning')) {
-      document.querySelectorAll('#site-graph .v9-transition-overlay').forEach(element => element.remove());
-    }
-  });
 
   window.ProfileAtlasPointerHotfix = Object.freeze({
     active: true,
@@ -253,7 +260,8 @@
     reducedMotionGuard: true,
     hitTargetGuard: true,
     cameraGuard: true,
+    crossLinkGuard: true,
     reducedMotion: reducedMatches(),
-    reason: 'Keep SVG nodes clickable and make Atlas/V9/camera ownership disjoint.'
+    reason: 'Keep SVG nodes clickable and make Atlas/cross-link/V9/camera ownership disjoint.'
   });
 })();

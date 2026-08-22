@@ -3,17 +3,22 @@
     const script = document.createElement('script');
     script.src = 'scene-runtime.js';
     script.dataset.profileSceneRuntime = 'true';
-    script.addEventListener('load', () => {
-      /* The existing hero container still owns physical hide/show during its
-         structural transition. The Scene registry owns the declaration, but
-         does not add a second `hidden` state to the copy/portrait themselves. */
-      ['root-profile-copy', 'root-portrait'].forEach(id => {
-        const object = window.ProfileScene?.registry?.get(id);
-        if (object) object.manageVisibility = false;
-      });
-      window.ProfileScene?.manager?.sync();
-    }, { once: true });
     document.head.appendChild(script);
+  }
+
+  /* graph-v9.css is loaded by the compatibility prelude. Keep the critical
+     reduced-motion handoff rule available synchronously so an immediate first
+     interaction cannot blank the live renderer while that stylesheet loads. */
+  if (!document.querySelector('style[data-profile-reduced-handoff]')) {
+    const style = document.createElement('style');
+    style.dataset.profileReducedHandoff = 'true';
+    style.textContent = `@media (prefers-reduced-motion: reduce) {
+      body.is-v9-transitioning #site-graph .site-graph-svg > g:not(.v9-transition-overlay) {
+        opacity: 1 !important;
+        visibility: visible !important;
+      }
+    }`;
+    document.head.appendChild(style);
   }
 
   const mobileBreakpoint = window.matchMedia('(max-width: 900px)');

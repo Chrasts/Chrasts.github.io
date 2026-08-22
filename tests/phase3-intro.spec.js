@@ -85,15 +85,17 @@ test.describe('Phase 3 interaction-gated intro — desktop', () => {
 
     await page.locator('.profile-intro-enter').click();
     await waitStage(page, 'territories');
-    await waitStage(page, 'branches');
 
-    const deepAfter = await page.evaluate(id => {
-      const node = document.querySelector(`.profile-intro-overlay .site-graph-node[data-node-id="${id}"]`);
-      return node ? { x: Number(node.dataset.x), y: Number(node.dataset.y) } : null;
-    }, deepBefore.id);
-    expect(deepAfter).toBeTruthy();
-    expect(Math.abs(deepAfter.x - deepBefore.sectionX)).toBeLessThan(1);
-    expect(Math.abs(deepAfter.y - deepBefore.sectionY)).toBeLessThan(1);
+    // Observe the branch contract atomically. The cinematic continues shortly
+    // after publishing `branches`, so a second protocol round-trip can otherwise
+    // sample the following root-collapse frame rather than the branch frame.
+    await page.waitForFunction(expected => {
+      if (window.ProfileIntro?.snapshot().stage !== 'branches') return false;
+      const node = document.querySelector(`.profile-intro-overlay .site-graph-node[data-node-id="${expected.id}"]`);
+      if (!node) return false;
+      return Math.abs(Number(node.dataset.x) - expected.sectionX) < 1 &&
+        Math.abs(Number(node.dataset.y) - expected.sectionY) < 1;
+    }, { id: deepBefore.id, sectionX: deepBefore.sectionX, sectionY: deepBefore.sectionY }, { timeout: 8_000 });
 
     await waitStage(page, 'root');
     await waitStage(page, 'identity');
@@ -118,6 +120,10 @@ test.describe('Phase 3 interaction-gated intro — desktop', () => {
     await expect(identity.locator('.profile-intro-identity-name')).toContainText('Štěpán Chrast');
     await expect(identity.locator('.profile-intro-identity-tag')).toHaveCount(3);
 
+    // The identity appears where the previous Enter control lived, so the
+    // pointer can already be over it. Move away before testing hover motion.
+    await page.mouse.move(8, 8);
+    await page.waitForTimeout(80);
     const transformBefore = await identity.evaluate(element => getComputedStyle(element).transform);
     await identity.hover();
     await page.waitForTimeout(140);
@@ -197,6 +203,7 @@ test.describe('Phase 3 reduced motion', () => {
   test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
 
   test('uses a short root-to-Atlas reveal, then waits for Enter profile and hands directly to identity', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await freshSession(page);
     await page.goto('/#overview');
     await waitAtlasReady(page);

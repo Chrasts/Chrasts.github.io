@@ -23,8 +23,8 @@
   });
 
   const OVERVIEW = Object.freeze({ width: 1200, height: 720, center: { x: 600, y: 350 }, radius: 230 });
-  const ATLAS = Object.freeze({ width: 2520, height: 1580, center: { x: 1260, y: 790 }, sectionRadius: 300, safe: 78 });
-  const halfAngles = Object.freeze({ work: 0.70, knowledge: 0.80, experience: 0.60, education: 0.58, about: 0.58 });
+  const ATLAS = Object.freeze({ width: 2520, height: 1580, center: { x: 1260, y: 790 }, sectionRadius: 336, safe: 78 });
+  const halfAngles = Object.freeze({ work: 0.70, knowledge: 0.82, experience: 0.62, education: 0.60, about: 0.60 });
 
   const stableNumber = value => {
     let number = 2166136261;
@@ -100,6 +100,9 @@
   const atlasPositions = () => {
     const positions = new Map([[rootId, { ...ATLAS.center }]]);
     const tangentById = new Map([[rootId, 0]]);
+    const hasChildInSection = (id, sectionId) => graph.nodes.some(candidate =>
+      candidate.parentIds?.includes(id) && sectionFor(candidate.id) === sectionId
+    );
 
     sections.forEach(sectionId => {
       const vector = compass[sectionId];
@@ -118,9 +121,15 @@
 
       const limit = rayLimit(ATLAS.center, vector, ATLAS.width, ATLAS.height, ATLAS.safe);
       const usable = Math.max(ATLAS.sectionRadius + 120, limit - 42);
+      // Non-Work territories may deliberately project beyond the old radial
+      // envelope. The later fan projection rotates them into their final sectors.
+      // Work remains regular because its geometry continues into the FCA lattice.
+      const extendedUsable = sectionId === 'work'
+        ? usable
+        : usable + (sectionId === 'knowledge' ? 190 : 120);
       const levelGap = maxDepth > 0
-        ? Math.max(72, Math.min(148, (usable - ATLAS.sectionRadius) / maxDepth))
-        : 120;
+        ? Math.max(76, Math.min(152, (usable - ATLAS.sectionRadius) / maxDepth))
+        : 124;
       const sectionPoint = {
         x: ATLAS.center.x + vector.x * ATLAS.sectionRadius,
         y: ATLAS.center.y + vector.y * ATLAS.sectionRadius
@@ -144,19 +153,39 @@
         );
 
         const baseRadius = ATLAS.sectionRadius + levelGap * depth;
-        const tangentialCapacity = Math.max(150, baseRadius * Math.tan(halfAngles[sectionId]));
+        const tangentialCapacity = Math.max(160, baseRadius * Math.tan(halfAngles[sectionId]));
         const desiredGap = sectionId === 'knowledge'
-          ? 92
+          ? 108
           : sectionId === 'work'
             ? (depth === 2 ? 132 : 118)
-            : 116;
+            : 124;
         const span = Math.min(tangentialCapacity * 2, desiredGap * Math.max(0, level.length - 1));
 
         level.forEach((node, index) => {
-          const tangent = level.length <= 1 ? 0 : -span / 2 + span * index / (level.length - 1);
+          const baseTangent = level.length <= 1 ? 0 : -span / 2 + span * index / (level.length - 1);
           const dense = level.length >= 8;
-          const radialJitter = dense ? (index % 2 ? 24 : -18) : ((stableNumber(`${node.id}:r`) % 11) - 5);
-          const radius = Math.min(usable, baseRadius + radialJitter);
+          const leaf = !hasChildInSection(node.id, sectionId);
+          const seed = stableNumber(`${node.id}:terminal`);
+          const tangentVariance = sectionId === 'work'
+            ? 0
+            : leaf
+              ? ((seed >>> 9) % (sectionId === 'knowledge' ? 61 : 43)) - (sectionId === 'knowledge' ? 30 : 21)
+              : ((seed >>> 12) % 17) - 8;
+          const tangent = baseTangent + tangentVariance;
+
+          let radialJitter;
+          if (sectionId === 'work') {
+            radialJitter = dense ? (index % 2 ? 24 : -18) : ((stableNumber(`${node.id}:r`) % 11) - 5);
+          } else if (leaf) {
+            radialJitter = sectionId === 'knowledge'
+              ? 40 + (seed % 151)
+              : 24 + (seed % 93);
+            if (depth === maxDepth) radialJitter += sectionId === 'knowledge' ? ((seed >>> 16) % 52) : ((seed >>> 16) % 26);
+          } else {
+            radialJitter = (stableNumber(`${node.id}:r`) % 41) - 20;
+          }
+
+          const radius = Math.min(extendedUsable, Math.max(baseRadius - 32, baseRadius + radialJitter));
           positions.set(node.id, {
             x: ATLAS.center.x + vector.x * radius + perpendicular.x * tangent,
             y: ATLAS.center.y + vector.y * radius + perpendicular.y * tangent

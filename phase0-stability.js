@@ -6,76 +6,7 @@
     document.head.appendChild(script);
   }
 
-  /* graph-v9.css is loaded by the compatibility prelude. Keep the critical
-     reduced-motion handoff rule available synchronously so an immediate first
-     interaction cannot blank the live renderer while that stylesheet loads. */
-  if (!document.querySelector('style[data-profile-reduced-handoff]')) {
-    const style = document.createElement('style');
-    style.dataset.profileReducedHandoff = 'true';
-    style.textContent = `@media (prefers-reduced-motion: reduce) {
-      body.is-v9-transitioning #site-graph .site-graph-svg > g:not(.v9-transition-overlay) {
-        opacity: 1 !important;
-        visibility: visible !important;
-      }
-    }`;
-    document.head.appendChild(style);
-  }
-
   const mobileBreakpoint = window.matchMedia('(max-width: 900px)');
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-
-  /* The transition engine hides the live camera once during prepare and again
-     when its scheduled handoff starts. Reduced-motion mode does not need the
-     visual overlay, so keep the live camera invariantly visible across both
-     writes and release the override as soon as the transition class clears. */
-  const reconcileReducedMotionCamera = () => {
-    if (!reducedMotion.matches) return;
-    const camera = document.querySelector('#site-graph .site-graph-svg > g:not(.v9-transition-overlay)');
-    if (!camera) return;
-
-    if (document.body?.classList.contains('is-v9-transitioning')) {
-      if (
-        camera.style.getPropertyValue('opacity') !== '1' ||
-        camera.style.getPropertyPriority('opacity') !== 'important'
-      ) {
-        camera.style.setProperty('opacity', '1', 'important');
-      }
-      if (
-        camera.style.getPropertyValue('visibility') !== 'visible' ||
-        camera.style.getPropertyPriority('visibility') !== 'important'
-      ) {
-        camera.style.setProperty('visibility', 'visible', 'important');
-      }
-      camera.dataset.reducedMotionHandoff = 'true';
-      return;
-    }
-
-    if (camera.dataset.reducedMotionHandoff === 'true') {
-      camera.style.removeProperty('opacity');
-      camera.style.removeProperty('visibility');
-      delete camera.dataset.reducedMotionHandoff;
-    }
-  };
-
-  const reducedMotionObserver = new MutationObserver(mutations => {
-    const relevant = mutations.some(mutation =>
-      (mutation.target === document.body && mutation.attributeName === 'class') ||
-      (
-        mutation.attributeName === 'style' &&
-        mutation.target instanceof Element &&
-        Boolean(mutation.target.closest?.('#site-graph .site-graph-svg'))
-      )
-    );
-    if (relevant) reconcileReducedMotionCamera();
-  });
-  if (document.body) {
-    reducedMotionObserver.observe(document.body, {
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['class', 'style']
-    });
-  }
-  reducedMotion.addEventListener?.('change', reconcileReducedMotionCamera);
 
   /*
    * Phase 0 invariant: desktop must not inherit a loaded mobile runtime.

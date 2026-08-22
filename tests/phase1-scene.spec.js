@@ -9,6 +9,7 @@ const boot = async page => {
   await page.route('https://cloud.umami.is/**', route => route.abort());
   await page.goto('/#overview');
   await page.waitForFunction(() => Boolean(window.ProfileScene?.manager));
+  await page.waitForFunction(() => Boolean(window.ProfileRootLanding));
   await page.waitForFunction(() => Boolean(document.body.dataset.graphMode));
   await page.waitForFunction(() => Boolean(document.querySelector('#site-graph .site-graph-svg')));
   await settle(page);
@@ -56,6 +57,7 @@ test.describe('Phase 1 scene architecture — desktop', () => {
     expect(snapshot.variant).toBe('desktop');
     expect(snapshot.graphState.mode).toBe('overview');
     expect(snapshot.graphState.route).toBe('overview');
+    expect(snapshot.graphState.rootLanding).toBe(true);
     expect(await page.evaluate(() => window.ProfileScene.camera.activeName)).toBe('desktop-local');
 
     await expect(page.locator('.hero-copy')).toHaveAttribute('data-scene-object', 'root-profile-copy');
@@ -133,11 +135,12 @@ test.describe('Phase 1 scene architecture — mobile', () => {
     const snapshot = await page.evaluate(() => window.ProfileScene.manager.snapshot());
     expect(snapshot.variant).toBe('mobile');
     expect(snapshot.graphState.mode).toBe('overview');
+    expect(snapshot.graphState.rootLanding).toBe(true);
     expect(await page.evaluate(() => window.ProfileScene.camera.activeName)).toBe('mobile-local');
 
     await expect(page.locator('.hero-copy')).toHaveAttribute('data-scene-object', 'root-profile-copy');
-    await expect(page.locator('.hero-copy')).toHaveAttribute('data-scene-placement', 'identity-copy-upper');
-    await expect(page.locator('.hero-visual.profile-identity')).toHaveAttribute('data-scene-placement', 'identity-portrait-upper-right');
+    await expect(page.locator('.hero-copy')).toHaveAttribute('data-scene-placement', 'identity-copy-centre');
+    await expect(page.locator('.hero-visual.profile-identity')).toHaveAttribute('data-scene-placement', 'identity-portrait-top');
 
     await page.locator('#main-nav [data-route="work"]').first().click({ force: true });
     await page.waitForFunction(() => document.body.dataset.graphMode === 'work');

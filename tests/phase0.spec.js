@@ -130,6 +130,7 @@ test.describe('Phase 0 reduced motion', () => {
   test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
 
   test('route handoff never blanks the live renderer', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await waitReady(page);
     await unfoldRoot(page);
     await page.locator('#main-nav [data-route="knowledge"]').first().click({ force: true });

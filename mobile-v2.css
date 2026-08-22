@@ -1,0 +1,68 @@
+/* Mobile V2 refinements — phone-only portrait graph scene. */
+@media (max-width:900px){
+  /* The graph is now geometrically projected into a portrait-friendly shape by
+     mobile-app.js, so labels can stay comfortably readable without scrolling. */
+  .site-graph-label{font-size:14px!important;stroke-width:5px!important}
+  .site-graph-node.is-section .site-graph-label{font-size:15px!important}
+  .site-graph-meta{font-size:10px!important}
+  .site-graph-hit{r:27px!important}
+  .site-graph-node[data-node-id="stepan-chrast"] .site-graph-hit{r:31px!important}
+
+  body[data-graph-mode="work"] .work-theme-label-v5 text{font-size:13.7px!important}
+  body[data-graph-mode="work"] .work-project-anchor-v5 text{font-size:13.8px!important;stroke-width:5.8px!important}
+  body[data-graph-mode="work"] .work-project-anchor-v5.is-selected text{font-size:14.5px!important}
+
+  /* Smaller, more app-like transient surfaces. They reveal information without
+     replacing most of the graph underneath. */
+  .mobile-control-sheet{
+    right:12px!important;
+    left:12px!important;
+    bottom:calc(52px + env(safe-area-inset-bottom))!important;
+    max-height:min(45dvh,330px)!important;
+    border-radius:14px!important;
+  }
+  .mobile-control-sheet-head{min-height:42px!important;padding:5px 7px 5px 12px!important}
+  .mobile-control-sheet-body{padding:9px 11px calc(10px + env(safe-area-inset-bottom))!important}
+  .mobile-sheet-close{width:30px!important;height:30px!important}
+  .mobile-control-sheet .integrated-work-controls{gap:11px!important}
+  .mobile-control-sheet .work-filter,
+  .mobile-control-sheet .theme-filter-option,
+  .mobile-control-sheet .theme-match-button{min-height:30px!important;font-size:9.4px!important}
+  .mobile-control-sheet .atlas-controls label,
+  .mobile-control-sheet .atlas-controls button{min-height:33px!important;font-size:9.4px!important}
+
+  .scene-detail,
+  body[data-graph-mode="work"] .scene-detail.is-work-concept-detail{
+    right:12px!important;
+    left:12px!important;
+    bottom:calc(52px + env(safe-area-inset-bottom))!important;
+    max-height:min(49dvh,350px)!important;
+    padding:15px 13px calc(14px + env(safe-area-inset-bottom))!important;
+    border-radius:13px!important;
+    box-shadow:0 -7px 28px color-mix(in srgb,var(--ink) 12%,transparent)!important;
+  }
+  .scene-detail .detail-close{top:8px!important;right:8px!important;width:30px!important;height:30px!important}
+  .scene-detail h2{font-size:20px!important;line-height:1.08!important;margin-top:3px!important}
+  .scene-detail .detail-summary{font-size:11.5px!important;line-height:1.48!important}
+  .scene-detail .detail-list-title{margin-top:15px!important}
+  .detail-facts{margin-top:11px!important}
+  .detail-node-list{margin-top:7px!important}
+  .work-concept-project{padding:8px 0!important;font-size:10.5px!important}
+
+  .mobile-sheet-backdrop{background:color-mix(in srgb,var(--ink) 6%,transparent)!important}
+
+  /* Slightly lighter HUD so it reads as camera controls rather than content. */
+  .mobile-graph-dock{min-height:38px!important;padding:3px!important}
+  .mobile-graph-dock button{height:32px!important;min-width:34px!important}
+  .mobile-camera-fit{min-width:48px!important}
+
+  /* Keep Overview compact while retaining a clearly visible portrait. */
+  body[data-graph-mode="overview"] .hero-visual.profile-identity{width:86px!important;height:86px!important}
+  body[data-graph-mode="overview"] .profile-identity .portrait{width:76px!important;height:76px!important}
+}
+
+@media (max-width:520px){
+  .mobile-control-sheet{max-height:42dvh!important}
+  .scene-detail,
+  body[data-graph-mode="work"] .scene-detail.is-work-concept-detail{max-height:46dvh!important}
+}

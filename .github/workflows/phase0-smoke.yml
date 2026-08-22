@@ -31,6 +31,7 @@ jobs:
           node --check root-landing.js
           node --check intro-animation.js
           node --check motion-polish.js
+          node --check intro-unfold.js
           node --check radial-geometry.js
           node --check cross-link-travel-v2.js
           node --check phase0-stability.js
@@ -42,6 +43,7 @@ jobs:
           node --check tests/phase6-cross-link.spec.js
           node --check tests/radial-geometry.spec.js
           node --check tests/motion-polish.spec.js
+          node --check tests/intro-unfold.spec.js
 
       - name: Install Playwright test runner
         run: npm install --no-save @playwright/test@1.55.0

@@ -20,6 +20,9 @@
 
   const routeForNode = node => node?.route || 'overview';
   const childrenFor = id => graph.nodes.filter(node => node.parentIds?.includes(id));
+  const externalTransitionOwnsRoute = () =>
+    document.body?.classList.contains('is-atlas-handoff') ||
+    document.body?.classList.contains('is-crosslink-travelling');
 
   const primaryPath = node => {
     const path = [];
@@ -347,7 +350,7 @@
 
   const prepare = ({ targetId = null, targetRoute = null, trigger = 'click' } = {}) => {
     if (document.body.dataset.graphMode === 'atlas') return;
-    if (document.body.classList.contains('is-v9-transitioning')) return;
+    if (document.body.classList.contains('is-v9-transitioning') || externalTransitionOwnsRoute()) return;
 
     const svg = graphSvg();
     const camera = graphCamera();
@@ -357,7 +360,7 @@
     const resolvedTargetRoute = normaliseRoute(
       targetRoute || routeForNode(nodeMap.get(targetId)) || location.hash
     );
-    if (resolvedTargetRoute === currentRoute) return;
+    if (resolvedTargetRoute === currentRoute || resolvedTargetRoute === 'atlas') return;
 
     const currentNode = currentRouteNode(currentRoute);
     const targetNode = targetId ? nodeMap.get(targetId) : currentRouteNode(resolvedTargetRoute);
@@ -398,8 +401,9 @@
     });
 
     // Old edges and Work decorations are deliberately not copied.
-    // They disappear at the exact start of the route change.
-    camera.style.opacity = '0';
+    // They disappear at the exact start of the route change. In true reduced
+    // motion there is no visible overlay, so the live renderer must stay on.
+    if (!reduced.matches) camera.style.opacity = '0';
     document.body.classList.add('is-v9-transitioning');
     window.__GRAPH_V6_FORCE_SNAP__ = true;
 
@@ -498,6 +502,14 @@
     const current = pending;
     pending = null;
 
+    if (externalTransitionOwnsRoute() || current.targetRoute === 'atlas') {
+      current.overlay.remove();
+      document.body.classList.remove('is-v9-transitioning');
+      window.__GRAPH_V6_FORCE_SNAP__ = false;
+      current.camera?.style.removeProperty('opacity');
+      return;
+    }
+
     resetLabelGeometry();
     reflowFocus();
 
@@ -509,7 +521,7 @@
       return;
     }
     current.camera = camera;
-    camera.style.opacity = '0';
+    if (!reduced.matches) camera.style.opacity = '0';
 
     const afterElements = new Map(nodeElements().map(element => [element.dataset.nodeId, element]));
     const after = new Map([...afterElements].map(([id, element]) => [id, pointOf(element)]));
@@ -682,9 +694,9 @@
      Navigation capture
      ---------------------------------------------------------------------- */
   document.addEventListener('click', event => {
-    if (event.button !== 0 || event.defaultPrevented) return;
+    if (event.button !== 0 || event.defaultPrevented || externalTransitionOwnsRoute()) return;
     const route = routeFromControl(event.target);
-    if (!route) return;
+    if (!route || route === 'atlas') return;
     const currentRoute = normaliseRoute(document.body.dataset.graphRoute || location.hash);
     if (route === currentRoute) return;
 
@@ -698,9 +710,9 @@
 
   document.addEventListener('keydown', event => {
     if (event.key === 'Enter' || event.key === ' ') {
-      if (event.defaultPrevented) return;
+      if (event.defaultPrevented || externalTransitionOwnsRoute()) return;
       const route = routeFromControl(event.target);
-      if (!route) return;
+      if (!route || route === 'atlas') return;
       const currentRoute = normaliseRoute(document.body.dataset.graphRoute || location.hash);
       if (route === currentRoute) return;
       const node = event.target.closest?.('.site-graph-node[data-node-id]');
@@ -716,7 +728,7 @@
       const panel = document.querySelector('#site-detail-panel');
       if (panel && !panel.hidden) return;
       const mode = document.body.dataset.graphMode;
-      if (mode === 'atlas') return;
+      if (mode === 'atlas' || externalTransitionOwnsRoute()) return;
       const currentRoute = normaliseRoute(document.body.dataset.graphRoute || location.hash);
       const current = currentRouteNode(currentRoute);
       const target = mode === 'work'
@@ -731,10 +743,10 @@
   }, true);
 
   window.addEventListener('popstate', () => {
-    if (pending || document.body.dataset.graphMode === 'atlas') return;
+    if (pending || document.body.dataset.graphMode === 'atlas' || externalTransitionOwnsRoute()) return;
     const targetRoute = normaliseRoute(location.hash);
     const currentRoute = normaliseRoute(document.body.dataset.graphRoute || lastStableRoute);
-    if (targetRoute === currentRoute) return;
+    if (targetRoute === currentRoute || targetRoute === 'atlas') return;
     prepare({
       targetId: routeTargetId(targetRoute),
       targetRoute,
@@ -743,7 +755,7 @@
   }, true);
 
   window.addEventListener('hashchange', () => {
-    if (pending) scheduleTransition();
+    if (pending && !externalTransitionOwnsRoute()) scheduleTransition();
     else lastStableRoute = normaliseRoute(document.body.dataset.graphRoute || location.hash);
   });
 

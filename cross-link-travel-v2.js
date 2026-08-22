@@ -11,7 +11,12 @@
   const routebar = explorer?.querySelector('.graph-routebar');
   const detail = document.querySelector('#site-detail-panel');
   const status = document.querySelector('#site-graph-status');
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const reducedQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const reducedMotion = {
+    get matches() {
+      return Boolean(window.__PROFILE_REDUCED_MOTION__) || reducedQuery.matches;
+    }
+  };
   if (!explorer || !routebar) return;
 
   const relationCopy = {

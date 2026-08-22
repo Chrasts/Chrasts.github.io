@@ -297,6 +297,7 @@
     document.head.appendChild(script);
   };
 
+  ensureScript('phase7-pointer-hotfix.js', 'data-profile-atlas-pointer-hotfix');
   ensureScript('root-landing.js', 'data-profile-root-landing');
   ensureScript('motion-polish.js', 'data-profile-motion-polish');
   ensureScript('intro-fixes-v3.js', 'data-profile-intro-fixes-v3');

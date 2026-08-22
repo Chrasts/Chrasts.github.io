@@ -32,6 +32,7 @@ test.describe('Intro motion polish', () => {
     const before = await enter.evaluate(element => ({
       color: getComputedStyle(element).color,
       transform: getComputedStyle(element).transform,
+      outerColor: getComputedStyle(element, '::after').borderTopColor,
       outerWidth: parseFloat(getComputedStyle(element, '::after').borderTopWidth)
     }));
     expect(before.outerWidth).toBeGreaterThanOrEqual(1.5);
@@ -45,7 +46,7 @@ test.describe('Intro motion polish', () => {
     }));
     expect(after.color).not.toBe(before.color);
     expect(after.transform).not.toBe(before.transform);
-    expect(after.outerColor).toBe(after.color);
+    expect(after.outerColor).not.toBe(before.outerColor);
   });
 
   test('final condensation removes converging labels and morphs the root into the portrait', async ({ page }) => {

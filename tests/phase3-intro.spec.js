@@ -20,6 +20,12 @@ const waitStage = async (page, stage, timeout = 8_000) => {
   return page.evaluate(() => window.ProfileIntro.snapshot());
 };
 
+const waitAtlasReady = async page => {
+  await waitStage(page, 'atlas');
+  await page.waitForFunction(() => window.ProfileIntroUnfold?.snapshot().completed === true, null, { timeout: 8_000 });
+  return page.evaluate(() => ({ intro: window.ProfileIntro.snapshot(), unfold: window.ProfileIntroUnfold.snapshot() }));
+};
+
 const waitComplete = async (page, result = 'completed') => {
   await page.waitForFunction(expected => window.ProfileIntro?.snapshot().result === expected, result, { timeout: 10_000 });
   return page.evaluate(() => window.ProfileIntro.snapshot());
@@ -30,13 +36,13 @@ const firstLevelIds = ['work', 'knowledge', 'experience', 'education', 'about'];
 test.describe('Phase 3 interaction-gated intro — desktop', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('shows the full real Atlas and waits for explicit Enter profile interaction', async ({ page }) => {
+  test('automatically unfolds the real Atlas, then waits for explicit Enter profile interaction', async ({ page }) => {
     await freshSession(page);
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto('/#overview');
     await page.waitForSelector('.profile-intro-overlay[data-source="real-atlas"]');
-    await waitStage(page, 'atlas');
+    const ready = await waitAtlasReady(page);
 
     const source = await page.evaluate(() => ({
       expected: window.SITE_DATA.graph.nodes.length,
@@ -46,13 +52,14 @@ test.describe('Phase 3 interaction-gated intro — desktop', () => {
     }));
     expect(source.source).toBe('real-atlas');
     expect(source.cloned).toBe(source.expected);
+    expect(ready.unfold.completed).toBe(true);
     expect(source.snapshot.running).toBe(false);
     expect(source.snapshot.waiting).toBe(true);
     await expect(page.locator('.profile-intro-enter')).toBeVisible();
     await expect(page.locator('.profile-intro-enter')).toBeEnabled();
     await expect(page.locator('.profile-intro-enter')).toContainText('Enter profile');
 
-    await page.waitForTimeout(900);
+    await page.waitForTimeout(700);
     const stillWaiting = await page.evaluate(() => window.ProfileIntro.snapshot());
     expect(stillWaiting.stage).toBe('atlas');
     expect(stillWaiting.running).toBe(false);
@@ -62,7 +69,7 @@ test.describe('Phase 3 interaction-gated intro — desktop', () => {
   test('condenses semantic layers physically toward branches and then into the root', async ({ page }) => {
     await freshSession(page);
     await page.goto('/#overview');
-    await waitStage(page, 'atlas');
+    await waitAtlasReady(page);
 
     const deepBefore = await page.evaluate(() => {
       const node = document.querySelector('.profile-intro-overlay .site-graph-node[data-intro-tier="deep"]');
@@ -100,7 +107,7 @@ test.describe('Phase 3 interaction-gated intro — desktop', () => {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto('/#overview');
-    await waitStage(page, 'atlas');
+    await waitAtlasReady(page);
     await page.locator('.profile-intro-enter').click();
     await waitStage(page, 'identity');
 
@@ -142,7 +149,7 @@ test.describe('Phase 3 interaction-gated intro — desktop', () => {
     await expect(page.locator('#site-explorer')).toBeHidden();
   });
 
-  test('Escape skips but ordinary pointer interaction with the Atlas does not start condensation', async ({ page }) => {
+  test('Escape skips but ordinary pointer interaction with the unfolding Atlas does not start condensation', async ({ page }) => {
     await freshSession(page);
     await page.goto('/#overview');
     await waitStage(page, 'atlas');
@@ -157,7 +164,7 @@ test.describe('Phase 3 interaction-gated intro — desktop', () => {
   test('the completed intro is session-only; refresh returns directly to the root landing', async ({ page }) => {
     await freshSession(page);
     await page.goto('/#overview');
-    await waitStage(page, 'atlas');
+    await waitAtlasReady(page);
     await page.locator('.profile-intro-enter').click();
     await waitStage(page, 'identity');
     await page.locator('.profile-intro-identity').click();
@@ -189,11 +196,10 @@ test.describe('Phase 3 interaction-gated intro — desktop', () => {
 test.describe('Phase 3 reduced motion', () => {
   test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
 
-  test('waits for Enter profile, then uses a direct Atlas-to-identity handoff', async ({ page }) => {
+  test('uses a short root-to-Atlas reveal, then waits for Enter profile and hands directly to identity', async ({ page }) => {
     await freshSession(page);
     await page.goto('/#overview');
-    await waitStage(page, 'atlas');
-    await page.waitForTimeout(300);
+    await waitAtlasReady(page);
     expect((await page.evaluate(() => window.ProfileIntro.snapshot())).stage).toBe('atlas');
 
     await page.locator('.profile-intro-enter').click();
@@ -211,12 +217,12 @@ test.describe('Phase 3 reduced motion', () => {
 test.describe('Phase 3 interaction-gated intro — mobile portrait', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
-  test('waits on the real Atlas, forms the portrait identity node, then reveals the five-branch mobile graph', async ({ page }) => {
+  test('auto-unfolds the real Atlas, forms the portrait identity node, then reveals the five-branch mobile graph', async ({ page }) => {
     await freshSession(page);
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto('/#overview');
-    await waitStage(page, 'atlas');
+    await waitAtlasReady(page);
     await expect(page.locator('.profile-intro-enter')).toBeVisible();
     await page.locator('.profile-intro-enter').click();
     await waitStage(page, 'identity');

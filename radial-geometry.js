@@ -11,20 +11,20 @@
     return { x: vector.x / length, y: vector.y / length };
   };
 
-  // Shared global compass. Overview and Atlas use the same angular memory.
-  // Lower territories sit at ±60° from the horizontal so adjacent wedges keep
-  // clear angular reserves for later semantic-zoom labels and relations.
+  // One global compass for Overview, Atlas, intro geometry and cross-link travel.
+  // Work deliberately points exactly down so the global root -> Work direction
+  // continues naturally into the top-to-bottom FCA lattice.
   const compass = Object.freeze({
-    work: normalise({ x: -1, y: 0 }),
-    knowledge: normalise({ x: 0, y: -1 }),
-    experience: normalise({ x: 1, y: -0.04 }),
-    education: normalise({ x: 0.5, y: 0.866 }),
-    about: normalise({ x: -0.5, y: 0.866 })
+    work: normalise({ x: 0, y: 1 }),
+    knowledge: normalise({ x: -0.25, y: -0.97 }),
+    experience: normalise({ x: 0.95, y: -0.31 }),
+    education: normalise({ x: 0.76, y: 0.65 }),
+    about: normalise({ x: -0.95, y: 0.31 })
   });
 
   const OVERVIEW = Object.freeze({ width: 1200, height: 720, center: { x: 600, y: 350 }, radius: 230 });
   const ATLAS = Object.freeze({ width: 2520, height: 1580, center: { x: 1260, y: 790 }, sectionRadius: 300, safe: 78 });
-  const halfAngles = { work: 0.45, knowledge: 0.70, experience: 0.45, education: 0.42, about: 0.42 };
+  const halfAngles = Object.freeze({ work: 0.70, knowledge: 0.80, experience: 0.60, education: 0.58, about: 0.58 });
 
   const stableNumber = value => {
     let number = 2166136261;
@@ -44,6 +44,8 @@
       return id;
     }
     const nextTrail = new Set(trail).add(id);
+    // First declared hierarchy keeps Work projects owned by Work even though
+    // they also receive FCA theme parents later in site-data.js.
     for (const parentId of parents) {
       const section = sectionFor(parentId, nextTrail);
       if (section && section !== rootId) {
@@ -65,22 +67,22 @@
     if (sectionId === 'work' && node.type === 'work-theme') return 1;
     if (sectionId === 'work' && node.type === 'project') return 2;
     const nextTrail = new Set(trail).add(id);
-    const values = (node.parentIds || [])
+    const parentDepths = (node.parentIds || [])
       .filter(parentId => parentId === sectionId || sectionFor(parentId) === sectionId)
       .map(parentId => depthWithin(parentId, sectionId, nextTrail))
       .filter(Number.isFinite);
-    const depth = values.length ? Math.min(...values) + 1 : Infinity;
+    const depth = parentDepths.length ? Math.min(...parentDepths) + 1 : Infinity;
     depthMemo.set(key, depth);
     return depth;
   };
 
   const rayLimit = (center, vector, width, height, safe) => {
-    const values = [];
-    if (vector.x > 1e-5) values.push((width - safe - center.x) / vector.x);
-    if (vector.x < -1e-5) values.push((safe - center.x) / vector.x);
-    if (vector.y > 1e-5) values.push((height - safe - center.y) / vector.y);
-    if (vector.y < -1e-5) values.push((safe - center.y) / vector.y);
-    return Math.min(...values.filter(value => Number.isFinite(value) && value > 0));
+    const candidates = [];
+    if (vector.x > 1e-5) candidates.push((width - safe - center.x) / vector.x);
+    if (vector.x < -1e-5) candidates.push((safe - center.x) / vector.x);
+    if (vector.y > 1e-5) candidates.push((height - safe - center.y) / vector.y);
+    if (vector.y < -1e-5) candidates.push((safe - center.y) / vector.y);
+    return Math.min(...candidates.filter(value => Number.isFinite(value) && value > 0));
   };
 
   const overviewPositions = () => {
@@ -117,7 +119,7 @@
       const limit = rayLimit(ATLAS.center, vector, ATLAS.width, ATLAS.height, ATLAS.safe);
       const usable = Math.max(ATLAS.sectionRadius + 120, limit - 42);
       const levelGap = maxDepth > 0
-        ? Math.max(76, Math.min(148, (usable - ATLAS.sectionRadius) / maxDepth))
+        ? Math.max(72, Math.min(148, (usable - ATLAS.sectionRadius) / maxDepth))
         : 120;
       const sectionPoint = {
         x: ATLAS.center.x + vector.x * ATLAS.sectionRadius,
@@ -129,11 +131,12 @@
       [...levels.keys()].filter(depth => depth > 0).sort((a, b) => a - b).forEach(depth => {
         const level = levels.get(depth);
         const parentTangent = node => {
-          const parentValues = (node.parentIds || [])
+          const values = (node.parentIds || [])
             .map(parentId => tangentById.get(parentId))
             .filter(Number.isFinite);
-          return parentValues.length ? parentValues.reduce((sum, value) => sum + value, 0) / parentValues.length : 0;
+          return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
         };
+
         level.sort((left, right) =>
           parentTangent(left) - parentTangent(right) ||
           (stableNumber(left.id) % 97) - (stableNumber(right.id) % 97) ||
@@ -141,14 +144,18 @@
         );
 
         const baseRadius = ATLAS.sectionRadius + levelGap * depth;
-        const tangentialCapacity = Math.max(145, baseRadius * Math.tan(halfAngles[sectionId]));
-        const desiredGap = sectionId === 'knowledge' ? 86 : sectionId === 'work' ? 100 : 112;
+        const tangentialCapacity = Math.max(150, baseRadius * Math.tan(halfAngles[sectionId]));
+        const desiredGap = sectionId === 'knowledge'
+          ? 92
+          : sectionId === 'work'
+            ? (depth === 2 ? 132 : 118)
+            : 116;
         const span = Math.min(tangentialCapacity * 2, desiredGap * Math.max(0, level.length - 1));
 
         level.forEach((node, index) => {
           const tangent = level.length <= 1 ? 0 : -span / 2 + span * index / (level.length - 1);
           const dense = level.length >= 8;
-          const radialJitter = dense ? (index % 2 ? 28 : -20) : ((stableNumber(`${node.id}:r`) % 11) - 5);
+          const radialJitter = dense ? (index % 2 ? 24 : -18) : ((stableNumber(`${node.id}:r`) % 11) - 5);
           const radius = Math.min(usable, baseRadius + radialJitter);
           positions.set(node.id, {
             x: ATLAS.center.x + vector.x * radius + perpendicular.x * tangent,
@@ -158,14 +165,15 @@
         });
       });
     });
+
     return positions;
   };
 
-  // SITE_DATA is static for a document lifetime, so the global coordinate
-  // systems can be computed once. Stabilisation only re-applies those points
-  // while the canonical renderer finishes its own interpolation.
+  // SITE_DATA is static during one document lifetime. Compute the two global
+  // coordinate systems once and only re-apply them while the base renderer settles.
   const cachedOverview = overviewPositions();
   const cachedAtlas = atlasPositions();
+
   const baseNodes = () => [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')]
     .filter(element => !element.closest('.v9-transition-overlay'));
   const baseEdges = () => [...document.querySelectorAll('#site-graph .site-graph-edges path[data-source][data-target]')]
@@ -204,12 +212,14 @@
     const label = element.querySelector('.site-graph-label');
     const meta = element.querySelector('.site-graph-meta');
     if (!label) return;
+
     if (id === rootId || !vector) {
       label.setAttribute('text-anchor', 'middle');
       label.setAttribute('x', '0');
       label.setAttribute('y', '-27');
       return;
     }
+
     element.dataset.globalSector = sectionId;
     const signX = Math.sign(vector.x) || 0;
     if (Math.abs(vector.x) > .58) {
@@ -223,6 +233,7 @@
       }
       return;
     }
+
     label.setAttribute('text-anchor', 'middle');
     label.setAttribute('x', String(vector.x * 8));
     label.setAttribute('y', vector.y < 0 ? '-20' : '28');
@@ -278,6 +289,7 @@
     syncEdges(cachedOverview);
     document.body.dataset.globalGeometry = 'radial-overview';
   };
+
   const applyAtlas = () => {
     const elements = new Map(baseNodes().map(element => [element.dataset.nodeId, element]));
     cachedAtlas.forEach((point, id) => setPoint(elements.get(id), point));
@@ -296,6 +308,7 @@
       resetLabels();
       document.body.dataset.globalGeometry = 'local';
     }
+
     const eventKey = `${mode}|${document.body.dataset.globalGeometry}`;
     if (eventKey !== lastGeometryEvent) {
       lastGeometryEvent = eventKey;
@@ -354,10 +367,10 @@
     observer.observe(graphRoot, { childList: true, subtree: true });
   }
 
-  const bodyObserver = new MutationObserver(mutations => {
-    if (mutations.some(mutation => mutation.type === 'attributes')) stabilize(660);
-  });
   if (document.body) {
+    const bodyObserver = new MutationObserver(mutations => {
+      if (mutations.some(mutation => mutation.type === 'attributes')) stabilize(660);
+    });
     bodyObserver.observe(document.body, {
       attributes: true,
       attributeFilter: ['data-graph-mode', 'data-graph-route', 'class']

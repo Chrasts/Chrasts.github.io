@@ -19,10 +19,12 @@ const liveLabelPose = (page, id) => page.evaluate(id => {
   return label ? [label.getAttribute('text-anchor'), label.getAttribute('x'), label.getAttribute('y')] : null;
 }, id);
 
-test.describe('Phase 7 label continuity', () => {
+const rectOverlap = (a, b) => Math.max(0, Math.min(a.right, b.right) - Math.max(a.left, b.left)) * Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top));
+
+test.describe('Phase 7 label continuity and Overview emphasis', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('Overview to About hands root label to one stable right-side ancestor pose', async ({ page }) => {
+  test('Overview to About keeps the root label in one stable ancestor pose', async ({ page }) => {
     await bypassIntro(page);
     await activateOverview(page);
     await page.locator('#site-graph .site-graph-node[data-node-id="about"]').click();
@@ -37,7 +39,7 @@ test.describe('Phase 7 label continuity', () => {
     poses.forEach(pose => expect(pose).toEqual(['start', '17', '4']));
   });
 
-  test('every ancestor in a deep Logic for AI chain uses the same stable side pose', async ({ page }) => {
+  test('every ancestor in a deep Logic for AI chain uses the stable side pose', async ({ page }) => {
     await bypassIntro(page);
     await page.goto('/#knowledge/logic-math/mathematical-logic/computational-logic/logic-for-ai');
     await page.waitForFunction(() => Boolean(window.ProfileAtlasLOD) && document.body.dataset.graphMode === 'focus');
@@ -47,6 +49,23 @@ test.describe('Phase 7 label continuity', () => {
     for (const id of ids) expect(await liveLabelPose(page, id)).toEqual(['start', '17', '4']);
     await page.waitForTimeout(500);
     for (const id of ids) expect(await liveLabelPose(page, id)).toEqual(['start', '17', '4']);
+  });
+
+  test('the five Overview destinations read as large clickable choices', async ({ page }) => {
+    await bypassIntro(page);
+    await activateOverview(page);
+    const metrics = await page.evaluate(() => {
+      const section = document.querySelector('#site-graph .site-graph-node[data-node-id="knowledge"]');
+      const work = document.querySelector('#site-graph .site-graph-node[data-node-id="work"]');
+      return {
+        labelSize: parseFloat(getComputedStyle(section.querySelector('.site-graph-label')).fontSize),
+        dotTransform: getComputedStyle(section.querySelector('.site-graph-dot')).transform,
+        workLabelTransform: getComputedStyle(work.querySelector('.site-graph-label')).transform
+      };
+    });
+    expect(metrics.labelSize).toBeGreaterThanOrEqual(14);
+    expect(metrics.dotTransform).not.toBe('none');
+    expect(metrics.workLabelTransform).not.toBe('none');
   });
 });
 
@@ -60,7 +79,7 @@ test.describe('Phase 7 Atlas semantic zoom', () => {
     await page.waitForFunction(() => document.querySelectorAll('#site-graph .site-graph-node[data-node-id]').length === window.SITE_DATA.graph.nodes.length);
   });
 
-  test('progressively reveals graph depth and territory labels', async ({ page }) => {
+  test('progressively reveals structure and keeps primary connections legible at near zoom', async ({ page }) => {
     const total = await page.evaluate(() => window.SITE_DATA.graph.nodes.length);
 
     await page.evaluate(() => window.ProfileAtlasLOD.setScale(0.50, { immediate: true }));
@@ -80,15 +99,15 @@ test.describe('Phase 7 Atlas semantic zoom', () => {
     await page.waitForFunction(() => document.body.dataset.atlasLod === 'near');
     snap = await page.evaluate(() => window.ProfileAtlasLOD.snapshot());
     expect(snap.visibleNodeCount).toBe(total);
-    const idleCrosslinksHidden = await page.evaluate(() => [...document.querySelectorAll('#site-graph .site-graph-edges path.is-cross-link')]
-      .every(edge => edge.classList.contains('is-atlas-lod-hidden')));
-    expect(idleCrosslinksHidden).toBe(true);
+    const primaryCrosslinks = await page.evaluate(() => [...document.querySelectorAll('#site-graph .site-graph-edges path.is-cross-link:not(.is-secondary)')]
+      .filter(edge => !edge.classList.contains('is-atlas-lod-hidden')).length);
+    expect(primaryCrosslinks).toBeGreaterThan(0);
 
     await page.evaluate(() => window.ProfileAtlasLOD.setScale(1.5, { immediate: true }));
     await page.waitForFunction(() => document.body.dataset.atlasLod === 'detail');
     const detailedCrosslinks = await page.evaluate(() => [...document.querySelectorAll('#site-graph .site-graph-edges path.is-cross-link')]
       .filter(edge => !edge.classList.contains('is-atlas-lod-hidden')).length);
-    expect(detailedCrosslinks).toBeGreaterThan(0);
+    expect(detailedCrosslinks).toBeGreaterThanOrEqual(primaryCrosslinks);
   });
 
   test('camera clamps extreme pans and Fit enters the semantic overview', async ({ page }) => {
@@ -106,7 +125,44 @@ test.describe('Phase 7 Atlas semantic zoom', () => {
     expect(snap.lod).toBe('medium');
   });
 
-  test('Education stays distinctly above-left of the Knowledge wing', async ({ page }) => {
+  test('layer toggles keep the camera fixed and change actual rendered relations', async ({ page }) => {
+    await page.evaluate(() => {
+      window.ProfileAtlasLOD.setScale(1.55, { immediate: true });
+      window.ProfileAtlasLOD.panTo(-700, -350, { immediate: true });
+    });
+    const before = await page.evaluate(() => window.ProfileAtlasLOD.snapshot().camera);
+
+    const connections = page.locator('#atlas-crosslinks');
+    await connections.uncheck();
+    await page.waitForTimeout(650);
+    expect(await page.locator('#site-graph .site-graph-edges path.is-cross-link').count()).toBe(0);
+    let after = await page.evaluate(() => window.ProfileAtlasLOD.snapshot().camera);
+    expect(after.scale).toBeCloseTo(before.scale, 2);
+    expect(after.x).toBeCloseTo(before.x, 0);
+    expect(after.y).toBeCloseTo(before.y, 0);
+
+    await connections.check();
+    await page.waitForTimeout(650);
+    expect(await page.locator('#site-graph .site-graph-edges path.is-cross-link').count()).toBeGreaterThan(0);
+    after = await page.evaluate(() => window.ProfileAtlasLOD.snapshot().camera);
+    expect(after.scale).toBeCloseTo(before.scale, 2);
+
+    const additional = page.locator('#atlas-secondary');
+    await additional.check();
+    await page.waitForTimeout(650);
+    expect(await page.locator('#site-graph .site-graph-edges path.is-secondary').count()).toBeGreaterThan(0);
+    after = await page.evaluate(() => window.ProfileAtlasLOD.snapshot().camera);
+    expect(after.scale).toBeCloseTo(before.scale, 2);
+  });
+
+  test('controls use plain-language layer names', async ({ page }) => {
+    await expect(page.locator('#atlas-hierarchy').locator('..')).toContainText('Structure');
+    await expect(page.locator('#atlas-crosslinks').locator('..')).toContainText('Connections');
+    await expect(page.locator('#atlas-secondary').locator('..')).toContainText('Additional links');
+    await expect(page.locator('#atlas-show-all')).toHaveText('All links');
+  });
+
+  test('Education stays distinctly separated from the Knowledge wing', async ({ page }) => {
     const points = await page.evaluate(() => ({
       root: window.ProfileGeometry.atlasPoint('stepan-chrast'),
       knowledge: window.ProfileGeometry.atlasPoint('knowledge'),
@@ -116,21 +172,88 @@ test.describe('Phase 7 Atlas semantic zoom', () => {
     expect(points.education.y).toBeLessThan(points.root.y - 200);
     expect(points.education.x).toBeLessThan(points.knowledge.x - 120);
   });
+
+  test('targeted Work theme labels are separated by the collision pass', async ({ page }) => {
+    await page.evaluate(() => {
+      window.ProfileAtlasLOD.setScale(1.1, { immediate: true });
+      window.ProfileAtlasLOD.resolveLabelCollisions();
+    });
+    const rects = await page.evaluate(() => {
+      const rect = id => {
+        const label = document.querySelector(`#site-graph .site-graph-node[data-node-id="${id}"] .site-graph-label`).getBoundingClientRect();
+        return { left: label.left, right: label.right, top: label.top, bottom: label.bottom };
+      };
+      return { logic: rect('work-theme-logic'), communication: rect('work-theme-education') };
+    });
+    expect(rectOverlap(rects.logic, rects.communication)).toBeLessThan(4);
+  });
+});
+
+test.describe('Phase 7 Atlas selection and inspector', () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test.beforeEach(async ({ page }) => {
+    await bypassIntro(page);
+    await page.goto('/#atlas');
+    await page.waitForFunction(() => Boolean(window.ProfileAtlasLOD) && document.body.dataset.graphMode === 'atlas');
+  });
+
+  test('single click opens compact details, second click centres and zooms', async ({ page }) => {
+    const node = page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]');
+    await node.click();
+    await expect(page.locator('#site-detail-panel')).toBeVisible();
+    await expect(page.locator('#site-detail-panel .atlas-open-local')).toHaveText('Explore this section');
+    await expect(page.locator('#site-detail-panel')).toContainText('Click the selected node again to centre and zoom.');
+    expect((await page.evaluate(() => window.ProfileAtlasLOD.snapshot())).selectedNodeId).toBe('sat-smt');
+
+    const before = await page.evaluate(() => window.ProfileAtlasLOD.snapshot().camera);
+    await node.click();
+    await page.waitForTimeout(450);
+    const after = await page.evaluate(() => window.ProfileAtlasLOD.snapshot().camera);
+    expect(after.scale).toBeGreaterThan(before.scale);
+    expect((await page.evaluate(() => window.ProfileAtlasLOD.snapshot())).selectedNodeId).toBe('sat-smt');
+  });
+
+  test('clicking empty map clears both inspector and node focus without resetting camera', async ({ page }) => {
+    const node = page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]');
+    await node.click();
+    await page.evaluate(() => window.ProfileAtlasLOD.setScale(1.45, { immediate: true }));
+    const before = await page.evaluate(() => window.ProfileAtlasLOD.snapshot().camera);
+
+    await page.evaluate(() => document.querySelector('#site-graph .site-graph-svg').dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 12, clientY: 200 })));
+    await page.waitForTimeout(230);
+    await expect(page.locator('#site-detail-panel')).toBeHidden();
+    const after = await page.evaluate(() => window.ProfileAtlasLOD.snapshot());
+    expect(after.selectedNodeId).toBeNull();
+    expect(after.camera.scale).toBeCloseTo(before.scale, 2);
+  });
+
+  test('hovered and related node labels are enlarged for readability', async ({ page }) => {
+    const node = page.locator('#site-graph .site-graph-node[data-node-id="mathematical-logic"]');
+    await node.hover();
+    const sizes = await page.evaluate(() => ({
+      origin: parseFloat(getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="mathematical-logic"] .site-graph-label')).fontSize),
+      child: parseFloat(getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="modal-logic"] .site-graph-label')).fontSize)
+    }));
+    expect(sizes.origin).toBeGreaterThanOrEqual(15);
+    expect(sizes.child).toBeGreaterThanOrEqual(12);
+  });
 });
 
 test.describe('Phase 7 Atlas affordance', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('right-side Atlas button is enlarged and contains the graph glyph', async ({ page }) => {
+  test('right-side Atlas button is enlarged, graph-based and jargon-free', async ({ page }) => {
     await bypassIntro(page);
     await activateOverview(page);
     const button = page.locator('.atlas-button.atlas-entry-v7');
     await expect(button).toBeVisible();
     await expect(button.locator('.atlas-entry-glyph')).toHaveCount(1);
-    await expect(button).toContainText('Atlas');
-    await expect(button).toContainText('Full semantic map');
+    await expect(button).toHaveText(/Atlas/);
+    await expect(button).not.toContainText('semantic');
+    await expect(button).not.toContainText('Full graph');
     const rect = await button.boundingBox();
-    expect(rect.width).toBeGreaterThan(185);
+    expect(rect.width).toBeGreaterThan(175);
     expect(rect.height).toBeGreaterThan(60);
   });
 });

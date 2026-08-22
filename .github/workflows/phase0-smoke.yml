@@ -43,6 +43,7 @@ jobs:
           node --check mobile-app.js
           node --check cross-link-travel-v2.js
           node --check phase0-stability.js
+          node --check playwright.config.js
           node --check tests/phase0.spec.js
           node --check tests/phase0-breakpoint.spec.js
           node --check tests/phase1-scene.spec.js
@@ -77,3 +78,12 @@ jobs:
 
       - name: Run portfolio smoke tests
         run: npx playwright test
+
+      - name: Upload Playwright diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results-${{ github.run_attempt }}
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7

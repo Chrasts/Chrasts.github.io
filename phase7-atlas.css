@@ -111,23 +111,23 @@ body[data-graph-mode="atlas"][data-atlas-lod="detail"] #site-graph .atlas-territ
 
 /* --------------------------------------------------------------------------
    Atlas focus readability.
+   Use the full font shorthand with high specificity because the legacy graph
+   styles also use font shorthands; font-size alone can otherwise be reset.
    -------------------------------------------------------------------------- */
 body[data-graph-mode="atlas"] #site-graph .site-graph-label{
   transition:fill .12s ease,opacity .12s ease,font-size .12s ease
 }
-body[data-graph-mode="atlas"] #site-graph .site-graph-node:hover .site-graph-label,
-body[data-graph-mode="atlas"] #site-graph .site-graph-node:focus-visible .site-graph-label,
-body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-atlas-origin .site-graph-label,
-body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-previewed .site-graph-label{
-  font-size:15.5px!important;
-  font-weight:820!important;
+html body[data-graph-mode="atlas"] #site-graph .site-graph-node:hover .site-graph-label.site-graph-label,
+html body[data-graph-mode="atlas"] #site-graph .site-graph-node:focus-visible .site-graph-label.site-graph-label,
+html body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-atlas-origin .site-graph-label.site-graph-label,
+html body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-previewed .site-graph-label.site-graph-label{
+  font:820 20px/1 var(--sans)!important;
   fill:var(--teal)!important
 }
-body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-upstream .site-graph-label,
-body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-downstream .site-graph-label,
-body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-lateral .site-graph-label{
-  font-size:12.7px;
-  font-weight:760
+html body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-upstream .site-graph-label.site-graph-label,
+html body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-downstream .site-graph-label.site-graph-label,
+html body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-lateral .site-graph-label.site-graph-label{
+  font:760 14.5px/1 var(--sans)!important
 }
 body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-muted-soft .site-graph-label{
   opacity:.48
@@ -199,18 +199,30 @@ body[data-graph-mode="atlas"] .atlas-controls #atlas-fit{
 }
 
 /* --------------------------------------------------------------------------
-   Compact Atlas inspector: content determines height on desktop.
+   Compact Atlas inspector: content determines height on desktop. Keep the
+   selected graph node reachable: right-side territories place the inspector
+   on the left, so second-click focus and drag remain physically possible.
    -------------------------------------------------------------------------- */
+body[data-graph-mode="atlas"] #site-detail-panel[hidden]{
+  display:none!important;
+  pointer-events:none!important
+}
 @media(min-width:901px){
   body[data-graph-mode="atlas"] .scene-detail{
     top:82px!important;
     right:max(18px,calc((100vw - 1390px)/2))!important;
+    left:auto!important;
     bottom:auto!important;
     width:min(342px,calc(100vw - 36px))!important;
     max-height:calc(100% - 126px)!important;
     min-height:0!important;
     padding:19px 20px 18px!important;
     overflow:auto!important
+  }
+  body[data-graph-mode="atlas"]:has(#site-graph .site-graph-node.is-previewed[data-global-sector="knowledge"]) .scene-detail,
+  body[data-graph-mode="atlas"]:has(#site-graph .site-graph-node.is-previewed[data-global-sector="education"]) .scene-detail{
+    left:max(18px,calc((100vw - 1390px)/2))!important;
+    right:auto!important
   }
   body[data-graph-mode="atlas"] .scene-detail h2{
     margin-top:3px;

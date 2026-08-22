@@ -1,7 +1,12 @@
 const { test, expect } = require('@playwright/test');
 
 const freshSession = async page => {
-  await page.addInitScript(() => sessionStorage.removeItem('profileIntroSeen'));
+  await page.addInitScript(() => {
+    if (sessionStorage.getItem('__phase3IntroTestSeeded') !== 'true') {
+      sessionStorage.removeItem('profileIntroSeen');
+      sessionStorage.setItem('__phase3IntroTestSeeded', 'true');
+    }
+  });
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
 };
 

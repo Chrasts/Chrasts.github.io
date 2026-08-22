@@ -4,8 +4,9 @@
 
   const originalSet = proto.setPointerCapture;
   const originalRelease = proto.releasePointerCapture;
-  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const desktop = window.matchMedia('(min-width: 901px)');
+  const initialMatchMedia = window.matchMedia.bind(window);
+  const reduced = initialMatchMedia('(prefers-reduced-motion: reduce)');
+  const desktop = initialMatchMedia('(min-width: 901px)');
   const normaliseRoute = value =>
     (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
 
@@ -22,21 +23,60 @@
    * real pointer over the text) could fall through to the root <svg>. Make the
    * visible node group itself a hit target and keep the explicit hit circle as
    * a guaranteed fallback. Hidden Atlas LOD nodes remain non-interactive.
+   *
+   * The custom property is also a CSS-level reduced-motion probe. It is useful
+   * here because an older graph compatibility shim temporarily wraps
+   * window.matchMedia; CSS media evaluation remains native and authoritative.
    */
   if (!document.querySelector('style[data-profile-node-hit-guard]')) {
     const style = document.createElement('style');
     style.dataset.profileNodeHitGuard = 'true';
     style.textContent = `
+      :root{--profile-reduced-motion-probe:0}
       #site-graph .site-graph-node:not(.is-atlas-lod-hidden){pointer-events:bounding-box!important}
       #site-graph .site-graph-node:not(.is-atlas-lod-hidden) .site-graph-hit{pointer-events:all!important}
       #site-graph .site-graph-node:not(.is-atlas-lod-hidden) .site-graph-label,
       #site-graph .site-graph-node:not(.is-atlas-lod-hidden) .site-graph-meta{pointer-events:visiblePainted!important;cursor:pointer}
       @media(prefers-reduced-motion:reduce){
+        :root{--profile-reduced-motion-probe:1}
         body.is-v9-transitioning #site-graph .site-graph-svg > g:not(.v9-transition-overlay){opacity:1!important;visibility:visible!important}
         .v9-transition-overlay{display:none!important}
       }
     `;
     document.head.appendChild(style);
+  }
+
+  const cssReduced = (() => {
+    try {
+      return getComputedStyle(document.documentElement)
+        .getPropertyValue('--profile-reduced-motion-probe').trim() === '1';
+    } catch (_) {
+      return reduced.matches;
+    }
+  })();
+  const reducedMatches = () => cssReduced || reduced.matches;
+  window.__PROFILE_REDUCED_MOTION__ = reducedMatches();
+
+  /* Keep later consumers off the temporary compatibility false-negative. */
+  if (cssReduced && !reduced.matches) {
+    window.matchMedia = query => {
+      const result = initialMatchMedia(query);
+      if (query !== '(prefers-reduced-motion: reduce)' || result.matches) return result;
+      return new Proxy(result, {
+        get(target, property) {
+          if (property === 'matches') return true;
+          const value = Reflect.get(target, property, target);
+          return typeof value === 'function' ? value.bind(target) : value;
+        }
+      });
+    };
+  }
+
+  if (cssReduced && window.__PROFILE_INTRO_BOOTSTRAP__ && !window.__PROFILE_INTRO_BOOTSTRAP__.reducedMotion) {
+    window.__PROFILE_INTRO_BOOTSTRAP__ = Object.freeze({
+      ...window.__PROFILE_INTRO_BOOTSTRAP__,
+      reducedMotion: true
+    });
   }
 
   proto.setPointerCapture = function(pointerId) {
@@ -135,7 +175,7 @@
       ? target
       : baseCamera();
     if (!camera) return;
-    if (reduced.matches && document.body?.classList.contains('is-v9-transitioning')) {
+    if (reducedMatches() && document.body?.classList.contains('is-v9-transitioning')) {
       camera.dataset.reducedVisibilityGuard = 'true';
       camera.style.setProperty('opacity', '1', 'important');
       camera.style.setProperty('visibility', 'visible', 'important');
@@ -150,11 +190,7 @@
 
   /* ----------------------------------------------------------------------
      Phase-7 desktop camera ownership
-     ----------------------------------------------------------------------
-     Once ProfileAtlasLOD exists, its camera state is authoritative. A legacy
-     Atlas rerender may still write transform="... scale(1)"; repair that write
-     in the same mutation checkpoint instead of allowing Phase 7 to adopt it.
-   */
+     ---------------------------------------------------------------------- */
   let cameraGuard = false;
   const expectedCameraTransform = () => {
     const snap = window.ProfileAtlasLOD?.snapshot?.();
@@ -217,6 +253,7 @@
     reducedMotionGuard: true,
     hitTargetGuard: true,
     cameraGuard: true,
+    reducedMotion: reducedMatches(),
     reason: 'Keep SVG nodes clickable and make Atlas/V9/camera ownership disjoint.'
   });
 })();

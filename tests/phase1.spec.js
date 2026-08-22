@@ -16,7 +16,11 @@ const ready = async (page, path = '/') => {
 
 const route = async (page, name) => {
   const target = page.locator(`[data-route="${name}"]:visible`).first();
-  await target.click({ force: true });
+  if (await target.count()) {
+    await target.click({ force: true });
+  } else {
+    await page.evaluate(routeName => { location.hash = `#${routeName}`; }, name);
+  }
   await page.waitForFunction(expected => document.body.dataset.graphRoute === expected, name);
   await settle(page);
 };

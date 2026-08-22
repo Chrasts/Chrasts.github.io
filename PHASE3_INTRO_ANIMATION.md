@@ -1,86 +1,87 @@
-# Phase 3 — intro animation contract
+# Phase 3 — interaction-gated Atlas intro
 
-Phase 3 adds a first-session opening sequence above the Phase 2 root landing.
+Phase 3 now uses a two-interaction onboarding sequence rather than an autoplay cinematic.
 
 ```text
-full real Atlas
-    -> semantic territories / clusters
-    -> first-level profile branches
-    -> Štěpán Chrast root
-    -> Phase 2 root landing
+first visit / overview
+    -> full real Atlas, stationary
+    -> explicit Enter profile interaction
+    -> semantic folding toward first-level territories
+    -> five first-level branches fold into the person/root
+    -> large photographic Štěpán Chrast identity node
+    -> explicit click on identity node
+    -> identity node shrinks into the real SVG root
+    -> Work / Knowledge / Experience / Education / About emerge
 ```
 
-The intro is structural rather than decorative: it uses the actual portfolio graph and does not introduce video, canvas or a second graph model.
+The animation remains structural: the Atlas source is the actual portfolio graph rendered by `site-graph.js`. No video, canvas, illustrative substitute or parallel graph layout is introduced.
 
-## Eligibility and first-paint guard
+## 1. Eligibility and session behaviour
 
-Eligibility is decided before first paint in the small bootstrap inside `index.html`.
+Eligibility is still decided before first paint.
 
-The full intro is eligible only when:
+The intro is eligible only when:
 
 - the initial route is `overview`; and
 - `sessionStorage.profileIntroSeen !== "true"`.
 
-The bootstrap sets:
+Deep links such as `#knowledge`, `#work` or `#atlas` bypass the intro and mark it seen for the current session. If session storage is unavailable, the intro is bypassed rather than replayed on every reload.
+
+The first-paint guard in `index.html` plus the statically loaded `intro-animation.css` prevent the normal root landing from flashing before the Atlas snapshot is ready.
+
+The session marker is written when the condensation reaches the photographic identity node, or immediately when the intro is explicitly skipped. This means the visitor is not forced through the Atlas condensation again after already seeing it in the current session.
+
+## 2. Initial Atlas state: no autoplay
+
+The first visible intro state is the complete real Atlas.
+
+After the Atlas snapshot is ready:
 
 ```text
-html[data-profile-intro="pending"]
+ProfileIntro.snapshot().stage === "atlas"
+ProfileIntro.snapshot().running === false
+ProfileIntro.snapshot().waiting === true
 ```
 
-before body rendering. `intro-animation.css` is loaded statically from `<head>`, so the Phase 2 root UI cannot flash briefly before the Atlas intro.
+No semantic animation starts automatically, regardless of how long the visitor remains on the page.
 
-`scene-definitions.js` then confirms the same scene-level eligibility and exposes `window.__PROFILE_INTRO_BOOTSTRAP__` to the intro runtime.
+The primary affordance is a bottom-centred button:
 
-If `sessionStorage` is unavailable, the intro is bypassed rather than repeated on every reload.
-
-A completed or skipped intro stores:
-
-```js
-sessionStorage.setItem('profileIntroSeen', 'true')
+```text
+Enter profile
+Condense the Atlas
 ```
 
-Subsequent reloads in the same browser tab/session therefore go directly to the Phase 2 root landing.
+This is intentionally explicit. Pointer movement, an ordinary click on the Atlas surface, or merely loading the page does not start the animation. Enter/Space work naturally when the control is focused.
 
-An explicit deep link such as `#knowledge`, `#work` or `#atlas` bypasses the intro and marks it seen for that session. A visitor who intentionally entered specific content is not interrupted by the cinematic sequence later.
+A separate `Skip intro` control and Escape remain available.
 
-## Real-graph source contract
+## 3. Real-graph source contract
 
-`intro-animation.js` uses the canonical renderer as its source:
+The runtime prepares the snapshot by:
 
-1. wait for the shared graph renderer and root landing controller;
-2. internally render the real `atlas` route;
-3. wait until the live Atlas contains the complete `SITE_DATA.graph.nodes` set;
-4. clone the actual `.site-graph-svg` DOM;
-5. remove duplicate DOM IDs, focus attributes and interactive accessibility attributes from the clone;
-6. restore the live renderer to `overview` underneath the intro overlay;
-7. animate only the frozen real-Atlas snapshot.
+1. waiting for the graph renderer and root landing controller;
+2. internally rendering the real `atlas` route;
+3. waiting until all `SITE_DATA.graph.nodes` are represented;
+4. cloning the actual `.site-graph-svg` DOM;
+5. removing duplicate IDs and interactive attributes from the clone;
+6. recording each cloned node's canonical Atlas coordinates;
+7. restoring the live renderer to `overview` underneath the overlay;
+8. leaving the clone stationary until `Enter profile` is activated.
 
-The clone preserves canonical node coordinates, labels, edges and relation classes. The intro adds only semantic LOD metadata.
+The internal Atlas route uses `history.replaceState()` plus a synthetic `hashchange`, so the preparation does not create a fake browser-history entry.
 
-The overlay advertises its origin through:
+Diagnostics remain available through:
 
 ```text
 data-source="real-atlas"
 data-source-node-count="..."
+ProfileIntro.snapshot()
 ```
 
-and `ProfileIntro.snapshot()` exposes the same diagnostic data.
+## 4. Semantic folding model
 
-## Internal route preparation
-
-The hidden Atlas setup must not pollute browser history.
-
-Phase 3 uses `history.replaceState()` plus a synthetic `hashchange`, allowing the existing `site-graph.js` hash listener to perform the real render without inserting a temporary Atlas entry into back/forward history.
-
-Because this is not a captured user route activation, the normal `graph-transitions-v6.js` overlay does not start for the hidden setup.
-
-After the snapshot is captured, the live renderer is already restored to the Phase 2 root landing before the visible condensation completes.
-
-For a bare `/` entry, the temporary internal `#overview` hash is removed again before handoff. An explicit `/#overview` entry retains its original URL form.
-
-## Semantic tiers
-
-The snapshot reuses `SITE_DATA.graph` parent relationships to compute minimum depth from the root:
+Each node is classified from its real graph ancestry:
 
 ```text
 depth 0     -> root
@@ -89,238 +90,231 @@ depth 2     -> cluster
 depth >= 3  -> deep
 ```
 
-Edges are classified from the deepest endpoint. This produces semantic level-of-detail without changing graph topology or layout coordinates.
+In addition, each non-root node is assigned its first-level section ancestor. The snapshot stores:
 
-## Prototype stages
+- original Atlas point;
+- first-level section target point;
+- root target point.
 
-The implementation deliberately follows the roadmap's semantic prototype before trajectory polish.
-
-### `atlas`
-
-The complete real Atlas snapshot is visible and fitted to the viewport.
+This allows the animation to perform actual node motion rather than only opacity changes.
 
 ### `territories`
 
-Deep nodes/edges recede strongly, depth-2 clusters remain partially visible, and the first-level sections become dominant. The camera moves to the real-coordinate bounds of depth <= 2 nodes.
+Deep nodes recede and move partway toward their first-level section. Depth-2 clusters remain partially visible. The camera closes in on the depth <= 2 region.
 
 ### `branches`
 
-Depth-2 clusters disappear, leaving the root and first-level profile areas. The camera moves to the real-coordinate bounds of depth <= 1 nodes.
+Depth-2 and deeper nodes move fully into their corresponding first-level section and disappear. The visible structure becomes the root plus the five main profile branches.
 
 ### `root`
 
-All non-root graph objects fade away and the snapshot camera moves to the real root coordinate.
+The five first-level branch nodes physically move into the real root coordinate while their connecting edges recede. At the same time the snapshot viewBox continues its root-centred camera move.
 
-`branches` and `root` are separate observable implementation stages, but conceptually form the roadmap's final condensation from the first-level profile structure into the person/root.
+This is the main continuity improvement over the original Phase 3 prototype: the graph now visually folds into its parent structure rather than merely fading while the camera zooms.
 
-## Camera choreography
+## 5. Camera choreography
 
-Camera movement interpolates only the cloned SVG `viewBox`.
+Camera movement still interpolates only the cloned SVG `viewBox`.
 
-No alternative node-coordinate model is computed. Targets are derived from the actual snapshot:
+Targets are derived from the real Atlas coordinates:
 
 - full Atlas viewBox;
-- depth <= 2 bounding region;
-- depth <= 1 bounding region;
+- depth <= 2 bounds;
+- depth <= 1 bounds;
 - root-centred final viewBox.
 
-The live renderer is not mutated while the visible intro camera is moving.
+Node folding and camera travel run concurrently via `Promise.all`, so the visual motion reads as one condensation rather than sequential zoom/fade cuts.
 
-Approximate non-reduced visible timing is:
+Approximate non-reduced motion after the user presses `Enter profile` is:
 
 ```text
-Atlas establish / settle      ~0.5 s
-Atlas hold                    ~0.5 s
-territories move              ~0.7 s
-branches move                 ~0.6 s
-root move                     ~0.6 s
-root hold + cross-fade         ~0.5 s
+territories     ~0.82 s
+branches        ~0.80 s
+root            ~0.90 s
+identity morph  ~0.52 s
 ```
 
-This is around the roadmap's target of roughly 2.5–3.5 seconds once the real Atlas snapshot is available.
+The page may remain indefinitely on the initial Atlas before this starts.
 
-## Root landing handoff
+## 6. Photographic identity root
 
-The Phase 2 root landing is prepared underneath the snapshot before the final root stage finishes.
+The terminal state of the condensation is no longer the Phase 2 hero/root landing.
 
-During handoff:
-
-- underlying header/main/footer become non-inert;
-- document intro state becomes `handoff`;
-- the Phase 2 root scene fades in;
-- the intro overlay fades out over the same interval;
-- the overlay is removed only after the overlap completes.
-
-After cleanup:
+The SVG root cross-fades into a large centred interactive identity node built from the existing profile asset:
 
 ```text
-html[data-profile-intro="complete"]
-ProfileRootLanding.isActive() === true
+assets/stepan-chrast.jpg
+```
+
+The identity node contains:
+
+- portrait;
+- Štěpán Chrast name;
+- three surrounding profile tags derived from `SITE_DATA.profile.label`:
+  - Data analysis;
+  - Research;
+  - Mathematical logic;
+- `Open profile map` interaction hint.
+
+The identity node is a real `<button aria-label="Open the profile map">`.
+
+### Interaction signalling
+
+Hover and keyboard focus deliberately make interactivity visible:
+
+- the identity node scales slightly;
+- two concentric rings expand/emphasise;
+- the portrait receives a small scale response;
+- surrounding profile tags drift outward and switch toward the accent colour;
+- the `Open profile map` hint becomes fully visible.
+
+The effect is informational rather than decorative: the visitor should understand that the portrait/root is the next navigation action.
+
+## 7. Identity node -> real Overview root
+
+Clicking the photographic node performs the second onboarding transition.
+
+The runtime first calls:
+
+```js
+ProfileRootLanding.activate({ focusGraph: false })
+```
+
+This prepares the actual Overview graph beneath the still-opaque intro overlay.
+
+It then measures the real rendered root-dot using `getBoundingClientRect()`. The photographic identity node is animated from its centred large form to that exact screen-space target using the Web Animations API.
+
+During the same interval:
+
+- the identity metadata/rings fade;
+- the intro overlay background becomes transparent;
+- Phase 2's normal root-unfold animation begins underneath;
+- Work, Knowledge, Experience, Education and About emerge around the destination root.
+
+Only after the photographic node reaches the real root location is the intro overlay removed.
+
+Final state:
+
+```text
+ProfileRootLanding.isActive() === false
 body[data-graph-route="overview"]
+#site-explorer visible
+five first-level nodes visible
 ```
 
-The cross-fade is the current prototype mechanism for avoiding a discrete DOM handoff jump. Fine trajectory matching can be tuned only after visual acceptance.
+The handoff therefore targets measured live geometry rather than an estimated duplicate layout.
 
-## Skip behaviour
+## 8. Skip semantics
 
-Interaction always wins over the intro.
+`Skip intro` or Escape bypass the entire cinematic flow and land on the ordinary Phase 2 root landing.
 
-While pending/running, any of these immediately use the quick handoff path:
-
-- pointer down / tap;
-- Enter;
-- Space;
-- Escape;
-- the visible `Skip intro` control.
-
-The underlying site header/main/footer are `inert` while the intro owns interaction, so a skip gesture cannot simultaneously activate an underlying route.
-
-Skip lands on the same standalone Phase 2 root scene as a completed intro, not directly in the expanded Overview graph.
+An ordinary click/tap elsewhere on the Atlas does **not** skip and does **not** start condensation. This is deliberate: the first transition should result from a clear, intentional action.
 
 Public API:
 
 ```js
+ProfileIntro.start()
 ProfileIntro.skip()
+ProfileIntro.openProfile()
 ProfileIntro.snapshot()
 ```
 
-## Reduced motion
+## 9. Reduced motion
 
-With `prefers-reduced-motion: reduce`, the semantic camera travel is removed.
+Reduced-motion mode retains the two explicit interaction points but removes the large semantic travel.
 
 ```text
-real Atlas snapshot
-    -> short fade
-    -> Phase 2 root landing
+real Atlas, waiting
+    -> Enter profile
+    -> direct Atlas-to-photographic-identity handoff
+    -> click identity
+    -> short identity-to-root handoff
 ```
 
-Only the `atlas` semantic stage is emitted. Information and skip controls remain available.
+No territories/branches/root camera sequence is required to communicate the navigation state.
 
-## Mobile
+## 10. Mobile
 
-Desktop and mobile use the same real Atlas source and the same state machine.
+Desktop and mobile use the same real-Atlas source and state machine.
 
-The intro snapshot has its own responsive SVG viewBox and does not use the mobile local-graph projection. The destination remains the existing Phase 2 mobile root composition.
+On mobile:
 
-The overlay respects safe-area insets for skip/caption controls. After later root activation, Phase 2 still uses `MobileProfileScene.repair()` for the normal mobile graph.
+- `Enter profile` remains above the safe-area inset;
+- the photographic identity node is reduced to phone scale;
+- the three profile tags are repositioned around the smaller portrait;
+- the second click still targets the actual rendered mobile root-dot;
+- the existing Phase 2 `MobileProfileScene.repair()` remains part of root activation.
 
-## Failure safety
+The intro does not replace or modify the mobile graph renderer.
 
-The intro explicitly fails open to the root landing for:
+## 11. Failure safety
 
-- runtime/bootstrap timeout;
-- missing intro stylesheet;
+The runtime fails open to the usable Phase 2 root landing for:
+
+- setup / stylesheet timeout;
 - Atlas route timeout;
 - incomplete Atlas render;
 - missing Atlas SVG;
 - Overview restore timeout;
-- root landing restore timeout.
+- missing expanded root geometry.
 
-A setup failure uses the same fast handoff as an explicit skip instead of leaving a hidden or unusable page.
+Failure never leaves the user on a permanently hidden page.
 
-The runtime waits until `intro-animation.css` is present in `document.styleSheets` before changing `pending -> running`.
+## 12. Observability
 
-## Observability
-
-If Umami is available, Phase 3 emits:
+Optional Umami events:
 
 ```text
+intro_ready
+intro_started
+intro_condensed
 intro_completed
 intro_skipped
 ```
 
-Browser events:
+Browser events continue to expose intro state/stages and fallbacks. Rendering never depends on analytics.
 
-```text
-profile:intro-started
-profile:intro-stage
-profile:intro-completed
-profile:intro-skipped
-profile:intro-fallback
-```
+## 13. Regression tests
 
-Rendering does not depend on analytics.
+`tests/phase3-intro.spec.js` now verifies:
 
-## Regression tests
-
-`tests/phase3-intro.spec.js` covers:
-
-- first-session eligibility;
-- real-Atlas source and exact source node count;
-- `atlas -> territories -> branches -> root` progression;
-- overlapping handoff;
-- pointer skip;
-- Escape skip;
-- session-only refresh bypass;
+- the complete real Atlas is visible first;
+- the state remains on Atlas without autoplay;
+- explicit `Enter profile` starts condensation;
+- deep nodes physically reach their first-level section target;
+- semantic stages reach `territories -> branches -> root -> identity`;
+- identity node uses the real profile image and three profile tags;
+- hover changes its interactive visual state;
+- identity click ends with expanded Overview and all five first-level nodes;
+- ordinary Atlas pointer interaction does not start the animation;
+- Skip / Escape land on the Phase 2 root landing;
+- session-only reload bypass;
 - deep-link bypass;
-- reduced-motion Atlas -> root path;
-- mobile portrait handoff.
+- reduced-motion two-interaction path;
+- mobile portrait -> expanded mobile Overview path.
 
-Phase 0, Phase 1 and Phase 2 tests pre-mark `profileIntroSeen=true` before navigation. Their original renderer/scene/root contracts therefore remain isolated from the new opening animation.
+Phase 0–2 tests continue to pre-mark `profileIntroSeen=true` so their renderer/scene/root contracts remain isolated.
 
-The portfolio workflow syntax-checks the Phase 3 runtime/test and runs the full Playwright suite.
+## 14. Architectural boundary
 
-## Validation status
-
-Static architecture, failure-path and Phase 2 -> Phase 3 diff review are complete.
-
-Phase 3 does not modify:
+This revision still does not modify the canonical:
 
 - `site-graph.js`;
 - `graph-transitions-v6.js`;
 - `mobile-app.js`.
 
-The available GitHub connector still does not expose push-triggered Actions runs/checks for this repository, so a passing browser suite is **not** claimed solely from the committed workflow/tests.
+The intro owns only a frozen snapshot and a temporary HTML identity object. The final transition explicitly hands control back to the actual renderer.
 
-A real-browser visual pass should still judge perceptual qualities that assertions cannot establish reliably:
+## 15. Remaining Phase 3 visual tuning
 
-- initial Atlas readability;
-- semantic clarity of the territory stage;
-- continuity of the root cross-fade;
-- frame pacing on an actual phone.
+The implementation now represents the intended interaction/state model. Remaining work inside Phase 3 should be perceptual tuning after a real browser pass rather than another architectural redesign:
 
-## Deliberately deferred
+- exact `Enter profile` placement/wording;
+- folding trajectory/easing;
+- identity-node size and tag placement;
+- portrait crop;
+- timing of background transparency versus branch emergence;
+- final shrink scale and handoff pacing;
+- phone frame pacing.
 
-Phase 3 does not yet optimise individual node trajectories or introduce bespoke aggregate territory glyphs.
-
-It also does not:
-
-- rewrite Atlas layout;
-- add semantic LOD to normal interactive Atlas use;
-- replace the legacy route animation engine;
-- add rich project-scene content;
-- perform broad CSS consolidation.
-
-The current prototype proves the narrative/state/handoff contract first, as required by the roadmap.
-
-## Acceptance mapping
-
-Roadmap: **Atlas snapshot/state**  
-Implemented by cloning the fully rendered canonical Atlas SVG after all real graph nodes are present.
-
-Roadmap: **semantic condensation**  
-Implemented through hierarchy-derived semantic depth tiers and staged LOD fading.
-
-Roadmap: **camera choreography**  
-Implemented by real-coordinate-derived `viewBox` interpolation.
-
-Roadmap: **root landing handoff**  
-The Phase 2 root landing is restored beneath the overlay before an overlapping cross-fade.
-
-Roadmap: **skip**  
-Pointer/tap, Enter, Space and Escape all terminate into the usable root scene.
-
-Roadmap: **reduced motion**  
-A short real-Atlas -> root fade replaces camera movement.
-
-Roadmap: **session only**  
-`sessionStorage.profileIntroSeen` suppresses later intros in the same session.
-
-Roadmap acceptance: **intro uses real graph**  
-The source is the live Atlas SVG, not an independently generated visual.
-
-Roadmap acceptance: **interaction can skip**  
-Interaction has a capture-phase escape path and underlying controls are inert.
-
-Roadmap acceptance: **mobile and desktop both work**  
-The same snapshot/state machine is responsive and has dedicated desktop/mobile Playwright coverage.
+These should be tuned from the live result rather than guessed from static code.

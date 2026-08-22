@@ -304,4 +304,5 @@
   ensureScript('intro-fixes-v3.js', 'data-profile-intro-fixes-v3');
   ensureScript('intro-animation.js', 'data-profile-intro-animation');
   ensureScript('intro-unfold.js', 'data-profile-intro-unfold');
+  ensureScript('intro-state-consistency.js', 'data-profile-intro-state-consistency');
 })();

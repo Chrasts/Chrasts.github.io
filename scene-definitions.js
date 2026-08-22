@@ -4,14 +4,53 @@
 
   const normaliseRoute = value =>
     (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
-  const initialRootLanding = normaliseRoute(location.hash) === 'overview';
+  const initialRoute = normaliseRoute(location.hash);
+  const initialRootLanding = initialRoute === 'overview';
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  const ensureStylesheet = href => {
+  let introSeen = false;
+  try { introSeen = sessionStorage.getItem('profileIntroSeen') === 'true'; } catch (_) {}
+  const introEligible = initialRootLanding && !introSeen;
+
+  /* An explicit deep link takes precedence over the cinematic intro. Treat that
+     entry as the current session's visit so a later refresh of Overview does not
+     unexpectedly insert an intro after the visitor has already explored content. */
+  if (!initialRootLanding && !introSeen) {
+    try { sessionStorage.setItem('profileIntroSeen', 'true'); } catch (_) {}
+  }
+
+  document.documentElement.dataset.profileIntro = introEligible ? 'pending' : 'bypass';
+  window.__PROFILE_INTRO_BOOTSTRAP__ = Object.freeze({
+    eligible: introEligible,
+    initialRoute,
+    initialHash: location.hash,
+    reducedMotion
+  });
+
+  /* Minimal synchronous guard while the full intro stylesheet is loading. It is
+     deliberately tiny and exists only to prevent the Phase 2 landing/nav from
+     flashing before the first-session Atlas snapshot is ready. */
+  if (introEligible && !document.querySelector('style[data-profile-intro-guard]')) {
+    const style = document.createElement('style');
+    style.dataset.profileIntroGuard = 'true';
+    style.textContent = `
+      html[data-profile-intro="pending"] body > .site-header,
+      html[data-profile-intro="pending"] body > .profile-app,
+      html[data-profile-intro="pending"] body > footer{
+        opacity:0!important;
+        visibility:hidden!important;
+        pointer-events:none!important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  const ensureStylesheet = (href, marker) => {
     if (document.querySelector(`link[href="${href}"]`)) return;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = href;
-    link.dataset.profileRootLanding = 'true';
+    if (marker) link.setAttribute(marker, 'true');
     document.head.appendChild(link);
   };
 
@@ -65,7 +104,8 @@
     }
   };
 
-  ensureStylesheet('root-landing.css');
+  ensureStylesheet('root-landing.css', 'data-profile-root-landing-style');
+  ensureStylesheet('intro-animation.css', 'data-profile-intro-style');
   prepareRootLandingDom();
 
   document.body.dataset.rootLanding = initialRootLanding ? 'true' : 'false';
@@ -251,13 +291,17 @@
     }
   });
 
-  scene.manager.scheduleRefresh('phase2-root-definitions');
+  scene.manager.scheduleRefresh('phase3-intro-definitions');
 
-  if (!document.querySelector('script[data-profile-root-landing]')) {
+  const ensureScript = (src, marker) => {
+    if (document.querySelector(`script[${marker}]`)) return;
     const script = document.createElement('script');
-    script.src = 'root-landing.js';
+    script.src = src;
     script.async = false;
-    script.dataset.profileRootLanding = 'true';
+    script.setAttribute(marker, 'true');
     document.head.appendChild(script);
-  }
+  };
+
+  ensureScript('root-landing.js', 'data-profile-root-landing');
+  ensureScript('intro-animation.js', 'data-profile-intro-animation');
 })();

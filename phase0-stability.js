@@ -1,4 +1,11 @@
 (() => {
+  if (!document.querySelector('script[data-profile-scene-runtime]')) {
+    const script = document.createElement('script');
+    script.src = 'scene-runtime.js';
+    script.dataset.profileSceneRuntime = 'true';
+    document.head.appendChild(script);
+  }
+
   const mobileBreakpoint = window.matchMedia('(max-width: 900px)');
 
   /*

@@ -1,14 +1,10 @@
 (() => {
   const site = window.SITE_DATA;
 
-  /* ------------------------------------------------------------------------
-     Small data-label refinements applied before the graph renderer boots.
-     ------------------------------------------------------------------------ */
   const patchWorkData = data => {
     if (!data) return;
     const research = data.attributes?.find(attribute => attribute.id === 'research');
     if (research) research.label = 'Research';
-
     const insolvency = data.projects?.find(project => project.id === 'insolvency');
     if (insolvency) {
       insolvency.graphLabel = 'Insolvency Analysis';
@@ -40,13 +36,6 @@
   ensureStylesheet('graph-v8.css', 'data-profile-graph-v8');
   ensureStylesheet('graph-v9.css', 'data-profile-graph-v9');
 
-  /* ------------------------------------------------------------------------
-     Dedicated mobile app layer
-
-     Desktop keeps the existing renderer untouched. On phones, a separate CSS
-     and controller layer turns the same graph into a fixed scene with its own
-     camera, pinch zoom, panning, compact HUD and reusable segment-control sheet.
-     ------------------------------------------------------------------------ */
   const mobileViewport = window.matchMedia('(max-width: 900px)');
   const ensureMobileLayer = () => {
     if (!mobileViewport.matches) return;
@@ -65,20 +54,6 @@
     if (event.matches) ensureMobileLayer();
   });
 
-  /* ------------------------------------------------------------------------
-     Transition query isolation.
-
-     graph-transitions-v6.js intentionally renders a temporary SVG overlay
-     containing clones of the currently visible nodes. Its helper selectors
-     were broad enough to start selecting those clones as if they were the
-     real graph on the next animation frame. That creates duplicate node IDs,
-     makes the overlay overwrite the base-node positions in Maps, and produces
-     the visible teleport/blink and the occasional final-layout jump.
-
-     Keep the original transition animation completely unchanged; only make
-     those two base-graph queries ignore elements living inside the temporary
-     transition overlay while a route transition is active.
-     ------------------------------------------------------------------------ */
   const nativeDocumentQuerySelectorAll = Document.prototype.querySelectorAll;
   const transitionBaseSelectors = new Set([
     '#site-graph .site-graph-node[data-node-id]',
@@ -97,17 +72,10 @@
     return [...result].filter(element => !element.closest('.v9-transition-overlay'));
   };
 
-  /* ------------------------------------------------------------------------
-     Reduced-motion bridge.
-
-     site-graph.js keeps the returned MediaQueryList object. The transition
-     layer can temporarily make that object report reduced motion so the base
-     renderer jumps to its target state while V9 performs the visible motion.
-     ------------------------------------------------------------------------ */
   const realMatchMedia = window.matchMedia.bind(window);
   const realReduced = realMatchMedia('(prefers-reduced-motion: reduce)');
-
   let forceSnap = false;
+
   Object.defineProperty(window, '__GRAPH_V6_FORCE_SNAP__', {
     configurable: true,
     get: () => forceSnap,
@@ -121,9 +89,7 @@
   });
 
   const proxyReduced = {
-    get matches() {
-      return forceSnap || realReduced.matches;
-    },
+    get matches() { return forceSnap || realReduced.matches; },
     media: realReduced.media,
     onchange: null,
     addListener: (...args) => realReduced.addListener?.(...args),
@@ -135,24 +101,87 @@
 
   window.__GRAPH_V6_REAL_MATCH_MEDIA__ = realMatchMedia;
   window.__GRAPH_V6_RESTORE_MATCH_MEDIA__ = () => {
-    setTimeout(() => {
-      window.matchMedia = realMatchMedia;
-    }, 0);
+    setTimeout(() => { window.matchMedia = realMatchMedia; }, 0);
   };
   window.matchMedia = query =>
-    query === '(prefers-reduced-motion: reduce)'
-      ? proxyReduced
-      : realMatchMedia(query);
+    query === '(prefers-reduced-motion: reduce)' ? proxyReduced : realMatchMedia(query);
 
-  /* ------------------------------------------------------------------------
-     Work concept inspection.
+  let atlasRootPinned = false;
+  let atlasRootVisuallyCleared = false;
 
-     A theme label shows every project carrying that theme. A formal concept
-     node shows only projects introduced at that exact displayed concept.
-     ------------------------------------------------------------------------ */
+  const clearAtlasRootVisual = ({ closeDetail = true } = {}) => {
+    if (document.body.dataset.graphMode !== 'atlas') return;
+    document.querySelectorAll('#site-graph .site-graph-node').forEach(element => {
+      element.classList.remove('is-atlas-origin', 'is-upstream', 'is-downstream', 'is-lateral', 'is-muted-soft');
+    });
+    document.querySelectorAll('#site-graph .site-graph-edges path').forEach(element => {
+      element.classList.remove('is-upstream', 'is-downstream', 'is-lateral', 'is-muted-soft');
+    });
+    if (closeDetail) {
+      const panel = document.querySelector('#site-detail-panel');
+      if (panel?.classList.contains('is-open')) panel.querySelector('.detail-close')?.click();
+    }
+  };
+
+  const scheduleAtlasRootClear = options => {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (atlasRootVisuallyCleared) clearAtlasRootVisual(options);
+    }));
+  };
+
+  document.addEventListener('click', event => {
+    if (document.body.dataset.graphMode !== 'atlas') {
+      atlasRootPinned = false;
+      atlasRootVisuallyCleared = false;
+      return;
+    }
+
+    const node = event.target.closest?.('.site-graph-node[data-node-id]');
+    if (node?.dataset.nodeId === 'stepan-chrast') {
+      const wasPinned = atlasRootPinned;
+      if (wasPinned) {
+        atlasRootPinned = false;
+        atlasRootVisuallyCleared = true;
+        scheduleAtlasRootClear({ closeDetail: true });
+      } else {
+        atlasRootPinned = true;
+        atlasRootVisuallyCleared = false;
+      }
+      return;
+    }
+
+    if (node) {
+      atlasRootPinned = false;
+      atlasRootVisuallyCleared = false;
+      return;
+    }
+
+    const insideGraph = event.target.closest?.('.site-graph-viewport');
+    const utility = event.target.closest?.('.atlas-controls,.graph-routebar,.scene-detail,.mobile-graph-dock,.mobile-control-sheet');
+    if (insideGraph && !utility && atlasRootPinned) {
+      atlasRootPinned = false;
+      atlasRootVisuallyCleared = true;
+      scheduleAtlasRootClear({ closeDetail: true });
+    }
+  });
+
+  document.addEventListener('mouseleave', event => {
+    if (!atlasRootVisuallyCleared || document.body.dataset.graphMode !== 'atlas') return;
+    if (event.target.closest?.('.site-graph-node[data-node-id]')) scheduleAtlasRootClear({ closeDetail: false });
+  }, true);
+
+  document.addEventListener('focusout', event => {
+    if (!atlasRootVisuallyCleared || document.body.dataset.graphMode !== 'atlas') return;
+    if (event.target.closest?.('.site-graph-node[data-node-id]')) scheduleAtlasRootClear({ closeDetail: false });
+  }, true);
+
+  document.addEventListener('change', event => {
+    if (!atlasRootVisuallyCleared || document.body.dataset.graphMode !== 'atlas') return;
+    if (event.target.closest?.('#atlas-controls')) scheduleAtlasRootClear({ closeDetail: false });
+  });
+
   const work = site?.work;
   const detailPanel = () => document.querySelector('#site-detail-panel');
-
   const attributeIds = work?.attributes?.map(attribute => attribute.id) || [];
   const attributeMap = new Map((work?.attributes || []).map(attribute => [attribute.id, attribute]));
   const projects = work?.projects || [];
@@ -194,7 +223,6 @@
     if (!ids.length) return;
     const key = conceptKey(ids);
     const labels = ids.map(id => attributeMap.get(id).label);
-
     const matchingProjects = projects
       .filter(project => exactNode
         ? projectConceptKey(project) === key
@@ -298,5 +326,9 @@
   window.addEventListener('hashchange', () => {
     const route = (location.hash || '#overview').replace(/^#/, '');
     if (!route.startsWith('work')) closeWorkConceptDetail();
+    if (route !== 'atlas') {
+      atlasRootPinned = false;
+      atlasRootVisuallyCleared = false;
+    }
   });
 })();

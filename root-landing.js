@@ -9,6 +9,7 @@
   const explorer = document.querySelector('#site-explorer');
   const status = document.querySelector('#site-graph-status');
   const trigger = document.querySelector('[data-root-activate]');
+  const atlasTrigger = document.querySelector('.root-atlas-affordance');
 
   let rootActivated = false;
   let active = normaliseRoute(location.hash) === 'overview';
@@ -110,6 +111,7 @@
   });
 
   if (trigger) trigger.disabled = false;
+  if (atlasTrigger) atlasTrigger.disabled = false;
   setActive(active, { reason: 'root-controller-boot' });
 
   window.ProfileRootLanding = Object.freeze({

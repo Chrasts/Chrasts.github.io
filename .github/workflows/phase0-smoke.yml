@@ -37,6 +37,8 @@ jobs:
           node --check radial-geometry.js
           node --check phase7-pointer-hotfix.js
           node --check global-geometry-ownership.js
+          node --check graph-transition-prelude.js
+          node --check graph-transitions-v6.js
           node --check phase7-atlas.js
           node --check mobile-app.js
           node --check cross-link-travel-v2.js

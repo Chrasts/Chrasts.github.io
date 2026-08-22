@@ -53,6 +53,7 @@
       atlas.type = 'button';
       atlas.className = 'root-atlas-affordance';
       atlas.dataset.route = 'atlas';
+      atlas.disabled = true;
       atlas.setAttribute('aria-label', 'Explore Atlas, the full profile graph');
 
       const label = document.createElement('span');

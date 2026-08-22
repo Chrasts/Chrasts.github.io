@@ -8,14 +8,23 @@
   const initialRootLanding = initialRoute === 'overview';
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  let storageAvailable = true;
   let introSeen = false;
-  try { introSeen = sessionStorage.getItem('profileIntroSeen') === 'true'; } catch (_) {}
-  const introEligible = initialRootLanding && !introSeen;
+  try {
+    introSeen = sessionStorage.getItem('profileIntroSeen') === 'true';
+  } catch (_) {
+    storageAvailable = false;
+  }
+
+  const earlyIntroState = document.documentElement.dataset.profileIntro;
+  const introEligible = earlyIntroState
+    ? earlyIntroState === 'pending'
+    : initialRootLanding && storageAvailable && !introSeen;
 
   /* An explicit deep link takes precedence over the cinematic intro. Treat that
      entry as the current session's visit so a later refresh of Overview does not
      unexpectedly insert an intro after the visitor has already explored content. */
-  if (!initialRootLanding && !introSeen) {
+  if (!initialRootLanding && storageAvailable && !introSeen) {
     try { sessionStorage.setItem('profileIntroSeen', 'true'); } catch (_) {}
   }
 
@@ -24,26 +33,9 @@
     eligible: introEligible,
     initialRoute,
     initialHash: location.hash,
-    reducedMotion
+    reducedMotion,
+    storageAvailable
   });
-
-  /* Minimal synchronous guard while the full intro stylesheet is loading. It is
-     deliberately tiny and exists only to prevent the Phase 2 landing/nav from
-     flashing before the first-session Atlas snapshot is ready. */
-  if (introEligible && !document.querySelector('style[data-profile-intro-guard]')) {
-    const style = document.createElement('style');
-    style.dataset.profileIntroGuard = 'true';
-    style.textContent = `
-      html[data-profile-intro="pending"] body > .site-header,
-      html[data-profile-intro="pending"] body > .profile-app,
-      html[data-profile-intro="pending"] body > footer{
-        opacity:0!important;
-        visibility:hidden!important;
-        pointer-events:none!important;
-      }
-    `;
-    document.head.appendChild(style);
-  }
 
   const ensureStylesheet = (href, marker) => {
     if (document.querySelector(`link[href="${href}"]`)) return;

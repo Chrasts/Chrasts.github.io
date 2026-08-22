@@ -48,6 +48,8 @@ This bridge is explicitly transitional architecture. Later phases can remove pie
 
 Still implements the existing mobile graph projection and gestures. Its public camera operations are adapted into the common CameraController API.
 
+The older mobile-local object map remains only as a compatibility metadata shim. New scene semantics belong in the common `ProfileScene.registry`, where desktop and mobile are variants of the same object identity.
+
 ## Scene object declaration
 
 A scene object registration can declare:
@@ -164,7 +166,7 @@ Represents the ordinary desktop graph view. Its current renderer is mostly layou
 
 ### `atlas`
 
-Represents the real Atlas SVG transform and delegates fit/reset/zoom/pan to the existing Atlas controls/gesture implementation.
+Represents the real Atlas SVG transform. Fit, reset and zoom delegate to the existing Atlas implementation. User-driven pan remains owned by `site-graph.js`; programmatic `CameraController.pan()` currently returns `false` for Atlas rather than emulating a synthetic pointer sequence that could conflict with pointer capture. A direct pan adapter can be added once the renderer exports Atlas camera state mutations explicitly.
 
 ### `mobile-local`
 
@@ -176,7 +178,7 @@ Represents the mobile SVG viewBox camera and delegates supported operations to `
 - non-Atlas mobile -> `mobile-local`
 - non-Atlas desktop -> `desktop-local`
 
-Future scenes should call CameraController rather than reaching into a renderer-specific camera implementation.
+Future scenes should call CameraController rather than reaching into a renderer-specific camera implementation. Unsupported operations fail explicitly instead of pretending to succeed.
 
 ## Transition coordinator
 
@@ -193,7 +195,9 @@ There is also `cancel` for future transactional flows.
 
 Each transition receives an opaque token. Only the active token can advance or finish the transaction. `isLocked` is the shared interaction-lock signal.
 
-During Phase 1, `scene-legacy-bridge.js` observes the established `.is-v9-transitioning` lifecycle and translates it into these hooks. `phase0-stability.js` now uses `TransitionCoordinator.isLocked` as the architectural lock owner, retaining the old body class only as a compatibility fallback.
+During Phase 1, `scene-legacy-bridge.js` observes the established `.is-v9-transitioning` lifecycle and translates it into these hooks. The payload includes snapshots of the old and new scene state, so future scene objects can reason about transitions without reading the legacy overlay directly.
+
+`phase0-stability.js` now uses `TransitionCoordinator.isLocked` as the architectural lock owner, retaining the old body class only as a compatibility fallback.
 
 This means future scene objects can hook transition phases without knowing that the current graph animation uses a temporary SVG overlay.
 
@@ -264,21 +268,6 @@ Roadmap requirement: objects declare **enter/exit behaviour**
 Roadmap requirement: objects declare **desktop/mobile variant**  
 `variants.desktop` / `variants.mobile`.
 
-## Deliberately deferred
-
-Phase 1 does **not**:
-
-- add the standalone root landing scene from Phase 2;
-- build the Atlas condensation intro from Phase 3;
-- add project-specific charts, diagrams, media or demos;
-- replace the current graph renderer;
-- replace the existing structural animation implementation;
-- merge historical CSS layers;
-- remove the mobile projection compatibility runtime;
-- invent one generic modal/detail presentation for all future nodes.
-
-The value of Phase 1 is that those later changes can now target explicit scene, camera and transition interfaces instead of adding more route-specific global behaviour.
-
 ## Regression tests
 
 `tests/phase1-scene.spec.js` verifies:
@@ -291,8 +280,36 @@ The value of Phase 1 is that those later changes can now target explicit scene, 
 - preservation of Phase 0 graph invariants;
 - mobile variants using the same scene-object identities.
 
-Run the complete browser suite with:
+The repository workflow now runs JavaScript syntax checks followed by the complete Playwright suite on pushes to `main` and on pull requests targeting `main`.
+
+Run the complete browser suite locally with:
 
 ```bash
 npx playwright test
 ```
+
+## Current validation status
+
+Static architecture review and the Phase 0 -> Phase 1 diff audit are complete.
+
+No Phase 1 commit modifies the canonical `site-graph.js`, `graph-transitions-v6.js` or `mobile-app.js` implementation. Integration is additive through the scene runtime, declarations and compatibility bridge, plus the small Phase 0 lock migration.
+
+The current execution sandbox cannot resolve `raw.githubusercontent.com`, so it cannot pull the repository into its local Chromium/Node environment. The GitHub connector also currently returns no Actions/check status for these `main` commits. Therefore the Playwright suite is present and wired, but **a passing browser run is not claimed here**.
+
+The public GitHub Pages crawler available to this environment is several weeks stale and is likewise not valid evidence about the current deployment.
+
+## Deliberately deferred
+
+Phase 1 does **not**:
+
+- add the standalone root landing scene from Phase 2;
+- build the Atlas condensation intro from Phase 3;
+- add project-specific charts, diagrams, media or demos;
+- replace the current graph renderer;
+- replace the existing structural animation implementation;
+- merge historical CSS layers;
+- remove the mobile projection compatibility runtime;
+- expose direct programmatic Atlas pan until its internal camera mutations have a supported renderer API;
+- invent one generic modal/detail presentation for all future nodes.
+
+The value of Phase 1 is that those later changes can now target explicit scene, camera and transition interfaces instead of adding more route-specific global behaviour.

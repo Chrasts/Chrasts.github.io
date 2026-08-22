@@ -75,6 +75,30 @@
     });
   }
 
+  /* Chromium may emit an attribute mutation even when classList.add/remove is
+     asked to apply a state that is already true. Several portfolio observers
+     decorate nodes they also observe, so make those no-op class operations
+     genuinely idempotent and prevent observer feedback loops. */
+  const tokenProto = window.DOMTokenList?.prototype;
+  if (tokenProto && !tokenProto.__profileIdempotentClassGuard) {
+    const nativeAdd = tokenProto.add;
+    const nativeRemove = tokenProto.remove;
+    Object.defineProperty(tokenProto, '__profileIdempotentClassGuard', {
+      value: true,
+      configurable: false,
+      enumerable: false,
+      writable: false
+    });
+    tokenProto.add = function(...tokens) {
+      if (tokens.length && tokens.every(token => this.contains(token))) return;
+      return nativeAdd.apply(this, tokens);
+    };
+    tokenProto.remove = function(...tokens) {
+      if (tokens.length && tokens.every(token => !this.contains(token))) return;
+      return nativeRemove.apply(this, tokens);
+    };
+  }
+
   proto.setPointerCapture = function(pointerId) {
     if (
       document.body?.dataset.graphMode === 'atlas' &&
@@ -250,6 +274,7 @@
     crossLinkGuard: true,
     idempotentMutationGuards: true,
     inspectorTextGuard: true,
+    classMutationGuard: true,
     reducedMotion: reducedMatches(),
     reason: 'Keep SVG nodes clickable without mutation feedback loops and keep transition ownership disjoint.'
   });

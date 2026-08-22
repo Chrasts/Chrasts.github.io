@@ -116,39 +116,12 @@
     zoomAt: (_point, factor) => factor >= 1
       ? clickAtlas('#atlas-zoom-in')
       : clickAtlas('#atlas-zoom-out'),
-    pan: delta => {
-      const target = svg();
-      const box = target?.getBoundingClientRect();
-      if (!target || !box || typeof PointerEvent === 'undefined') return false;
-      const startX = box.left + box.width / 2;
-      const startY = box.top + box.height / 2;
-      const pointerId = 9051;
-      target.dispatchEvent(new PointerEvent('pointerdown', {
-        bubbles: true,
-        pointerId,
-        pointerType: 'mouse',
-        button: 0,
-        clientX: startX,
-        clientY: startY
-      }));
-      target.dispatchEvent(new PointerEvent('pointermove', {
-        bubbles: true,
-        pointerId,
-        pointerType: 'mouse',
-        button: 0,
-        clientX: startX + (delta?.x || 0),
-        clientY: startY + (delta?.y || 0)
-      }));
-      target.dispatchEvent(new PointerEvent('pointerup', {
-        bubbles: true,
-        pointerId,
-        pointerType: 'mouse',
-        button: 0,
-        clientX: startX + (delta?.x || 0),
-        clientY: startY + (delta?.y || 0)
-      }));
-      return true;
-    },
+    /* User-driven Atlas pan remains owned by site-graph.js. Do not emulate a
+       native pointer sequence here: synthetic pointers cannot safely satisfy
+       setPointerCapture and would make the abstraction less reliable than the
+       implementation it wraps. A direct programmatic pan adapter can replace
+       this once the Atlas camera state is exported by the renderer. */
+    pan: () => false,
     transitionTo: () => false,
     serialize: readAtlasTransform
   });
@@ -200,7 +173,8 @@
       if (!transitionToken || !transitions.matches(transitionToken)) return;
       transitions.commit(transitionToken, {
         toRoute: currentRoute(),
-        toMode: currentMode()
+        toMode: currentMode(),
+        toScene: manager.snapshot()
       });
     }));
   };
@@ -219,6 +193,7 @@
       transitionToken = transitions.begin({
         fromRoute: lastStableRoute,
         fromMode: manager.graphState.mode,
+        fromScene: manager.snapshot(),
         trigger: 'legacy-graph-transition'
       });
     }
@@ -229,7 +204,8 @@
         transitions.prepare(transitionToken, {
           toRoute: currentRoute(),
           toMode: currentMode(),
-          activeNodeId: activeNodeId()
+          activeNodeId: activeNodeId(),
+          toScene: manager.snapshot()
         });
         scheduleCommit();
       } else {
@@ -242,7 +218,8 @@
       transitions.finish(transitionToken, {
         toRoute: currentRoute(),
         toMode: currentMode(),
-        activeNodeId: activeNodeId()
+        activeNodeId: activeNodeId(),
+        toScene: manager.snapshot()
       });
       transitionToken = null;
       lastStableRoute = currentRoute();

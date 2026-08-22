@@ -1,7 +1,6 @@
 (() => {
   const MOBILE_QUERY = '(max-width: 900px)';
   const REDUCED_QUERY = '(prefers-reduced-motion: reduce)';
-  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const normaliseRoute = value =>
     (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
 
@@ -52,8 +51,9 @@
     }
 
     use(id) {
-      if (id === this.activeId) return this;
-      this.activeId = this.adapters.has(id) ? id : null;
+      const next = this.adapters.has(id) ? id : null;
+      if (next === this.activeId) return this;
+      this.activeId = next;
       this.emit();
       return this;
     }
@@ -63,11 +63,12 @@
     }
 
     snapshot() {
-      const value = this.active?.read?.();
+      const adapter = this.active;
+      const value = adapter?.read?.() || { x: 0, y: 0, scale: 1 };
       return Object.freeze({
         adapter: this.activeId,
-        writable: Boolean(this.active),
-        ...(value || { x: 0, y: 0, scale: 1 })
+        writable: Boolean(adapter && ['zoom', 'pan', 'fit', 'reset'].some(key => typeof adapter[key] === 'function')),
+        ...value
       });
     }
 
@@ -79,21 +80,10 @@
       return true;
     }
 
-    zoom(factor = 1) {
-      return this.command('zoom', factor);
-    }
-
-    pan(delta = { x: 0, y: 0 }) {
-      return this.command('pan', delta);
-    }
-
-    fit() {
-      return this.command('fit');
-    }
-
-    reset() {
-      return this.command('reset');
-    }
+    zoom(factor = 1) { return this.command('zoom', factor); }
+    pan(delta = { x: 0, y: 0 }) { return this.command('pan', delta); }
+    fit() { return this.command('fit'); }
+    reset() { return this.command('reset'); }
 
     onChange(listener) {
       this.listeners.add(listener);
@@ -134,11 +124,7 @@
 
     end(meta = {}) {
       if (!this.current) return false;
-      const completed = Object.freeze({
-        ...this.current,
-        ...meta,
-        endedAt: performance.now()
-      });
+      const completed = Object.freeze({ ...this.current, ...meta, endedAt: performance.now() });
       this.current = null;
       this.emit('after', completed);
       return true;
@@ -153,10 +139,10 @@
     }
 
     on(type, listener) {
-      const set = this.listeners.get(type);
-      if (!set) throw new Error(`Unknown transition hook: ${type}`);
-      set.add(listener);
-      return () => set.delete(listener);
+      const listeners = this.listeners.get(type);
+      if (!listeners) throw new Error(`Unknown transition hook: ${type}`);
+      listeners.add(listener);
+      return () => listeners.delete(listener);
     }
 
     emit(type, detail) {
@@ -181,9 +167,7 @@
 
     context(patch = {}) {
       const mode = patch.mode || document.body?.dataset.graphMode || 'overview';
-      const route = normaliseRoute(
-        patch.route || document.body?.dataset.graphRoute || location.hash || 'overview'
-      );
+      const route = normaliseRoute(patch.route || document.body?.dataset.graphRoute || location.hash || 'overview');
       return Object.freeze({
         mode,
         route,
@@ -251,7 +235,7 @@
         element.dataset.scenePhase = 'stable';
       }
 
-      if (object.manageVisibility && object.visibility !== 'manual') {
+      if (object.manageVisibility && object.visibility !== 'manual' && element.hidden !== !visible) {
         element.hidden = !visible;
       }
 
@@ -294,17 +278,20 @@
       this.transitions.on('cancel', () => this.sync());
 
       this.observer = new MutationObserver(mutations => {
-        const relevant = mutations.some(mutation =>
-          mutation.type === 'childList' ||
-          (mutation.type === 'attributes' && mutation.target === document.body)
-        );
+        const relevant = mutations.some(mutation => {
+          if (mutation.type === 'childList') return true;
+          if (mutation.type !== 'attributes') return false;
+          if (mutation.target === document.body) return true;
+          if (mutation.attributeName !== 'hidden') return false;
+          return this.registry.all().some(object => this.resolveElement(object) === mutation.target);
+        });
         if (relevant) this.scheduleSync();
       });
       this.observer.observe(document.body, {
         subtree: true,
         childList: true,
         attributes: true,
-        attributeFilter: ['data-graph-mode', 'data-graph-route', 'class']
+        attributeFilter: ['data-graph-mode', 'data-graph-route', 'class', 'hidden']
       });
 
       this.sync();
@@ -326,7 +313,8 @@
             placement: variant.placement || 'scene',
             enter: variant.enter || 'none',
             exit: variant.exit || 'none',
-            variant: context.variant
+            variant: context.variant,
+            managesVisibility: object.manageVisibility
           };
         })
       });
@@ -334,8 +322,8 @@
   }
 
   const readAtlasCamera = () => {
-    const camera = document.querySelector('#site-graph .site-graph-svg > g');
-    const transform = camera?.getAttribute('transform') || '';
+    const element = document.querySelector('#site-graph .site-graph-svg > g');
+    const transform = element?.getAttribute('transform') || '';
     const match = transform.match(/translate\(\s*(-?[\d.]+)[,\s]+(-?[\d.]+)\s*\)\s*scale\(\s*([\d.]+)\s*\)/i);
     return match
       ? { x: Number(match[1]), y: Number(match[2]), scale: Number(match[3]), kind: 'transform' }
@@ -365,10 +353,7 @@
     })
     .registerAdapter('mobile-local', {
       read: readMobileLocalCamera,
-      zoom: factor => {
-        if (factor >= 1) window.MobileProfileScene?.zoomIn?.();
-        else window.MobileProfileScene?.zoomOut?.();
-      },
+      zoom: factor => factor >= 1 ? window.MobileProfileScene?.zoomIn?.() : window.MobileProfileScene?.zoomOut?.(),
       fit: () => window.MobileProfileScene?.fitGraph?.(),
       reset: () => window.MobileProfileScene?.resetCamera?.()
     })
@@ -387,6 +372,7 @@
     id: 'root-profile-copy',
     element: '.hero-copy',
     visibility: context => context.mode === 'overview',
+    manageVisibility: false,
     placement: 'hero-copy',
     enter: 'from-left',
     exit: 'to-left',
@@ -400,6 +386,7 @@
     id: 'root-portrait',
     element: '.hero-visual.profile-identity',
     visibility: context => context.mode === 'overview',
+    manageVisibility: false,
     placement: 'hero-identity',
     enter: 'from-right',
     exit: 'to-right',
@@ -449,7 +436,7 @@
     }
   });
 
-  const profileScene = Object.freeze({
+  window.ProfileScene = Object.freeze({
     SceneManager,
     SceneObjectRegistry,
     Camera,
@@ -460,9 +447,48 @@
     transitions,
     inspect: () => manager.inspect()
   });
-  window.ProfileScene = profileScene;
+
+  const graphNodes = window.SITE_DATA?.graph?.nodes || [];
+  const graphNodeMap = new Map(graphNodes.map(node => [node.id, node]));
+  const rootId = window.SITE_DATA?.graph?.rootId || 'stepan-chrast';
+  const routeForTarget = target => {
+    const routeElement = target?.closest?.('[data-route]');
+    if (routeElement) {
+      return normaliseRoute(routeElement.dataset.route || routeElement.getAttribute('href'));
+    }
+    const nodeElement = target?.closest?.('.site-graph-node[data-node-id]');
+    if (!nodeElement) return null;
+    const id = nodeElement.dataset.nodeId;
+    if (id.startsWith('work-concept:')) return null;
+    if (id === rootId) return 'overview';
+    if (id === 'work') return 'work';
+    return graphNodeMap.get(id)?.route || null;
+  };
 
   let previousStableRoute = normaliseRoute(document.body?.dataset.graphRoute || location.hash);
+  let candidate = null;
+
+  const captureCandidate = (target, trigger) => {
+    if (document.body?.classList.contains('is-v9-transitioning')) return;
+    if (document.body?.dataset.graphMode === 'atlas') return;
+    const to = routeForTarget(target);
+    const from = normaliseRoute(document.body?.dataset.graphRoute || previousStableRoute);
+    if (!to || to === from) return;
+    candidate = { from, to, trigger };
+  };
+
+  window.addEventListener('click', event => {
+    if (event.button === 0) captureCandidate(event.target, 'click');
+  }, true);
+  window.addEventListener('keydown', event => {
+    if (event.key === 'Enter' || event.key === ' ') captureCandidate(event.target, 'keyboard');
+  }, true);
+  window.addEventListener('popstate', () => {
+    const from = normaliseRoute(document.body?.dataset.graphRoute || previousStableRoute);
+    const to = normaliseRoute(location.hash);
+    if (from !== to) candidate = { from, to, trigger: 'history' };
+  }, true);
+
   const transitionObserver = new MutationObserver(mutations => {
     const classChanged = mutations.some(mutation =>
       mutation.type === 'attributes' && mutation.target === document.body && mutation.attributeName === 'class'
@@ -471,15 +497,18 @@
 
     const active = document.body.classList.contains('is-v9-transitioning');
     if (active && !transitions.active) {
-      transitions.begin({
+      const fallback = {
         from: previousStableRoute,
         to: normaliseRoute(location.hash || document.body.dataset.graphRoute),
-        source: 'graph-transition'
-      });
+        trigger: 'unknown'
+      };
+      transitions.begin({ ...(candidate || fallback), source: 'graph-transition' });
+      candidate = null;
     } else if (!active && transitions.active) {
       const route = normaliseRoute(document.body.dataset.graphRoute || location.hash);
       transitions.end({ to: route });
       previousStableRoute = route;
+      candidate = null;
     }
   });
 
@@ -491,6 +520,7 @@
   window.addEventListener('hashchange', () => {
     if (!document.body.classList.contains('is-v9-transitioning')) {
       previousStableRoute = normaliseRoute(document.body.dataset.graphRoute || location.hash);
+      candidate = null;
     }
     manager.scheduleSync();
   });

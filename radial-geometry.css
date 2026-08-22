@@ -1,0 +1,55 @@
+/* ========================================================================== 
+   Global radial geometry — Atlas + first-layer Overview
+   ========================================================================== */
+
+body[data-global-geometry="radial-overview"] #site-graph .site-graph-node.is-section .site-graph-dot,
+body[data-global-geometry="radial-atlas"] #site-graph .site-graph-node.is-section .site-graph-dot{
+  stroke-width:2.15px
+}
+
+body[data-global-geometry="radial-overview"] #site-graph .site-graph-node.is-section .site-graph-label,
+body[data-global-geometry="radial-atlas"] #site-graph .site-graph-node.is-section .site-graph-label{
+  font-weight:790;
+  letter-spacing:.015em
+}
+
+body[data-global-geometry="radial-atlas"] #site-graph .site-graph-edges path.is-cross-link{
+  opacity:.42;
+  stroke-dasharray:5 5
+}
+
+body[data-global-geometry="radial-atlas"] #site-graph .site-graph-node[data-global-sector="knowledge"] .site-graph-dot,
+body[data-global-geometry="radial-overview"] #site-graph .site-graph-node[data-global-sector="knowledge"] .site-graph-dot{
+  transform-origin:center
+}
+
+/* Phase 6 vector travel. The JS supplies viewport-relative shift variables
+   from the canonical Atlas geometry, so lateral travel can now be genuinely
+   two-dimensional rather than only left/right. */
+.profile-crosslink-travel-overlay.is-vector-travel[data-phase="travel"] .profile-crosslink-snapshot,
+.profile-crosslink-travel-overlay.is-vector-travel[data-phase="arrive"] .profile-crosslink-snapshot{
+  transform:translate3d(var(--crosslink-snapshot-x,0),var(--crosslink-snapshot-y,0),0) scale(.972);
+  opacity:.20;
+  filter:blur(.25px)
+}
+
+.profile-crosslink-travel-overlay.is-vector-travel[data-phase="arrive"] .profile-crosslink-snapshot{
+  opacity:0
+}
+
+.profile-crosslink[data-direction="up"]::after,
+.profile-crosslink[data-direction="down"]::after,
+.profile-crosslink[data-direction="up-left"]::after,
+.profile-crosslink[data-direction="up-right"]::after,
+.profile-crosslink[data-direction="down-left"]::after,
+.profile-crosslink[data-direction="down-right"]::after{
+  border-top-style:dotted
+}
+
+@media(prefers-reduced-motion:reduce){
+  .profile-crosslink-travel-overlay.is-vector-travel[data-phase="travel"] .profile-crosslink-snapshot,
+  .profile-crosslink-travel-overlay.is-vector-travel[data-phase="arrive"] .profile-crosslink-snapshot{
+    transform:none!important;
+    filter:none!important
+  }
+}

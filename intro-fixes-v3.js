@@ -5,6 +5,15 @@
 
   const rootId = graph.rootId || 'stepan-chrast';
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+
+  // Synchronous first-paint guard. This script executes before intro-animation.js,
+  // so the completed Atlas clone can never paint before autoplay takes ownership.
+  if (!document.querySelector('style[data-profile-intro-flash-guard]')) {
+    const guard = document.createElement('style');
+    guard.dataset.profileIntroFlashGuard = 'true';
+    guard.textContent = '.profile-intro-overlay[data-source="real-atlas"]:not(.is-auto-unfold-complete) .site-graph-node:not([data-intro-tier="root"]),.profile-intro-overlay[data-source="real-atlas"]:not(.is-auto-unfold-complete) .site-graph-edges path{opacity:0!important}.profile-intro-overlay[data-source="real-atlas"]:not(.is-auto-unfold-complete) .profile-intro-enter{opacity:0!important;pointer-events:none!important}';
+    document.head.appendChild(guard);
+  }
   const norm = v => { const l = Math.max(1e-6, Math.hypot(v.x, v.y)); return { x:v.x/l, y:v.y/l }; };
   const dot = (a,b) => a.x*b.x + a.y*b.y;
   const tangent = v => ({ x:-v.y, y:v.x });
@@ -125,7 +134,7 @@
     window.ProfileGeometry=api;
     new MutationObserver(()=>stabilize(1100)).observe(document.body,{attributes:true,attributeFilter:['data-graph-mode','data-graph-route','class']});
     const root=document.querySelector('#site-graph'); if(root)new MutationObserver(()=>stabilize(900)).observe(root,{childList:true,subtree:true});
-    addEventListener('hashchange',()=>stabilize(1250)); addEventListener('resize',()=>stabilize(900)); addEventListener('profile:root-activated',()=>stabilize(1900)); addEventListener('profile:intro-complete',()=>stabilize(1800));
+    addEventListener('hashchange',()=>stabilize(1250)); addEventListener('resize',()=>stabilize(900)); addEventListener('profile:root-activated',()=>stabilize(1900)); addEventListener('profile:intro-completed',()=>stabilize(1800));
     stabilize(1300); return true;
   };
   const waitInstall = () => install() || requestAnimationFrame(waitInstall);

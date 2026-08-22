@@ -70,6 +70,7 @@
     }, 820);
 
     requestAnimationFrame(() => requestAnimationFrame(() => {
+      window.MobileProfileScene?.repair?.();
       if (status) status.textContent = 'Profile map expanded. Choose Work, Knowledge, Experience, Education or About.';
       if (focusGraph) focusExpandedRoot(0);
     }));

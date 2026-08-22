@@ -41,43 +41,29 @@
   ensureStylesheet('graph-v9.css', 'data-profile-graph-v9');
 
   /* ------------------------------------------------------------------------
-     Mobile scene
+     Dedicated mobile app layer
 
-     The desktop renderer deliberately uses a wide logical coordinate space.
-     On a phone, fitting that whole space into the viewport makes labels and
-     hit targets too small. The mobile stylesheet instead keeps a wider canvas
-     and lets the graph viewport pan natively. It is loaded after V5 has booted
-     so its phone-only rules are the final layout layer.
+     Desktop keeps the existing renderer untouched. On phones, a separate CSS
+     and controller layer turns the same graph into a fixed scene with its own
+     camera, pinch zoom, panning, compact HUD and reusable segment-control sheet.
      ------------------------------------------------------------------------ */
   const mobileViewport = window.matchMedia('(max-width: 900px)');
-  const ensureMobileStyles = () => {
+  const ensureMobileLayer = () => {
     if (!mobileViewport.matches) return;
     setTimeout(() => setTimeout(() => {
       ensureStylesheet('mobile.css', 'data-profile-mobile');
+      if (!document.querySelector('script[data-profile-mobile-app]')) {
+        const script = document.createElement('script');
+        script.src = 'mobile-app.js';
+        script.dataset.profileMobileApp = 'true';
+        document.body.appendChild(script);
+      }
     }, 0), 0);
   };
-  ensureMobileStyles();
-
-  const centreMobileGraph = () => {
-    if (!mobileViewport.matches || document.body?.dataset.graphMode === 'atlas') return;
-    const viewport = document.querySelector('.site-graph-viewport');
-    if (!viewport || viewport.scrollWidth <= viewport.clientWidth) return;
-    viewport.scrollLeft = Math.max(0, (viewport.scrollWidth - viewport.clientWidth) / 2);
-  };
-  const scheduleMobileCentre = () => {
-    if (!mobileViewport.matches) return;
-    [40, 180, 1120].forEach(delay => setTimeout(centreMobileGraph, delay));
-  };
+  ensureMobileLayer();
   mobileViewport.addEventListener?.('change', event => {
-    if (event.matches) {
-      ensureMobileStyles();
-      scheduleMobileCentre();
-    }
+    if (event.matches) ensureMobileLayer();
   });
-  window.addEventListener('orientationchange', scheduleMobileCentre);
-  window.addEventListener('load', scheduleMobileCentre);
-  window.addEventListener('hashchange', scheduleMobileCentre);
-  setTimeout(scheduleMobileCentre, 0);
 
   /* ------------------------------------------------------------------------
      Transition query isolation.

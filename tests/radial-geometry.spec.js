@@ -5,7 +5,8 @@ const prepare = async page => {
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
 };
 const waitFan = page => page.waitForFunction(() => window.ProfileGeometry?.snapshot?.().compassVersion === 'fan-v3');
-const point = (page, id) => page.locator(`#site-graph .site-graph-svg > g:not(.v9-transition-overlay) .site-graph-node[data-node-id="${id}"]`).evaluate(el => ({x:Number(el.dataset.x),y:Number(el.dataset.y)}));
+const liveNode = (page, id) => page.locator(`#site-graph .site-graph-svg > g:not(.v9-transition-overlay) .site-graph-node[data-node-id="${id}"]`);
+const point = (page, id) => liveNode(page, id).evaluate(el => ({x:Number(el.dataset.x),y:Number(el.dataset.y)}));
 const project = (root,target,vector) => (target.x-root.x)*vector.x + (target.y-root.y)*vector.y;
 
 test.describe('Global fan v3 geometry', () => {
@@ -38,15 +39,22 @@ test.describe('Global fan v3 geometry', () => {
   test('local Knowledge still normalises top-to-bottom and Work keeps lattice order', async ({ page }) => {
     await prepare(page); await page.goto('/#overview'); await page.waitForFunction(() => Boolean(window.ProfileRootLanding)); await waitFan(page);
     await page.evaluate(() => window.ProfileRootLanding.activate({focusGraph:false}));
-    await page.locator('#site-graph .site-graph-node[data-node-id="knowledge"]').click();
+    await liveNode(page,'knowledge').click();
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'knowledge' && document.body.dataset.globalGeometry === 'local');
     await page.waitForTimeout(950);
     const knowledge=await point(page,'knowledge'), child=await point(page,'logic-math'), root=await point(page,'stepan-chrast');
     expect(root.y).toBeLessThan(knowledge.y); expect(child.y).toBeGreaterThan(knowledge.y+90);
 
-    await page.goto('/#overview'); await page.waitForFunction(() => Boolean(window.ProfileRootLanding));
-    await page.evaluate(() => { window.ProfileRootLanding.reset(); window.ProfileRootLanding.activate({focusGraph:false}); }); await waitFan(page);
-    await page.locator('#site-graph .site-graph-node[data-node-id="work"]').click();
+    await page.goto('/#overview');
+    await page.waitForFunction(() => Boolean(window.ProfileRootLanding));
+    await page.waitForFunction(() =>
+      !document.body.classList.contains('is-v9-transitioning') &&
+      !document.body.classList.contains('is-atlas-handoff')
+    );
+    await page.evaluate(() => { window.ProfileRootLanding.reset(); window.ProfileRootLanding.activate({focusGraph:false}); });
+    await waitFan(page);
+    await page.waitForFunction(() => document.body.dataset.globalGeometry === 'radial-overview');
+    await liveNode(page,'work').click();
     await page.waitForFunction(() => document.body.dataset.graphMode === 'work'); await page.waitForTimeout(950);
     const wr=await point(page,'stepan-chrast'), work=await point(page,'work'), concept=await point(page,'work-concept:logic');
     expect(work.y).toBeGreaterThan(wr.y); expect(concept.y).toBeGreaterThan(work.y+80);

@@ -121,6 +121,7 @@ test.describe('Phase 6 reduced motion', () => {
   test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
 
   test('keeps relation semantics and the same canonical vector with a short handoff', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await prepare(page);
     await page.goto('/#education/esslli');
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'education/esslli');

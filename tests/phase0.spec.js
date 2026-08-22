@@ -116,24 +116,41 @@ test.describe('Phase 0 desktop stability', () => {
 test.describe('Phase 0 reduced motion', () => {
   test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
 
-  test('route handoff never blanks the live renderer', async ({ page }) => {
+  test('route handoff never paints a blank live renderer', async ({ page }) => {
     await waitReady(page);
-    await page.locator('#main-nav [data-route="knowledge"]').first().click({ force: true });
-    await page.waitForFunction(() => document.body.classList.contains('is-v9-transitioning'));
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    expect(await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(true);
 
-    const baseVisibility = await page.evaluate(() => {
-      const base = document.querySelector('#site-graph .site-graph-svg > g:not(.v9-transition-overlay)');
-      if (!base) return null;
-      const style = getComputedStyle(base);
-      return { opacity: Number(style.opacity), visibility: style.visibility, display: style.display };
+    await page.evaluate(() => {
+      window.__phase0ReducedSamples = [];
+      window.__phase0ReducedSampling = true;
+      const sample = () => {
+        const base = document.querySelector('#site-graph .site-graph-svg > g:not(.v9-transition-overlay)');
+        if (document.body.classList.contains('is-v9-transitioning') && base) {
+          const style = getComputedStyle(base);
+          window.__phase0ReducedSamples.push({
+            opacity: Number(style.opacity),
+            visibility: style.visibility,
+            display: style.display
+          });
+        }
+        if (window.__phase0ReducedSampling) requestAnimationFrame(sample);
+      };
+      requestAnimationFrame(sample);
     });
 
-    expect(baseVisibility).not.toBeNull();
-    expect(baseVisibility.opacity).toBeGreaterThan(0);
-    expect(baseVisibility.visibility).not.toBe('hidden');
-    expect(baseVisibility.display).not.toBe('none');
-
+    await page.locator('#main-nav [data-route="knowledge"]').first().click({ force: true });
+    await page.waitForFunction(() => document.body.dataset.graphRoute === 'knowledge');
     await settle(page);
+    await page.evaluate(() => { window.__phase0ReducedSampling = false; });
+
+    const samples = await page.evaluate(() => window.__phase0ReducedSamples);
+    for (const sample of samples) {
+      expect(sample.opacity).toBeGreaterThan(0);
+      expect(sample.visibility).not.toBe('hidden');
+      expect(sample.display).not.toBe('none');
+    }
+
     expect(await page.evaluate(() => document.body.dataset.graphRoute)).toBe('knowledge');
     await expectHealthyGraph(page);
   });

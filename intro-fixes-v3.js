@@ -36,275 +36,30 @@
     poll();
   });
 
+  // This is synchronous because the intro clone may otherwise receive one paint
+  // before the external stylesheet has finished loading.
   if (!document.querySelector('style[data-profile-intro-flash-guard]')) {
     const guard = document.createElement('style');
     guard.dataset.profileIntroFlashGuard = 'true';
     guard.textContent = [
       '.profile-intro-overlay[data-source="real-atlas"]:not(.is-auto-unfold-complete) .site-graph-node:not([data-intro-tier="root"]),',
       '.profile-intro-overlay[data-source="real-atlas"]:not(.is-auto-unfold-complete) .site-graph-edges path{opacity:0!important}',
-      '.profile-intro-overlay[data-source="real-atlas"]:not(.is-auto-unfold-complete) .profile-intro-enter{opacity:0!important;pointer-events:none!important}'
+      '.profile-intro-overlay[data-source="real-atlas"]:not(.is-auto-unfold-complete) .profile-intro-enter{opacity:0!important;pointer-events:none!important}',
+      '.profile-intro-gateway-orbit{z-index:0!important}',
+      '.profile-intro-enter>span,.profile-intro-enter>small{z-index:1}'
     ].join('');
     document.head.appendChild(guard);
   }
 
-  const norm = vector => {
-    const length = Math.max(1e-6, Math.hypot(vector.x, vector.y));
-    return { x: vector.x / length, y: vector.y / length };
-  };
-  const dot = (a, b) => a.x * b.x + a.y * b.y;
-  const tangent = vector => ({ x: -vector.y, y: vector.x });
-  const compass = Object.freeze({
-    work: norm({ x: 0, y: 1 }),
-    knowledge: norm({ x: 1, y: -0.02 }),
-    education: norm({ x: 0.72, y: -0.69 }),
-    about: norm({ x: -0.72, y: -0.69 }),
-    experience: norm({ x: -0.99, y: 0.12 })
-  });
-  const sections = Object.keys(compass);
-  const overviewRadius = id => {
-    const mobile = matchMedia('(max-width: 900px)').matches;
-    const map = mobile
-      ? { work: 225, knowledge: 250, education: 224, about: 222, experience: 218 }
-      : { work: 302, knowledge: 365, education: 322, about: 314, experience: 292 };
-    return map[id] || 230;
-  };
-  const baseNodes = (includeOverlay = false) => [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')]
-    .filter(element => includeOverlay || !element.closest('.v9-transition-overlay'));
-  const baseEdges = () => [...document.querySelectorAll('#site-graph .site-graph-edges path[data-source][data-target]')]
-    .filter(element => !element.closest('.v9-transition-overlay'));
-  const setPoint = (element, point) => {
-    if (!element || !point) return;
-    element.setAttribute('transform', `translate(${point.x.toFixed(1)} ${point.y.toFixed(1)})`);
-    element.dataset.x = String(point.x);
-    element.dataset.y = String(point.y);
-  };
-  const directionName = vector => {
-    const angle = Math.atan2(vector.y, vector.x) * 180 / Math.PI;
-    if (angle >= -22.5 && angle < 22.5) return 'right';
-    if (angle >= 22.5 && angle < 67.5) return 'down-right';
-    if (angle >= 67.5 && angle < 112.5) return 'down';
-    if (angle >= 112.5 && angle < 157.5) return 'down-left';
-    if (angle >= 157.5 || angle < -157.5) return 'left';
-    if (angle >= -157.5 && angle < -112.5) return 'up-left';
-    if (angle >= -112.5 && angle < -67.5) return 'up';
-    return 'up-right';
-  };
-
-  let geometryFrame = 0;
-  let geometryPinUntil = 0;
-  const installGeometry = () => {
-    const base = window.ProfileGeometry;
-    if (!base || base.__profileCompassV3) return Boolean(base?.__profileCompassV3);
-    if (base.snapshot?.().compassVersion !== 'fan-v2') return false;
-
-    const sectionFor = id => base.sectionFor?.(id) || (sections.includes(id) ? id : null);
-    const atlasCenter = base.atlasPoint(rootId) || base.snapshot?.().center || { x: 1260, y: 790 };
-    const overviewCenter = base.overviewPoint(rootId) || { x: 600, y: 350 };
-    const atlasCache = new Map();
-
-    graph.nodes.forEach(node => {
-      if (node.id === rootId) {
-        atlasCache.set(node.id, { ...atlasCenter });
-        return;
-      }
-      const section = sectionFor(node.id);
-      const oldPoint = base.atlasPoint(node.id);
-      const oldVector = base.compass?.[section];
-      const nextVector = compass[section];
-      if (!section || !oldPoint || !oldVector || !nextVector) {
-        if (oldPoint) atlasCache.set(node.id, oldPoint);
-        return;
-      }
-      const delta = { x: oldPoint.x - atlasCenter.x, y: oldPoint.y - atlasCenter.y };
-      const radial = dot(delta, oldVector);
-      const lateral = dot(delta, tangent(oldVector));
-      const nextTangent = tangent(nextVector);
-      atlasCache.set(node.id, {
-        x: atlasCenter.x + nextVector.x * radial + nextTangent.x * lateral,
-        y: atlasCenter.y + nextVector.y * radial + nextTangent.y * lateral
-      });
-    });
-
-    const fitAtlas = () => {
-      let maxDx = 1, maxDy = 1;
-      atlasCache.forEach(point => {
-        maxDx = Math.max(maxDx, Math.abs(point.x - atlasCenter.x));
-        maxDy = Math.max(maxDy, Math.abs(point.y - atlasCenter.y));
-      });
-      const safeX = 142;
-      const safeY = 132;
-      const availableX = Math.min(atlasCenter.x - safeX, 2520 - safeX - atlasCenter.x);
-      const availableY = Math.min(atlasCenter.y - safeY, 1580 - safeY - atlasCenter.y);
-      const scaleX = Math.min(1, availableX / maxDx);
-      const scaleY = Math.min(0.96, availableY / maxDy);
-      atlasCache.forEach((point, id) => {
-        if (id === rootId) return;
-        atlasCache.set(id, {
-          x: atlasCenter.x + (point.x - atlasCenter.x) * scaleX,
-          y: atlasCenter.y + (point.y - atlasCenter.y) * scaleY
-        });
-      });
-    };
-    fitAtlas();
-
-    const overviewPoint = id => {
-      if (id === rootId) return { ...overviewCenter };
-      const section = sectionFor(id);
-      if (!section || id !== section) return base.overviewPoint(id);
-      const vector = compass[section];
-      const radius = overviewRadius(section);
-      return {
-        x: overviewCenter.x + vector.x * radius,
-        y: overviewCenter.y + vector.y * radius
-      };
-    };
-    const atlasPoint = id => atlasCache.get(id) || base.atlasPoint(id) || null;
-    const vectorBetween = (sourceId, targetId) => {
-      const source = atlasPoint(sourceId);
-      const target = atlasPoint(targetId);
-      if (source && target && Math.hypot(target.x - source.x, target.y - source.y) > 2) {
-        return norm({ x: target.x - source.x, y: target.y - source.y });
-      }
-      const sourceVector = compass[sectionFor(sourceId)] || { x: 0, y: 0 };
-      const targetVector = compass[sectionFor(targetId)] || { x: 1, y: 0 };
-      return norm({ x: targetVector.x - sourceVector.x || 1, y: targetVector.y - sourceVector.y });
-    };
-    const placeGlobalLabel = (element, id) => {
-      const label = element?.querySelector('.site-graph-label');
-      const meta = element?.querySelector('.site-graph-meta');
-      if (!label) return;
-      if (id === rootId) {
-        label.setAttribute('text-anchor', 'middle');
-        label.setAttribute('x', '0');
-        label.setAttribute('y', '-27');
-        if (meta) {
-          meta.setAttribute('text-anchor', 'middle');
-          meta.setAttribute('x', '0');
-          meta.setAttribute('y', '42');
-        }
-        return;
-      }
-      const vector = compass[sectionFor(id)];
-      if (!vector) return;
-      if (Math.abs(vector.x) > 0.58) {
-        const sign = Math.sign(vector.x);
-        label.setAttribute('text-anchor', sign > 0 ? 'start' : 'end');
-        label.setAttribute('x', String(sign * 18));
-        label.setAttribute('y', vector.y < -0.42 ? '-8' : vector.y > 0.42 ? '14' : '4');
-        if (meta) {
-          meta.setAttribute('text-anchor', sign > 0 ? 'start' : 'end');
-          meta.setAttribute('x', String(sign * 18));
-          meta.setAttribute('y', vector.y < -0.42 ? '-24' : vector.y > 0.42 ? '31' : '20');
-        }
-      } else {
-        label.setAttribute('text-anchor', 'middle');
-        label.setAttribute('x', String(vector.x * 9));
-        label.setAttribute('y', vector.y < 0 ? '-21' : '29');
-        if (meta) {
-          meta.setAttribute('text-anchor', 'middle');
-          meta.setAttribute('x', String(vector.x * 10));
-          meta.setAttribute('y', vector.y < 0 ? '-37' : '45');
-        }
-      }
-    };
-    const edgePath = (from, to, edge, center) => {
-      const type = edge.dataset.type || '';
-      const hierarchy = ['hierarchy', 'hierarchy-alt', 'work-lattice'].includes(type);
-      if (hierarchy) {
-        const vector = compass[sectionFor(edge.dataset.target)] || compass[sectionFor(edge.dataset.source)];
-        if (!vector || edge.dataset.source === rootId || edge.dataset.target === rootId) {
-          return `M ${from.x.toFixed(1)} ${from.y.toFixed(1)} L ${to.x.toFixed(1)} ${to.y.toFixed(1)}`;
-        }
-        const distance = Math.max(1, Math.hypot(to.x - from.x, to.y - from.y));
-        return `M ${from.x.toFixed(1)} ${from.y.toFixed(1)} C ${(from.x + vector.x * distance * 0.38).toFixed(1)} ${(from.y + vector.y * distance * 0.38).toFixed(1)} ${(to.x - vector.x * distance * 0.28).toFixed(1)} ${(to.y - vector.y * distance * 0.28).toFixed(1)} ${to.x.toFixed(1)} ${to.y.toFixed(1)}`;
-      }
-      const mid = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
-      let outward = { x: mid.x - center.x, y: mid.y - center.y };
-      if (Math.hypot(outward.x, outward.y) < 80) outward = { x: -(to.y - from.y), y: to.x - from.x };
-      outward = norm(outward);
-      const push = Math.min(260, Math.max(76, Math.hypot(to.x - from.x, to.y - from.y) * 0.19));
-      return `M ${from.x.toFixed(1)} ${from.y.toFixed(1)} Q ${(mid.x + outward.x * push).toFixed(1)} ${(mid.y + outward.y * push).toFixed(1)} ${to.x.toFixed(1)} ${to.y.toFixed(1)}`;
-    };
-    const apply = () => {
-      const mode = document.body?.dataset.graphMode;
-      if (mode !== 'overview' && mode !== 'atlas') return true;
-      const positions = new Map();
-      if (mode === 'overview') {
-        positions.set(rootId, overviewPoint(rootId));
-        sections.forEach(id => positions.set(id, overviewPoint(id)));
-      } else {
-        graph.nodes.forEach(node => {
-          const point = atlasPoint(node.id);
-          if (point) positions.set(node.id, point);
-        });
-      }
-      const nodes = new Map(baseNodes().map(element => [element.dataset.nodeId, element]));
-      positions.forEach((point, id) => setPoint(nodes.get(id), point));
-      nodes.forEach((element, id) => placeGlobalLabel(element, id));
-      const center = positions.get(rootId) || atlasCenter;
-      baseEdges().forEach(edge => {
-        const from = positions.get(edge.dataset.source);
-        const to = positions.get(edge.dataset.target);
-        if (from && to) edge.setAttribute('d', edgePath(from, to, edge, center));
-      });
-      document.body.dataset.globalCompass = 'fan-v3';
-      return true;
-    };
-    const stabilize = (ms = 1050) => {
-      geometryPinUntil = Math.max(geometryPinUntil, performance.now() + ms);
-      if (geometryFrame) return;
-      const tick = now => {
-        apply();
-        if (now < geometryPinUntil) geometryFrame = requestAnimationFrame(tick);
-        else {
-          geometryFrame = 0;
-          requestAnimationFrame(() => requestAnimationFrame(apply));
-        }
-      };
-      geometryFrame = requestAnimationFrame(tick);
-    };
-    const api = Object.freeze({
-      __profileCompassV3: true,
-      compass,
-      sectionFor,
-      atlasPoint,
-      overviewPoint,
-      vectorBetween,
-      directionBetween: (sourceId, targetId) => directionName(vectorBetween(sourceId, targetId)),
-      apply,
-      stabilize,
-      snapshot: () => ({
-        ...base.snapshot?.(),
-        compassVersion: 'fan-v3',
-        geometry: document.body?.dataset.globalGeometry || null,
-        sections: Object.fromEntries(sections.map(id => [id, {
-          vector: { ...compass[id] },
-          atlas: atlasPoint(id),
-          overview: overviewPoint(id)
-        }]))
-      })
-    });
-
-    window.ProfileGeometry = api;
-    const graphRoot = document.querySelector('#site-graph');
-    if (graphRoot) new MutationObserver(() => stabilize(1250)).observe(graphRoot, { childList: true, subtree: true });
-    if (document.body) new MutationObserver(() => stabilize(1350)).observe(document.body, {
-      attributes: true,
-      attributeFilter: ['data-graph-mode', 'data-graph-route', 'class']
-    });
-    addEventListener('hashchange', () => stabilize(1500));
-    addEventListener('resize', () => stabilize(1000));
-    addEventListener('profile:root-activated', () => stabilize(2000));
-    addEventListener('profile:intro-completed', () => stabilize(1900));
-    stabilize(1450);
-    return true;
-  };
-  const waitInstall = () => installGeometry() || requestAnimationFrame(waitInstall);
-  waitInstall();
-
+  /* ----------------------------------------------------------------------
+     Canonical local label pose
+     ---------------------------------------------------------------------- */
   let labelFrame = 0;
   let labelPinUntil = 0;
   let labelGuard = false;
+
+  const liveNodes = () => [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')]
+    .filter(element => !element.closest('.v9-transition-overlay'));
   const setText = (element, anchor, x, y) => {
     if (!element) return;
     if (element.getAttribute('text-anchor') !== anchor) element.setAttribute('text-anchor', anchor);
@@ -317,9 +72,8 @@
     if (!target) return false;
     labelGuard = true;
     try {
-      const path = primaryPath(target);
-      const ancestorIds = new Set(path.slice(0, -1).map(node => node.id));
-      baseNodes().forEach(node => {
+      const ancestorIds = new Set(primaryPath(target).slice(0, -1).map(node => node.id));
+      liveNodes().forEach(node => {
         const id = node.dataset.nodeId;
         const label = node.querySelector('.site-graph-label');
         const meta = node.querySelector('.site-graph-meta');
@@ -357,7 +111,7 @@
   if (graphRoot) {
     new MutationObserver(mutations => {
       if (labelGuard) return;
-      if (mutations.some(mutation => mutation.type === 'childList' || mutation.type === 'attributes')) pinLocalLabels(1200);
+      if (mutations.some(mutation => mutation.type === 'childList' || mutation.type === 'attributes')) pinLocalLabels(1250);
     }).observe(graphRoot, {
       subtree: true,
       childList: true,
@@ -367,15 +121,18 @@
   }
   if (document.body) {
     new MutationObserver(() => {
-      pinLocalLabels(1650);
+      pinLocalLabels(1700);
       syncRootOrbit();
     }).observe(document.body, {
       attributes: true,
       attributeFilter: ['data-graph-mode', 'data-graph-route', 'data-root-landing', 'class']
     });
   }
-  addEventListener('hashchange', () => pinLocalLabels(1800));
+  addEventListener('hashchange', () => pinLocalLabels(1850));
 
+  /* ----------------------------------------------------------------------
+     Intro Enter gateway
+     ---------------------------------------------------------------------- */
   const patchGateway = shell => {
     const enter = shell?.querySelector('.profile-intro-enter');
     if (!enter || enter.dataset.v3Gateway === 'true') return;
@@ -407,6 +164,9 @@
     shell?.classList.remove('is-enter-active');
   }, true);
 
+  /* ----------------------------------------------------------------------
+     Rotating root state for expanded Overview only
+     ---------------------------------------------------------------------- */
   const makeRootOrbit = root => {
     if (!root || root.querySelector(':scope > .profile-root-overview-orbit')) return;
     const orbit = document.createElementNS(svgNS, 'g');
@@ -424,8 +184,8 @@
       circle.classList.add(spec.className);
       orbit.appendChild(circle);
     });
-    const dotElement = root.querySelector('.site-graph-dot');
-    root.insertBefore(orbit, dotElement || root.firstChild);
+    const dot = root.querySelector('.site-graph-dot');
+    root.insertBefore(orbit, dot || root.firstChild);
     requestAnimationFrame(() => orbit.classList.remove('is-entering'));
   };
   function syncRootOrbit() {
@@ -453,6 +213,9 @@
   addEventListener('profile:intro-completed', () => requestAnimationFrame(syncRootOrbit));
   requestAnimationFrame(syncRootOrbit);
 
+  /* ----------------------------------------------------------------------
+     Atlas <-> segmented navigation boundary
+     ---------------------------------------------------------------------- */
   let atlasHandoff = null;
   const routeFromControl = target => {
     const control = target.closest?.('[data-route]');
@@ -482,14 +245,12 @@
   };
   const setRoute = route => {
     const next = `#${route}`;
-    if (location.hash === next) return;
-    location.hash = next;
+    if (location.hash !== next) location.hash = next;
   };
   const beginAtlasHandoff = async targetRoute => {
     if (atlasHandoff) return false;
-    const sourceMode = document.body?.dataset.graphMode;
     const shell = createAtlasSnapshot();
-    atlasHandoff = { sourceMode, targetRoute, shell };
+    atlasHandoff = { targetRoute, shell };
     document.body.classList.add('is-atlas-handoff');
     document.body.classList.remove('is-atlas-handoff-revealing');
     document.body.dataset.atlasHandoffTarget = targetRoute;
@@ -501,7 +262,7 @@
       return targetRoute === 'atlas' ? mode === 'atlas' : route === targetRoute && mode !== 'atlas';
     });
     window.ProfileGeometry?.stabilize?.(1500);
-    pinLocalLabels(1700);
+    pinLocalLabels(1750);
     await raf();
     await raf();
     await raf();
@@ -523,10 +284,9 @@
   };
   const shouldOwnAtlasBoundary = targetRoute => {
     if (!targetRoute || document.querySelector('.profile-intro-overlay')) return false;
-    const sourceMode = document.body?.dataset.graphMode;
     const currentRoute = normaliseRoute(document.body?.dataset.graphRoute || location.hash);
     if (targetRoute === currentRoute) return false;
-    return sourceMode === 'atlas' || targetRoute === 'atlas';
+    return document.body?.dataset.graphMode === 'atlas' || targetRoute === 'atlas';
   };
   addEventListener('click', event => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -545,6 +305,9 @@
     beginAtlasHandoff(targetRoute);
   }, true);
 
+  /* ----------------------------------------------------------------------
+     Root identity inspector
+     ---------------------------------------------------------------------- */
   let inspector = null;
   let returnFocus = null;
   const closeInspector = () => {
@@ -618,9 +381,6 @@
     inspector = shell;
     returnFocus = rootElement;
     document.body.classList.add('has-root-inspector');
-    const rect = rootElement.getBoundingClientRect();
-    shell.style.setProperty('--root-screen-x', `${rect.left + rect.width / 2}px`);
-    shell.style.setProperty('--root-screen-y', `${rect.top + rect.height / 2}px`);
     backdrop.addEventListener('click', closeInspector);
     close.addEventListener('click', closeInspector);
     requestAnimationFrame(() => {
@@ -629,7 +389,8 @@
     });
   };
   const overviewRoot = target => {
-    if (document.querySelector('.profile-intro-overlay') || document.body?.dataset.graphMode !== 'overview' || document.body?.dataset.rootLanding === 'true') return null;
+    if (document.querySelector('.profile-intro-overlay')) return null;
+    if (document.body?.dataset.graphMode !== 'overview' || document.body?.dataset.rootLanding === 'true') return null;
     return target.closest?.(`#site-graph .site-graph-node[data-node-id="${rootId}"]`) || null;
   };
   addEventListener('click', event => {
@@ -665,7 +426,7 @@
       gatewayOrbit: Boolean(document.querySelector('.profile-intro-enter .profile-intro-gateway-orbit'))
     }),
     openProfileSummary: () => {
-      const root = baseNodes().find(element => element.dataset.nodeId === rootId);
+      const root = liveNodes().find(element => element.dataset.nodeId === rootId);
       if (root) openInspector(root);
     },
     closeProfileSummary: closeInspector,

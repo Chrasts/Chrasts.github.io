@@ -133,23 +133,39 @@ test.describe('Phase 0 reduced motion', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await waitReady(page);
     await unfoldRoot(page);
-    await page.locator('#main-nav [data-route="knowledge"]').first().click({ force: true });
-    await page.waitForFunction(() => document.body.classList.contains('is-v9-transitioning'));
 
+    await page.evaluate(() => {
+      window.__reducedMotionBlankObserved = false;
+      window.__reducedMotionSampling = true;
+      const sample = () => {
+        const base = document.querySelector('#site-graph .site-graph-svg > g:not(.v9-transition-overlay)');
+        if (base) {
+          const style = getComputedStyle(base);
+          if (Number(style.opacity) <= 0 || style.visibility === 'hidden' || style.display === 'none') {
+            window.__reducedMotionBlankObserved = true;
+          }
+        }
+        if (window.__reducedMotionSampling) requestAnimationFrame(sample);
+      };
+      requestAnimationFrame(sample);
+    });
+
+    await page.locator('#main-nav [data-route="knowledge"]').first().click({ force: true });
+    await page.waitForFunction(() => document.body.dataset.graphRoute === 'knowledge');
+    await settle(page);
+    await page.evaluate(() => { window.__reducedMotionSampling = false; });
+
+    expect(await page.evaluate(() => window.__reducedMotionBlankObserved)).toBe(false);
     const baseVisibility = await page.evaluate(() => {
       const base = document.querySelector('#site-graph .site-graph-svg > g:not(.v9-transition-overlay)');
       if (!base) return null;
       const style = getComputedStyle(base);
       return { opacity: Number(style.opacity), visibility: style.visibility, display: style.display };
     });
-
     expect(baseVisibility).not.toBeNull();
     expect(baseVisibility.opacity).toBeGreaterThan(0);
     expect(baseVisibility.visibility).not.toBe('hidden');
     expect(baseVisibility.display).not.toBe('none');
-
-    await settle(page);
-    expect(await page.evaluate(() => document.body.dataset.graphRoute)).toBe('knowledge');
     await expectHealthyGraph(page);
   });
 });

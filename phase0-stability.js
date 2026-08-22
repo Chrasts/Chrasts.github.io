@@ -1,12 +1,6 @@
 (() => {
   const mobileBreakpoint = window.matchMedia('(max-width: 900px)');
 
-  /*
-   * Phase 0 invariant retained during the Phase 1 migration: desktop must not
-   * inherit a loaded mobile runtime until mobile-app.js has an explicit unmount
-   * lifecycle. The SceneManager can already switch responsive composition, but
-   * this reload remains the compatibility boundary for the old gesture hooks.
-   */
   const mobileRuntimePresent = () => Boolean(
     window.MobileProfileScene ||
     document.querySelector('script[data-profile-mobile-app]') ||
@@ -14,23 +8,14 @@
   );
 
   mobileBreakpoint.addEventListener?.('change', event => {
-    if (!event.matches && mobileRuntimePresent()) {
-      location.reload();
-    }
+    if (!event.matches && mobileRuntimePresent()) location.reload();
   });
 
   const isGraphMutationActivation = target => Boolean(
     target?.closest?.([
-      '[data-route]',
-      '.site-graph-node[data-node-id]',
-      '.site-graph-viewport',
-      '.work-theme-label-v5',
-      '.work-project-anchor-v5',
-      '.integrated-work-controls',
-      '.atlas-controls',
-      '.scene-detail',
-      '.mobile-graph-dock',
-      '.mobile-control-sheet'
+      '[data-route]', '.site-graph-node[data-node-id]', '.site-graph-viewport',
+      '.work-theme-label-v5', '.work-project-anchor-v5', '.integrated-work-controls',
+      '.atlas-controls', '.scene-detail', '.mobile-graph-dock', '.mobile-control-sheet'
     ].join(','))
   );
 
@@ -39,14 +24,8 @@
     document.body?.classList.contains('is-v9-transitioning')
   );
 
-  /*
-   * TransitionCoordinator is now the architectural lock owner. The legacy body
-   * class remains a fallback while graph-transitions-v6 still implements the
-   * actual structural animation.
-   */
   const blockDuringTransition = event => {
-    if (!transitionLocked()) return;
-    if (!isGraphMutationActivation(event.target)) return;
+    if (!transitionLocked() || !isGraphMutationActivation(event.target)) return;
     event.preventDefault();
     event.stopImmediatePropagation();
   };
@@ -56,11 +35,9 @@
   window.addEventListener('pointerdown', blockDuringTransition, true);
   window.addEventListener('wheel', blockDuringTransition, { capture: true, passive: false });
   window.addEventListener('keydown', event => {
-    if (event.key !== 'Enter' && event.key !== ' ') return;
-    blockDuringTransition(event);
+    if (event.key === 'Enter' || event.key === ' ') blockDuringTransition(event);
   }, true);
 
-  /* Lightweight diagnostics retained as a regression surface for Phase 1. */
   const checkGraphInvariants = () => {
     const nodes = [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')]
       .filter(element => !element.closest('.v9-transition-overlay'));
@@ -68,10 +45,7 @@
       .filter(element => !element.closest('.v9-transition-overlay'));
     const ids = new Set(nodes.map(node => node.dataset.nodeId));
     const orphanEdges = edges.filter(edge => !ids.has(edge.dataset.source) || !ids.has(edge.dataset.target));
-    const duplicateIds = nodes
-      .map(node => node.dataset.nodeId)
-      .filter((id, index, all) => all.indexOf(id) !== index);
-
+    const duplicateIds = nodes.map(node => node.dataset.nodeId).filter((id, index, all) => all.indexOf(id) !== index);
     return {
       mode: document.body?.dataset.graphMode || null,
       route: document.body?.dataset.graphRoute || null,
@@ -87,34 +61,15 @@
       mobileBreakpoint: mobileBreakpoint.matches
     };
   };
-
   window.ProfilePhase0 = Object.freeze({ checkGraphInvariants });
 
-  /* ----------------------------------------------------------------------
-     Pre-Phase 8 cleanup.
-
-     These are deliberately compatibility-layer fixes. They remove accidental
-     chrome and repair presentation without changing the graph ontology or the
-     Phase 6 cross-link navigation model.
-     ---------------------------------------------------------------------- */
+  /* Pre-Phase 8 compatibility cleanup. */
   const cleanupStyle = document.createElement('style');
   cleanupStyle.dataset.prePhase8Cleanup = 'true';
   cleanupStyle.textContent = `
-    /* Cross-links remain a graph relation/travel mechanism, not a permanent
-       second navigation bar below the site header. */
     .profile-crosslinks{display:none!important}
-
-    /* Atlas project nodes should read as project names only. The project type
-       remains available in the inspector/detail view. */
-    body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-project .site-graph-meta{
-      display:none!important
-    }
-
-    /* Atlas no longer needs a tutorial sentence once its controls and cursor
-       affordances are visible. */
+    body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-project .site-graph-meta{display:none!important}
     body[data-graph-mode="atlas"] #site-graph-help{display:none!important}
-
-    /* In Atlas the entry control becomes the symmetric way back to the profile. */
     body[data-graph-mode="atlas"] .atlas-button.atlas-entry-v7{
       min-width:154px!important;
       grid-template-columns:38px minmax(70px,1fr)!important;
@@ -143,8 +98,10 @@
       const source = edge.dataset.source;
       const target = edge.dataset.target;
       if (!positions.has(source) && !positions.has(target)) return;
-      const from = positions.get(source) || pointOf(graphNode(source));
-      const to = positions.get(target) || pointOf(graphNode(target));
+      const sourceElement = graphNode(source);
+      const targetElement = graphNode(target);
+      const from = positions.get(source) || (sourceElement ? pointOf(sourceElement) : null);
+      const to = positions.get(target) || (targetElement ? pointOf(targetElement) : null);
       if (!from || !to) return;
       const dx = to.x - from.x;
       const dy = to.y - from.y;
@@ -158,9 +115,6 @@
     });
   };
 
-  /* Work in Atlas is intentionally lattice-shaped rather than two flat rows.
-     Theme nodes form the first rank; projects are placed by the barycentre of
-     their theme parents and descend further as their intent becomes richer. */
   const applyAtlasWorkLattice = () => {
     if (document.body?.dataset.graphMode !== 'atlas' || !window.SITE_DATA?.work) return false;
     const work = graphNode('work');
@@ -174,10 +128,7 @@
 
     attributes.forEach((attribute, index) => {
       const t = attributes.length <= 1 ? .5 : index / (attributes.length - 1);
-      const point = {
-        x: origin.x - span / 2 + span * t,
-        y: origin.y + 145 + Math.abs(t - .5) * 36
-      };
+      const point = { x: origin.x - span / 2 + span * t, y: origin.y + 145 + Math.abs(t - .5) * 36 };
       const id = `work-theme-${attribute.id}`;
       themePositions.set(attribute.id, point);
       positions.set(id, point);
@@ -192,12 +143,9 @@
     });
 
     [...rankBuckets.keys()].sort((a, b) => a - b).forEach((rank, rankIndex) => {
-      const bucket = rankBuckets.get(rank);
-      const desired = bucket.map(project => {
+      const desired = rankBuckets.get(rank).map(project => {
         const parents = (project.lattice || []).map(id => themePositions.get(id)).filter(Boolean);
-        const barycentre = parents.length
-          ? parents.reduce((sum, point) => sum + point.x, 0) / parents.length
-          : origin.x;
+        const barycentre = parents.length ? parents.reduce((sum, point) => sum + point.x, 0) / parents.length : origin.x;
         return { project, x: barycentre };
       }).sort((a, b) => a.x - b.x || a.project.order - b.project.order);
 
@@ -216,10 +164,7 @@
 
       desired.forEach((item, index) => {
         const id = `project-${item.project.id}`;
-        const point = {
-          x: item.x,
-          y: origin.y + 315 + rankIndex * 145 + (index % 2 ? 8 : -8)
-        };
+        const point = { x: item.x, y: origin.y + 315 + rankIndex * 145 + (index % 2 ? 8 : -8) };
         positions.set(id, point);
         setPoint(graphNode(id), point);
       });
@@ -249,7 +194,7 @@
     if (!button) return;
     const atlas = document.body?.dataset.graphMode === 'atlas';
     if (!atlas) {
-      if (button.classList.contains('atlas-entry-v7')) storedAtlasButtonMarkup = button.innerHTML;
+      if (button.classList.contains('atlas-entry-v7') && button.dataset.prePhase8Back !== 'true') storedAtlasButtonMarkup = button.innerHTML;
       button.dataset.route = 'atlas';
       button.setAttribute('aria-label', 'Open Atlas, the full profile map');
       if (storedAtlasButtonMarkup && button.dataset.prePhase8Back === 'true') button.innerHTML = storedAtlasButtonMarkup;
@@ -257,6 +202,7 @@
       return;
     }
 
+    if (button.dataset.prePhase8Back === 'true') return;
     if (!storedAtlasButtonMarkup && button.classList.contains('atlas-entry-v7')) storedAtlasButtonMarkup = button.innerHTML;
     button.dataset.route = 'overview';
     button.dataset.prePhase8Back = 'true';
@@ -264,9 +210,6 @@
     button.innerHTML = '<span class="atlas-entry-glyph" aria-hidden="true" style="display:grid;place-items:center;font-size:24px">←</span><span class="atlas-entry-copy"><strong>Profile</strong></span>';
   };
 
-  /* The root label clone used by upward transitions must already have its final
-     Overview pose. Otherwise it briefly keeps the local ancestor side-offset
-     and snaps left when the live renderer is revealed. */
   const repairOverviewTransitionRootLabel = () => {
     if (document.body?.dataset.graphMode !== 'overview' || !document.body.classList.contains('is-v9-transitioning')) return;
     document.querySelectorAll('.v9-transition-overlay .site-graph-node[data-node-id="stepan-chrast"] .site-graph-label').forEach(label => {

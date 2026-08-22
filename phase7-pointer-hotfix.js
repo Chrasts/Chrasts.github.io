@@ -24,6 +24,13 @@
       #site-graph .site-graph-node:not(.is-atlas-lod-hidden) .site-graph-hit{pointer-events:all!important}
       #site-graph .site-graph-node:not(.is-atlas-lod-hidden) .site-graph-label,
       #site-graph .site-graph-node:not(.is-atlas-lod-hidden) .site-graph-meta{pointer-events:visiblePainted!important;cursor:pointer}
+      html body[data-graph-mode="atlas"] #site-graph .site-graph-node:hover .site-graph-label,
+      html body[data-graph-mode="atlas"] #site-graph .site-graph-node:focus-visible .site-graph-label,
+      html body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-atlas-origin .site-graph-label,
+      html body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-previewed .site-graph-label{font-size:20px!important;font-weight:820!important}
+      html body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-upstream .site-graph-label,
+      html body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-downstream .site-graph-label,
+      html body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-lateral .site-graph-label{font-size:14.5px!important}
       @media(prefers-reduced-motion:reduce){
         :root{--profile-reduced-motion-probe:1}
         body.is-v9-transitioning #site-graph .site-graph-svg > g:not(.v9-transition-overlay){opacity:1!important;visibility:visible!important}
@@ -275,6 +282,7 @@
     idempotentMutationGuards: true,
     inspectorTextGuard: true,
     classMutationGuard: true,
+    scaleReadableAtlasLabels: true,
     reducedMotion: reducedMatches(),
     reason: 'Keep SVG nodes clickable without mutation feedback loops and keep transition ownership disjoint.'
   });

@@ -16,22 +16,24 @@
     return number >>> 0;
   };
 
+  // Canonical fan-v3. Education is deliberately steeper than in the previous
+  // pass so its Atlas territory does not drift into the long Knowledge wing.
   const compass = Object.freeze({
     work: normalise({ x: 0, y: 1 }),
     knowledge: normalise({ x: 1, y: -0.02 }),
     experience: normalise({ x: -0.99, y: 0.12 }),
-    education: normalise({ x: 0.72, y: -0.69 }),
+    education: normalise({ x: 0.42, y: -0.91 }),
     about: normalise({ x: -0.72, y: -0.69 })
   });
 
   const OVERVIEW = Object.freeze({ width: 1200, height: 720, center: { x: 600, y: 350 } });
   const ATLAS = Object.freeze({ width: 2520, height: 1580, center: { x: 1260, y: 790 }, sectionRadius: 350 });
-  const halfAngles = Object.freeze({ work: 0.66, knowledge: 0.76, experience: 0.58, education: 0.58, about: 0.58 });
+  const halfAngles = Object.freeze({ work: 0.66, knowledge: 0.76, experience: 0.58, education: 0.47, about: 0.58 });
   const overviewRadius = id => {
     const mobile = window.matchMedia('(max-width: 900px)').matches;
     const values = mobile
       ? { work: 225, knowledge: 250, education: 224, about: 222, experience: 218 }
-      : { work: 302, knowledge: 365, education: 322, about: 314, experience: 292 };
+      : { work: 302, knowledge: 365, education: 314, about: 314, experience: 292 };
     return values[id] || 230;
   };
 
@@ -152,7 +154,7 @@
           ? 108
           : sectionId === 'work'
             ? (depth === 2 ? 132 : 118)
-            : 120;
+            : sectionId === 'education' ? 110 : 120;
         const span = Math.min(tangentialCapacity * 2, desiredGap * Math.max(0, level.length - 1));
 
         level.forEach((node, index) => {
@@ -220,25 +222,6 @@
     element.setAttribute('transform', `translate(${point.x.toFixed(1)} ${point.y.toFixed(1)})`);
     element.dataset.x = String(point.x);
     element.dataset.y = String(point.y);
-  };
-
-  const resetLabels = () => {
-    liveNodes().forEach(element => {
-      const id = element.dataset.nodeId;
-      const label = element.querySelector('.site-graph-label');
-      const meta = element.querySelector('.site-graph-meta');
-      if (label) {
-        label.setAttribute('text-anchor', 'middle');
-        label.setAttribute('x', '0');
-        label.setAttribute('y', id === rootId ? '-25' : '25');
-      }
-      if (meta) {
-        meta.setAttribute('text-anchor', 'middle');
-        meta.setAttribute('x', '0');
-        meta.setAttribute('y', '42');
-      }
-      delete element.dataset.globalSector;
-    });
   };
 
   const placeGlobalLabel = (element, id) => {
@@ -334,7 +317,9 @@
     if (mode === 'overview') applyOverview();
     else if (mode === 'atlas') applyAtlas();
     else {
-      resetLabels();
+      // Local label geometry belongs to graph-transitions / local composition.
+      // Do not reset x/y/text-anchor here: doing so races the transition handoff
+      // and is the source of the visible ancestor-label snaps.
       document.body.dataset.globalGeometry = 'local';
       document.body.dataset.globalCompass = 'fan-v3';
     }
@@ -415,6 +400,7 @@
       geometry: document.body?.dataset.globalGeometry || null,
       compassVersion: 'fan-v3',
       center: { ...ATLAS.center },
+      atlasSize: { width: ATLAS.width, height: ATLAS.height },
       sections: Object.fromEntries(sections.map(id => [id, {
         vector: { ...compass[id] },
         atlas: atlasPoint(id),
@@ -423,5 +409,23 @@
     })
   });
 
+  const ensurePhase7 = () => {
+    if (!document.querySelector('link[data-profile-atlas-lod-v7]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'phase7-atlas.css';
+      link.dataset.profileAtlasLodV7 = 'true';
+      document.head.appendChild(link);
+    }
+    if (!document.querySelector('script[data-profile-atlas-lod-v7]')) {
+      const script = document.createElement('script');
+      script.src = 'phase7-atlas.js';
+      script.async = false;
+      script.dataset.profileAtlasLodV7 = 'true';
+      document.head.appendChild(script);
+    }
+  };
+
   stabilize(980);
+  ensurePhase7();
 })();

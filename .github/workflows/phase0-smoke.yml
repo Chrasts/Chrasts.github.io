@@ -48,6 +48,7 @@ jobs:
           node --check tests/intro-unfold.spec.js
           node --check tests/interaction-consolidation.spec.js
           node --check tests/phase7-atlas.spec.js
+          node --check tests/phase7-atlas-drag.spec.js
 
       - name: Install Playwright test runner
         run: npm install --no-save @playwright/test@1.55.0

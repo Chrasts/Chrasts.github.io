@@ -10,10 +10,22 @@ const waitTravelComplete = async page => {
   return page.evaluate(() => window.ProfileCrossLinkTravel.snapshot());
 };
 
+const relationGeometry = async (page, sourceId, targetId) => page.evaluate(([source, target]) => {
+  const vector = window.ProfileGeometry.vectorBetween(source, target);
+  const direction = window.ProfileGeometry.directionBetween(source, target);
+  return { vector, direction };
+}, [sourceId, targetId]);
+
+const expectVectorClose = (actual, expected) => {
+  expect(actual).not.toBeNull();
+  expect(Math.abs(actual.x - expected.x)).toBeLessThan(0.01);
+  expect(Math.abs(actual.y - expected.y)).toBeLessThan(0.01);
+};
+
 test.describe('Phase 6 cross-link travel — desktop', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('Work project -> Knowledge evidence follows the global Atlas vector into local Knowledge context', async ({ page }) => {
+  test('Work project -> Knowledge evidence follows the exact canonical Atlas vector', async ({ page }) => {
     await prepare(page);
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
@@ -22,25 +34,23 @@ test.describe('Phase 6 cross-link travel — desktop', () => {
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'work/project/sql-schema');
     await page.waitForFunction(() => Boolean(window.ProfileCrossLinkTravel && window.ProfileGeometry));
 
+    const expected = await relationGeometry(page, 'project-sql-schema', 'sql');
     const link = page.locator('.profile-crosslink[data-source-id="project-sql-schema"][data-target-id="sql"]');
     await expect(link).toBeVisible();
     await expect(link.locator('.profile-crosslink-relation')).toHaveText('Evidence');
-    const direction = await link.getAttribute('data-direction');
-    const vector = {
+    expect(await link.getAttribute('data-direction')).toBe(expected.direction);
+    expectVectorClose({
       x: Number(await link.getAttribute('data-vector-x')),
       y: Number(await link.getAttribute('data-vector-y'))
-    };
-    expect(vector.x).toBeGreaterThan(0);
-    expect(vector.y).toBeLessThan(0);
+    }, expected.vector);
 
     await link.click();
     await page.waitForSelector('.profile-crosslink-travel-overlay.is-vector-travel');
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'knowledge/data-computing/data-management/sql');
     const snapshot = await waitTravelComplete(page);
 
-    expect(snapshot.direction).toBe(direction);
-    expect(snapshot.vector.x).toBeGreaterThan(0);
-    expect(snapshot.vector.y).toBeLessThan(0);
+    expect(snapshot.direction).toBe(expected.direction);
+    expectVectorClose(snapshot.vector, expected.vector);
     expect(snapshot.relationType).toBe('evidence');
     expect(await page.evaluate(() => document.body.dataset.graphMode)).toBe('focus');
     await expect(page.locator('.profile-crosslink-travel-overlay')).toHaveCount(0);
@@ -48,52 +58,47 @@ test.describe('Phase 6 cross-link travel — desktop', () => {
     expect(errors).toEqual([]);
   });
 
-  test('Education -> studied topic preserves its upward-left global direction', async ({ page }) => {
+  test('Education -> studied topic follows the exact Education-to-Knowledge Atlas vector', async ({ page }) => {
     await prepare(page);
     await page.goto('/#education/esslli');
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'education/esslli');
+    await page.waitForFunction(() => Boolean(window.ProfileCrossLinkTravel && window.ProfileGeometry));
 
+    const expected = await relationGeometry(page, 'esslli', 'sat-smt');
     const link = page.locator('.profile-crosslink[data-target-id="sat-smt"]');
     await expect(link).toBeVisible();
     await expect(link.locator('.profile-crosslink-relation')).toHaveText('Studied topic');
-    const vector = {
-      x: Number(await link.getAttribute('data-vector-x')),
-      y: Number(await link.getAttribute('data-vector-y'))
-    };
-    expect(vector.x).toBeLessThan(0);
-    expect(vector.y).toBeLessThan(0);
+    expect(await link.getAttribute('data-direction')).toBe(expected.direction);
 
     await link.click();
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'knowledge/logic-math/mathematical-logic/computational-logic/sat-smt');
     const snapshot = await waitTravelComplete(page);
 
     expect(snapshot.relationType).toBe('studied-in');
-    expect(snapshot.vector.x).toBeLessThan(0);
-    expect(snapshot.vector.y).toBeLessThan(0);
+    expect(snapshot.direction).toBe(expected.direction);
+    expectVectorClose(snapshot.vector, expected.vector);
     await expect(page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]')).toBeVisible();
   });
 
-  test('Experience -> project crosses leftward into the Work project local context', async ({ page }) => {
+  test('Experience -> Work project follows the exact cross-territory Atlas vector', async ({ page }) => {
     await prepare(page);
     await page.goto('/#experience/ceske-priority');
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'experience/ceske-priority');
+    await page.waitForFunction(() => Boolean(window.ProfileCrossLinkTravel && window.ProfileGeometry));
 
+    const expected = await relationGeometry(page, 'ceske-priority', 'project-social-workers-survey');
     const link = page.locator('.profile-crosslink[data-target-id="project-social-workers-survey"]');
     await expect(link).toBeVisible();
     await expect(link.locator('.profile-crosslink-relation')).toHaveText('Project');
-    const vector = {
-      x: Number(await link.getAttribute('data-vector-x')),
-      y: Number(await link.getAttribute('data-vector-y'))
-    };
-    expect(vector.x).toBeLessThan(0);
+    expect(await link.getAttribute('data-direction')).toBe(expected.direction);
 
     await link.click();
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'work/project/social-workers-survey');
     const snapshot = await waitTravelComplete(page);
 
     expect(snapshot.relationType).toBe('experience-link');
-    expect(snapshot.vector.x).toBeLessThan(0);
-    expect(Math.hypot(snapshot.vector.x, snapshot.vector.y)).toBeGreaterThan(0.99);
+    expect(snapshot.direction).toBe(expected.direction);
+    expectVectorClose(snapshot.vector, expected.vector);
     expect(await page.evaluate(() => document.body.dataset.graphMode)).toBe('work');
     await expect(page.locator('#site-detail-panel')).toBeVisible();
     await expect(page.locator('#site-detail-panel h2')).toContainText('Social Workers Survey Analysis');
@@ -115,10 +120,12 @@ test.describe('Phase 6 cross-link travel — desktop', () => {
 test.describe('Phase 6 reduced motion', () => {
   test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
 
-  test('keeps relation semantics while replacing vector travel motion with a short handoff', async ({ page }) => {
+  test('keeps relation semantics and the same canonical vector with a short handoff', async ({ page }) => {
     await prepare(page);
     await page.goto('/#education/esslli');
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'education/esslli');
+    await page.waitForFunction(() => Boolean(window.ProfileCrossLinkTravel && window.ProfileGeometry));
+    const expected = await relationGeometry(page, 'esslli', 'sat-smt');
 
     const link = page.locator('.profile-crosslink[data-target-id="sat-smt"]');
     await expect(link).toBeVisible();
@@ -128,8 +135,7 @@ test.describe('Phase 6 reduced motion', () => {
 
     expect(snapshot.reducedMotion).toBe(true);
     expect(snapshot.relationType).toBe('studied-in');
-    expect(snapshot.vector).not.toBeNull();
-    await expect(page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]')).toBeVisible();
+    expectVectorClose(snapshot.vector, expected.vector);
   });
 });
 

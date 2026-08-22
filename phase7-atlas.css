@@ -32,6 +32,9 @@ body[data-graph-mode="atlas"][data-atlas-lod="medium"] #site-graph .site-graph-n
   opacity:0;
   pointer-events:none
 }
+.profile-intro-graph .atlas-territory-label-layer{
+  display:none!important
+}
 body[data-graph-mode="atlas"] #site-graph .atlas-territory-label-layer{
   opacity:1
 }

@@ -45,6 +45,7 @@ jobs:
           node --check tests/radial-geometry.spec.js
           node --check tests/motion-polish.spec.js
           node --check tests/intro-unfold.spec.js
+          node --check tests/interaction-consolidation.spec.js
 
       - name: Install Playwright test runner
         run: npm install --no-save @playwright/test@1.55.0

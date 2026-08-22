@@ -98,6 +98,7 @@
 
   ensureStylesheet('root-landing.css', 'data-profile-root-landing-style');
   ensureStylesheet('intro-animation.css', 'data-profile-intro-style');
+  ensureStylesheet('motion-polish.css', 'data-profile-motion-polish-style');
   prepareRootLandingDom();
 
   document.body.dataset.rootLanding = initialRootLanding ? 'true' : 'false';
@@ -296,4 +297,5 @@
 
   ensureScript('root-landing.js', 'data-profile-root-landing');
   ensureScript('intro-animation.js', 'data-profile-intro-animation');
+  ensureScript('motion-polish.js', 'data-profile-motion-polish');
 })();

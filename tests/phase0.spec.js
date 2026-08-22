@@ -1,16 +1,16 @@
 const { test, expect } = require('@playwright/test');
 
-const waitReady = async page => {
-  await page.goto('/');
-  await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
-  await page.waitForFunction(() => Boolean(window.ProfilePhase0?.checkGraphInvariants));
-  await page.waitForFunction(() => Boolean(document.body.dataset.graphMode));
-  await settle(page);
-};
-
 const settle = async page => {
   await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
   await page.waitForTimeout(180);
+};
+
+const waitReady = async page => {
+  await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
+  await page.goto('/');
+  await page.waitForFunction(() => Boolean(window.ProfilePhase0?.checkGraphInvariants));
+  await page.waitForFunction(() => Boolean(document.body.dataset.graphMode));
+  await settle(page);
 };
 
 const invariants = async page => page.evaluate(() => window.ProfilePhase0.checkGraphInvariants());
@@ -113,6 +113,32 @@ test.describe('Phase 0 desktop stability', () => {
   });
 });
 
+test.describe('Phase 0 reduced motion', () => {
+  test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+
+  test('route handoff never blanks the live renderer', async ({ page }) => {
+    await waitReady(page);
+    await page.locator('#main-nav [data-route="knowledge"]').first().click({ force: true });
+    await page.waitForFunction(() => document.body.classList.contains('is-v9-transitioning'));
+
+    const baseVisibility = await page.evaluate(() => {
+      const base = document.querySelector('#site-graph .site-graph-svg > g:not(.v9-transition-overlay)');
+      if (!base) return null;
+      const style = getComputedStyle(base);
+      return { opacity: Number(style.opacity), visibility: style.visibility, display: style.display };
+    });
+
+    expect(baseVisibility).not.toBeNull();
+    expect(baseVisibility.opacity).toBeGreaterThan(0);
+    expect(baseVisibility.visibility).not.toBe('hidden');
+    expect(baseVisibility.display).not.toBe('none');
+
+    await settle(page);
+    expect(await page.evaluate(() => document.body.dataset.graphRoute)).toBe('knowledge');
+    await expectHealthyGraph(page);
+  });
+});
+
 test.describe('Phase 0 mobile stability', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
@@ -124,6 +150,7 @@ test.describe('Phase 0 mobile stability', () => {
 
     const snapshot = await expectHealthyGraph(page);
     expect(snapshot.mobileBreakpoint).toBe(true);
+    expect(snapshot.mobileRuntimeLoaded).toBe(true);
     expect(snapshot.mobileRuntimeBooted).toBe(true);
 
     const spread = await graphScreenSpread(page);
@@ -192,6 +219,7 @@ test.describe('Phase 0 mobile stability', () => {
     expect(await page.evaluate(() => document.documentElement.classList.contains('mobile-profile-app'))).toBe(false);
     const snapshot = await expectHealthyGraph(page);
     expect(snapshot.mobileBreakpoint).toBe(false);
+    expect(snapshot.mobileRuntimeLoaded).toBe(false);
     expect(snapshot.mobileRuntimeBooted).toBe(false);
   });
 });

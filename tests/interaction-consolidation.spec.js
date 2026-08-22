@@ -19,6 +19,13 @@ const activateOverview = async page => {
   await page.waitForFunction(() => document.body.dataset.graphMode === 'overview' && document.body.dataset.rootLanding === 'false');
 };
 
+const liveLabelPose = (page, id) => page.evaluate(id => {
+  const node = [...document.querySelectorAll(`#site-graph .site-graph-node[data-node-id="${id}"]`)]
+    .find(element => !element.closest('.v9-transition-overlay'));
+  const label = node?.querySelector('.site-graph-label');
+  return label ? [label.getAttribute('text-anchor'), label.getAttribute('x'), label.getAttribute('y')] : null;
+}, id);
+
 test.describe('Final graph interaction consolidation', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
@@ -79,20 +86,30 @@ test.describe('Final graph interaction consolidation', () => {
       expect(Math.abs(poses[id].y)).toBeLessThan(8);
     });
 
-    const before = await page.evaluate(() => {
-      const node = [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id="stepan-chrast"]')]
-        .find(element => !element.closest('.v9-transition-overlay'));
-      const label = node.querySelector('.site-graph-label');
-      return [label.getAttribute('text-anchor'), label.getAttribute('x'), label.getAttribute('y')];
-    });
+    const before = await liveLabelPose(page, 'stepan-chrast');
     await page.waitForTimeout(420);
-    const after = await page.evaluate(() => {
-      const node = [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id="stepan-chrast"]')]
-        .find(element => !element.closest('.v9-transition-overlay'));
-      const label = node.querySelector('.site-graph-label');
-      return [label.getAttribute('text-anchor'), label.getAttribute('x'), label.getAttribute('y')];
-    });
+    const after = await liveLabelPose(page, 'stepan-chrast');
     expect(after).toEqual(before);
+  });
+
+  test('does not snap the root label after Overview to Knowledge transition ends', async ({ page }) => {
+    await bypassIntro(page);
+    await activateOverview(page);
+    await page.locator('#site-graph .site-graph-node[data-node-id="knowledge"]').click();
+    await page.waitForFunction(() => document.body.dataset.graphRoute === 'knowledge');
+    await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'), null, { timeout: 5_000 });
+
+    const poses = [];
+    poses.push(await liveLabelPose(page, 'stepan-chrast'));
+    await page.waitForTimeout(60);
+    poses.push(await liveLabelPose(page, 'stepan-chrast'));
+    await page.waitForTimeout(120);
+    poses.push(await liveLabelPose(page, 'stepan-chrast'));
+    await page.waitForTimeout(260);
+    poses.push(await liveLabelPose(page, 'stepan-chrast'));
+
+    expect(poses.every(pose => JSON.stringify(pose) === JSON.stringify(poses[0]))).toBe(true);
+    expect(poses[0]).toEqual(['start', '17', '4']);
   });
 
   test('shows a rotating root orbit only in expanded Overview', async ({ page }) => {
@@ -131,12 +148,21 @@ test.describe('Final graph interaction consolidation', () => {
     await page.waitForFunction(() => document.body.dataset.graphMode === 'atlas' && document.body.dataset.globalCompass === 'fan-v3');
     await page.waitForFunction(() => !document.body.classList.contains('is-atlas-handoff'), null, { timeout: 4_000 });
 
+    await page.evaluate(() => {
+      window.__compassHistory = [document.body.dataset.globalCompass];
+      window.__compassObserver = new MutationObserver(() => window.__compassHistory.push(document.body.dataset.globalCompass));
+      window.__compassObserver.observe(document.body, { attributes: true, attributeFilter: ['data-global-compass'] });
+    });
     await page.locator('#atlas-controls [data-route="overview"]').click();
     await page.waitForFunction(() => document.body.classList.contains('is-atlas-handoff'));
     expect(await page.evaluate(() => document.body.classList.contains('is-v9-transitioning'))).toBe(false);
     await page.waitForFunction(() => document.body.dataset.graphMode === 'overview');
     await page.waitForFunction(() => !document.body.classList.contains('is-atlas-handoff'), null, { timeout: 4_000 });
-    expect(await page.evaluate(() => document.body.dataset.globalCompass)).toBe('fan-v3');
+    const history = await page.evaluate(() => {
+      window.__compassObserver?.disconnect();
+      return window.__compassHistory;
+    });
+    expect(history.every(value => value === 'fan-v3')).toBe(true);
   });
 });
 

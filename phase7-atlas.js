@@ -31,10 +31,15 @@
     ? nodeMap.get(rootId)
     : graph.nodes.find(node => node.route === route) || null;
 
+  /* --------------------------------------------------------------------
+     Canonical local-label guardian
+     -------------------------------------------------------------------- */
   let labelGuard = false;
   let correctedLabelWrites = 0;
+
   const liveNodeElements = () => [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')]
     .filter(element => !element.closest('.v9-transition-overlay'));
+
   const setTextPose = (text, anchor, x, y) => {
     if (!text) return false;
     let changed = false;
@@ -43,10 +48,12 @@
     if (text.getAttribute('y') !== String(y)) { text.setAttribute('y', String(y)); changed = true; }
     return changed;
   };
+
   const applyLocalLabelPolicy = () => {
     if (labelGuard || document.body?.dataset.graphMode !== 'focus') return false;
     const target = routeNode(normaliseRoute(document.body?.dataset.graphRoute || location.hash));
     if (!target) return false;
+
     const ancestorIds = new Set(primaryPath(target).slice(0, -1).map(node => node.id));
     labelGuard = true;
     let changed = 0;
@@ -56,12 +63,14 @@
         const label = node.querySelector('.site-graph-label');
         const meta = node.querySelector('.site-graph-meta');
         if (!label) return;
+
         if (ancestorIds.has(id)) {
           changed += Number(setTextPose(label, 'start', 17, 4));
           changed += Number(setTextPose(meta, 'start', 17, 20));
           node.dataset.localLabelRole = 'ancestor';
           return;
         }
+
         node.dataset.localLabelRole = id === target.id ? 'target' : 'branch';
       });
     } finally {
@@ -79,6 +88,8 @@
         mutation.type === 'childList' ||
         (mutation.type === 'attributes' && ['x', 'y', 'text-anchor'].includes(mutation.attributeName))
       )) return;
+      // MutationObserver callbacks run before paint, so a late renderer write is
+      // corrected before an intermediate label pose can become visible.
       applyLocalLabelPolicy();
     }).observe(graphRoot, {
       subtree: true,
@@ -87,6 +98,7 @@
       attributeFilter: ['x', 'y', 'text-anchor']
     });
   }
+
   if (document.body) {
     new MutationObserver(() => applyLocalLabelPolicy()).observe(document.body, {
       attributes: true,
@@ -96,6 +108,9 @@
   addEventListener('hashchange', applyLocalLabelPolicy);
   addEventListener('load', () => requestAnimationFrame(applyLocalLabelPolicy), { once: true });
 
+  /* --------------------------------------------------------------------
+     Atlas depth model
+     -------------------------------------------------------------------- */
   const depth = new Map([[rootId, 0]]);
   let changed = true;
   while (changed) {
@@ -116,10 +131,12 @@
     section,
     graph.nodes.filter(node => geometry.sectionFor(node.id) === section).length
   ]));
+
   const liveAtlasNodes = () => [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')]
     .filter(element => !element.closest('.v9-transition-overlay'));
   const liveAtlasEdges = () => [...document.querySelectorAll('#site-graph .site-graph-edges path[data-source][data-target]')]
     .filter(element => !element.closest('.v9-transition-overlay'));
+
   const lodForScale = scale => scale < thresholds.far
     ? 'far'
     : scale < thresholds.medium
@@ -127,6 +144,7 @@
       : scale < thresholds.detail
         ? 'near'
         : 'detail';
+
   const preservedSelectionIds = () => {
     const result = new Set([rootId]);
     const selected = document.querySelector(
@@ -141,6 +159,7 @@
   let currentScale = 1;
   let visibleNodeCount = 0;
   let hiddenNodeCount = 0;
+
   const visibleAtLOD = (id, lod, preserved) => {
     if (preserved.has(id)) return true;
     const d = depth.get(id) ?? 99;
@@ -156,6 +175,7 @@
     const edges = svg.querySelector(':scope > g > .site-graph-edges');
     const camera = edges?.parentElement || svg.firstElementChild;
     if (!camera) return null;
+
     let layer = camera.querySelector(':scope > .atlas-territory-label-layer');
     if (!layer) {
       layer = document.createElementNS(svgNS, 'g');
@@ -163,6 +183,7 @@
       layer.setAttribute('aria-hidden', 'true');
       const nodeLayer = camera.querySelector(':scope > .site-graph-nodes');
       camera.insertBefore(layer, nodeLayer || null);
+
       sections.forEach(section => {
         const point = geometry.atlasPoint(section);
         const vector = geometry.compass[section];
@@ -172,6 +193,7 @@
         group.dataset.territory = section;
         group.dataset.baseX = String(point.x + vector.x * 54);
         group.dataset.baseY = String(point.y + vector.y * 54);
+
         const title = document.createElementNS(svgNS, 'text');
         title.classList.add('atlas-territory-title');
         title.setAttribute('text-anchor', 'middle');
@@ -188,6 +210,7 @@
     }
     return layer;
   };
+
   const syncTerritoryLabels = scale => {
     const layer = ensureTerritoryLayer();
     if (!layer) return;
@@ -198,12 +221,14 @@
       group.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${inverse.toFixed(4)})`);
     });
   };
+
   const applyLOD = (scale = currentScale) => {
     if (document.body?.dataset.graphMode !== 'atlas' || document.querySelector('.profile-intro-overlay')) return false;
     currentScale = Number.isFinite(scale) ? scale : currentScale;
     const lod = lodForScale(currentScale);
     const preserved = preservedSelectionIds();
     const visibility = new Map();
+
     liveAtlasNodes().forEach(node => {
       const id = node.dataset.nodeId;
       const show = visibleAtLOD(id, lod, preserved);
@@ -213,6 +238,7 @@
       node.dataset.atlasDepth = String(depth.get(id) ?? 99);
       node.dataset.atlasTerritory = geometry.sectionFor(id) || '';
     });
+
     liveAtlasEdges().forEach(edge => {
       const hierarchy = ['hierarchy', 'hierarchy-alt', 'work-lattice'].includes(edge.dataset.type || '');
       const endpointsVisible = visibility.get(edge.dataset.source) !== false && visibility.get(edge.dataset.target) !== false;
@@ -224,12 +250,14 @@
       if (edge.classList.contains('is-secondary') && lod !== 'detail') show = false;
       edge.classList.toggle('is-atlas-lod-hidden', !show);
     });
+
     visibleNodeCount = [...visibility.values()].filter(Boolean).length;
     hiddenNodeCount = visibility.size - visibleNodeCount;
     const previous = currentLOD;
     currentLOD = lod;
     document.body.dataset.atlasLod = lod;
     syncTerritoryLabels(currentScale);
+
     if (previous !== lod) {
       dispatchEvent(new CustomEvent('profile:atlas-lod-change', {
         detail: { lod, previous, scale: currentScale, visibleNodeCount, hiddenNodeCount }
@@ -238,17 +266,23 @@
     return true;
   };
 
+  /* --------------------------------------------------------------------
+     Stable desktop Atlas camera
+     -------------------------------------------------------------------- */
   const atlasSize = geometry.snapshot().atlasSize || { width: 2520, height: 1580 };
   const camera = { x: 0, y: 0, scale: 1, targetX: 0, targetY: 0, targetScale: 1, frame: 0 };
   let gesture = null;
+  let suppressAtlasClickUntil = 0;
   let cameraWriting = false;
   let lastWrittenTransform = '';
+
   const cameraElement = () => {
     const svg = document.querySelector('#site-graph .site-graph-svg');
     const edges = svg?.querySelector(':scope > g > .site-graph-edges');
     return edges?.parentElement || svg?.firstElementChild || null;
   };
   const graphSvg = () => document.querySelector('#site-graph .site-graph-svg');
+
   const cameraBounds = (scale = camera.targetScale) => {
     const width = atlasSize.width;
     const height = atlasSize.height;
@@ -265,6 +299,7 @@
       maxY: margin
     };
   };
+
   const clampCamera = state => {
     state.scale = clamp(state.scale, 0.48, 2.8);
     const bounds = cameraBounds(state.scale);
@@ -272,6 +307,7 @@
     state.y = clamp(state.y, bounds.minY, bounds.maxY);
     return state;
   };
+
   const writeCamera = () => {
     const element = cameraElement();
     if (!element || document.body?.dataset.graphMode !== 'atlas') return;
@@ -282,6 +318,7 @@
     cameraWriting = false;
     applyLOD(camera.scale);
   };
+
   const animateCamera = () => {
     if (camera.frame) return;
     const frame = () => {
@@ -306,6 +343,7 @@
     };
     camera.frame = requestAnimationFrame(frame);
   };
+
   const setCamera = ({ x = camera.targetX, y = camera.targetY, scale = camera.targetScale } = {}, { immediate = false } = {}) => {
     const next = clampCamera({ x, y, scale });
     camera.targetX = next.x;
@@ -321,11 +359,13 @@
     } else animateCamera();
     return { ...next };
   };
+
   const fit = ({ immediate = false } = {}) => {
     const scale = 0.78;
     const bounds = cameraBounds(scale);
     return setCamera({ x: bounds.minX, y: bounds.minY, scale }, { immediate });
   };
+
   const zoomAt = (clientX, clientY, factor, immediate = false) => {
     const svg = graphSvg();
     if (!svg) return;
@@ -342,12 +382,14 @@
       scale: nextScale
     }, { immediate });
   };
+
   const zoomCentre = factor => {
     const svg = graphSvg();
     if (!svg) return;
     const rect = svg.getBoundingClientRect();
     zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, factor, false);
   };
+
   const syncCameraFromDOM = () => {
     if (document.body?.dataset.graphMode !== 'atlas') return;
     const transform = cameraElement()?.getAttribute('transform') || '';
@@ -362,6 +404,7 @@
     applyLOD(camera.scale);
     syncTerritoryLabels(camera.scale);
   };
+
   if (document.body) {
     new MutationObserver(() => {
       if (document.body.dataset.graphMode === 'atlas') {
@@ -375,6 +418,7 @@
       }
     }).observe(document.body, { attributes: true, attributeFilter: ['data-graph-mode', 'data-graph-route'] });
   }
+
   const cameraObserver = new MutationObserver(() => {
     if (cameraWriting || !desktop.matches || document.body?.dataset.graphMode !== 'atlas') return;
     const current = cameraElement()?.getAttribute('transform') || '';
@@ -396,57 +440,77 @@
     const delta = Math.max(-180, Math.min(180, event.deltaMode === 1 ? event.deltaY * 16 : event.deltaY));
     zoomAt(event.clientX, event.clientY, Math.exp(-delta * 0.00235), false);
   }, { capture: true, passive: false });
+
   document.addEventListener('pointerdown', event => {
     if (!desktop.matches || document.body?.dataset.graphMode !== 'atlas' || event.button !== 0) return;
     if (!event.target.closest?.('#site-graph .site-graph-svg')) return;
-    gesture = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+    gesture = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, moved: false };
     graphSvg()?.classList.add('is-phase7-dragging');
     event.stopImmediatePropagation();
   }, true);
+
   document.addEventListener('pointermove', event => {
     if (!gesture || event.pointerId !== gesture.pointerId || document.body?.dataset.graphMode !== 'atlas') return;
     const svg = graphSvg();
     if (!svg) return;
     const rect = svg.getBoundingClientRect();
-    const dx = (event.clientX - gesture.x) * atlasSize.width / Math.max(1, rect.width);
-    const dy = (event.clientY - gesture.y) * atlasSize.height / Math.max(1, rect.height);
+    const pixelDx = event.clientX - gesture.x;
+    const pixelDy = event.clientY - gesture.y;
+    if (Math.abs(pixelDx) + Math.abs(pixelDy) > 3) gesture.moved = true;
+    const dx = pixelDx * atlasSize.width / Math.max(1, rect.width);
+    const dy = pixelDy * atlasSize.height / Math.max(1, rect.height);
     gesture.x = event.clientX;
     gesture.y = event.clientY;
     setCamera({ x: camera.targetX + dx, y: camera.targetY + dy, scale: camera.targetScale }, { immediate: true });
     event.preventDefault();
     event.stopImmediatePropagation();
   }, true);
+
   const endGesture = event => {
     if (!gesture || (event.pointerId != null && event.pointerId !== gesture.pointerId)) return;
+    if (gesture.moved) suppressAtlasClickUntil = performance.now() + 260;
     gesture = null;
     graphSvg()?.classList.remove('is-phase7-dragging');
   };
   document.addEventListener('pointerup', endGesture, true);
   document.addEventListener('pointercancel', endGesture, true);
+
   document.addEventListener('click', event => {
     if (document.body?.dataset.graphMode !== 'atlas') return;
+    if (performance.now() < suppressAtlasClickUntil && event.target.closest?.('#site-graph .site-graph-svg')) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return;
+    }
     const button = event.target.closest?.('#atlas-fit,#atlas-reset,#atlas-zoom-in,#atlas-zoom-out');
     if (!button) return;
+    // Reset remains owned by site-graph because it also clears its private pinned
+    // selection. We only resynchronise Phase 7 with the resulting camera.
+    if (button.id === 'atlas-reset') {
+      requestAnimationFrame(() => requestAnimationFrame(syncCameraFromDOM));
+      return;
+    }
     event.preventDefault();
     event.stopImmediatePropagation();
     if (button.id === 'atlas-fit') fit();
     else if (button.id === 'atlas-zoom-in') zoomCentre(1.28);
     else if (button.id === 'atlas-zoom-out') zoomCentre(1 / 1.28);
-    else {
-      document.querySelector('#site-detail-panel.is-open .detail-close')?.click();
-      fit();
-    }
   }, true);
 
+  /* --------------------------------------------------------------------
+     Atlas entry affordance
+     -------------------------------------------------------------------- */
   const decorateAtlasButton = button => {
     if (!button || button.dataset.phase7Decorated === 'true') return;
     button.dataset.phase7Decorated = 'true';
     button.classList.add('atlas-entry-v7');
     button.replaceChildren();
+
     const glyph = document.createElementNS(svgNS, 'svg');
     glyph.classList.add('atlas-entry-glyph');
     glyph.setAttribute('viewBox', '0 0 88 52');
     glyph.setAttribute('aria-hidden', 'true');
+
     const edges = document.createElementNS(svgNS, 'g');
     edges.classList.add('atlas-entry-glyph-edges');
     [
@@ -460,6 +524,7 @@
       edges.appendChild(line);
     });
     glyph.appendChild(edges);
+
     const nodes = document.createElementNS(svgNS, 'g');
     nodes.classList.add('atlas-entry-glyph-nodes');
     [[44,26,4.2],[13,10,2.5],[75,11,2.3],[14,40,2.4],[74,41,2.7],[61,25,2.2],[30,17,1.8],[32,34,1.9]].forEach(([cx,cy,r], index) => {
@@ -469,6 +534,7 @@
       nodes.appendChild(circle);
     });
     glyph.appendChild(nodes);
+
     const copy = document.createElement('span');
     copy.className = 'atlas-entry-copy';
     const title = document.createElement('strong');
@@ -478,6 +544,7 @@
     copy.append(title, note);
     button.append(glyph, copy);
   };
+
   document.querySelectorAll('.atlas-button').forEach(decorateAtlasButton);
   new MutationObserver(mutations => mutations.forEach(mutation => mutation.addedNodes.forEach(node => {
     if (!(node instanceof Element)) return;

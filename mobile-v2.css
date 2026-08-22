@@ -70,6 +70,43 @@
 
   body[data-graph-mode="overview"] .hero-visual.profile-identity{width:86px!important;height:86px!important}
   body[data-graph-mode="overview"] .profile-identity .portrait{width:76px!important;height:76px!important}
+
+  /* Pre-Phase 8 parity: the desktop Atlas card becomes a compact, explicit
+     return control on phones. mobile.css hides Atlas-card spans by default,
+     so the Atlas state needs to opt the replacement markup back in. */
+  body[data-graph-mode="atlas"] .graph-routebar .atlas-button.atlas-entry-v7{
+    min-width:92px!important;
+    min-height:34px!important;
+    display:flex!important;
+    grid-template-columns:none!important;
+    justify-content:center!important;
+    align-items:center!important;
+    gap:5px!important;
+    padding:0 9px!important;
+    border-radius:18px!important;
+  }
+  body[data-graph-mode="atlas"] .graph-routebar .atlas-button.atlas-entry-v7 .atlas-entry-glyph{
+    display:grid!important;
+    width:18px!important;
+    height:18px!important;
+    place-items:center!important;
+    font-size:16px!important;
+    line-height:1!important;
+  }
+  body[data-graph-mode="atlas"] .graph-routebar .atlas-button.atlas-entry-v7 .atlas-entry-copy{
+    display:flex!important;
+    width:auto!important;
+    height:auto!important;
+  }
+  body[data-graph-mode="atlas"] .graph-routebar .atlas-button.atlas-entry-v7 .atlas-entry-copy strong{
+    display:inline!important;
+    font-size:10px!important;
+    letter-spacing:0!important;
+  }
+
+  /* The removed desktop cross-link rail must never reclaim vertical space on
+     mobile, even while a deep route is settling. */
+  .profile-crosslinks{display:none!important}
 }
 
 @media (max-width:520px){

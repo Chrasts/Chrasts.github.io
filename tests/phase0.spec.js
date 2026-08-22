@@ -10,6 +10,7 @@ const waitReady = async page => {
   await page.goto('/');
   await page.waitForFunction(() => Boolean(window.ProfilePhase0?.checkGraphInvariants));
   await page.waitForFunction(() => Boolean(document.body.dataset.graphMode));
+  await page.waitForFunction(() => Boolean(window.ProfileRootLanding));
   await settle(page);
 };
 
@@ -142,11 +143,14 @@ test.describe('Phase 0 reduced motion', () => {
 test.describe('Phase 0 mobile stability', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
-  test('portrait overview is spread out and local camera controls work', async ({ page }) => {
+  test('portrait overview is spread out and local camera controls work after root unfold', async ({ page }) => {
     const pageErrors = [];
     page.on('pageerror', error => pageErrors.push(error.message));
     await waitReady(page);
     await page.waitForFunction(() => Boolean(window.MobileProfileScene));
+    await page.locator('.root-node-trigger').click();
+    await page.waitForFunction(() => window.ProfileRootLanding.isActive() === false);
+    await page.waitForTimeout(180);
 
     const snapshot = await expectHealthyGraph(page);
     expect(snapshot.mobileBreakpoint).toBe(true);
@@ -170,7 +174,7 @@ test.describe('Phase 0 mobile stability', () => {
     await waitReady(page);
     await page.waitForFunction(() => Boolean(window.MobileProfileScene));
 
-    await page.locator('.atlas-button').click({ force: true });
+    await page.locator('.root-atlas-affordance').click({ force: true });
     await page.waitForFunction(() => document.body.dataset.graphMode === 'atlas');
     await settle(page);
 

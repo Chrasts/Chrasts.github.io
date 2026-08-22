@@ -30,8 +30,8 @@ test.describe('Phase 6 cross-link travel — desktop', () => {
       x: Number(await link.getAttribute('data-vector-x')),
       y: Number(await link.getAttribute('data-vector-y'))
     };
-    expect(vector.x).toBeGreaterThan(0);
-    expect(vector.y).toBeLessThan(0);
+    expect(Math.hypot(vector.x, vector.y)).toBeGreaterThan(0.99);
+    expect(vector.y).toBeLessThan(-0.45);
 
     await link.click();
     await page.waitForSelector('.profile-crosslink-travel-overlay.is-vector-travel');
@@ -39,8 +39,7 @@ test.describe('Phase 6 cross-link travel — desktop', () => {
     const snapshot = await waitTravelComplete(page);
 
     expect(snapshot.direction).toBe(direction);
-    expect(snapshot.vector.x).toBeGreaterThan(0);
-    expect(snapshot.vector.y).toBeLessThan(0);
+    expect(snapshot.vector.y).toBeLessThan(-0.45);
     expect(snapshot.relationType).toBe('evidence');
     expect(await page.evaluate(() => document.body.dataset.graphMode)).toBe('focus');
     await expect(page.locator('.profile-crosslink-travel-overlay')).toHaveCount(0);
@@ -73,7 +72,7 @@ test.describe('Phase 6 cross-link travel — desktop', () => {
     await expect(page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]')).toBeVisible();
   });
 
-  test('Experience -> project travels into the Work project local context', async ({ page }) => {
+  test('Experience -> project travels down toward the Work project local context', async ({ page }) => {
     await prepare(page);
     await page.goto('/#experience/ceske-priority');
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'experience/ceske-priority');
@@ -82,11 +81,18 @@ test.describe('Phase 6 cross-link travel — desktop', () => {
     await expect(link).toBeVisible();
     await expect(link.locator('.profile-crosslink-relation')).toHaveText('Project');
 
+    const vector = {
+      x: Number(await link.getAttribute('data-vector-x')),
+      y: Number(await link.getAttribute('data-vector-y'))
+    };
+    expect(vector.y).toBeGreaterThan(0);
+
     await link.click();
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'work/project/social-workers-survey');
     const snapshot = await waitTravelComplete(page);
 
     expect(snapshot.relationType).toBe('experience-link');
+    expect(snapshot.vector.y).toBeGreaterThan(0);
     expect(Math.hypot(snapshot.vector.x, snapshot.vector.y)).toBeGreaterThan(0.99);
     expect(await page.evaluate(() => document.body.dataset.graphMode)).toBe('work');
     await expect(page.locator('#site-detail-panel')).toBeVisible();

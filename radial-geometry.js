@@ -5,25 +5,22 @@
   const nodeMap = new Map(graph.nodes.map(node => [node.id, node]));
   const rootId = graph.rootId || 'stepan-chrast';
   const sections = ['work', 'knowledge', 'experience', 'education', 'about'];
-  const sectionSet = new Set(sections);
 
   const normalise = vector => {
     const length = Math.max(1e-6, Math.hypot(vector.x, vector.y));
     return { x: vector.x / length, y: vector.y / length };
   };
-
-  // Shared global compass. Overview and Atlas use the same angular memory.
   const compass = Object.freeze({
-    work: normalise({ x: -1, y: 0 }),
-    knowledge: normalise({ x: 0, y: -1 }),
-    experience: normalise({ x: 1, y: -0.04 }),
-    education: normalise({ x: 0.66, y: 0.75 }),
-    about: normalise({ x: -0.66, y: 0.75 })
+    work: normalise({ x: 0, y: 1 }),
+    knowledge: normalise({ x: -0.25, y: -0.97 }),
+    experience: normalise({ x: 0.95, y: -0.31 }),
+    education: normalise({ x: 0.76, y: 0.65 }),
+    about: normalise({ x: -0.95, y: 0.31 })
   });
 
   const OVERVIEW = Object.freeze({ width: 1200, height: 720, center: { x: 600, y: 350 }, radius: 230 });
   const ATLAS = Object.freeze({ width: 2520, height: 1580, center: { x: 1260, y: 790 }, sectionRadius: 300, safe: 78 });
-  const halfAngles = { work: 0.60, knowledge: 0.76, experience: 0.60, education: 0.55, about: 0.55 };
+  const halfAngles = { work: 0.70, knowledge: 0.80, experience: 0.60, education: 0.58, about: 0.58 };
 
   const stableNumber = value => {
     let number = 2166136261;
@@ -43,8 +40,6 @@
       return id;
     }
     const nextTrail = new Set(trail).add(id);
-    // Prefer the first declared parent. For Work projects this keeps the project
-    // in Work even though the FCA theme parents are also present.
     for (const parentId of parents) {
       const section = sectionFor(parentId, nextTrail);
       if (section && section !== rootId) {
@@ -66,22 +61,22 @@
     if (sectionId === 'work' && node.type === 'work-theme') return 1;
     if (sectionId === 'work' && node.type === 'project') return 2;
     const nextTrail = new Set(trail).add(id);
-    const parents = (node.parentIds || [])
+    const values = (node.parentIds || [])
       .filter(parentId => parentId === sectionId || sectionFor(parentId) === sectionId)
       .map(parentId => depthWithin(parentId, sectionId, nextTrail))
       .filter(Number.isFinite);
-    const depth = parents.length ? Math.min(...parents) + 1 : Infinity;
+    const depth = values.length ? Math.min(...values) + 1 : Infinity;
     depthMemo.set(key, depth);
     return depth;
   };
 
   const rayLimit = (center, vector, width, height, safe) => {
-    const candidates = [];
-    if (vector.x > 1e-5) candidates.push((width - safe - center.x) / vector.x);
-    if (vector.x < -1e-5) candidates.push((safe - center.x) / vector.x);
-    if (vector.y > 1e-5) candidates.push((height - safe - center.y) / vector.y);
-    if (vector.y < -1e-5) candidates.push((safe - center.y) / vector.y);
-    return Math.min(...candidates.filter(value => Number.isFinite(value) && value > 0));
+    const values = [];
+    if (vector.x > 1e-5) values.push((width - safe - center.x) / vector.x);
+    if (vector.x < -1e-5) values.push((safe - center.x) / vector.x);
+    if (vector.y > 1e-5) values.push((height - safe - center.y) / vector.y);
+    if (vector.y < -1e-5) values.push((safe - center.y) / vector.y);
+    return Math.min(...values.filter(value => Number.isFinite(value) && value > 0));
   };
 
   const overviewPositions = () => {
@@ -116,11 +111,10 @@
       });
 
       const limit = rayLimit(ATLAS.center, vector, ATLAS.width, ATLAS.height, ATLAS.safe);
-      const usable = Math.max(ATLAS.sectionRadius + 120, limit - 42);
+      const usable = Math.max(ATLAS.sectionRadius + 120, limit - 40);
       const levelGap = maxDepth > 0
-        ? Math.max(92, Math.min(154, (usable - ATLAS.sectionRadius) / maxDepth))
+        ? Math.max(72, Math.min(154, (usable - ATLAS.sectionRadius) / maxDepth))
         : 120;
-
       const sectionPoint = {
         x: ATLAS.center.x + vector.x * ATLAS.sectionRadius,
         y: ATLAS.center.y + vector.y * ATLAS.sectionRadius
@@ -131,12 +125,9 @@
       [...levels.keys()].filter(depth => depth > 0).sort((a, b) => a - b).forEach(depth => {
         const level = levels.get(depth);
         const parentTangent = node => {
-          const values = (node.parentIds || [])
-            .map(parentId => tangentById.get(parentId))
-            .filter(Number.isFinite);
+          const values = (node.parentIds || []).map(parentId => tangentById.get(parentId)).filter(Number.isFinite);
           return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
         };
-
         level.sort((left, right) =>
           parentTangent(left) - parentTangent(right) ||
           (stableNumber(left.id) % 97) - (stableNumber(right.id) % 97) ||
@@ -144,34 +135,28 @@
         );
 
         const baseRadius = ATLAS.sectionRadius + levelGap * depth;
-        const angularCapacity = Math.max(150, baseRadius * Math.tan(halfAngles[sectionId]));
-        const desiredGap = sectionId === 'knowledge' ? 88 : sectionId === 'work' ? 104 : 118;
-        const desiredSpan = desiredGap * Math.max(0, level.length - 1);
-        const span = Math.min(angularCapacity * 2, desiredSpan);
+        const tangentialCapacity = Math.max(150, baseRadius * Math.tan(halfAngles[sectionId]));
+        const desiredGap = sectionId === 'knowledge' ? 92 : sectionId === 'work' ? (depth === 2 ? 132 : 118) : 116;
+        const span = Math.min(tangentialCapacity * 2, desiredGap * Math.max(0, level.length - 1));
 
         level.forEach((node, index) => {
           const tangent = level.length <= 1 ? 0 : -span / 2 + span * index / (level.length - 1);
-          // Dense ranks get a shallow two-row stagger. The hierarchy remains
-          // outward-directed, but long labels no longer share exactly one arc.
           const dense = level.length >= 8;
-          const radialJitter = dense ? (index % 2 ? 30 : -22) : ((stableNumber(`${node.id}:r`) % 11) - 5);
+          const radialJitter = dense ? (index % 2 ? 24 : -18) : ((stableNumber(`${node.id}:r`) % 11) - 5);
           const radius = Math.min(usable, baseRadius + radialJitter);
-          const point = {
+          positions.set(node.id, {
             x: ATLAS.center.x + vector.x * radius + perpendicular.x * tangent,
             y: ATLAS.center.y + vector.y * radius + perpendicular.y * tangent
-          };
-          positions.set(node.id, point);
+          });
           tangentById.set(node.id, tangent);
         });
       });
     });
-
     return positions;
   };
 
   let cachedOverview = overviewPositions();
   let cachedAtlas = atlasPositions();
-
   const baseNodes = () => [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')]
     .filter(element => !element.closest('.v9-transition-overlay'));
   const baseEdges = () => [...document.querySelectorAll('#site-graph .site-graph-edges path[data-source][data-target]')]
@@ -183,22 +168,18 @@
     element.dataset.x = String(point.x);
     element.dataset.y = String(point.y);
   };
-
-  const pointForElement = element => ({
-    x: Number(element?.dataset.x || 0),
-    y: Number(element?.dataset.y || 0)
-  });
+  const pointForElement = element => ({ x: Number(element?.dataset.x || 0), y: Number(element?.dataset.y || 0) });
 
   const resetLabels = () => {
     baseNodes().forEach(element => {
       const id = element.dataset.nodeId;
       const label = element.querySelector('.site-graph-label');
+      const meta = element.querySelector('.site-graph-meta');
       if (label) {
         label.setAttribute('text-anchor', 'middle');
         label.setAttribute('x', '0');
         label.setAttribute('y', id === rootId ? '-25' : '25');
       }
-      const meta = element.querySelector('.site-graph-meta');
       if (meta) {
         meta.setAttribute('text-anchor', 'middle');
         meta.setAttribute('x', '0');
@@ -214,92 +195,70 @@
     const label = element.querySelector('.site-graph-label');
     const meta = element.querySelector('.site-graph-meta');
     if (!label) return;
-
     if (id === rootId || !vector) {
       label.setAttribute('text-anchor', 'middle');
       label.setAttribute('x', '0');
       label.setAttribute('y', '-27');
       return;
     }
-
     element.dataset.globalSector = sectionId;
-    const horizontal = Math.abs(vector.x) > 0.72;
-    if (horizontal) {
-      const sign = Math.sign(vector.x) || 1;
-      label.setAttribute('text-anchor', sign > 0 ? 'start' : 'end');
-      label.setAttribute('x', String(sign * 17));
-      label.setAttribute('y', '4');
+    const signX = Math.sign(vector.x) || 0;
+    if (Math.abs(vector.x) > .58) {
+      label.setAttribute('text-anchor', signX > 0 ? 'start' : 'end');
+      label.setAttribute('x', String(signX * 17));
+      label.setAttribute('y', String(vector.y > .35 ? 14 : vector.y < -.35 ? -8 : 4));
       if (meta) {
-        meta.setAttribute('text-anchor', sign > 0 ? 'start' : 'end');
-        meta.setAttribute('x', String(sign * 17));
-        meta.setAttribute('y', '20');
+        meta.setAttribute('text-anchor', signX > 0 ? 'start' : 'end');
+        meta.setAttribute('x', String(signX * 17));
+        meta.setAttribute('y', String(vector.y > .35 ? 31 : vector.y < -.35 ? -24 : 20));
       }
       return;
     }
-
-    if (Math.abs(vector.x) < 0.24) {
-      label.setAttribute('text-anchor', 'middle');
-      label.setAttribute('x', '0');
-      label.setAttribute('y', vector.y < 0 ? '-20' : '27');
-      if (meta) {
-        meta.setAttribute('text-anchor', 'middle');
-        meta.setAttribute('x', '0');
-        meta.setAttribute('y', vector.y < 0 ? '-36' : '43');
-      }
-      return;
-    }
-
-    const sign = Math.sign(vector.x) || 1;
-    label.setAttribute('text-anchor', sign > 0 ? 'start' : 'end');
-    label.setAttribute('x', String(sign * 14));
-    label.setAttribute('y', vector.y > 0 ? '17' : '-11');
+    label.setAttribute('text-anchor', 'middle');
+    label.setAttribute('x', String(vector.x * 8));
+    label.setAttribute('y', vector.y < 0 ? '-20' : '28');
     if (meta) {
-      meta.setAttribute('text-anchor', sign > 0 ? 'start' : 'end');
-      meta.setAttribute('x', String(sign * 14));
-      meta.setAttribute('y', vector.y > 0 ? '33' : '-27');
+      meta.setAttribute('text-anchor', 'middle');
+      meta.setAttribute('x', String(vector.x * 10));
+      meta.setAttribute('y', vector.y < 0 ? '-36' : '44');
     }
   };
 
   const hierarchyPath = (from, to, sourceId, targetId) => {
-    const sourceSection = sectionFor(sourceId);
     const targetSection = sectionFor(targetId);
+    const sourceSection = sectionFor(sourceId);
     const vector = compass[targetSection] || compass[sourceSection];
     if (!vector || sourceId === rootId || targetId === rootId) {
       return `M ${from.x.toFixed(1)} ${from.y.toFixed(1)} L ${to.x.toFixed(1)} ${to.y.toFixed(1)}`;
     }
     const distance = Math.max(1, Math.hypot(to.x - from.x, to.y - from.y));
-    const c1 = { x: from.x + vector.x * distance * 0.40, y: from.y + vector.y * distance * 0.40 };
-    const c2 = { x: to.x - vector.x * distance * 0.30, y: to.y - vector.y * distance * 0.30 };
+    const c1 = { x: from.x + vector.x * distance * .38, y: from.y + vector.y * distance * .38 };
+    const c2 = { x: to.x - vector.x * distance * .28, y: to.y - vector.y * distance * .28 };
     return `M ${from.x.toFixed(1)} ${from.y.toFixed(1)} C ${c1.x.toFixed(1)} ${c1.y.toFixed(1)} ${c2.x.toFixed(1)} ${c2.y.toFixed(1)} ${to.x.toFixed(1)} ${to.y.toFixed(1)}`;
   };
 
   const crossLinkPath = (from, to) => {
-    const center = ATLAS.center;
     const mid = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
-    let outward = { x: mid.x - center.x, y: mid.y - center.y };
-    if (Math.hypot(outward.x, outward.y) < 80) {
-      outward = { x: -(to.y - from.y), y: to.x - from.x };
-    }
+    let outward = { x: mid.x - ATLAS.center.x, y: mid.y - ATLAS.center.y };
+    if (Math.hypot(outward.x, outward.y) < 80) outward = { x: -(to.y - from.y), y: to.x - from.x };
     outward = normalise(outward);
     const distance = Math.hypot(to.x - from.x, to.y - from.y);
-    const push = Math.min(260, Math.max(74, distance * 0.20));
+    const push = Math.min(250, Math.max(72, distance * .19));
     const control = { x: mid.x + outward.x * push, y: mid.y + outward.y * push };
     return `M ${from.x.toFixed(1)} ${from.y.toFixed(1)} Q ${control.x.toFixed(1)} ${control.y.toFixed(1)} ${to.x.toFixed(1)} ${to.y.toFixed(1)}`;
   };
 
   const syncEdges = positions => {
-    const nodeElements = new Map(baseNodes().map(element => [element.dataset.nodeId, element]));
+    const elements = new Map(baseNodes().map(element => [element.dataset.nodeId, element]));
     baseEdges().forEach(edge => {
       const sourceId = edge.dataset.source;
       const targetId = edge.dataset.target;
-      const from = positions.get(sourceId) || pointForElement(nodeElements.get(sourceId));
-      const to = positions.get(targetId) || pointForElement(nodeElements.get(targetId));
+      const from = positions.get(sourceId) || pointForElement(elements.get(sourceId));
+      const to = positions.get(targetId) || pointForElement(elements.get(targetId));
       if (!from || !to) return;
       const type = edge.dataset.type || '';
       const hierarchy = type === 'hierarchy' || type === 'hierarchy-alt' || type === 'work-lattice';
-      edge.setAttribute('d', hierarchy
-        ? hierarchyPath(from, to, sourceId, targetId)
-        : crossLinkPath(from, to));
+      edge.setAttribute('d', hierarchy ? hierarchyPath(from, to, sourceId, targetId) : crossLinkPath(from, to));
     });
   };
 
@@ -311,7 +270,6 @@
     syncEdges(cachedOverview);
     document.body.dataset.globalGeometry = 'radial-overview';
   };
-
   const applyAtlas = () => {
     cachedAtlas = atlasPositions();
     const elements = new Map(baseNodes().map(element => [element.dataset.nodeId, element]));
@@ -320,7 +278,6 @@
     syncEdges(cachedAtlas);
     document.body.dataset.globalGeometry = 'radial-atlas';
   };
-
   const applyCurrent = () => {
     if (!document.body) return false;
     const mode = document.body.dataset.graphMode;
@@ -330,9 +287,7 @@
       resetLabels();
       document.body.dataset.globalGeometry = 'local';
     }
-    window.dispatchEvent(new CustomEvent('profile:geometry-applied', {
-      detail: { mode, geometry: document.body.dataset.globalGeometry }
-    }));
+    window.dispatchEvent(new CustomEvent('profile:geometry-applied', { detail: { mode, geometry: document.body.dataset.globalGeometry } }));
     return true;
   };
 
@@ -344,7 +299,10 @@
     const tick = now => {
       applyCurrent();
       if (now < pinUntil) frame = requestAnimationFrame(tick);
-      else frame = 0;
+      else {
+        frame = 0;
+        requestAnimationFrame(() => requestAnimationFrame(applyCurrent));
+      }
     };
     frame = requestAnimationFrame(tick);
   };
@@ -375,22 +333,16 @@
 
   const graphRoot = document.querySelector('#site-graph');
   if (graphRoot) {
-    const observer = new MutationObserver(mutations => {
+    new MutationObserver(mutations => {
       if (mutations.some(mutation => mutation.type === 'childList')) stabilize(660);
-    });
-    observer.observe(graphRoot, { childList: true, subtree: true });
+    }).observe(graphRoot, { childList: true, subtree: true });
   }
-
-  const bodyObserver = new MutationObserver(mutations => {
-    if (mutations.some(mutation => mutation.type === 'attributes')) stabilize(660);
-  });
   if (document.body) {
-    bodyObserver.observe(document.body, {
+    new MutationObserver(() => stabilize(660)).observe(document.body, {
       attributes: true,
       attributeFilter: ['data-graph-mode', 'data-graph-route', 'class']
     });
   }
-
   window.addEventListener('hashchange', () => stabilize(680));
   window.addEventListener('resize', () => stabilize(720));
   window.addEventListener('load', () => stabilize(720), { once: true });

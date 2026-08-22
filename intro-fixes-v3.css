@@ -1,0 +1,39 @@
+/* Final intro/Overview corrections: flash guard, independent gateway orbit, root inspector. */
+.profile-intro-overlay[data-source="real-atlas"]:not(.is-auto-unfold-complete) .site-graph-node:not([data-intro-tier="root"]),
+.profile-intro-overlay[data-source="real-atlas"]:not(.is-auto-unfold-complete) .site-graph-edges path{opacity:0!important}
+.profile-intro-overlay[data-source="real-atlas"]:not(.is-auto-unfold-complete) .profile-intro-enter{opacity:0!important;pointer-events:none!important}
+
+.profile-intro-overlay.is-auto-unfold-complete .profile-intro-enter::before{
+  transform-box:border-box!important;transform-origin:center!important;rotate:0deg!important;
+  animation:intro-gateway-orbit-v3-inner 18s linear infinite reverse!important
+}
+.profile-intro-overlay.is-auto-unfold-complete .profile-intro-enter::after{
+  transform-box:border-box!important;transform-origin:center!important;rotate:0deg!important;
+  animation:intro-gateway-orbit-v3 12s linear infinite!important
+}
+@keyframes intro-gateway-orbit-v3{to{rotate:360deg}}
+@keyframes intro-gateway-orbit-v3-inner{to{rotate:360deg}}
+.profile-intro-overlay.is-auto-unfold-complete .profile-intro-enter:hover::before,
+.profile-intro-overlay.is-auto-unfold-complete .profile-intro-enter:focus-visible::before,
+.profile-intro-overlay.is-auto-unfold-complete.is-enter-active .profile-intro-enter::before{transform:scale(1.075)!important;animation-play-state:running!important}
+.profile-intro-overlay.is-auto-unfold-complete .profile-intro-enter:hover::after,
+.profile-intro-overlay.is-auto-unfold-complete .profile-intro-enter:focus-visible::after,
+.profile-intro-overlay.is-auto-unfold-complete.is-enter-active .profile-intro-enter::after{transform:scale(1.12)!important;animation-play-state:running!important}
+.profile-intro-overlay.is-enter-committed .profile-intro-enter{opacity:0!important;visibility:hidden!important;pointer-events:none!important;transform:translate(-50%,-50%) scale(.82)!important}
+
+.profile-root-inspector{--root-screen-x:50vw;--root-screen-y:50vh;position:fixed;z-index:920;inset:0;display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .22s ease}
+.profile-root-inspector.is-open{opacity:1;pointer-events:auto}
+.profile-root-inspector-backdrop{appearance:none;position:absolute;inset:0;width:100%;height:100%;border:0;padding:0;background:color-mix(in srgb,var(--paper) 72%,transparent);backdrop-filter:blur(7px);cursor:default}
+.profile-root-inspector-panel{position:relative;z-index:1;width:min(720px,calc(100vw - 48px));min-height:330px;display:grid;grid-template-columns:240px 1fr;gap:34px;align-items:center;padding:34px 38px 34px 34px;border:1px solid color-mix(in srgb,var(--teal) 25%,var(--line));border-radius:28px;background:color-mix(in srgb,var(--paper) 96%,transparent);box-shadow:0 28px 78px color-mix(in srgb,var(--ink) 17%,transparent);transform:scale(.78);opacity:0;transition:transform .48s cubic-bezier(.16,.76,.18,1),opacity .28s ease}
+.profile-root-inspector.is-open .profile-root-inspector-panel{transform:scale(1);opacity:1}
+.profile-root-inspector-close{appearance:none;position:absolute;top:16px;right:18px;width:38px;height:38px;border:1px solid var(--line);border-radius:50%;background:var(--paper);color:var(--ink);font:500 23px/1 var(--sans);cursor:pointer}
+.profile-root-inspector-portrait{width:220px;height:220px;border-radius:50%;overflow:hidden;border:2px solid color-mix(in srgb,var(--teal) 48%,var(--line));box-shadow:0 16px 42px color-mix(in srgb,var(--ink) 14%,transparent)}
+.profile-root-inspector-portrait img{width:100%;height:100%;display:block;object-fit:cover;object-position:center}
+.profile-root-inspector-copy h2{margin:5px 0 10px;font:800 clamp(28px,3vw,42px)/1 var(--sans);letter-spacing:-.035em}
+.profile-root-inspector-eyebrow{margin:0;color:var(--teal);font:800 10px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase}
+.profile-root-inspector-label{margin:0 0 14px;color:var(--brown);font:760 13px/1.35 var(--sans)}
+.profile-root-inspector-intro{margin:0;color:var(--muted);font:500 14px/1.55 var(--sans)}
+.profile-root-inspector-links{display:flex;flex-wrap:wrap;gap:10px 16px;margin-top:20px}
+.profile-root-inspector-links a{color:var(--teal);font:760 12px/1 var(--sans);text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--teal) 40%,transparent);padding-bottom:3px}
+@media(max-width:900px){.profile-root-inspector-panel{width:min(92vw,480px);grid-template-columns:1fr;gap:18px;padding:28px 24px 26px;text-align:center}.profile-root-inspector-portrait{width:150px;height:150px;margin:auto}.profile-root-inspector-links{justify-content:center}}
+@media(prefers-reduced-motion:reduce){.profile-root-inspector,.profile-root-inspector-panel{transition-duration:.01ms!important}}

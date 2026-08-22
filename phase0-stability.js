@@ -2,47 +2,66 @@
   const mobileBreakpoint = window.matchMedia('(max-width: 900px)');
 
   /*
-   * Phase 0 invariant: desktop must not inherit a booted mobile runtime.
+   * Phase 0 invariant: desktop must not inherit a loaded mobile runtime.
    *
-   * mobile-app.js intentionally monkey-patches SVGElement#setAttribute and
-   * attaches gesture handlers when it boots. Those hooks are safe while the
-   * page remains mobile, but they are not fully unmounted when the viewport is
-   * widened past 900px. A one-time reload on the mobile -> desktop crossing is
-   * therefore the smallest reliable stabilisation before the scene lifecycle
-   * is formalised in Phase 1.
+   * mobile-app.js monkey-patches SVGElement#setAttribute and attaches gesture
+   * handlers after it is injected. Those hooks are safe while the page remains
+   * mobile, but there is not yet a formal unmount lifecycle. A one-time reload
+   * on the mobile -> desktop crossing is therefore the smallest reliable
+   * stabilisation before Phase 1 introduces explicit scene/runtime ownership.
+   *
+   * Detect the injected script as well as the completed MobileProfileScene boot
+   * so a resize during the short script-load/boot window cannot leak the mobile
+   * runtime into desktop.
    */
+  const mobileRuntimePresent = () => Boolean(
+    window.MobileProfileScene ||
+    document.querySelector('script[data-profile-mobile-app]') ||
+    document.documentElement.classList.contains('mobile-profile-app')
+  );
+
   mobileBreakpoint.addEventListener?.('change', event => {
-    if (!event.matches && window.MobileProfileScene) {
+    if (!event.matches && mobileRuntimePresent()) {
       location.reload();
     }
   });
 
-  const isRouteActivation = target => Boolean(
-    target?.closest?.('[data-route], .site-graph-node[data-node-id]')
+  const isGraphMutationActivation = target => Boolean(
+    target?.closest?.([
+      '[data-route]',
+      '.site-graph-node[data-node-id]',
+      '.work-theme-label-v5',
+      '.work-project-anchor-v5',
+      '.integrated-work-controls',
+      '.atlas-controls'
+    ].join(','))
   );
 
   /*
    * The current graph transition implementation owns one route transition at a
-   * time. A second activation while the overlay is running can otherwise move
-   * location.hash underneath the in-flight transition and leave DOM geometry,
-   * route state and the visible animation out of agreement.
+   * time. Route controls as well as Work/Atlas controls can mutate the graph,
+   * so none of them may change renderer state while the transition overlay owns
+   * the scene. Otherwise location/hash or underlying geometry can move beneath
+   * an in-flight transition and make the final handoff inconsistent.
    */
   const blockDuringTransition = event => {
     if (!document.body?.classList.contains('is-v9-transitioning')) return;
-    if (!isRouteActivation(event.target)) return;
+    if (!isGraphMutationActivation(event.target)) return;
     event.preventDefault();
     event.stopImmediatePropagation();
   };
 
   window.addEventListener('click', blockDuringTransition, true);
+  window.addEventListener('change', blockDuringTransition, true);
   window.addEventListener('keydown', event => {
     if (event.key !== 'Enter' && event.key !== ' ') return;
     blockDuringTransition(event);
   }, true);
 
   /*
-   * Lightweight diagnostics for manual smoke testing. No renderer behaviour
-   * depends on these checks; they only report violated Phase 0 assumptions.
+   * Lightweight diagnostics for manual/browser smoke testing. No renderer
+   * behaviour depends on these checks; they only report violated Phase 0
+   * assumptions.
    */
   const checkGraphInvariants = () => {
     const nodes = [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')]
@@ -63,6 +82,7 @@
       duplicateNodeIds: [...new Set(duplicateIds)],
       orphanEdgeCount: orphanEdges.length,
       transitioning: document.body?.classList.contains('is-v9-transitioning') || false,
+      mobileRuntimeLoaded: Boolean(document.querySelector('script[data-profile-mobile-app]')),
       mobileRuntimeBooted: Boolean(window.MobileProfileScene),
       mobileBreakpoint: mobileBreakpoint.matches
     };

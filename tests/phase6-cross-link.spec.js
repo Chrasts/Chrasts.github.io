@@ -33,7 +33,6 @@ test.describe('Phase 6 cross-link travel — desktop', () => {
 
     expect(snapshot.direction).toBe('right');
     expect(snapshot.relationType).toBe('evidence');
-    expect(document.body).toBeDefined();
     expect(await page.evaluate(() => document.body.dataset.graphMode)).toBe('focus');
     await expect(page.locator('.profile-crosslink-travel-overlay')).toHaveCount(0);
     await expect(page.locator('#site-graph .site-graph-node[data-node-id="sql"]')).toBeVisible();

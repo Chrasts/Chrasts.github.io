@@ -7,6 +7,10 @@ body[data-graph-mode="atlas"] #site-graph .is-atlas-lod-hidden{
   opacity:0!important;
   pointer-events:none!important
 }
+body[data-graph-mode="atlas"][data-atlas-lod="near"] #site-graph .site-graph-edges path.is-cross-link.is-lateral.is-atlas-lod-hidden{
+  opacity:1!important;
+  pointer-events:auto!important
+}
 body[data-graph-mode="atlas"][data-atlas-lod="far"] #site-graph .is-atlas-territory-node .site-graph-label,
 body[data-graph-mode="atlas"][data-atlas-lod="medium"] #site-graph .is-atlas-territory-node .site-graph-label,
 body[data-graph-mode="atlas"][data-atlas-lod="far"] #site-graph .site-graph-meta,

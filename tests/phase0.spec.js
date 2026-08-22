@@ -6,6 +6,7 @@ const settle = async page => {
 };
 
 const waitReady = async page => {
+  await page.addInitScript(() => sessionStorage.setItem('profileIntroSeen', 'true'));
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
   await page.goto('/');
   await page.waitForFunction(() => Boolean(window.ProfilePhase0?.checkGraphInvariants));

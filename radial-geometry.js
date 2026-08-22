@@ -10,17 +10,21 @@
     const length = Math.max(1e-6, Math.hypot(vector.x, vector.y));
     return { x: vector.x / length, y: vector.y / length };
   };
+
+  // Shared global compass. Overview and Atlas use the same angular memory.
+  // Lower territories sit at ±60° from the horizontal so adjacent wedges keep
+  // clear angular reserves for later semantic-zoom labels and relations.
   const compass = Object.freeze({
-    work: normalise({ x: 0, y: 1 }),
-    knowledge: normalise({ x: -0.25, y: -0.97 }),
-    experience: normalise({ x: 0.95, y: -0.31 }),
-    education: normalise({ x: 0.76, y: 0.65 }),
-    about: normalise({ x: -0.95, y: 0.31 })
+    work: normalise({ x: -1, y: 0 }),
+    knowledge: normalise({ x: 0, y: -1 }),
+    experience: normalise({ x: 1, y: -0.04 }),
+    education: normalise({ x: 0.5, y: 0.866 }),
+    about: normalise({ x: -0.5, y: 0.866 })
   });
 
   const OVERVIEW = Object.freeze({ width: 1200, height: 720, center: { x: 600, y: 350 }, radius: 230 });
   const ATLAS = Object.freeze({ width: 2520, height: 1580, center: { x: 1260, y: 790 }, sectionRadius: 300, safe: 78 });
-  const halfAngles = { work: 0.70, knowledge: 0.80, experience: 0.60, education: 0.58, about: 0.58 };
+  const halfAngles = { work: 0.45, knowledge: 0.70, experience: 0.45, education: 0.42, about: 0.42 };
 
   const stableNumber = value => {
     let number = 2166136261;
@@ -111,9 +115,9 @@
       });
 
       const limit = rayLimit(ATLAS.center, vector, ATLAS.width, ATLAS.height, ATLAS.safe);
-      const usable = Math.max(ATLAS.sectionRadius + 120, limit - 40);
+      const usable = Math.max(ATLAS.sectionRadius + 120, limit - 42);
       const levelGap = maxDepth > 0
-        ? Math.max(72, Math.min(154, (usable - ATLAS.sectionRadius) / maxDepth))
+        ? Math.max(76, Math.min(148, (usable - ATLAS.sectionRadius) / maxDepth))
         : 120;
       const sectionPoint = {
         x: ATLAS.center.x + vector.x * ATLAS.sectionRadius,
@@ -125,8 +129,10 @@
       [...levels.keys()].filter(depth => depth > 0).sort((a, b) => a - b).forEach(depth => {
         const level = levels.get(depth);
         const parentTangent = node => {
-          const values = (node.parentIds || []).map(parentId => tangentById.get(parentId)).filter(Number.isFinite);
-          return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
+          const parentValues = (node.parentIds || [])
+            .map(parentId => tangentById.get(parentId))
+            .filter(Number.isFinite);
+          return parentValues.length ? parentValues.reduce((sum, value) => sum + value, 0) / parentValues.length : 0;
         };
         level.sort((left, right) =>
           parentTangent(left) - parentTangent(right) ||
@@ -135,14 +141,14 @@
         );
 
         const baseRadius = ATLAS.sectionRadius + levelGap * depth;
-        const tangentialCapacity = Math.max(150, baseRadius * Math.tan(halfAngles[sectionId]));
-        const desiredGap = sectionId === 'knowledge' ? 92 : sectionId === 'work' ? (depth === 2 ? 132 : 118) : 116;
+        const tangentialCapacity = Math.max(145, baseRadius * Math.tan(halfAngles[sectionId]));
+        const desiredGap = sectionId === 'knowledge' ? 86 : sectionId === 'work' ? 100 : 112;
         const span = Math.min(tangentialCapacity * 2, desiredGap * Math.max(0, level.length - 1));
 
         level.forEach((node, index) => {
           const tangent = level.length <= 1 ? 0 : -span / 2 + span * index / (level.length - 1);
           const dense = level.length >= 8;
-          const radialJitter = dense ? (index % 2 ? 24 : -18) : ((stableNumber(`${node.id}:r`) % 11) - 5);
+          const radialJitter = dense ? (index % 2 ? 28 : -20) : ((stableNumber(`${node.id}:r`) % 11) - 5);
           const radius = Math.min(usable, baseRadius + radialJitter);
           positions.set(node.id, {
             x: ATLAS.center.x + vector.x * radius + perpendicular.x * tangent,
@@ -155,8 +161,11 @@
     return positions;
   };
 
-  let cachedOverview = overviewPositions();
-  let cachedAtlas = atlasPositions();
+  // SITE_DATA is static for a document lifetime, so the global coordinate
+  // systems can be computed once. Stabilisation only re-applies those points
+  // while the canonical renderer finishes its own interpolation.
+  const cachedOverview = overviewPositions();
+  const cachedAtlas = atlasPositions();
   const baseNodes = () => [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')]
     .filter(element => !element.closest('.v9-transition-overlay'));
   const baseEdges = () => [...document.querySelectorAll('#site-graph .site-graph-edges path[data-source][data-target]')]
@@ -263,7 +272,6 @@
   };
 
   const applyOverview = () => {
-    cachedOverview = overviewPositions();
     const elements = new Map(baseNodes().map(element => [element.dataset.nodeId, element]));
     cachedOverview.forEach((point, id) => setPoint(elements.get(id), point));
     elements.forEach((element, id) => placeGlobalLabel(element, id));
@@ -271,13 +279,14 @@
     document.body.dataset.globalGeometry = 'radial-overview';
   };
   const applyAtlas = () => {
-    cachedAtlas = atlasPositions();
     const elements = new Map(baseNodes().map(element => [element.dataset.nodeId, element]));
     cachedAtlas.forEach((point, id) => setPoint(elements.get(id), point));
     elements.forEach((element, id) => placeGlobalLabel(element, id));
     syncEdges(cachedAtlas);
     document.body.dataset.globalGeometry = 'radial-atlas';
   };
+
+  let lastGeometryEvent = '';
   const applyCurrent = () => {
     if (!document.body) return false;
     const mode = document.body.dataset.graphMode;
@@ -287,7 +296,13 @@
       resetLabels();
       document.body.dataset.globalGeometry = 'local';
     }
-    window.dispatchEvent(new CustomEvent('profile:geometry-applied', { detail: { mode, geometry: document.body.dataset.globalGeometry } }));
+    const eventKey = `${mode}|${document.body.dataset.globalGeometry}`;
+    if (eventKey !== lastGeometryEvent) {
+      lastGeometryEvent = eventKey;
+      window.dispatchEvent(new CustomEvent('profile:geometry-applied', {
+        detail: { mode, geometry: document.body.dataset.globalGeometry }
+      }));
+    }
     return true;
   };
 
@@ -319,7 +334,7 @@
     return 'up-right';
   };
 
-  const atlasPoint = id => cachedAtlas.get(id) || atlasPositions().get(id) || null;
+  const atlasPoint = id => cachedAtlas.get(id) || null;
   const vectorBetween = (sourceId, targetId) => {
     const source = atlasPoint(sourceId);
     const target = atlasPoint(targetId);
@@ -333,16 +348,22 @@
 
   const graphRoot = document.querySelector('#site-graph');
   if (graphRoot) {
-    new MutationObserver(mutations => {
+    const observer = new MutationObserver(mutations => {
       if (mutations.some(mutation => mutation.type === 'childList')) stabilize(660);
-    }).observe(graphRoot, { childList: true, subtree: true });
+    });
+    observer.observe(graphRoot, { childList: true, subtree: true });
   }
+
+  const bodyObserver = new MutationObserver(mutations => {
+    if (mutations.some(mutation => mutation.type === 'attributes')) stabilize(660);
+  });
   if (document.body) {
-    new MutationObserver(() => stabilize(660)).observe(document.body, {
+    bodyObserver.observe(document.body, {
       attributes: true,
       attributeFilter: ['data-graph-mode', 'data-graph-route', 'class']
     });
   }
+
   window.addEventListener('hashchange', () => stabilize(680));
   window.addEventListener('resize', () => stabilize(720));
   window.addEventListener('load', () => stabilize(720), { once: true });
@@ -351,7 +372,7 @@
     compass,
     sectionFor,
     atlasPoint,
-    overviewPoint: id => cachedOverview.get(id) || overviewPositions().get(id) || null,
+    overviewPoint: id => cachedOverview.get(id) || null,
     vectorBetween,
     directionBetween: (sourceId, targetId) => directionName(vectorBetween(sourceId, targetId)),
     apply: applyCurrent,

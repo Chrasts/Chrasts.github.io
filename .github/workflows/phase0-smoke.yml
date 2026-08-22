@@ -1,6 +1,8 @@
 name: Phase 0 browser smoke
 
 on:
+  push:
+    branches: [phase0-stability-hardening]
   pull_request:
     branches: [main]
   workflow_dispatch:

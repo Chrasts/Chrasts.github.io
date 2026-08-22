@@ -231,6 +231,7 @@ test.describe('Phase 7 Atlas selection and inspector', () => {
   test('hovered and related node labels are enlarged for readability', async ({ page }) => {
     const node = page.locator('#site-graph .site-graph-node[data-node-id="mathematical-logic"]');
     await node.hover();
+    await page.waitForTimeout(180);
     const sizes = await page.evaluate(() => ({
       origin: parseFloat(getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="mathematical-logic"] .site-graph-label')).fontSize),
       child: parseFloat(getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="modal-logic"] .site-graph-label')).fontSize)

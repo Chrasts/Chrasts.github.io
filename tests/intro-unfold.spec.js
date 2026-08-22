@@ -17,9 +17,10 @@ test.describe('Intro v3 regressions', () => {
     await fresh(page); await page.goto('/');
     await page.waitForFunction(() => window.ProfileIntroUnfold?.snapshot().completed === true, null, {timeout:8000});
     const enter=page.locator('.profile-intro-enter'); await expect(enter).toBeVisible();
-    expect(await enter.evaluate(e=>getComputedStyle(e,'::after').animationName)).toContain('intro-gateway-orbit-v3');
+    const orbit=enter.locator('.profile-intro-gateway-orbit.is-outer'); await expect(orbit).toHaveCount(1);
+    expect(await orbit.evaluate(e=>getComputedStyle(e).animationName)).toContain('profile-gateway-spin');
     await enter.hover(); await page.waitForTimeout(120);
-    expect(await enter.evaluate(e=>getComputedStyle(e,'::after').animationPlayState)).toBe('running');
+    expect(await orbit.evaluate(e=>getComputedStyle(e).animationPlayState)).toBe('running');
     await enter.click(); await expect(page.locator('.profile-intro-overlay')).toHaveClass(/is-enter-committed/);
     expect(await enter.evaluate(e=>getComputedStyle(e).visibility)).toBe('hidden');
     await page.waitForFunction(() => ['territories','branches','root','identity'].includes(window.ProfileIntro?.snapshot().stage), null, {timeout:2500});
@@ -43,7 +44,7 @@ test.describe('Overview root identity', () => {
     await page.evaluate(() => window.ProfileRootLanding.activate({focusGraph:false})); await page.waitForFunction(() => document.body.dataset.globalCompass === 'fan-v3');
     const ids=['work','knowledge','education','about','experience']; const before={}; for(const id of ids) before[id]=await p(page,id);
     await page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]').click();
-    await expect(page.locator('.profile-root-inspector')).toHaveClass(/is-open/); await expect(page.locator('.profile-root-inspector-portrait img')).toHaveAttribute('src','assets/stepan-chrast.jpg'); await expect(page.locator('.profile-root-inspector h2')).toContainText('Štěpán Chrast');
+    await expect(page.locator('.profile-root-inspector')).toHaveClass(/is-open/); await expect(page.locator('.profile-root-inspector-portrait img')).toHaveAttribute('src','assets/stepan-chrast.jpg'); await expect(page.locator('.profile-root-inspector h2')).toContainText('Štěpán Chrast'); await expect(page.locator('.profile-root-inspector')).not.toContainText('Profile root');
     expect(await page.evaluate(() => document.body.dataset.graphRoute)).toBe('overview'); expect(await page.evaluate(() => document.body.dataset.globalCompass)).toBe('fan-v3');
     await page.waitForTimeout(500); for(const id of ids){const after=await p(page,id);expect(Math.hypot(after.x-before[id].x,after.y-before[id].y)).toBeLessThan(3);}
     await page.keyboard.press('Escape'); await page.waitForFunction(() => !window.ProfileIntroFixesV3.snapshot().inspectorOpen);

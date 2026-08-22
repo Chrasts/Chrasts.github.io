@@ -1,20 +1,18 @@
 # Radial global geometry contract
 
-This document records the current global/local geometry split after the intro and Overview stabilisation pass.
+This document records the current global/local geometry and transition contract.
 
 ## Core rule
 
 ```text
-GLOBAL      Atlas + Overview       asymmetric fan territories
+GLOBAL      Atlas + Overview       one canonical asymmetric fan
 LOCAL       focused branch         top -> bottom hierarchy
 SEMANTIC    specialised scene      geometry owned by the content
 ```
 
-The global fan is not a universal replacement for local graph geometry.
+## Canonical global compass — fan-v3
 
-## Final global compass — fan-v3
-
-`Štěpán Chrast` is the geometric centre of both Atlas and Overview.
+`Štěpán Chrast` is the geometric centre of Atlas and expanded Overview.
 
 ```text
           About                 Education
@@ -26,25 +24,37 @@ The global fan is not a universal replacement for local graph geometry.
                         Work
 ```
 
-The composition is intentionally asymmetric:
+The current directions are intentional:
 
-- **Work** points exactly down;
-- **Knowledge** is the long primary right wing;
-- **Education** is an upper-right territory;
-- **About** is an upper-left territory;
-- **Experience** occupies the remaining left / slightly downward territory.
+- **Work** exactly down;
+- **Knowledge** the long right wing;
+- **Education** upper-right;
+- **About** upper-left;
+- **Experience** left and slightly down.
 
-`intro-fixes-v3.js` wraps the previous public geometry layer and exposes the final layout through the existing `ProfileGeometry` API. `ProfileGeometry.snapshot().compassVersion === "fan-v3"` identifies this contract.
+`radial-geometry.js` now owns this layout directly. There is no intermediate runtime compass. `motion-polish.js` no longer rewrites global coordinates.
 
-## Atlas subtrees
+The public contract is:
 
-Each territory remains an ordinary rooted hierarchy growing outward along its section vector. The final layer rotates the already computed subtrees as wholes, preserving their existing radial/tangential structure and terminal variance.
+```js
+ProfileGeometry.snapshot().compassVersion === "fan-v3"
+ProfileGeometry.compass
+ProfileGeometry.sectionFor(nodeId)
+ProfileGeometry.atlasPoint(nodeId)
+ProfileGeometry.overviewPoint(nodeId)
+ProfileGeometry.vectorBetween(sourceId, targetId)
+ProfileGeometry.directionBetween(sourceId, targetId)
+```
 
-Non-Work terminal nodes may end at meaningfully different radial distances. Knowledge keeps the largest organic terminal spread.
+## Atlas geometry
 
-### Work exception
+Each territory is an outward rooted hierarchy rather than a concentric ring. Structural depth supplies the main radial direction and stable node IDs supply deterministic tangential/terminal variation.
 
-Work remains rank-like and vertically ordered:
+Knowledge retains the largest terminal variance. Work remains deliberately regular because its global downward direction continues into the FCA scene.
+
+The final Atlas coordinates receive a viewport-safe projection before they are exposed. Horizontal extent is preserved when possible while vertical extent is slightly compressed. This keeps the upper About/Education branches inside the SVG safe area and produces a wider global silhouette.
+
+## Work exception
 
 ```text
 Štěpán
@@ -56,21 +66,55 @@ Work remains rank-like and vertically ordered:
 FCA lattice ranks
 ```
 
-Work is not scattered or rotated away from the downward order. The FCA lattice remains a specialised semantic geometry.
+The Work concept lattice remains vertically ordered and is not radialised.
 
-## Overview and spatial memory
+## Overview and root semantics
 
-Overview uses exactly the same five territory directions as Atlas. The portrait-to-Overview handoff is pinned to `fan-v3` during and after the transition so an older geometry layer cannot briefly reassert itself and cause a visible second reorganisation.
+Expanded Overview uses the first layer of the same fan. The five section directions therefore match the Atlas and the intro.
 
-Opening an ordinary section still means:
+The central root is an identity interaction rather than hierarchy navigation. Clicking `Štěpán Chrast` opens the profile summary without changing route or graph geometry.
+
+While Overview is the active root segment, the root has a subtle two-ring rotating orbit. The orbit fades out when navigation leaves Overview and is removed from the live root once it becomes an ancestor in a focused branch.
+
+## Local focus labels
+
+Focused branches keep their ordinary top-to-bottom structural geometry.
+
+For the linear primary path above the active node, labels are placed to the **right** of their nodes:
 
 ```text
-fan global location
-        -> structural travel
-        -> top-to-bottom local exploration
+○  Štěpán Chrast
+|
+○  Knowledge
+|
+○  Mathematics & Logic
+|
+○  Mathematical Logic
+|
+○  Computational Logic
 ```
 
-Work already agrees with the local vertical order.
+This avoids the old collision where labels below an ancestor overlapped the next node in the chain.
+
+The final label pose is pinned while structural transitions settle. `motion-polish.js` interpolates transition-overlay labels toward that same pose, so the visible animation and the post-animation renderer agree instead of producing a one-frame label jump.
+
+## Atlas boundary handoff
+
+Atlas ↔ segmented navigation does not use the ordinary V9 parent/child transition.
+
+The boundary now has a dedicated handoff:
+
+```text
+current rendered SVG snapshot
+        -> route changes underneath
+        -> target geometry fully settles
+        -> snapshot fades/recedes
+        -> settled live scene is revealed
+```
+
+This prevents the renderer from exposing intermediate Atlas, old global, and local layouts during the same transition.
+
+Ordinary parent/child navigation inside segmented exploration remains owned by `graph-transitions-v6.js`.
 
 ## Intro integration
 
@@ -78,68 +122,50 @@ First-session flow:
 
 ```text
 central Štěpán root only
-        -> irregular rotating root orbit
-        -> real Atlas grows outward from parent positions
-        -> complete fan-v3 Atlas
-        -> rotating Enter profile gateway appears
+        -> root orbit
+        -> canonical fan-v3 Atlas grows outward
+        -> Enter profile gateway appears
         -> explicit Enter profile
         -> territories condense
-        -> branches fold into root
         -> root morphs into portrait identity
-        -> portrait shrinks into the stable fan-v3 Overview root
+        -> portrait hands off to fan-v3 Overview
 ```
 
-Before autoplay owns the clone, all non-root Atlas nodes and edges are CSS-hidden. This prevents a one-frame flash of the completed Atlas.
+Non-root clone content is hidden before autoplay takes ownership, preventing the completed Atlas from flashing on the first paint.
 
-The Enter gateway is transient. It disappears immediately when clicked. Its rotation uses the independent CSS `rotate` property, while hover uses `transform: scale(...)`; therefore hover can enlarge the ring without freezing the orbit.
-
-## Root semantics in Overview
-
-The central `Štěpán Chrast` node in Overview is **not** a hierarchy-navigation action. Clicking or keyboard-activating it keeps the route and fan geometry unchanged and opens a profile identity summary containing:
-
-- portrait;
-- name;
-- profile label;
-- short introduction;
-- Email, GitHub and LinkedIn links.
-
-This prevents the meaningless temporary normalisation of the root into a downward local fragment.
+The Enter gateway uses two real orbit elements rather than pseudo-element transform composition. Their rotation is independent from hover/focus scaling, so the ring keeps rotating in idle, hover and keyboard-focus states. The gateway disappears immediately after activation.
 
 ## Cross-link integration
 
-Phase 6 continues to consume the public geometry only:
-
-```js
-ProfileGeometry.vectorBetween(sourceId, targetId)
-ProfileGeometry.directionBetween(sourceId, targetId)
-```
-
-Because `fan-v3` is the final public wrapper, typed cross-link travel automatically follows the same Atlas coordinates.
+Phase 6 consumes only the canonical `ProfileGeometry` positions. Cross-link travel therefore uses the same fan-v3 Atlas as the visible graph.
 
 ## Mobile
 
-Mobile preserves the same territory ownership and directions with smaller radii. Local mobile projection remains owned by the existing mobile layer.
+Mobile preserves territory ownership and compass directions with smaller Overview radii. The Atlas coordinates remain deterministic; the existing mobile/camera layer controls how they are framed on portrait screens.
 
 ## Renderer ownership
 
-- `site-graph.js` remains canonical for graph creation, routes, modes, Work lattice and Atlas camera.
-- `radial-geometry.js` supplies base radial tree coordinates.
-- `motion-polish.js` retains structural transition polish and the earlier fan transform.
-- `intro-fixes-v3.js` is the final public fan/root contract and stabilisation layer.
-- `intro-animation.js` owns Atlas condensation and portrait handoff.
-- `intro-unfold.js` owns the automatic root-to-Atlas reveal.
-- `graph-transitions-v6.js` owns structural route transitions.
-- `cross-link-travel-v2.js` owns typed lateral travel.
+- `site-graph.js`: canonical graph DOM, route state, modes, Work lattice and Atlas camera.
+- `radial-geometry.js`: the single canonical fan-v3 Atlas/Overview coordinate system.
+- `motion-polish.js`: intro morph and structural label interpolation only; no global geometry wrapper.
+- `intro-fixes-v3.js`: root inspector, right-side local path-label contract, root/gateway orbits and Atlas boundary handoff.
+- `intro-animation.js`: condensation and portrait handoff.
+- `intro-unfold.js`: automatic root-to-Atlas reveal.
+- `graph-transitions-v6.js`: ordinary structural route transitions.
+- `cross-link-travel-v2.js`: typed lateral relation travel.
 
 ## Regression expectations
 
 Browser coverage checks:
 
-1. Knowledge right, Education/About up, Work down;
-2. representative Atlas subtrees grow outward along `fan-v3`;
-3. Work preserves vertical FCA order;
-4. no completed-Atlas flash before autoplay;
-5. Enter orbit continues during hover;
-6. Enter disappears immediately on activation;
-7. portrait handoff remains in the same Overview positions after settling;
-8. clicking the Overview root opens identity information without changing route or graph coordinates.
+1. Knowledge right, Education/About up and Work down;
+2. Atlas nodes remain within a safe global envelope;
+3. representative subtrees grow outward in fan-v3;
+4. Work preserves vertical FCA order;
+5. no completed-Atlas flash before autoplay;
+6. Enter gateway rotates idle and hovered/focused, then disappears immediately;
+7. portrait handoff remains in stable fan-v3 Overview positions;
+8. deep primary-path labels stay on the right and remain stable after transitions;
+9. root orbit exists only in expanded Overview;
+10. Atlas boundary navigation uses the dedicated handoff rather than V9;
+11. clicking the Overview root opens profile information without graph reorganisation.

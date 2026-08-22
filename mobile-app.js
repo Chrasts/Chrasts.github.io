@@ -390,6 +390,7 @@
 
   const animateCamera = (target, duration = 360) => {
     cancelAnimationFrame(state.cameraFrame);
+    state.cameraFrame = 0;
     const start = { ...state.camera };
     if (reduced.matches || !duration) {
       Object.assign(state.camera, target);
@@ -406,6 +407,7 @@
       state.camera.zoom = start.zoom + (target.zoom - start.zoom) * progress;
       applyCamera();
       if (raw < 1) state.cameraFrame = requestAnimationFrame(frame);
+      else state.cameraFrame = 0;
     };
     state.cameraFrame = requestAnimationFrame(frame);
   };
@@ -455,10 +457,19 @@
     state.settleTimer = setTimeout(() => poll(0), 45);
   };
 
+  const interruptCameraAutomation = () => {
+    ++state.settleToken;
+    clearTimeout(state.settleTimer);
+    state.settleTimer = 0;
+    cancelAnimationFrame(state.cameraFrame);
+    state.cameraFrame = 0;
+  };
+
   const zoomAt = (factor, screenX = null, screenY = null) => {
     if (!localMode()) return;
     const vp = viewport();
     if (!vp) return;
+    interruptCameraAutomation();
     const rect = vp.getBoundingClientRect();
     const before = cameraBox();
     const px = screenX == null ? rect.width / 2 : screenX - rect.left;
@@ -476,6 +487,7 @@
     if (!localMode()) return;
     const vp = viewport();
     if (!vp) return;
+    interruptCameraAutomation();
     const box = cameraBox();
     state.camera.cx -= dx * box.width / Math.max(1, vp.clientWidth);
     state.camera.cy -= dy * box.height / Math.max(1, vp.clientHeight);
@@ -759,16 +771,14 @@
     registerExistingObjects();
     syncMode();
 
+    let v9WasActive = document.body.classList.contains('is-v9-transitioning');
     const observer = new MutationObserver(mutations => {
       const modeChanged = mutations.some(mutation =>
         mutation.type === 'attributes' && mutation.target === document.body && mutation.attributeName === 'data-graph-mode'
       );
-      const transitionEnded = mutations.some(mutation =>
-        mutation.type === 'attributes' &&
-        mutation.target === document.body &&
-        mutation.attributeName === 'class' &&
-        !document.body.classList.contains('is-v9-transitioning')
-      );
+      const v9Active = document.body.classList.contains('is-v9-transitioning');
+      const transitionEnded = v9WasActive && !v9Active;
+      v9WasActive = v9Active;
       if (modeChanged) syncMode();
       if (transitionEnded) settleScene();
       adoptModeControls();

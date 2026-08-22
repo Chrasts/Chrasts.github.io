@@ -1,6 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
 const boot = async (page, route = 'overview') => {
+  await page.addInitScript(() => sessionStorage.setItem('profileIntroSeen', 'true'));
   await page.route('https://cloud.umami.is/**', response => response.abort());
   await page.goto(`/#${route}`);
   await page.waitForFunction(() => Boolean(window.ProfileScene?.manager));

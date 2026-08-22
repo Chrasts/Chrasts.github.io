@@ -84,6 +84,14 @@ html[data-profile-intro="handoff"] body > footer{
 }
 
 .profile-intro-overlay[data-stage="atlas"] [data-intro-tier]{opacity:1}
+.profile-intro-overlay[data-stage="atlas"] .site-graph-node[data-intro-tier="root"] .site-graph-dot{
+  stroke:var(--teal);
+  transform:scale(1.28)
+}
+.profile-intro-overlay[data-stage="atlas"] .site-graph-node[data-intro-tier="root"] .site-graph-label{
+  fill:var(--teal);
+  font-weight:790
+}
 
 .profile-intro-overlay[data-stage="territories"] [data-intro-tier="deep"]{opacity:.08!important}
 .profile-intro-overlay[data-stage="territories"] [data-intro-tier="cluster"]{opacity:.58!important}
@@ -120,43 +128,79 @@ html[data-profile-intro="handoff"] body > footer{
 .profile-intro-overlay[data-stage="identity"] .profile-intro-graph,
 .profile-intro-overlay[data-stage="expanding"] .profile-intro-graph{opacity:0}
 
+/* The entry control is a gateway around the Atlas root rather than a detached CTA. */
 .profile-intro-enter{
+  appearance:none;
   position:absolute;
   z-index:4;
   left:50%;
-  bottom:max(30px,calc(env(safe-area-inset-bottom) + 18px));
-  transform:translateX(-50%);
-  display:flex;
-  align-items:baseline;
-  gap:10px;
-  min-height:44px;
-  padding:10px 16px 9px;
-  border:1px solid color-mix(in srgb,var(--teal) 38%,var(--line));
-  border-radius:999px;
-  background:color-mix(in srgb,var(--paper) 91%,transparent);
-  box-shadow:0 8px 26px color-mix(in srgb,var(--ink) 7%,transparent);
+  top:50%;
+  width:132px;
+  height:132px;
+  min-height:0;
+  padding:0;
+  transform:translate(-50%,-50%);
+  border:0;
+  border-radius:50%;
+  background:transparent;
   color:var(--teal);
   cursor:pointer;
-  backdrop-filter:blur(8px);
-  transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease,opacity .2s ease;
+  outline:none;
+  display:block;
+  transition:transform .28s cubic-bezier(.16,.76,.18,1),opacity .2s ease;
+}
+.profile-intro-enter::before,
+.profile-intro-enter::after{
+  content:"";
+  position:absolute;
+  border-radius:50%;
+  pointer-events:none;
+  transition:transform .3s ease,opacity .3s ease,border-color .3s ease
+}
+.profile-intro-enter::before{
+  inset:8px;
+  border:1px solid color-mix(in srgb,var(--teal) 46%,transparent);
+  opacity:.78
+}
+.profile-intro-enter::after{
+  inset:-11px;
+  border:1px solid color-mix(in srgb,var(--teal) 22%,transparent);
+  opacity:.55
+}
+.profile-intro-enter>span,
+.profile-intro-enter>small{
+  position:absolute;
+  left:50%;
+  width:max-content;
+  transform:translateX(-50%);
+  pointer-events:none;
+  white-space:nowrap
 }
 .profile-intro-enter>span{
-  font:780 10px/1 var(--sans);
-  letter-spacing:.075em;
+  top:calc(100% + 17px);
+  padding-bottom:3px;
+  border-bottom:1px solid color-mix(in srgb,var(--teal) 55%,transparent);
+  font:800 11px/1 var(--sans);
+  letter-spacing:.085em;
   text-transform:uppercase
 }
 .profile-intro-enter>small{
+  top:calc(100% + 40px);
   color:var(--muted);
   font:620 9px/1 var(--sans);
   letter-spacing:.035em
 }
 .profile-intro-enter:hover,
-.profile-intro-enter:focus-visible{
-  transform:translateX(-50%) translateY(-2px);
-  border-color:var(--teal);
-  box-shadow:0 11px 30px color-mix(in srgb,var(--ink) 10%,transparent)
+.profile-intro-enter:focus-visible{transform:translate(-50%,-50%) scale(1.045)}
+.profile-intro-enter:hover::before,
+.profile-intro-enter:focus-visible::before{
+  transform:scale(1.08);
+  opacity:1;
+  border-color:color-mix(in srgb,var(--teal) 70%,transparent)
 }
-.profile-intro-enter:disabled{opacity:.25;pointer-events:none}
+.profile-intro-enter:hover::after,
+.profile-intro-enter:focus-visible::after{transform:scale(1.13);opacity:.82}
+.profile-intro-enter:disabled{opacity:.18;pointer-events:none}
 .profile-intro-overlay.is-condensing .profile-intro-enter,
 .profile-intro-overlay[data-stage="identity"] .profile-intro-enter,
 .profile-intro-overlay[data-stage="expanding"] .profile-intro-enter{opacity:0;pointer-events:none}
@@ -343,7 +387,8 @@ html[data-profile-intro="handoff"] body > footer{
 @media(max-width:900px){
   .profile-intro-skip{top:max(12px,env(safe-area-inset-top));right:max(14px,env(safe-area-inset-right))}
   .profile-intro-caption{left:max(14px,env(safe-area-inset-left));bottom:max(12px,env(safe-area-inset-bottom))}
-  .profile-intro-enter{bottom:max(20px,calc(env(safe-area-inset-bottom) + 12px));gap:7px;padding-inline:13px}
+  .profile-intro-enter{width:104px;height:104px}
+  .profile-intro-enter>span{top:calc(100% + 13px);font-size:10px}
   .profile-intro-enter>small{display:none}
   .profile-intro-graph .site-graph-label{font-size:12px!important;stroke-width:4.5px!important}
   .profile-intro-graph .site-graph-meta{font-size:8.8px!important}
@@ -372,6 +417,9 @@ html[data-profile-intro="handoff"] body > footer{
   .profile-intro-graph .site-graph-label,
   .profile-intro-graph .site-graph-meta,
   .profile-intro-graph .site-graph-dot,
+  .profile-intro-enter,
+  .profile-intro-enter::before,
+  .profile-intro-enter::after,
   .profile-intro-identity-anchor,
   .profile-intro-identity,
   .profile-intro-identity::before,

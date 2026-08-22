@@ -19,8 +19,8 @@ test.describe('Global fan v3 geometry', () => {
     const root=await point(page,'stepan-chrast'), work=await point(page,'work'), knowledge=await point(page,'knowledge'), education=await point(page,'education'), about=await point(page,'about'), experience=await point(page,'experience');
     expect(Math.abs(work.x-root.x)).toBeLessThan(8); expect(work.y).toBeGreaterThan(root.y+270);
     expect(knowledge.x).toBeGreaterThan(root.x+330); expect(Math.abs(knowledge.y-root.y)).toBeLessThan(55);
-    expect(education.x).toBeGreaterThan(root.x+150); expect(education.y).toBeLessThan(root.y-240);
-    expect(about.x).toBeLessThan(root.x-170); expect(about.y).toBeLessThan(root.y-220);
+    expect(education.x).toBeGreaterThan(root.x+205); expect(education.y).toBeLessThan(root.y-210);
+    expect(about.x).toBeLessThan(root.x-210); expect(about.y).toBeLessThan(root.y-205);
     expect(experience.x).toBeLessThan(root.x-260); expect(experience.y).toBeGreaterThan(root.y);
   });
 

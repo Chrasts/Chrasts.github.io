@@ -2,17 +2,10 @@
   const mobileBreakpoint = window.matchMedia('(max-width: 900px)');
 
   /*
-   * Phase 0 invariant: desktop must not inherit a loaded mobile runtime.
-   *
-   * mobile-app.js monkey-patches SVGElement#setAttribute and attaches gesture
-   * handlers after it is injected. Those hooks are safe while the page remains
-   * mobile, but there is not yet a formal unmount lifecycle. A one-time reload
-   * on the mobile -> desktop crossing is therefore the smallest reliable
-   * stabilisation before Phase 1 introduces explicit scene/runtime ownership.
-   *
-   * Detect the injected script as well as the completed MobileProfileScene boot
-   * so a resize during the short script-load/boot window cannot leak the mobile
-   * runtime into desktop.
+   * Phase 0 invariant retained during the Phase 1 migration: desktop must not
+   * inherit a loaded mobile runtime until mobile-app.js has an explicit unmount
+   * lifecycle. The SceneManager can already switch responsive composition, but
+   * this reload remains the compatibility boundary for the old gesture hooks.
    */
   const mobileRuntimePresent = () => Boolean(
     window.MobileProfileScene ||
@@ -41,16 +34,18 @@
     ].join(','))
   );
 
+  const transitionLocked = () => Boolean(
+    window.ProfileScene?.transitions?.isLocked ||
+    document.body?.classList.contains('is-v9-transitioning')
+  );
+
   /*
-   * The current graph transition implementation owns one route transition at a
-   * time. Route controls, detail actions, Work/Atlas controls and camera
-   * controls/gestures can mutate the graph or its camera, so none of them may
-   * change renderer state while the transition overlay owns the scene.
-   * Otherwise location/hash or underlying geometry can move beneath an
-   * in-flight transition and make the final handoff inconsistent.
+   * TransitionCoordinator is now the architectural lock owner. The legacy body
+   * class remains a fallback while graph-transitions-v6 still implements the
+   * actual structural animation.
    */
   const blockDuringTransition = event => {
-    if (!document.body?.classList.contains('is-v9-transitioning')) return;
+    if (!transitionLocked()) return;
     if (!isGraphMutationActivation(event.target)) return;
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -65,11 +60,7 @@
     blockDuringTransition(event);
   }, true);
 
-  /*
-   * Lightweight diagnostics for manual/browser smoke testing. No renderer
-   * behaviour depends on these checks; they only report violated Phase 0
-   * assumptions.
-   */
+  /* Lightweight diagnostics retained as a regression surface for Phase 1. */
   const checkGraphInvariants = () => {
     const nodes = [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')]
       .filter(element => !element.closest('.v9-transition-overlay'));
@@ -89,6 +80,8 @@
       duplicateNodeIds: [...new Set(duplicateIds)],
       orphanEdgeCount: orphanEdges.length,
       transitioning: document.body?.classList.contains('is-v9-transitioning') || false,
+      sceneTransitionLocked: Boolean(window.ProfileScene?.transitions?.isLocked),
+      sceneVariant: window.ProfileScene?.manager?.variant || null,
       mobileRuntimeLoaded: Boolean(document.querySelector('script[data-profile-mobile-app]')),
       mobileRuntimeBooted: Boolean(window.MobileProfileScene),
       mobileBreakpoint: mobileBreakpoint.matches

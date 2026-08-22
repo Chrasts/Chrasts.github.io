@@ -4,63 +4,52 @@ This document records the global/local geometry split introduced after Phase 6.
 
 ## Core rule
 
-The profile uses three geometry levels:
-
 ```text
 GLOBAL      Atlas + Overview       radial territories
 LOCAL       focused branch         top -> bottom hierarchy
 SEMANTIC    specialised scene      geometry owned by the content
 ```
 
-The radial geometry is therefore not a replacement for all graph layouts.
+The radial geometry is not a universal replacement for every graph layout.
 
 ## Global compass
 
-`Štěpán Chrast` is the geometric centre of both Overview and Atlas.
-
-The five first-level sections have stable directions:
+`Štěpán Chrast` is the geometric centre of Overview and Atlas. The five first-level sections keep the same directions in both views.
 
 ```text
-                     Knowledge
-                         ↑
+                   Knowledge
+                      ↖
 
-Work  ←──────────── Štěpán ────────────→  Experience
-
-                 ↙               ↘
-              About             Education
+        About  ←    Štěpán    →  Experience
+                       |          ↘
+                       |        Education
+                       ↓
+                      Work
 ```
 
-The exact vectors live in `radial-geometry.js` and are exported through `ProfileGeometry.compass`.
+The exact vectors live in `radial-geometry.js` and are exposed through `ProfileGeometry.compass`.
 
-The lower diagonal territories use approximately ±60° from the horizontal. This leaves deliberate angular reserves between neighboring territory wedges for labels, typed relations and future semantic LOD.
-
-Overview uses only this first ring. Atlas preserves the same angular memory and continues every section as an outward-oriented rooted hierarchy.
+The important semantic choice is that **Work points exactly downward**. The other territories are distributed around it asymmetrically to leave useful angular space for their trees, labels and typed relations. A regular pentagon is not a requirement.
 
 ## Atlas subtrees
 
-Atlas is not implemented as concentric circles.
+Atlas is not a set of concentric rings. Each territory is an ordinary rooted hierarchy with its own outward axis:
 
-Each territory remains an ordinary hierarchical tree with a local outward axis:
-
-- Work grows left;
-- Knowledge grows up;
-- Experience grows right;
+- Work grows down;
+- Knowledge grows up-left;
+- Experience grows up-right;
 - Education grows down-right;
-- About grows down-left.
+- About grows left / slightly down.
 
-Structural depth becomes distance along that section's axis. Siblings are distributed along the perpendicular tangent. Dense ranks receive only a small radial stagger to reduce label collisions.
+Structural depth becomes distance along that axis. Siblings spread along the perpendicular tangent, with a small stagger on dense levels.
 
-This means every section remains visually recognisable as a tree while the five trees together form the global radial map.
+Work projects remain owned by Work even though project nodes also have FCA theme parents.
 
-## Spatial memory
+## Overview and spatial memory
 
-Overview and Atlas intentionally share the same compass.
+Overview is the first ring of the same compass. It therefore preserves the positions learned in Atlas and in the intro rather than introducing a third global layout.
 
-A user who learns that Knowledge is above the root or Work is left of the root does not have to relearn those locations between the two global views.
-
-When a first-level section is opened, the structural transition starts from its global position. The destination local view is then normalised into the standard top-to-bottom hierarchy.
-
-The resulting grammar is:
+When a section is opened, departure begins from its global position. Normal focused branches then settle into the standard top-to-bottom local coordinate system:
 
 ```text
 radial global location
@@ -68,87 +57,77 @@ radial global location
         -> top-to-bottom local exploration
 ```
 
-## Local views
+## Work continuity
 
-`focus` mode remains top-to-bottom.
+Work is the deliberate exception to the need for rotational normalisation. Its global direction already agrees with the formal Work scene:
 
-The radial layer explicitly restores the normal local label geometry when the renderer leaves Overview/Atlas. It does not rewrite local node coordinates.
+```text
+Štěpán
+   |
+   ↓
+ Work
+   |
+   ↓
+FCA lattice ranks
+```
 
-This preserves the existing behaviour of:
+Entering Work changes scale and semantic scene geometry, but not the direction of order. The Work concept lattice itself remains untouched and vertically ordered.
 
-- focused Knowledge/About/Education branches;
-- Experience timeline handling;
+## Local and semantic scenes
+
+The radial layer does not own local node coordinates. Focused branches remain top-to-bottom, while semantic scenes may use their own geometry, including:
+
 - Work FCA lattice;
-- future rich scene layouts.
-
-## Work exception
-
-The Work scene remains a formal concept lattice with its established vertical order.
-
-The radial geometry applies only to Work as a territory in Overview/Atlas. Entering Work therefore visibly changes from a leftward global territory into the vertically ordered semantic Work scene.
-
-That geometry change is intentional: global position communicates *where Work lives in the profile*, while the FCA scene communicates its own mathematical order.
+- Experience timeline;
+- future Education document geometry;
+- future Research Interests constellation;
+- future project/media scenes.
 
 ## Edge routing
 
 In global radial views:
 
-- hierarchy edges follow the outward axis of their territory;
 - root-to-section edges are direct radial connections;
-- typed cross-links are curved away from the centre rather than being routed through the root.
+- hierarchy edges follow the outward axis of their territory;
+- typed cross-links curve away from the centre to reduce hairball pressure.
 
-This reduces centre hairball pressure without changing edge semantics.
-
-Phase 7 can later add relation LOD/filtering on top of this geometry.
+Phase 7 can add semantic LOD and relation filtering on top of this geometry.
 
 ## Intro integration
 
-Phase 3 continues to use the real Atlas SVG.
-
-Because the real Atlas is now radial, the intro automatically becomes:
+Phase 3 still clones the real Atlas SVG. The first-session sequence therefore automatically uses the same central radial map:
 
 ```text
-five outward trees
-      -> territory condensation
-      -> five section nodes
-      -> central Štěpán root
-      -> photographic identity node
+five outward trees around Štěpán
+        -> territory condensation
+        -> five section nodes
+        -> central root
+        -> photographic identity node
 ```
 
-The `Enter profile` gateway is therefore geometrically centred on the actual root rather than being an unrelated UI control.
-
-No second intro-only coordinate system is used.
-
-After the photographic identity node is opened, the five first-level nodes unfold into the same compass used by Atlas.
+The `Enter profile` gateway is centred on the actual Atlas root. Clicking the photographic identity later unfolds the same five-direction Overview compass.
 
 ## Cross-link integration
 
-Phase 6 no longer reduces Atlas geography to left/right.
+Phase 6 uses the exact canonical Atlas positions, not a left/right approximation.
 
-`ProfileGeometry.vectorBetween(sourceId, targetId)` returns the normalised 2D vector between the two nodes' canonical Atlas positions. Cross-link travel uses that vector for:
+`ProfileGeometry.vectorBetween(sourceId, targetId)` returns the normalised 2D vector between the two actual Atlas node positions. `cross-link-travel-v2.js` uses it for departure, portal selection, outgoing-scene recession and direction metadata.
 
-- departure direction;
-- viewport portal selection;
-- old-scene recession;
-- direction metadata (`up-left`, `down-right`, etc.).
+Because sibling placement has a tangential component, an individual project-to-topic relation can differ slightly from the coarse section-to-section direction. Tests should therefore compare travel against `ProfileGeometry.vectorBetween(...)` rather than hard-code a section direction where unnecessary.
 
-The destination still opens in its normal local geometry.
+The destination still settles into its normal local/semantic geometry.
 
 ## Mobile
 
-Mobile keeps the same territory topology. The existing mobile projection may compress the global map for a portrait viewport, but it does not change section ownership or the semantic compass.
-
-Local mobile scenes continue to use their established portrait projection.
+Mobile preserves territory ownership and radial topology. Its existing portrait projection may compress the geometry, but it does not redefine the compass. Local mobile scenes continue to use their established projection.
 
 ## Renderer ownership
 
-`site-graph.js` still owns node creation, routing state, Atlas camera and semantic modes.
+`site-graph.js` remains the canonical renderer for node creation, route state, graph modes, Work lattice and Atlas camera.
 
-`radial-geometry.js` is a geometry stabilisation layer over the real renderer. During global renders it pins the real SVG nodes/edges to the radial coordinates while the canonical renderer settles. It never creates a second graph.
+`radial-geometry.js` is a stabilisation layer over that real renderer. In Overview and Atlas it pins the real SVG nodes and edges to radial coordinates while the base renderer settles; it does not create a second graph.
 
-`graph-transitions-v6.js` remains responsible for structural route transitions. `cross-link-travel-v2.js` owns typed non-hierarchical travel.
-
-This avoids touching the Work renderer or local layout engine while keeping a single interactive DOM graph.
+`graph-transitions-v6.js` retains structural route transitions. `cross-link-travel-v2.js` retains typed non-hierarchical travel.
 
 ## Public API
 
@@ -168,10 +147,11 @@ ProfileGeometry.snapshot()
 
 `tests/radial-geometry.spec.js` verifies:
 
-1. central root + stable five-direction Overview compass;
-2. outward growth of representative nodes in all five Atlas territories;
-3. local branch normalisation back to top-to-bottom;
-4. Work changing from its leftward global position into the vertically ordered FCA scene;
-5. Phase 3 intro sourcing the same radial Atlas.
+1. central root and the five-direction Overview compass;
+2. Work exactly below the root;
+3. outward growth of representative nodes in all five Atlas territories;
+4. local Knowledge normalisation to top-to-bottom;
+5. downward continuity from global Work into the FCA lattice;
+6. Phase 3 sourcing the same radial Atlas.
 
-Phase 6 tests additionally verify that cross-link travel uses the resulting 2D vectors.
+Phase 6 tests verify that typed travel uses the resulting exact 2D vectors.

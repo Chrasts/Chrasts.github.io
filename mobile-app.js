@@ -2,11 +2,119 @@
   const mq = window.matchMedia('(max-width: 900px)');
   if (!mq.matches) return;
 
+  /* ----------------------------------------------------------------------
+     Mobile-only visual projection
+
+     The desktop graph is authored in a 1200px-wide landscape coordinate
+     system. Phones are normally portrait. Rather than shrinking that landscape
+     graph, mobile applies a deterministic projection to every local graph
+     position: horizontal distances contract and vertical distances expand.
+     The underlying data coordinates stay untouched, so desktop layout and the
+     existing transition engine remain authoritative.
+     ---------------------------------------------------------------------- */
+  const projection = {
+    centreX: 600,
+    originY: 50,
+    scaleX: .53,
+    scaleY: 1.28,
+    fullHeight: 980
+  };
+
+  const mapPoint = point => ({
+    x: projection.centreX + (point.x - projection.centreX) * projection.scaleX,
+    y: projection.originY + (point.y - projection.originY) * projection.scaleY
+  });
+
+  const modeNow = () => document.body.dataset.graphMode || 'overview';
+  const localMode = () => modeNow() !== 'atlas';
+  const numberPattern = /-?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?/gi;
+  const nativeSvgSetAttribute = SVGElement.prototype.setAttribute;
+
+  const projectTranslate = value => {
+    const match = String(value).match(/^translate\(\s*(-?(?:\d+\.?\d*|\.\d+))[,\s]+(-?(?:\d+\.?\d*|\.\d+))\s*\)$/i);
+    if (!match) return value;
+    const point = mapPoint({ x: Number(match[1]), y: Number(match[2]) });
+    return `translate(${point.x.toFixed(1)} ${point.y.toFixed(1)})`;
+  };
+
+  const projectPath = value => {
+    let index = 0;
+    return String(value).replace(numberPattern, token => {
+      const number = Number(token);
+      const projected = index % 2 === 0
+        ? projection.centreX + (number - projection.centreX) * projection.scaleX
+        : projection.originY + (number - projection.originY) * projection.scaleY;
+      index += 1;
+      return projected.toFixed(1);
+    });
+  };
+
+  const transformProjectedElement = element =>
+    element?.classList?.contains('site-graph-node') ||
+    element?.classList?.contains('work-project-anchor-v5') ||
+    element?.classList?.contains('work-theme-label-v5');
+
+  SVGElement.prototype.setAttribute = function(name, value) {
+    if (mq.matches && localMode()) {
+      if (name === 'transform' && transformProjectedElement(this)) {
+        value = projectTranslate(value);
+      } else if (
+        name === 'd' &&
+        this.tagName?.toLowerCase() === 'path' &&
+        this.parentElement?.classList?.contains('site-graph-edges')
+      ) {
+        value = projectPath(value);
+      } else if (this.classList?.contains('site-graph-timeline')) {
+        const numeric = Number(value);
+        if (Number.isFinite(numeric)) {
+          if (name === 'x1' || name === 'x2') {
+            value = projection.centreX + (numeric - projection.centreX) * projection.scaleX;
+          } else if (name === 'y1' || name === 'y2') {
+            value = projection.originY + (numeric - projection.originY) * projection.scaleY;
+          }
+        }
+      }
+    }
+    return nativeSvgSetAttribute.call(this, name, value);
+  };
+
+  const projectExistingGraph = () => {
+    if (!localMode()) return;
+    document.querySelectorAll('#site-graph .site-graph-node[data-node-id]').forEach(element => {
+      if (element.closest('.v9-transition-overlay')) return;
+      const x = Number(element.dataset.x);
+      const y = Number(element.dataset.y);
+      if (Number.isFinite(x) && Number.isFinite(y)) {
+        element.setAttribute('transform', `translate(${x} ${y})`);
+      }
+    });
+    document.querySelectorAll('#site-graph .work-project-anchor-v5,#site-graph .work-theme-label-v5').forEach(element => {
+      const value = element.getAttribute('transform');
+      if (value) element.setAttribute('transform', value);
+    });
+    document.querySelectorAll('#site-graph .site-graph-edges path[d]').forEach(path => {
+      if (path.closest('.v9-transition-overlay')) return;
+      const value = path.getAttribute('d');
+      if (value) path.setAttribute('d', value);
+    });
+    const timeline = document.querySelector('#site-graph .site-graph-timeline');
+    if (timeline) {
+      ['x1', 'x2', 'y1', 'y2'].forEach(attribute => {
+        const value = timeline.getAttribute(attribute);
+        if (value != null) timeline.setAttribute(attribute, value);
+      });
+    }
+  };
+
+  window.__MOBILE_GRAPH_PROJECTION__ = { ...projection, mapPoint };
+
+  /* ----------------------------------------------------------------------
+     Mobile app state / camera
+     ---------------------------------------------------------------------- */
   const state = {
     ready: false,
     mode: 'overview',
-    camera: { cx: 600, cy: 360, zoom: 1 },
-    full: { width: 1200, height: 720 },
+    camera: { cx: 600, cy: 470, zoom: .9 },
     pointers: new Map(),
     gesture: null,
     dragged: false,
@@ -18,41 +126,53 @@
     dock: null,
     modeButton: null,
     cameraFrame: 0,
-    registeredObjects: new Map()
+    registeredObjects: new Map(),
+    atlasPointers: new Map(),
+    atlasPinching: false,
+    atlasPinchDistance: 0
   };
 
   const $ = selector => document.querySelector(selector);
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-
-  const modeNow = () => document.body.dataset.graphMode || 'overview';
-  const localMode = () => modeNow() !== 'atlas';
-  const fullForMode = mode => mode === 'work'
-    ? { width: 1200, height: 760 }
-    : { width: 1200, height: 720 };
-
   const svg = () => $('#site-graph .site-graph-svg');
   const viewport = () => $('.site-graph-viewport');
-  const activeNode = () => {
-    const mode = modeNow();
-    if (mode === 'overview') return $('#site-graph .site-graph-node[data-node-id="stepan-chrast"]');
-    return $('#site-graph .site-graph-node.is-selected') ||
-      $('#site-graph .site-graph-node[data-node-id="work"]') ||
-      $('#site-graph .site-graph-node[data-node-id="stepan-chrast"]');
+
+  const ensureStyle = href => {
+    if (document.querySelector(`link[href="${href}"]`)) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    link.dataset.profileMobileV2 = 'true';
+    document.head.appendChild(link);
   };
+  ensureStyle('mobile-v2.css');
 
   const readNodePoint = element => {
     if (!element) return null;
     const x = Number(element.dataset.x);
     const y = Number(element.dataset.y);
-    return Number.isFinite(x) && Number.isFinite(y) ? { x, y } : null;
+    return Number.isFinite(x) && Number.isFinite(y) ? mapPoint({ x, y }) : null;
+  };
+
+  const activeNode = () => {
+    const mode = modeNow();
+    const selector = mode === 'overview'
+      ? '#site-graph .site-graph-node[data-node-id="stepan-chrast"]'
+      : '#site-graph .site-graph-node.is-selected:not(.v9-transition-overlay .site-graph-node)';
+    return $(selector) ||
+      $('#site-graph .site-graph-node[data-node-id="work"]:not(.v9-transition-overlay .site-graph-node)') ||
+      $('#site-graph .site-graph-node[data-node-id="stepan-chrast"]:not(.v9-transition-overlay .site-graph-node)');
+  };
+
+  const cameraAspect = () => {
+    const vp = viewport();
+    return Math.max(.42, Math.min(1.35, (vp?.clientWidth || innerWidth) / Math.max(1, vp?.clientHeight || innerHeight)));
   };
 
   const cameraBox = () => {
-    const vp = viewport();
-    const aspect = Math.max(.42, Math.min(1.35, (vp?.clientWidth || innerWidth) / Math.max(1, vp?.clientHeight || innerHeight)));
-    const height = state.full.height / state.camera.zoom;
-    const width = height * aspect;
+    const height = projection.fullHeight / state.camera.zoom;
+    const width = height * cameraAspect();
     return {
       width,
       height,
@@ -63,17 +183,18 @@
 
   const constrainCamera = () => {
     const box = cameraBox();
-    const marginX = box.width * .34;
-    const marginY = box.height * .28;
+    const bounds = { left: 205, right: 995, top: -80, bottom: 1030 };
+    const marginX = box.width * .28;
+    const marginY = box.height * .22;
     state.camera.cx = clamp(
       state.camera.cx,
-      -marginX + box.width / 2,
-      state.full.width + marginX - box.width / 2
+      bounds.left - marginX + box.width / 2,
+      bounds.right + marginX - box.width / 2
     );
     state.camera.cy = clamp(
       state.camera.cy,
-      -marginY + box.height / 2,
-      state.full.height + marginY - box.height / 2
+      bounds.top - marginY + box.height / 2,
+      bounds.bottom + marginY - box.height / 2
     );
   };
 
@@ -109,21 +230,61 @@
     state.cameraFrame = requestAnimationFrame(frame);
   };
 
-  const defaultZoom = mode => {
-    if (mode === 'work') return 1.18;
-    if (mode === 'overview') return 1.04;
-    return 1.22;
+  const visibleProjectedPoints = () => [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')]
+    .filter(element => !element.closest('.v9-transition-overlay'))
+    .map(readNodePoint)
+    .filter(Boolean);
+
+  const fitTarget = () => {
+    const points = visibleProjectedPoints();
+    const fallback = readNodePoint(activeNode()) || { x: 600, y: 450 };
+    if (!points.length) return { cx: fallback.x, cy: fallback.y, zoom: .82 };
+
+    let minX = Math.min(...points.map(point => point.x));
+    let maxX = Math.max(...points.map(point => point.x));
+    let minY = Math.min(...points.map(point => point.y));
+    let maxY = Math.max(...points.map(point => point.y));
+
+    const xPad = modeNow() === 'work' ? 58 : 66;
+    const yPad = modeNow() === 'overview' ? 54 : 72;
+    minX -= xPad; maxX += xPad; minY -= yPad; maxY += yPad;
+
+    const width = Math.max(300, maxX - minX);
+    const height = Math.max(390, maxY - minY);
+    const requiredHeight = Math.max(height, width / cameraAspect());
+    let zoom = projection.fullHeight / requiredHeight * .88;
+    const maxZoom = modeNow() === 'work' ? .96 : .93;
+    zoom = clamp(zoom, .56, maxZoom);
+
+    return {
+      cx: (minX + maxX) / 2,
+      cy: (minY + maxY) / 2,
+      zoom
+    };
   };
 
   const resetCamera = ({ instant = false } = {}) => {
     if (!localMode()) return;
-    state.full = fullForMode(modeNow());
-    const point = readNodePoint(activeNode()) || { x: state.full.width / 2, y: state.full.height / 2 };
-    let cx = point.x;
-    let cy = point.y;
-    if (modeNow() === 'overview') cy = 385;
-    if (modeNow() === 'work') cy = 385;
-    animateCamera({ cx, cy, zoom: defaultZoom(modeNow()) }, instant ? 0 : 420);
+    if (document.body.classList.contains('is-v9-transitioning')) {
+      scheduleStableReset({ instant });
+      return;
+    }
+    animateCamera(fitTarget(), instant ? 0 : 420);
+  };
+
+  let stableResetTimer = 0;
+  const scheduleStableReset = ({ instant = false, attempt = 0 } = {}) => {
+    clearTimeout(stableResetTimer);
+    stableResetTimer = setTimeout(() => {
+      if (document.body.classList.contains('is-v9-transitioning') && attempt < 24) {
+        scheduleStableReset({ instant, attempt: attempt + 1 });
+        return;
+      }
+      requestAnimationFrame(() => {
+        projectExistingGraph();
+        resetCamera({ instant });
+      });
+    }, attempt ? 70 : 45);
   };
 
   const zoomAt = (factor, screenX = null, screenY = null) => {
@@ -136,8 +297,7 @@
     const py = screenY == null ? rect.height / 2 : screenY - rect.top;
     const worldX = before.x + (px / Math.max(1, rect.width)) * before.width;
     const worldY = before.y + (py / Math.max(1, rect.height)) * before.height;
-    const nextZoom = clamp(state.camera.zoom * factor, .68, 2.65);
-    state.camera.zoom = nextZoom;
+    state.camera.zoom = clamp(state.camera.zoom * factor, .48, 2.5);
     const after = cameraBox();
     state.camera.cx = worldX - (px / Math.max(1, rect.width)) * after.width + after.width / 2;
     state.camera.cy = worldY - (py / Math.max(1, rect.height)) * after.height + after.height / 2;
@@ -225,6 +385,62 @@
     }
   };
 
+  /* Atlas already owns its one-finger drag camera. Mobile adds a two-finger
+     pinch gesture by feeding the same wheel-zoom path that the desktop Atlas
+     renderer uses, so zoom remains centred under the fingers. */
+  const atlasPointerDown = event => {
+    if (modeNow() !== 'atlas' || event.pointerType === 'mouse') return;
+    state.atlasPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (state.atlasPointers.size === 2) {
+      const [a, b] = [...state.atlasPointers.values()];
+      state.atlasPinching = true;
+      state.atlasPinchDistance = Math.max(1, distance(a, b));
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  };
+
+  const atlasPointerMove = event => {
+    if (modeNow() !== 'atlas' || !state.atlasPointers.has(event.pointerId)) return;
+    state.atlasPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (!state.atlasPinching || state.atlasPointers.size < 2) {
+      if (state.atlasPinching) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      return;
+    }
+    const [a, b] = [...state.atlasPointers.values()];
+    const nextDistance = Math.max(1, distance(a, b));
+    const centre = midpoint(a, b);
+    const ratio = nextDistance / Math.max(1, state.atlasPinchDistance);
+    if (Math.abs(ratio - 1) > .004) {
+      const target = svg();
+      if (target) {
+        target.dispatchEvent(new WheelEvent('wheel', {
+          bubbles: true,
+          cancelable: true,
+          clientX: centre.x,
+          clientY: centre.y,
+          deltaY: -Math.log(ratio) * 520,
+          deltaMode: 0
+        }));
+      }
+      state.atlasPinchDistance = nextDistance;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+  };
+
+  const atlasPointerEnd = event => {
+    if (!state.atlasPointers.has(event.pointerId)) return;
+    state.atlasPointers.delete(event.pointerId);
+    if (!state.atlasPointers.size) {
+      state.atlasPinching = false;
+      state.atlasPinchDistance = 0;
+    }
+  };
+
   const createButton = (label, className, action, aria = label) => {
     const button = document.createElement('button');
     button.type = 'button';
@@ -258,6 +474,8 @@
     else if (mode === 'atlas') openSheet('Atlas layers');
   };
 
+  const clickAtlasControl = id => document.querySelector(id)?.click();
+
   const buildChrome = () => {
     const scene = $('.scene-canvas');
     if (!scene || state.dock) return;
@@ -266,9 +484,9 @@
     dock.className = 'mobile-graph-dock';
     dock.setAttribute('aria-label', 'Graph controls');
     dock.append(
-      createButton('−', 'mobile-camera-button', () => localMode() ? zoomAt(.82) : $('#atlas-zoom-out')?.click(), 'Zoom out'),
-      createButton('+', 'mobile-camera-button', () => localMode() ? zoomAt(1.22) : $('#atlas-zoom-in')?.click(), 'Zoom in'),
-      createButton('Center', 'mobile-camera-fit', () => localMode() ? resetCamera() : $('#atlas-fit')?.click(), 'Center graph')
+      createButton('−', 'mobile-camera-button', () => localMode() ? zoomAt(.82) : clickAtlasControl('#atlas-zoom-out'), 'Zoom out'),
+      createButton('+', 'mobile-camera-button', () => localMode() ? zoomAt(1.22) : clickAtlasControl('#atlas-zoom-in'), 'Zoom in'),
+      createButton('Center', 'mobile-camera-fit', () => localMode() ? resetCamera() : clickAtlasControl('#atlas-fit'), 'Center graph')
     );
     const modeButton = createButton('Filters', 'mobile-mode-button', toggleModeSheet, 'Open segment controls');
     modeButton.setAttribute('aria-expanded', 'false');
@@ -350,15 +568,17 @@
     }
     if (state.dock) state.dock.classList.toggle('is-atlas', state.mode === 'atlas');
 
-    if (reset && localMode()) {
-      [70, 420, 1080].forEach((delay, index) => setTimeout(() => resetCamera({ instant: index < 2 }), delay));
-    }
+    if (reset && localMode()) scheduleStableReset({ instant: false });
   };
 
   const bindViewport = () => {
     const vp = viewport();
     if (!vp || vp.dataset.mobileGestures === 'true') return;
     vp.dataset.mobileGestures = 'true';
+    vp.addEventListener('pointerdown', atlasPointerDown, { capture: true, passive: false });
+    vp.addEventListener('pointermove', atlasPointerMove, { capture: true, passive: false });
+    vp.addEventListener('pointerup', atlasPointerEnd, { capture: true, passive: true });
+    vp.addEventListener('pointercancel', atlasPointerEnd, { capture: true, passive: true });
     vp.addEventListener('pointerdown', pointerDown, { passive: true });
     vp.addEventListener('pointermove', pointerMove, { passive: false });
     vp.addEventListener('pointerup', pointerEnd, { passive: true });
@@ -368,12 +588,13 @@
 
   const boot = () => {
     if (!mq.matches || state.ready) return;
-    if (!$('.scene-canvas') || !viewport()) {
+    if (!$('.scene-canvas') || !viewport() || !svg()) {
       setTimeout(boot, 60);
       return;
     }
     state.ready = true;
     document.documentElement.classList.add('mobile-profile-app');
+    projectExistingGraph();
     buildChrome();
     bindViewport();
     adoptModeControls();
@@ -382,25 +603,39 @@
 
     const observer = new MutationObserver(mutations => {
       const modeChanged = mutations.some(m => m.type === 'attributes' && m.target === document.body && m.attributeName === 'data-graph-mode');
+      const transitionEnded = mutations.some(m =>
+        m.type === 'attributes' &&
+        m.target === document.body &&
+        m.attributeName === 'class' &&
+        !document.body.classList.contains('is-v9-transitioning')
+      );
       if (modeChanged) syncMode({ reset: true });
+      if (transitionEnded && localMode()) scheduleStableReset({ instant: false });
       adoptModeControls();
       bindViewport();
     });
-    observer.observe(document.body, { attributes: true, attributeFilter: ['data-graph-mode'], childList: true, subtree: true });
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['data-graph-mode', 'class'],
+      childList: true,
+      subtree: true
+    });
 
-    window.addEventListener('hashchange', () => syncMode({ reset: true }));
-    window.addEventListener('orientationchange', () => setTimeout(() => resetCamera({ instant: true }), 140));
+    window.addEventListener('hashchange', () => localMode() && scheduleStableReset({ instant: false }));
+    window.addEventListener('orientationchange', () => setTimeout(() => localMode() && scheduleStableReset({ instant: true }), 150));
     window.addEventListener('resize', () => {
-      if (!mq.matches) return;
-      applyCamera();
+      if (!mq.matches || !localMode()) return;
+      scheduleStableReset({ instant: true });
     });
 
     window.MobileProfileScene = {
       registerSceneObject,
       resetCamera,
-      zoomIn: () => zoomAt(1.2),
-      zoomOut: () => zoomAt(.84),
-      closeSheet
+      fitGraph: resetCamera,
+      zoomIn: () => localMode() ? zoomAt(1.2) : clickAtlasControl('#atlas-zoom-in'),
+      zoomOut: () => localMode() ? zoomAt(.84) : clickAtlasControl('#atlas-zoom-out'),
+      closeSheet,
+      projection
     };
   };
 

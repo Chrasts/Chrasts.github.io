@@ -22,6 +22,40 @@
   }
 
   const mobileBreakpoint = window.matchMedia('(max-width: 900px)');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  /* The transition engine intentionally hides the live camera while the cloned
+     overlay animates. Reduced-motion mode does not use that overlay, so enforce
+     the inverse invariant directly at the lifecycle boundary as well as in CSS.
+     This avoids depending on the asynchronously loaded graph-v9 stylesheet. */
+  const reconcileReducedMotionCamera = () => {
+    if (!reducedMotion.matches) return;
+    const camera = document.querySelector('#site-graph .site-graph-svg > g:not(.v9-transition-overlay)');
+    if (!camera) return;
+
+    if (document.body?.classList.contains('is-v9-transitioning')) {
+      camera.style.setProperty('opacity', '1', 'important');
+      camera.style.setProperty('visibility', 'visible', 'important');
+      camera.dataset.reducedMotionHandoff = 'true';
+      return;
+    }
+
+    if (camera.dataset.reducedMotionHandoff === 'true') {
+      camera.style.removeProperty('opacity');
+      camera.style.removeProperty('visibility');
+      delete camera.dataset.reducedMotionHandoff;
+    }
+  };
+
+  const reducedMotionObserver = new MutationObserver(mutations => {
+    if (mutations.some(mutation => mutation.attributeName === 'class')) {
+      reconcileReducedMotionCamera();
+    }
+  });
+  if (document.body) {
+    reducedMotionObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  }
+  reducedMotion.addEventListener?.('change', reconcileReducedMotionCamera);
 
   /*
    * Phase 0 invariant: desktop must not inherit a loaded mobile runtime.

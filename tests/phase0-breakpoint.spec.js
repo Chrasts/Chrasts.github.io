@@ -4,6 +4,7 @@ test.describe('Phase 0 deferred mobile boot', () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
   test('rapid breakpoint crossing cannot strand an inert mobile script', async ({ page }) => {
+    await page.addInitScript(() => sessionStorage.setItem('profileIntroSeen', 'true'));
     await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
     await page.goto('/');
     await page.waitForFunction(() => Boolean(window.ProfilePhase0?.checkGraphInvariants));

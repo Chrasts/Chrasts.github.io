@@ -16,37 +16,62 @@ const bypassIntro = async page => {
 test.describe('Intro motion polish', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('Enter profile is a single stronger gateway with a clear hover response', async ({ page }) => {
+  test('Enter profile surrounds the real root, starts passive and highlights both ring and root on hover', async ({ page }) => {
     await freshIntro(page);
     await page.goto('/#overview');
     await page.waitForFunction(() => window.ProfileIntro?.snapshot().stage === 'atlas' && window.ProfileIntro.snapshot().waiting);
     await page.waitForFunction(() => Boolean(window.ProfileMotionPolish));
+    await page.waitForTimeout(80);
 
     const enter = page.locator('.profile-intro-enter');
+    const root = page.locator('.profile-intro-graph .site-graph-node[data-node-id="stepan-chrast"]');
+    const rootDot = root.locator('.site-graph-dot');
+    const rootLabel = root.locator('.site-graph-label');
+
     await expect(enter).toBeVisible();
     await expect(enter.locator('small')).toHaveCount(0);
     await expect(enter).toHaveText(/Enter profile/i);
     await expect(enter).not.toContainText(/Condense the Atlas/i);
     await expect(enter).toHaveAttribute('aria-label', 'Enter profile');
+    await expect(root).toBeVisible();
+    await expect(rootLabel).toContainText('Štěpán Chrast');
+
+    expect(await page.evaluate(() => document.activeElement?.classList?.contains('profile-intro-enter'))).toBe(false);
 
     const before = await enter.evaluate(element => ({
       color: getComputedStyle(element).color,
       transform: getComputedStyle(element).transform,
-      outerColor: getComputedStyle(element, '::after').borderTopColor,
-      outerWidth: parseFloat(getComputedStyle(element, '::after').borderTopWidth)
+      background: getComputedStyle(element).backgroundColor,
+      outerWidth: parseFloat(getComputedStyle(element, '::after').borderTopWidth),
+      labelSize: parseFloat(getComputedStyle(element.querySelector('span')).fontSize)
     }));
-    expect(before.outerWidth).toBeGreaterThanOrEqual(1.5);
+    const rootBefore = await rootDot.evaluate(dot => ({
+      stroke: getComputedStyle(dot).stroke,
+      transform: getComputedStyle(dot).transform
+    }));
+
+    expect(before.outerWidth).toBeGreaterThanOrEqual(2);
+    expect(before.labelSize).toBeGreaterThanOrEqual(12);
+    expect(before.background === 'rgba(0, 0, 0, 0)' || before.background === 'transparent').toBe(true);
 
     await enter.hover();
-    await page.waitForTimeout(160);
+    await page.waitForTimeout(180);
     const after = await enter.evaluate(element => ({
       color: getComputedStyle(element).color,
       transform: getComputedStyle(element).transform,
       outerColor: getComputedStyle(element, '::after').borderTopColor
     }));
+    const rootAfter = await rootDot.evaluate(dot => ({
+      stroke: getComputedStyle(dot).stroke,
+      transform: getComputedStyle(dot).transform
+    }));
+
     expect(after.color).not.toBe(before.color);
     expect(after.transform).not.toBe(before.transform);
-    expect(after.outerColor).not.toBe(before.outerColor);
+    expect(after.outerColor).not.toBe(rootBefore.stroke);
+    expect(rootAfter.stroke).not.toBe(rootBefore.stroke);
+    expect(rootAfter.transform).not.toBe(rootBefore.transform);
+    expect(await page.evaluate(() => window.ProfileMotionPolish.snapshot().enterActive)).toBe(true);
   });
 
   test('final condensation removes converging labels and morphs the root into the portrait', async ({ page }) => {

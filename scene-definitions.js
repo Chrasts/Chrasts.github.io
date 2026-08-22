@@ -2,18 +2,87 @@
   const scene = window.ProfileScene;
   if (!scene?.registry) return;
 
+  const normaliseRoute = value =>
+    (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
+  const initialRootLanding = normaliseRoute(location.hash) === 'overview';
+
+  const ensureStylesheet = href => {
+    if (document.querySelector(`link[href="${href}"]`)) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    link.dataset.profileRootLanding = 'true';
+    document.head.appendChild(link);
+  };
+
+  const prepareRootLandingDom = () => {
+    const copy = document.querySelector('.hero-copy');
+    const heading = copy?.querySelector('h1');
+    const intro = copy?.querySelector('.intro');
+    const links = copy?.querySelector('.inline-links');
+    if (!copy || !heading || !intro || !links) return;
+
+    intro.id ||= 'root-intro';
+
+    const oldPrimary = links.querySelector('[data-route="work"]');
+    if (oldPrimary?.textContent?.trim().toLowerCase().includes('explore')) oldPrimary.remove();
+
+    if (!copy.querySelector('[data-root-activate]')) {
+      const trigger = document.createElement('button');
+      trigger.type = 'button';
+      trigger.className = 'root-node-trigger';
+      trigger.dataset.rootActivate = 'true';
+      trigger.disabled = true;
+      trigger.setAttribute('aria-describedby', intro.id);
+      trigger.setAttribute('aria-label', 'Open the profile map');
+
+      const dot = document.createElement('span');
+      dot.className = 'root-node-dot';
+      dot.setAttribute('aria-hidden', 'true');
+
+      const action = document.createElement('span');
+      action.className = 'root-node-action';
+      action.textContent = 'Open profile map';
+
+      trigger.append(dot, action);
+      heading.after(trigger);
+    }
+
+    if (!copy.querySelector('.root-atlas-affordance')) {
+      const atlas = document.createElement('button');
+      atlas.type = 'button';
+      atlas.className = 'root-atlas-affordance';
+      atlas.dataset.route = 'atlas';
+      atlas.setAttribute('aria-label', 'Explore Atlas, the full profile graph');
+
+      const label = document.createElement('span');
+      label.textContent = 'Explore Atlas';
+      const note = document.createElement('small');
+      note.textContent = 'Full graph';
+      atlas.append(label, note);
+      links.after(atlas);
+    }
+  };
+
+  ensureStylesheet('root-landing.css');
+  prepareRootLandingDom();
+
+  document.body.dataset.rootLanding = initialRootLanding ? 'true' : 'false';
+  document.body.classList.toggle('is-root-landing', initialRootLanding);
+  const explorer = document.querySelector('#site-explorer');
+  if (initialRootLanding && explorer) explorer.style.setProperty('display', 'none', 'important');
+  scene.manager.setGraphState({ rootLanding: initialRootLanding }, { reason: 'root-landing-bootstrap' });
+
   const modeIs = mode => context => context.mode === mode;
-  const overview = modeIs('overview');
+  const rootLanding = context => context.mode === 'overview' && context.rootLanding === true;
+  const graphScene = context => !rootLanding(context);
   const work = modeIs('work');
   const atlas = modeIs('atlas');
 
-  /* Structural wrapper for the two root identity objects. It is intentionally
-     not a new content object; it lets SceneManager own the existing hero shell
-     while copy and portrait remain independently declared scene objects. */
   scene.registry.register({
     id: 'root-identity-shell',
     selector: '.hero',
-    visible: overview,
+    visible: rootLanding,
     placement: 'identity-shell',
     enter: 'root-shell-in',
     exit: 'root-shell-out',
@@ -27,7 +96,7 @@
     id: 'root-profile-copy',
     selector: '.hero-copy',
     managedVisibility: false,
-    visible: overview,
+    visible: rootLanding,
     anchorNodeId: 'stepan-chrast',
     placement: 'identity-copy',
     enter: 'from-left',
@@ -39,7 +108,7 @@
         exit: 'to-left'
       },
       mobile: {
-        placement: 'identity-copy-upper',
+        placement: 'identity-copy-centre',
         enter: 'fade-up',
         exit: 'fade-left'
       }
@@ -50,7 +119,7 @@
     id: 'portrait',
     selector: '.hero-visual.profile-identity',
     managedVisibility: false,
-    visible: overview,
+    visible: rootLanding,
     anchorNodeId: 'stepan-chrast',
     placement: 'identity-portrait',
     enter: 'from-right',
@@ -62,10 +131,55 @@
         exit: 'to-right'
       },
       mobile: {
-        placement: 'identity-portrait-upper-right',
+        placement: 'identity-portrait-top',
         enter: 'fade-scale',
         exit: 'fade-right'
       }
+    }
+  });
+
+  scene.registry.register({
+    id: 'root-activate-control',
+    selector: '[data-root-activate]',
+    managedVisibility: false,
+    visible: rootLanding,
+    anchorNodeId: 'stepan-chrast',
+    placement: 'root-primary-action',
+    enter: 'root-affordance-in',
+    exit: 'root-affordance-out',
+    variants: {
+      desktop: { placement: 'root-primary-action' },
+      mobile: { placement: 'root-primary-action-centre' }
+    }
+  });
+
+  scene.registry.register({
+    id: 'root-atlas-affordance',
+    selector: '.root-atlas-affordance',
+    managedVisibility: false,
+    visible: rootLanding,
+    anchorNodeId: 'stepan-chrast',
+    placement: 'root-secondary-action',
+    enter: 'utility-up',
+    exit: 'utility-down',
+    variants: {
+      desktop: { placement: 'root-secondary-action' },
+      mobile: { placement: 'root-secondary-action-centre' }
+    }
+  });
+
+  scene.registry.register({
+    id: 'profile-graph-stage',
+    selector: '#site-explorer',
+    managedVisibility: false,
+    visible: graphScene,
+    anchorNodeId: 'stepan-chrast',
+    placement: 'graph-stage',
+    enter: 'graph-unfold',
+    exit: 'graph-fold',
+    variants: {
+      desktop: { placement: 'graph-stage-desktop' },
+      mobile: { placement: 'graph-stage-mobile' }
     }
   });
 
@@ -113,10 +227,7 @@
     }
   });
 
-  /* The legacy renderer still owns the exact open/close timing in Phase 1.
-     SceneManager nevertheless owns its scene identity, placement, responsive
-     variant and lifecycle metadata. Full visibility ownership can move here
-     once the generic detail behaviour is replaced by richer scene objects. */
+  /* The current renderer still owns exact detail open/close timing. */
   scene.registry.register({
     id: 'detail-panel',
     selector: '#site-detail-panel',
@@ -139,5 +250,13 @@
     }
   });
 
-  scene.manager.scheduleRefresh('initial-definitions');
+  scene.manager.scheduleRefresh('phase2-root-definitions');
+
+  if (!document.querySelector('script[data-profile-root-landing]')) {
+    const script = document.createElement('script');
+    script.src = 'root-landing.js';
+    script.async = false;
+    script.dataset.profileRootLanding = 'true';
+    document.head.appendChild(script);
+  }
 })();

@@ -28,10 +28,12 @@ jobs:
           node --check scene-system.js
           node --check scene-definitions.js
           node --check scene-legacy-bridge.js
+          node --check root-landing.js
           node --check phase0-stability.js
           node --check tests/phase0.spec.js
           node --check tests/phase0-breakpoint.spec.js
           node --check tests/phase1-scene.spec.js
+          node --check tests/phase2-root-landing.spec.js
 
       - name: Install Playwright test runner
         run: npm install --no-save @playwright/test@1.55.0

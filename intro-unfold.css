@@ -1,0 +1,149 @@
+/* ========================================================================== 
+   Automatic first-session Atlas unfold
+   ========================================================================== */
+
+/* A much stronger central identity label while the Atlas is the full-screen
+   object. The node itself remains the same graph node used by every later stage. */
+.profile-intro-overlay[data-stage="atlas"]
+.site-graph-node[data-intro-tier="root"] .site-graph-label{
+  font-size:18.5px!important;
+  font-weight:860!important;
+  letter-spacing:-.018em!important;
+  stroke-width:5.5px!important;
+  paint-order:stroke!important;
+}
+.profile-intro-overlay.is-auto-unfolding[data-auto-unfold-stage="root"]
+.site-graph-node[data-intro-tier="root"] .site-graph-label{
+  font-size:20.5px!important;
+}
+
+/* The root-only opening beat has three irregular rotating traces. */
+.profile-intro-root-orbit{
+  fill:none;
+  stroke:var(--teal);
+  pointer-events:none;
+  transform-box:fill-box;
+  transform-origin:center;
+  opacity:.82;
+  transition:opacity .34s ease;
+}
+.profile-intro-root-orbit circle{
+  fill:none;
+  vector-effect:non-scaling-stroke;
+  transform-box:fill-box;
+  transform-origin:center;
+}
+.profile-intro-root-orbit .is-a{
+  stroke-width:1.35;
+  opacity:.8;
+  animation:intro-root-orbit-a 5.8s linear infinite;
+}
+.profile-intro-root-orbit .is-b{
+  stroke:var(--brown);
+  stroke-width:1.05;
+  opacity:.48;
+  animation:intro-root-orbit-b 8.2s linear infinite reverse;
+}
+.profile-intro-root-orbit .is-c{
+  stroke-width:.8;
+  opacity:.34;
+  animation:intro-root-orbit-c 11s linear infinite;
+}
+@keyframes intro-root-orbit-a{to{transform:rotate(360deg)}}
+@keyframes intro-root-orbit-b{to{transform:rotate(360deg)}}
+@keyframes intro-root-orbit-c{to{transform:rotate(360deg)}}
+
+/* The existing Enter control is not available until the automatic graph growth
+   is complete. It materialises around the same real root afterwards. */
+.profile-intro-overlay.is-auto-unfolding .profile-intro-enter{
+  opacity:0!important;
+  pointer-events:none!important;
+  transform:translate(-50%,-50%) scale(.78)!important;
+}
+.profile-intro-overlay.is-auto-unfold-complete .profile-intro-enter{
+  width:170px!important;
+  height:170px!important;
+}
+.profile-intro-overlay.is-auto-unfold-complete .profile-intro-enter>span{
+  top:-68px!important;
+  padding:9px 14px 8px!important;
+  font-size:16px!important;
+  font-weight:880!important;
+  letter-spacing:.12em!important;
+  box-shadow:0 7px 22px color-mix(in srgb,var(--ink) 9%,transparent)!important;
+}
+.profile-intro-overlay.is-auto-unfold-complete .profile-intro-enter::before{
+  inset:4px!important;
+  border-width:1.9px!important;
+}
+.profile-intro-overlay.is-auto-unfold-complete .profile-intro-enter::after{
+  inset:-16px!important;
+  border-width:2.5px!important;
+  border-style:dashed!important;
+  border-color:color-mix(in srgb,var(--teal) 48%,transparent)!important;
+  animation:intro-gateway-orbit 12s linear infinite;
+}
+@keyframes intro-gateway-orbit{to{transform:rotate(360deg)}}
+
+/* Hover grows the ring without letting it catch the action label above it. */
+.profile-intro-overlay.is-auto-unfold-complete .profile-intro-enter:hover,
+.profile-intro-overlay.is-auto-unfold-complete .profile-intro-enter:focus-visible,
+.profile-intro-overlay.is-auto-unfold-complete.is-enter-active .profile-intro-enter{
+  transform:translate(-50%,-50%) scale(1.035)!important;
+}
+.profile-intro-overlay.is-auto-unfold-complete .profile-intro-enter:hover::after,
+.profile-intro-overlay.is-auto-unfold-complete .profile-intro-enter:focus-visible::after,
+.profile-intro-overlay.is-auto-unfold-complete.is-enter-active .profile-intro-enter::after{
+  transform:rotate(18deg) scale(1.12)!important;
+  animation-duration:7.2s;
+}
+.profile-intro-overlay.is-auto-unfold-complete .profile-intro-enter:hover>span,
+.profile-intro-overlay.is-auto-unfold-complete .profile-intro-enter:focus-visible>span,
+.profile-intro-overlay.is-auto-unfold-complete.is-enter-active .profile-intro-enter>span{
+  transform:translateX(-50%) translateY(-3px) scale(1.035)!important;
+}
+
+/* Keep enough empty visual territory immediately around the central gateway. */
+.profile-intro-overlay.is-auto-unfold-complete[data-stage="atlas"]
+.site-graph-node[data-intro-tier="section"] .site-graph-label{
+  font-weight:800!important;
+}
+
+.profile-intro-overlay.is-gateway-revealed .profile-intro-enter{
+  animation:intro-gateway-arrive .52s cubic-bezier(.16,.76,.18,1) both;
+}
+@keyframes intro-gateway-arrive{
+  from{opacity:0;transform:translate(-50%,-50%) scale(.72)}
+  72%{opacity:1;transform:translate(-50%,-50%) scale(1.045)}
+  to{opacity:1;transform:translate(-50%,-50%) scale(1)}
+}
+
+@media(max-width:900px){
+  .profile-intro-overlay[data-stage="atlas"]
+  .site-graph-node[data-intro-tier="root"] .site-graph-label{
+    font-size:15.5px!important;
+    stroke-width:5px!important;
+  }
+  .profile-intro-overlay.is-auto-unfolding[data-auto-unfold-stage="root"]
+  .site-graph-node[data-intro-tier="root"] .site-graph-label{font-size:17px!important}
+  .profile-intro-overlay.is-auto-unfold-complete .profile-intro-enter{
+    width:126px!important;
+    height:126px!important;
+  }
+  .profile-intro-overlay.is-auto-unfold-complete .profile-intro-enter>span{
+    top:-46px!important;
+    padding:6px 9px!important;
+    font-size:11.5px!important;
+  }
+  .profile-intro-overlay.is-auto-unfold-complete .profile-intro-enter::after{inset:-11px!important}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .profile-intro-root-orbit circle,
+  .profile-intro-overlay.is-auto-unfold-complete .profile-intro-enter::after{
+    animation:none!important
+  }
+  .profile-intro-overlay.is-gateway-revealed .profile-intro-enter{
+    animation-duration:.16s!important
+  }
+}

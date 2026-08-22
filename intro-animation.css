@@ -1,0 +1,168 @@
+/* ========================================================================== 
+   Phase 3 — Atlas condensation intro
+   ========================================================================== */
+
+html[data-profile-intro="pending"] body > .site-header,
+html[data-profile-intro="pending"] body > .profile-app,
+html[data-profile-intro="pending"] body > footer,
+html[data-profile-intro="running"] body > .site-header,
+html[data-profile-intro="running"] body > .profile-app,
+html[data-profile-intro="running"] body > footer{
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+
+html[data-profile-intro="handoff"] body > .site-header,
+html[data-profile-intro="handoff"] body > .profile-app,
+html[data-profile-intro="handoff"] body > footer{
+  opacity:1;
+  visibility:visible;
+  transition:opacity .38s cubic-bezier(.2,.72,.2,1);
+}
+
+.profile-intro-overlay{
+  position:fixed;
+  z-index:1000;
+  inset:0;
+  overflow:hidden;
+  background:var(--paper);
+  opacity:0;
+  transition:opacity .22s ease;
+  touch-action:none;
+}
+
+.profile-intro-overlay.is-ready{opacity:1}
+.profile-intro-overlay.is-handoff{opacity:0;transition-duration:.38s}
+.profile-intro-overlay.is-skipping{opacity:0;transition-duration:.14s}
+
+.profile-intro-surface{
+  position:absolute;
+  inset:0;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+}
+
+.profile-intro-graph{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  overflow:visible!important;
+  pointer-events:none!important;
+  user-select:none!important;
+}
+
+.profile-intro-graph .site-graph-node,
+.profile-intro-graph .site-graph-edges path{
+  pointer-events:none!important;
+  transition:
+    opacity .48s cubic-bezier(.18,.72,.2,1),
+    filter .48s ease!important;
+}
+
+.profile-intro-graph .site-graph-label,
+.profile-intro-graph .site-graph-meta,
+.profile-intro-graph .site-graph-dot{
+  transition:
+    opacity .48s cubic-bezier(.18,.72,.2,1),
+    transform .48s cubic-bezier(.18,.72,.2,1),
+    fill .48s ease,
+    stroke .48s ease!important;
+}
+
+.profile-intro-overlay[data-stage="atlas"] [data-intro-tier]{opacity:1}
+
+.profile-intro-overlay[data-stage="territories"] [data-intro-tier="deep"]{opacity:.035!important}
+.profile-intro-overlay[data-stage="territories"] [data-intro-tier="cluster"]{opacity:.52!important}
+.profile-intro-overlay[data-stage="territories"] [data-intro-tier="section"],
+.profile-intro-overlay[data-stage="territories"] [data-intro-tier="root"]{opacity:1!important}
+.profile-intro-overlay[data-stage="territories"] .site-graph-node[data-intro-tier="section"] .site-graph-dot{
+  transform:scale(1.18)
+}
+.profile-intro-overlay[data-stage="territories"] .site-graph-node[data-intro-tier="section"] .site-graph-label{
+  font-weight:790
+}
+.profile-intro-overlay[data-stage="territories"] .site-graph-edges path[data-intro-tier="deep"]{opacity:.025!important}
+.profile-intro-overlay[data-stage="territories"] .site-graph-edges path[data-intro-tier="cluster"]{opacity:.14!important}
+.profile-intro-overlay[data-stage="territories"] .site-graph-edges path[data-intro-tier="section"]{opacity:.48!important}
+.profile-intro-overlay[data-stage="territories"] .site-graph-edges path.is-cross-link{opacity:.035!important}
+
+.profile-intro-overlay[data-stage="branches"] .site-graph-node[data-intro-tier="deep"],
+.profile-intro-overlay[data-stage="branches"] .site-graph-node[data-intro-tier="cluster"]{opacity:0!important}
+.profile-intro-overlay[data-stage="branches"] .site-graph-node[data-intro-tier="section"],
+.profile-intro-overlay[data-stage="branches"] .site-graph-node[data-intro-tier="root"]{opacity:1!important}
+.profile-intro-overlay[data-stage="branches"] .site-graph-edges path[data-intro-tier="deep"],
+.profile-intro-overlay[data-stage="branches"] .site-graph-edges path[data-intro-tier="cluster"]{opacity:0!important}
+.profile-intro-overlay[data-stage="branches"] .site-graph-edges path[data-intro-tier="section"]{opacity:.62!important}
+.profile-intro-overlay[data-stage="branches"] .site-graph-edges path.is-cross-link{opacity:0!important}
+
+.profile-intro-overlay[data-stage="root"] .site-graph-node:not([data-intro-tier="root"]),
+.profile-intro-overlay[data-stage="root"] .site-graph-edges path{
+  opacity:0!important
+}
+.profile-intro-overlay[data-stage="root"] .site-graph-node[data-intro-tier="root"]{opacity:1!important}
+.profile-intro-overlay[data-stage="root"] .site-graph-node[data-intro-tier="root"] .site-graph-dot{
+  transform:scale(1.55);
+  stroke:var(--teal)
+}
+.profile-intro-overlay[data-stage="root"] .site-graph-node[data-intro-tier="root"] .site-graph-label{
+  fill:var(--teal);
+  font-weight:800
+}
+
+.profile-intro-skip{
+  position:absolute;
+  z-index:3;
+  top:max(18px,env(safe-area-inset-top));
+  right:max(20px,env(safe-area-inset-right));
+  min-height:40px;
+  padding:0 3px 3px;
+  border:0;
+  border-bottom:1px solid color-mix(in srgb,var(--muted) 55%,transparent);
+  background:transparent;
+  color:var(--muted);
+  font:700 10px/1 var(--sans);
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  cursor:pointer;
+}
+.profile-intro-skip:hover,
+.profile-intro-skip:focus-visible{color:var(--teal);border-color:currentColor}
+
+.profile-intro-caption{
+  position:absolute;
+  z-index:2;
+  left:max(20px,env(safe-area-inset-left));
+  bottom:max(18px,env(safe-area-inset-bottom));
+  margin:0;
+  color:var(--muted);
+  font:700 9px/1.3 var(--sans);
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  opacity:.72;
+}
+
+@media(max-width:900px){
+  .profile-intro-overlay{inset:0}
+  .profile-intro-skip{top:max(12px,env(safe-area-inset-top));right:max(14px,env(safe-area-inset-right))}
+  .profile-intro-caption{left:max(14px,env(safe-area-inset-left));bottom:max(12px,env(safe-area-inset-bottom))}
+  .profile-intro-graph .site-graph-label{font-size:12px!important;stroke-width:4.5px!important}
+  .profile-intro-graph .site-graph-meta{font-size:8.8px!important}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .profile-intro-overlay,
+  .profile-intro-graph .site-graph-node,
+  .profile-intro-graph .site-graph-edges path,
+  .profile-intro-graph .site-graph-label,
+  .profile-intro-graph .site-graph-meta,
+  .profile-intro-graph .site-graph-dot,
+  html[data-profile-intro="handoff"] body > .site-header,
+  html[data-profile-intro="handoff"] body > .profile-app,
+  html[data-profile-intro="handoff"] body > footer{
+    transition-duration:.2s!important
+  }
+}

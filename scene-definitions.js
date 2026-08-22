@@ -100,6 +100,7 @@
   ensureStylesheet('intro-animation.css', 'data-profile-intro-style');
   ensureStylesheet('motion-polish.css', 'data-profile-motion-polish-style');
   ensureStylesheet('intro-unfold.css', 'data-profile-intro-unfold-style');
+  ensureStylesheet('intro-fixes-v3.css', 'data-profile-intro-fixes-v3-style');
   prepareRootLandingDom();
 
   document.body.dataset.rootLanding = initialRootLanding ? 'true' : 'false';
@@ -297,7 +298,8 @@
   };
 
   ensureScript('root-landing.js', 'data-profile-root-landing');
-  ensureScript('intro-animation.js', 'data-profile-intro-animation');
   ensureScript('motion-polish.js', 'data-profile-motion-polish');
+  ensureScript('intro-fixes-v3.js', 'data-profile-intro-fixes-v3');
+  ensureScript('intro-animation.js', 'data-profile-intro-animation');
   ensureScript('intro-unfold.js', 'data-profile-intro-unfold');
 })();

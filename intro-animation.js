@@ -5,7 +5,7 @@
   const profile = window.SITE_DATA?.profile || {};
   const rootId = graph?.rootId || 'stepan-chrast';
   const nodeMap = new Map((graph?.nodes || []).map(node => [node.id, node]));
-  const reducedMotion = Boolean(bootstrap.reducedMotion) || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reducedMotion = Boolean(window.__PROFILE_REDUCED_MOTION__) || Boolean(bootstrap.reducedMotion) || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const initialHash = bootstrap.initialHash ?? location.hash;
 
   const state = {
@@ -281,9 +281,21 @@
     if (reducedMotion) {
       document.documentElement.dataset.profileIntro = 'identity'; setStage('identity'); setViewBox(introSvg, targets.root); buildIdentityNode(); markSeen(); state.running = false; await wait(30); identityAnchor?.querySelector('button')?.focus?.({ preventScroll: true }); return true;
     }
-    setStage('territories'); await Promise.all([animateViewBox(introSvg, targets.territories, 820, id), animateNodeCollapse(introSvg, 'territories', 820, id)]); if (id !== runId || finalising) return false;
-    setStage('branches'); await Promise.all([animateViewBox(introSvg, targets.branches, 800, id), animateNodeCollapse(introSvg, 'branches', 800, id)]); if (id !== runId || finalising) return false;
-    setStage('root'); await Promise.all([animateViewBox(introSvg, targets.root, 900, id), animateNodeCollapse(introSvg, 'root', 900, id)]); if (id !== runId || finalising) return false;
+    setStage('territories');
+    await Promise.all([animateViewBox(introSvg, targets.territories, 820, id), animateNodeCollapse(introSvg, 'territories', 820, id)]);
+    if (id !== runId || finalising) return false;
+
+    // Branches is a settled-state contract: finish the physical collapse first,
+    // then expose the stage for one short readable beat before root convergence.
+    await Promise.all([animateViewBox(introSvg, targets.branches, 800, id), animateNodeCollapse(introSvg, 'branches', 800, id)]);
+    if (id !== runId || finalising) return false;
+    setStage('branches');
+    await wait(48);
+    if (id !== runId || finalising) return false;
+
+    setStage('root');
+    await Promise.all([animateViewBox(introSvg, targets.root, 900, id), animateNodeCollapse(introSvg, 'root', 900, id)]);
+    if (id !== runId || finalising) return false;
     buildIdentityNode(); document.documentElement.dataset.profileIntro = 'identity'; setStage('identity'); markSeen(); state.running = false; await wait(520); identityAnchor?.querySelector('button')?.focus?.({ preventScroll: true }); emit('identity-ready'); track('intro_condensed'); return true;
   }
 

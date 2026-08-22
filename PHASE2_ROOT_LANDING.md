@@ -50,7 +50,9 @@ The landing scene contains:
 - a primary root-node button labelled `Open profile map`;
 - a secondary `Explore Atlas` action.
 
-The previous hero-level `Explore profile -> Work` shortcut is removed from the landing composition because it competed with the new primary root interaction. Work remains accessible from the global navigation and after root expansion.
+The first-level global navigation (`Work`, `Knowledge`, `Experience`, `Education`, `About`, `Atlas`) and duplicate header utility links are hidden while the root landing is active. This is deliberate: the first action hierarchy should read as person/root first, profile branches second. The theme control remains available.
+
+The previous hero-level `Explore profile -> Work` shortcut is removed from the landing composition because it competed with the new primary root interaction. Work becomes available through the restored global navigation and through the expanded graph after root activation.
 
 ## Root activation
 
@@ -69,11 +71,12 @@ Activating the root:
 2. sets `rootLanding = false` through `SceneManager`;
 3. removes the explorer visibility guard;
 4. hides the identity shell through its declarative scene visibility;
-5. reveals the already prepared Overview graph;
-6. applies a short opacity-only unfold treatment to the root, branches and edges;
-7. asks the mobile runtime to repair/refit after reveal when it exists;
-8. moves keyboard focus to the real graph root when available;
-9. updates the graph live-region status.
+5. restores the global first-level navigation and header utilities;
+6. reveals the already prepared Overview graph;
+7. applies a short opacity-only unfold treatment to the root, branches and edges;
+8. asks the mobile runtime to repair/refit after reveal when it exists;
+9. moves keyboard focus to the real graph root when available;
+10. updates the graph live-region status.
 
 The unfold animation deliberately avoids CSS transforms on SVG graph nodes because node transforms are renderer-owned geometry.
 
@@ -93,7 +96,7 @@ returns to the expanded Overview graph rather than forcing the user through the 
 
 A full reload of `/#overview` starts at the landing state again. Session-only persistence belongs to the Phase 3 intro behaviour, not Phase 2.
 
-If the visitor enters through a deep link such as `/#knowledge`, the requested graph route opens directly and the root landing is not forced over it.
+If the visitor enters through a deep link such as `/#knowledge`, the requested graph route opens directly and the root landing is not forced over it. The normal global navigation remains available in that case.
 
 ## Atlas
 
@@ -127,12 +130,18 @@ In the root state:
 
 - portrait is centred near the top;
 - identity copy is centred below it;
-- links are visible rather than suppressed;
+- direct contact/profile links are visible rather than suppressed;
 - the root action is the primary control;
 - Atlas remains visually secondary;
-- the graph stage is absent.
+- the graph stage is absent;
+- the hamburger / first-level branch menu is hidden because those branches have not yet been unfolded.
 
-After root activation, the old 178 px Overview reservation for hero content is removed and the graph viewport returns to the normal 44 px top inset.
+After root activation:
+
+- the hamburger becomes available again;
+- the old 178 px Overview reservation for hero content is removed;
+- the graph viewport returns to the normal 44 px top inset;
+- `MobileProfileScene.repair()` is requested after reveal so a mobile runtime that booted while the explorer was hidden can refit against real viewport dimensions.
 
 The existing mobile graph runtime still owns projection and gestures.
 
@@ -144,7 +153,7 @@ The existing mobile graph runtime still owns projection and gestures.
 - Enter/Space work through native button activation;
 - after expansion, focus moves to the real graph root when available;
 - the graph live region announces that the first-level map has opened;
-- hidden first-level content is removed from the accessibility tree while the landing is active;
+- hidden first-level graph/navigation content is removed from the accessibility tree while the landing is active;
 - reduced motion preserves all information and interaction.
 
 ## Tests
@@ -152,16 +161,26 @@ The existing mobile graph runtime still owns projection and gestures.
 `tests/phase2-root-landing.spec.js` checks:
 
 - fresh Overview is a standalone root scene;
-- first-level graph nodes are not visible before activation;
+- first-level graph nodes and first-level header navigation are not visible before activation;
 - the primary root control is visible, enabled and labelled;
 - root activation reveals all five first-level branches without changing the `overview` route;
+- global navigation returns after activation;
 - returning to Overview after activation stays expanded;
 - Atlas can be opened directly from the secondary landing affordance;
 - deep links bypass the landing correctly;
 - mobile portrait contains portrait, intro, links and both root/Atlas affordances;
+- the mobile menu is hidden before unfold and restored after it;
 - mobile expanded Overview reclaims the graph viewport space.
 
-Phase 0 mobile tests were also updated so graph spread/camera assertions happen after root activation rather than assuming an immediately visible Overview graph.
+Phase 0 and Phase 1 browser tests were also updated so navigation and graph spread/camera assertions happen after root activation rather than assuming an immediately visible Overview graph.
+
+## Validation status
+
+The Phase 2 controller and Phase 2 Playwright test file pass local `node --check` syntax validation.
+
+The repository workflow includes syntax checks for the Phase 0, Phase 1 and Phase 2 runtime/test files and runs the full Playwright suite on pushes to `main`. The GitHub connector available in the current environment still does not expose a push-triggered Actions result, so a passing browser suite is not claimed here.
+
+The Phase 2 diff does not change the canonical `site-graph.js`, `graph-transitions-v6.js` or `mobile-app.js` implementations. Root landing behaviour is layered above them through scene state, declarations, CSS composition and the root controller.
 
 ## Deliberately deferred to Phase 3
 
@@ -181,16 +200,16 @@ The Phase 2 root unfold is intentionally simple. Phase 3 can now target a stable
 ## Acceptance mapping
 
 Roadmap: **page settles on standalone Štěpán Chrast root scene**  
-Implemented as `overview + rootLanding=true` with the graph stage guarded.
+Implemented as `overview + rootLanding=true` with the graph stage and first-level branch navigation guarded.
 
 Roadmap: **Click root -> expand first-level branches**  
-Implemented by `ProfileRootLanding.activate()` revealing the existing Overview graph.
+Implemented by `ProfileRootLanding.activate()` revealing the existing Overview graph and restoring first-level navigation.
 
 Roadmap: **portrait / intro / links / secondary Atlas affordance**  
 All present in the root scene; Atlas is separate from the primary root action.
 
 Roadmap: **obvious what to click**  
-The primary control is a labelled node-style button adjacent to the identity heading, with a larger visual hit target and focus/hover treatment.
+The primary control is a labelled node-style button adjacent to the identity heading, with a larger visual hit target and focus/hover treatment. Competing first-level branch navigation is absent until activation.
 
 Roadmap: **first-level graph does not appear until user activates root**  
 The explorer is display-guarded from bootstrap until root activation. Deep links are the explicit exception because the visitor requested a non-root route directly.

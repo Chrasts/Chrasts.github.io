@@ -26,6 +26,7 @@ test.describe('Phase 2 root landing — desktop', () => {
     await expect(page.locator('.root-node-trigger')).toBeEnabled();
     await expect(page.locator('.root-node-trigger')).toContainText('Open profile map');
     await expect(page.locator('.root-atlas-affordance')).toBeVisible();
+    await expect(page.locator('.root-atlas-affordance')).toBeEnabled();
     await expect(page.locator('#site-explorer')).toBeHidden();
     await expect(page.locator('#main-nav')).toBeHidden();
     await expect(page.locator('.header-utility').first()).toBeHidden();
@@ -105,7 +106,9 @@ test.describe('Phase 2 root landing — mobile portrait', () => {
     await expect(page.locator('.hero .intro')).toBeVisible();
     await expect(page.locator('.hero a[href^="mailto:"]')).toBeVisible();
     await expect(page.locator('.root-node-trigger')).toBeVisible();
+    await expect(page.locator('.root-node-trigger')).toBeEnabled();
     await expect(page.locator('.root-atlas-affordance')).toBeVisible();
+    await expect(page.locator('.root-atlas-affordance')).toBeEnabled();
     await expect(page.locator('#site-explorer')).toBeHidden();
     await expect(page.locator('.menu-button')).toBeHidden();
     await expect(page.locator('#main-nav')).toBeHidden();

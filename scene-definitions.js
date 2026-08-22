@@ -111,10 +111,15 @@
     }
   });
 
+  /* The legacy renderer still owns the exact open/close timing in Phase 1.
+     SceneManager nevertheless owns its scene identity, placement, responsive
+     variant and lifecycle metadata. Full visibility ownership can move here
+     once the generic detail behaviour is replaced by richer scene objects. */
   scene.registry.register({
     id: 'detail-panel',
     selector: '#site-detail-panel',
-    visible: ({ objectState }) => Boolean(objectState.visible),
+    managedVisibility: false,
+    visible: ({ element }) => !element.hidden || element.classList.contains('is-open'),
     placement: 'inspector',
     enter: 'inspector-in',
     exit: 'inspector-out',

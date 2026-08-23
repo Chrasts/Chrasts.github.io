@@ -5,12 +5,13 @@ This layer turns published portfolio artifacts into scene objects that live besi
 ## Ownership
 
 - `artifact-data.js` remains the canonical artifact manifest: identity, semantic type, source location, availability and graph anchors.
-- `artifact-scene-bindings.js` describes where an artifact experience appears: route targets, anchor nodes, scene recipe and placement side.
+- `artifact-scene-bindings.js` describes where an artifact experience appears: route targets, anchor nodes, scene recipe and preferred placement side.
 - `artifact-scene-recipes.js` owns reusable visual grammars and Ambient/Active selection state. A recipe must be generic enough to serve multiple real artifacts.
 - `artifact-scene-runtime.js` owns artifact-scene lifecycle, route visibility, graph tethering, hover/focus coupling and responsive scene registration. It also provides the existing viewer DOM surface used by Object Focus.
+- `scene-composer.js` owns effective root-level scene placement, occupancy, side resolution, stacking and viewport containment shared with other scene objects.
 - `object-focus-controller.js` owns deep Inspect lifecycle, media behavior, shared-element flight, interruption, focus restoration and owner invalidation.
 - `object-focus.css` owns the reusable deep-inspection presentation.
-- `artifact-scenes.css` and the object-emergence styles own ambient artifact presentation and motion.
+- `artifact-scenes.css`, `artifact-scenes-layout.css` and the object-emergence styles own ambient artifact presentation and internal object geometry.
 
 Do not copy file paths into scene bindings. Bindings reference artifact IDs and resolve paths through `ProfileArtifacts`.
 
@@ -55,7 +56,19 @@ A binding contains one or more targets:
 
 The same artifact scene can therefore appear from multiple semantic entry points. The CLP paper, for example, is reachable from both its Work project and the Congruence Lattice Problem knowledge node.
 
-Desktop `side` is contextual: Work artifacts normally occupy the left side because the existing project inspector uses the right side. Knowledge and About artifacts can use either side according to the current inspector lane. Mobile uses the shared mobile artifact placement.
+`side` is a preference, not an absolute coordinate. On desktop the Scene Composer resolves it against the other visible scene objects. A right-side inspector can therefore move a flexible right-preferred artifact to the left without an artifact-specific collision rule. Mobile uses the artifact scene's mobile variant.
+
+## Scene composition
+
+Artifact roots participate in the same composition system as semantic objects and the inspector.
+
+The composer decides only where the artifact scene root lives. Internal recipe geometry stays local:
+
+- a fan still owns the relative pose of its photographs
+- a diagram deck still owns the relation between its figures
+- a folio still owns its page and shadow geometry
+
+The retired `artifact-scene-layout-contract.js` no longer owns placement. `artifact-scene-layout-compat.js` exposes the old `ProfileArtifactSceneLayout` read/refresh surface temporarily, but delegates to `ProfileSceneComposer`.
 
 ## Graph coupling
 
@@ -82,8 +95,9 @@ The Phase 8 certificate stack uses a thin adapter: certificate selection remains
 2. Add a binding in `artifact-scene-bindings.js` using an existing recipe if possible.
 3. Add a new recipe only when at least 2–3 real artifacts require a genuinely different interaction grammar.
 4. Keep Ambient/Active selection in the recipe or scene owner and call Object Focus only for Inspect.
-5. Add a Playwright contract for the new interaction, not merely for DOM presence.
-6. Run `scripts/validate-artifact-scenes.mjs`.
+5. Express unusual root-level placement needs through the shared scene-composition contract rather than route-specific CSS.
+6. Add a Playwright contract for the new interaction, not merely for DOM presence.
+7. Run `scripts/validate-artifact-scenes.mjs`.
 
 ## Non-goals
 
@@ -91,5 +105,6 @@ The Phase 8 certificate stack uses a thin adapter: certificate selection remains
 - The artifact layer is not a bookmark manager.
 - Object Focus does not own graph routes or scene selection.
 - Deep inspection is not a replacement for scene-specific interaction.
+- Scene composition does not own internal recipe geometry.
 - Animations must not alter canonical graph geometry or create a second navigation state owner.
-- Scene composition remains a separate Phase D concern.
+- Camera-aware composition remains a separate Phase E concern.

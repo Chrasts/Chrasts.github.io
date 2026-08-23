@@ -145,7 +145,7 @@ test.describe('Structural transition motion polish', () => {
     await page.waitForFunction(() => document.body.classList.contains('is-v9-transitioning'));
     await page.waitForSelector('#site-graph .v9-transition-overlay .site-graph-node[data-node-id="knowledge"] .site-graph-label[data-motion-label="true"]', { timeout: 2_500 });
 
-    const label = page.locator('#site-graph .v9-transition-overlay .site-graph-node[data-node-id="knowledge"] .site-graph-label');
+    const label = page.locator('#site-graph .v9-transition-overlay .site-graph-node[data-node-id="knowledge"] .site-graph-label[data-motion-label="true"]');
     const delta = await label.evaluate(element => ({
       dx: Number(element.dataset.motionTargetDx),
       dy: Number(element.dataset.motionTargetDy),

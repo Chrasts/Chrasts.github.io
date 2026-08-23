@@ -21,9 +21,6 @@
     ? earlyIntroState === 'pending'
     : initialRootLanding && storageAvailable && !introSeen;
 
-  /* An explicit deep link takes precedence over the cinematic intro. Treat that
-     entry as the current session's visit so a later refresh of Overview does not
-     unexpectedly insert an intro after the visitor has already explored content. */
   if (!initialRootLanding && storageAvailable && !introSeen) {
     try { sessionStorage.setItem('profileIntroSeen', 'true'); } catch (_) {}
   }
@@ -52,9 +49,7 @@
     const intro = copy?.querySelector('.intro');
     const links = copy?.querySelector('.inline-links');
     if (!copy || !heading || !intro || !links) return;
-
     intro.id ||= 'root-intro';
-
     const oldPrimary = links.querySelector('[data-route="work"]');
     if (oldPrimary?.textContent?.trim().toLowerCase().includes('explore')) oldPrimary.remove();
 
@@ -66,15 +61,12 @@
       trigger.disabled = true;
       trigger.setAttribute('aria-describedby', intro.id);
       trigger.setAttribute('aria-label', 'Open the profile map');
-
       const dot = document.createElement('span');
       dot.className = 'root-node-dot';
       dot.setAttribute('aria-hidden', 'true');
-
       const action = document.createElement('span');
       action.className = 'root-node-action';
       action.textContent = 'Open profile map';
-
       trigger.append(dot, action);
       heading.after(trigger);
     }
@@ -86,7 +78,6 @@
       atlas.dataset.route = 'atlas';
       atlas.disabled = true;
       atlas.setAttribute('aria-label', 'Explore Atlas, the full profile graph');
-
       const label = document.createElement('span');
       label.textContent = 'Explore Atlas';
       const note = document.createElement('small');
@@ -115,174 +106,29 @@
   const work = modeIs('work');
   const atlas = modeIs('atlas');
 
-  scene.registry.register({
-    id: 'root-identity-shell',
-    selector: '.hero',
-    visible: rootLanding,
-    placement: 'identity-shell',
-    enter: 'root-shell-in',
-    exit: 'root-shell-out',
-    variants: {
-      desktop: { placement: 'identity-shell-desktop' },
-      mobile: { placement: 'identity-shell-mobile' }
-    }
-  });
+  scene.registry.register({ id: 'root-identity-shell', selector: '.hero', visible: rootLanding, placement: 'identity-shell', enter: 'root-shell-in', exit: 'root-shell-out', variants: { desktop: { placement: 'identity-shell-desktop' }, mobile: { placement: 'identity-shell-mobile' } } });
+  scene.registry.register({ id: 'root-profile-copy', selector: '.hero-copy', managedVisibility: false, visible: rootLanding, anchorNodeId: 'stepan-chrast', placement: 'identity-copy', enter: 'from-left', exit: 'to-left', variants: { desktop: { placement: 'identity-copy-left', enter: 'from-left', exit: 'to-left' }, mobile: { placement: 'identity-copy-centre', enter: 'fade-up', exit: 'fade-left' } } });
+  scene.registry.register({ id: 'portrait', selector: '.hero-visual.profile-identity', managedVisibility: false, visible: rootLanding, anchorNodeId: 'stepan-chrast', placement: 'identity-portrait', enter: 'from-right', exit: 'to-right', variants: { desktop: { placement: 'identity-portrait-right', enter: 'from-right', exit: 'to-right' }, mobile: { placement: 'identity-portrait-top', enter: 'fade-scale', exit: 'fade-right' } } });
+  scene.registry.register({ id: 'root-activate-control', selector: '[data-root-activate]', managedVisibility: false, visible: rootLanding, anchorNodeId: 'stepan-chrast', placement: 'root-primary-action', enter: 'root-affordance-in', exit: 'root-affordance-out', variants: { desktop: { placement: 'root-primary-action' }, mobile: { placement: 'root-primary-action-centre' } } });
+  scene.registry.register({ id: 'root-atlas-affordance', selector: '.root-atlas-affordance', managedVisibility: false, visible: rootLanding, anchorNodeId: 'stepan-chrast', placement: 'root-secondary-action', enter: 'utility-up', exit: 'utility-down', variants: { desktop: { placement: 'root-secondary-action' }, mobile: { placement: 'root-secondary-action-centre' } } });
+  scene.registry.register({ id: 'profile-graph-stage', selector: '#site-explorer', managedVisibility: false, visible: graphScene, anchorNodeId: 'stepan-chrast', placement: 'graph-stage', enter: 'graph-unfold', exit: 'graph-fold', variants: { desktop: { placement: 'graph-stage-desktop' }, mobile: { placement: 'graph-stage-mobile' } } });
+  scene.registry.register({ id: 'work-controls', selector: '.integrated-work-controls', visible: work, anchorNodeId: 'work', placement: 'work-rails', enter: 'rails-in', exit: 'rails-out', variants: { desktop: { placement: 'work-side-rails', enter: 'rails-in', exit: 'rails-out' }, mobile: { placement: 'control-sheet', enter: 'sheet-in', exit: 'sheet-out' } } });
+  scene.registry.register({ id: 'atlas-controls', selector: '#atlas-controls', visible: atlas, anchorNodeId: 'stepan-chrast', placement: 'atlas-toolbar', enter: 'utility-up', exit: 'utility-down', variants: { desktop: { placement: 'atlas-bottom-toolbar', enter: 'utility-up', exit: 'utility-down' }, mobile: { placement: 'control-sheet', enter: 'sheet-in', exit: 'sheet-out' } } });
 
-  scene.registry.register({
-    id: 'root-profile-copy',
-    selector: '.hero-copy',
-    managedVisibility: false,
-    visible: rootLanding,
-    anchorNodeId: 'stepan-chrast',
-    placement: 'identity-copy',
-    enter: 'from-left',
-    exit: 'to-left',
-    variants: {
-      desktop: {
-        placement: 'identity-copy-left',
-        enter: 'from-left',
-        exit: 'to-left'
-      },
-      mobile: {
-        placement: 'identity-copy-centre',
-        enter: 'fade-up',
-        exit: 'fade-left'
-      }
-    }
-  });
-
-  scene.registry.register({
-    id: 'portrait',
-    selector: '.hero-visual.profile-identity',
-    managedVisibility: false,
-    visible: rootLanding,
-    anchorNodeId: 'stepan-chrast',
-    placement: 'identity-portrait',
-    enter: 'from-right',
-    exit: 'to-right',
-    variants: {
-      desktop: {
-        placement: 'identity-portrait-right',
-        enter: 'from-right',
-        exit: 'to-right'
-      },
-      mobile: {
-        placement: 'identity-portrait-top',
-        enter: 'fade-scale',
-        exit: 'fade-right'
-      }
-    }
-  });
-
-  scene.registry.register({
-    id: 'root-activate-control',
-    selector: '[data-root-activate]',
-    managedVisibility: false,
-    visible: rootLanding,
-    anchorNodeId: 'stepan-chrast',
-    placement: 'root-primary-action',
-    enter: 'root-affordance-in',
-    exit: 'root-affordance-out',
-    variants: {
-      desktop: { placement: 'root-primary-action' },
-      mobile: { placement: 'root-primary-action-centre' }
-    }
-  });
-
-  scene.registry.register({
-    id: 'root-atlas-affordance',
-    selector: '.root-atlas-affordance',
-    managedVisibility: false,
-    visible: rootLanding,
-    anchorNodeId: 'stepan-chrast',
-    placement: 'root-secondary-action',
-    enter: 'utility-up',
-    exit: 'utility-down',
-    variants: {
-      desktop: { placement: 'root-secondary-action' },
-      mobile: { placement: 'root-secondary-action-centre' }
-    }
-  });
-
-  scene.registry.register({
-    id: 'profile-graph-stage',
-    selector: '#site-explorer',
-    managedVisibility: false,
-    visible: graphScene,
-    anchorNodeId: 'stepan-chrast',
-    placement: 'graph-stage',
-    enter: 'graph-unfold',
-    exit: 'graph-fold',
-    variants: {
-      desktop: { placement: 'graph-stage-desktop' },
-      mobile: { placement: 'graph-stage-mobile' }
-    }
-  });
-
-  scene.registry.register({
-    id: 'work-controls',
-    selector: '.integrated-work-controls',
-    visible: work,
-    anchorNodeId: 'work',
-    placement: 'work-rails',
-    enter: 'rails-in',
-    exit: 'rails-out',
-    variants: {
-      desktop: {
-        placement: 'work-side-rails',
-        enter: 'rails-in',
-        exit: 'rails-out'
-      },
-      mobile: {
-        placement: 'control-sheet',
-        enter: 'sheet-in',
-        exit: 'sheet-out'
-      }
-    }
-  });
-
-  scene.registry.register({
-    id: 'atlas-controls',
-    selector: '#atlas-controls',
-    visible: atlas,
-    anchorNodeId: 'stepan-chrast',
-    placement: 'atlas-toolbar',
-    enter: 'utility-up',
-    exit: 'utility-down',
-    variants: {
-      desktop: {
-        placement: 'atlas-bottom-toolbar',
-        enter: 'utility-up',
-        exit: 'utility-down'
-      },
-      mobile: {
-        placement: 'control-sheet',
-        enter: 'sheet-in',
-        exit: 'sheet-out'
-      }
-    }
-  });
-
-  /* The current renderer still owns exact detail open/close timing. */
   scene.registry.register({
     id: 'detail-panel',
     selector: '#site-detail-panel',
     managedVisibility: false,
     visible: ({ element }) => !element.hidden || element.classList.contains('is-open'),
     placement: 'inspector',
+    composition: context => context.variant === 'mobile'
+      ? { zone: 'mobile-tray', role: 'inspector' }
+      : { zone: 'inspector', side: 'right', preferredSide: 'right', allowFlip: false, blocksSideStage: true, priority: 1000, role: 'inspector' },
     enter: 'inspector-in',
     exit: 'inspector-out',
     variants: {
-      desktop: {
-        placement: 'inspector-right',
-        enter: 'inspector-in',
-        exit: 'inspector-out'
-      },
-      mobile: {
-        placement: 'detail-sheet',
-        enter: 'sheet-in',
-        exit: 'sheet-out'
-      }
+      desktop: { placement: 'inspector-right', enter: 'inspector-in', exit: 'inspector-out' },
+      mobile: { placement: 'detail-sheet', enter: 'sheet-in', exit: 'sheet-out' }
     }
   });
 
@@ -297,6 +143,7 @@
     document.head.appendChild(script);
   };
 
+  ensureScript('scene-composer.js', 'data-profile-scene-composer');
   ensureScript('phase7-pointer-hotfix.js', 'data-profile-atlas-pointer-hotfix');
   ensureScript('global-geometry-ownership.js', 'data-profile-global-geometry-ownership');
   ensureScript('root-landing.js', 'data-profile-root-landing');

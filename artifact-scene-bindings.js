@@ -13,13 +13,7 @@
       title: 'Simulation Credence',
       description: 'The paper is treated as a scene object: inspect the real PDF, then return to the graph without leaving the route.',
       artifactIds: ['simulation-credence-coursework'],
-      targets: [
-        {
-          route: 'education/charles-university/coursework/simulation-credence',
-          anchorNodeId: 'simulation-credence',
-          side: 'left'
-        }
-      ]
+      targets: [{ route: 'education/charles-university/coursework/simulation-credence', anchorNodeId: 'simulation-credence', side: 'left' }]
     },
     {
       id: 'clp-survey-paper',
@@ -62,9 +56,7 @@
       variant: 'fan',
       title: 'Hedgehog house photographs',
       artifactIds: ['hedgehog-house-outside', 'hedgehog-house-inside', 'hedgehog-house-visitor'],
-      targets: [
-        { route: 'about/woodworking/hedgehog-house', anchorNodeId: 'hedgehog-house', side: 'right' }
-      ]
+      targets: [{ route: 'about/woodworking/hedgehog-house', anchorNodeId: 'hedgehog-house', side: 'right' }]
     }
   ];
 
@@ -90,13 +82,14 @@
   };
 
   if (typeof document !== 'undefined') {
-    ensureScript('artifact-scene-layout-contract.js', 'data-profile-artifact-layout-contract');
+    ensureScript('artifact-scene-layout-compat.js', 'data-profile-artifact-layout-compat');
     ensureStyle('portfolio-refinements.css', 'data-profile-refinements-style');
     ensureScript('portfolio-refinements.js', 'data-profile-refinements');
     ensureStyle('object-focus.css', 'data-profile-object-focus-style');
     ensureStyle('phase-b-object-emergence.css', 'data-profile-phase-b-object-emergence-style');
     ensureStyle('phase-b-object-emergence-refinements.css', 'data-profile-phase-b-object-emergence-refinements');
     ensureScript('object-focus-controller.js', 'data-profile-object-focus');
+    ensureScript('object-focus-fit.js', 'data-profile-object-focus-fit');
     ensureScript('object-focus-certificate-adapter.js', 'data-profile-object-focus-certificate-adapter');
     ensureScript('node-detail-dismiss.js', 'data-profile-node-detail-dismiss');
   }

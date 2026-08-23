@@ -11,15 +11,15 @@ const waitArtifactScenes = async page => {
     window.ProfileArtifactSceneLayout &&
     window.ProfileArtifacts &&
     window.ProfileRefinements &&
-    window.ProfilePhaseBObjectFocus &&
-    window.ProfilePhaseBNodeDismiss
+    window.ProfileObjectFocus &&
+    window.ProfileNodeDetailDismiss
   ));
   await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
   await page.waitForTimeout(180);
 };
 
 const waitSettled = async page => {
-  await page.waitForFunction(() => window.ProfilePhaseBObjectFocus?.snapshot().phase === 'settled');
+  await page.waitForFunction(() => window.ProfileObjectFocus?.snapshot().phase === 'settled');
 };
 
 test('artifact architecture boots with reusable folio and deck recipes', async ({ page }) => {
@@ -33,7 +33,7 @@ test('artifact architecture boots with reusable folio and deck recipes', async (
   expect(await page.locator('[data-artifact-scene]').count()).toBe(5);
 });
 
-test('Simulation Credence is a document object and opens as a clean PDF stage', async ({ page }) => {
+test('Simulation Credence is a document object and opens in Object Focus', async ({ page }) => {
   await bypassIntro(page);
   await page.goto('/#education/charles-university/coursework/simulation-credence');
   await waitArtifactScenes(page);
@@ -46,8 +46,9 @@ test('Simulation Credence is a document object and opens as a clean PDF stage', 
 
   await folio.locator('[data-artifact-focus="simulation-credence-coursework"]').click();
   const viewer = page.locator('.artifact-focus-viewer');
+  await waitSettled(page);
   await expect(viewer).toBeVisible();
-  await expect(viewer).toHaveAttribute('data-media-stage', 'phase-b');
+  await expect(viewer).toHaveAttribute('data-media-stage', 'object-focus');
   await expect(viewer).toHaveAttribute('data-media-kind', 'pdf');
   await expect(viewer.locator('.artifact-focus-title')).toContainText('Simulation Credence and Its Consequences');
   await expect(viewer.locator('.artifact-focus-media iframe')).toHaveAttribute('src', /simulation-credence-and-its-consequences\.pdf#toolbar=0&navpanes=0&scrollbar=0&view=FitH/);
@@ -150,30 +151,28 @@ test('Modal Logic Lab screenshots preserve the full intrinsic image instead of c
   expect(Math.abs(geometry.ratio - geometry.intrinsic)).toBeLessThan(.03);
 });
 
-test('Hedgehog House is a centered loose photo fan with direct-manipulation focus and graph tether', async ({ page }) => {
+test('Hedgehog House photo fan keeps every rotated photograph inside the viewport', async ({ page }) => {
   await bypassIntro(page);
+  await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/#about/woodworking/hedgehog-house');
   await waitArtifactScenes(page);
 
   const gallery = page.locator('[data-artifact-scene="hedgehog-house-gallery"]');
+  const cards = gallery.locator('.artifact-deck-card');
   await expect(gallery).toBeVisible();
-  await expect(gallery.locator('.artifact-object-header')).toHaveCount(0);
-  await expect(gallery.locator('.artifact-deck-card')).toHaveCount(3);
+  await expect(cards).toHaveCount(3);
   await expect(gallery.locator('img')).toHaveCount(3);
 
-  const placement = await gallery.evaluate(element => {
-    const scene = element.closest('.scene-canvas').getBoundingClientRect();
+  const boxes = await cards.evaluateAll(elements => elements.map(element => {
     const box = element.getBoundingClientRect();
-    return {
-      left: box.left - scene.left,
-      right: scene.right - box.right,
-      width: box.width,
-      sceneWidth: scene.width
-    };
+    return { left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width };
+  }));
+  boxes.forEach(box => {
+    expect(box.left).toBeGreaterThanOrEqual(20);
+    expect(box.right).toBeLessThanOrEqual(1260);
+    expect(box.top).toBeGreaterThanOrEqual(60);
+    expect(box.bottom).toBeLessThanOrEqual(790);
   });
-  expect(placement.left).toBeGreaterThan(60);
-  expect(placement.right).toBeGreaterThan(40);
-  expect(placement.width).toBeGreaterThan(520);
 
   const outside = gallery.locator('.artifact-deck-card[data-artifact-id="hedgehog-house-outside"]');
   await expect(outside.locator('.artifact-deck-preview')).toHaveAttribute('data-media-aspect-ready', 'true', { timeout: 5000 });
@@ -191,8 +190,7 @@ test('Hedgehog House is a centered loose photo fan with direct-manipulation focu
   await expect(viewer).toBeVisible();
   await expect(viewer).toHaveAttribute('data-media-kind', 'image');
   await expect(viewer).toHaveAttribute('data-shared-focus-artifact', 'hedgehog-house-outside');
-  await expect(viewer.locator('.artifact-focus-media img.phase-b-panzoom-media')).toHaveAttribute('src', /assets\/images\/about\/woodworking\/hedgehog-house\/outside\.png$/);
-  await expect(viewer.locator('[data-artifact-image-zoom="true"]')).toHaveCount(0);
+  await expect(viewer.locator('.artifact-focus-media img.object-focus-panzoom-media')).toHaveAttribute('src', /assets\/images\/about\/woodworking\/hedgehog-house\/outside\.png$/);
   await page.keyboard.press('Escape');
   await expect(viewer).toBeHidden();
 });
@@ -237,7 +235,7 @@ test('clicking elsewhere on the node view dismisses the open inspector like its 
 
   await page.locator('.site-graph-heading').click({ force: true });
   await expect(detail).toBeHidden();
-  expect((await page.evaluate(() => window.ProfilePhaseBNodeDismiss.snapshot())).open).toBe(false);
+  expect((await page.evaluate(() => window.ProfileNodeDetailDismiss.snapshot())).open).toBe(false);
 });
 
 test('artifact object clusters remain viewport-contained on mobile without a tray window', async ({ page }) => {

@@ -76,4 +76,15 @@
 
   deepFreeze(bindings);
   window.ARTIFACT_SCENE_BINDINGS = bindings;
+
+  // The layout contract is deliberately separate from data and rendering. This
+  // small bootstrap keeps it coupled to the artifact-scene bundle without
+  // putting collision or card-layout logic into the graph renderer.
+  if (typeof document !== 'undefined' && !document.querySelector('script[data-profile-artifact-layout-contract]')) {
+    const script = document.createElement('script');
+    script.src = 'artifact-scene-layout-contract.js';
+    script.async = false;
+    script.setAttribute('data-profile-artifact-layout-contract', 'true');
+    document.head.appendChild(script);
+  }
 })();

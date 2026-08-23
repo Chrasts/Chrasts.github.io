@@ -1,0 +1,69 @@
+/* Artifact scene spatial contract.
+   Rich scene objects keep their own lane and overlapping media remains directly selectable. */
+.artifact-deck-card .artifact-media-preview,
+.artifact-deck-card .artifact-media-preview *,
+.artifact-deck-card .artifact-deck-label{
+  pointer-events:none
+}
+
+@media (min-width:901px){
+  /* Two-card diagrams: keep each card in its own stable slot even when active. */
+  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card{
+    width:210px;
+    height:205px
+  }
+  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(1){
+    transform:translateX(calc(-50% - 65px)) translateY(8px) rotate(-3deg)
+  }
+  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(2){
+    transform:translateX(calc(-50% + 65px)) translateY(18px) rotate(3deg)
+  }
+  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(1).is-active{
+    transform:translateX(calc(-50% - 65px)) translateY(-4px) rotate(0deg)
+  }
+  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(2).is-active{
+    transform:translateX(calc(-50% + 65px)) translateY(-4px) rotate(0deg)
+  }
+
+  /* Screen pairs use the same direct-selection contract, with a wider spread. */
+  .artifact-object[data-artifact-variant="screens"] .artifact-deck-card{
+    width:250px;
+    height:202px
+  }
+  .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(1){
+    transform:translateX(calc(-50% - 73px)) translateY(7px) rotate(-2.2deg)
+  }
+  .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(2){
+    transform:translateX(calc(-50% + 73px)) translateY(18px) rotate(2.2deg)
+  }
+  .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(1).is-active{
+    transform:translateX(calc(-50% - 73px)) translateY(-4px) rotate(0deg)
+  }
+  .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(2).is-active{
+    transform:translateX(calc(-50% + 73px)) translateY(-4px) rotate(0deg)
+  }
+
+  /* Three-photo fans expose the centre of every card; active means lift, not recenter. */
+  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card{
+    width:160px;
+    height:190px
+  }
+  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(1){
+    transform:translateX(calc(-50% - 102px)) translateY(22px) rotate(-8deg)
+  }
+  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(2){
+    transform:translateX(-50%) translateY(3px) rotate(0deg)
+  }
+  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(3){
+    transform:translateX(calc(-50% + 102px)) translateY(22px) rotate(8deg)
+  }
+  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(1).is-active{
+    transform:translateX(calc(-50% - 102px)) translateY(-7px) rotate(0deg)
+  }
+  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(2).is-active{
+    transform:translateX(-50%) translateY(-7px) rotate(0deg)
+  }
+  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(3).is-active{
+    transform:translateX(calc(-50% + 102px)) translateY(-7px) rotate(0deg)
+  }
+}

@@ -6,9 +6,13 @@ const bypassIntro = async page => {
 };
 
 const waitArtifactScenes = async page => {
-  await page.waitForFunction(() => Boolean(window.ProfileArtifactScenes && window.ProfileArtifacts));
+  await page.waitForFunction(() => Boolean(
+    window.ProfileArtifactScenes &&
+    window.ProfileArtifactSceneLayout &&
+    window.ProfileArtifacts
+  ));
   await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
-  await page.waitForTimeout(150);
+  await page.waitForTimeout(180);
 };
 
 test('artifact architecture boots with reusable folio and deck recipes', async ({ page }) => {
@@ -41,7 +45,7 @@ test('Simulation Credence opens as a live PDF folio with an immersive focus view
   await expect(viewer).toBeHidden();
 });
 
-test('thesis diagrams form an interactive two-item specimen deck', async ({ page }) => {
+test('thesis diagrams keep every specimen directly selectable while the active card stays in its slot', async ({ page }) => {
   await bypassIntro(page);
   await page.goto('/#work/project/bachelor-thesis');
   await waitArtifactScenes(page);
@@ -51,10 +55,16 @@ test('thesis diagrams form an interactive two-item specimen deck', async ({ page
   await expect(deck.locator('.artifact-deck-card')).toHaveCount(2);
   await expect(deck).toHaveAttribute('data-active-artifact-id', 'bachelor-thesis-lattice-of-bands');
 
+  const first = deck.locator('.artifact-deck-card[data-artifact-id="bachelor-thesis-lattice-of-bands"]');
   const second = deck.locator('.artifact-deck-card[data-artifact-id="bachelor-thesis-rol-non-a"]');
+
   await second.click();
   await expect(second).toHaveClass(/is-active/);
   await expect(deck).toHaveAttribute('data-active-artifact-id', 'bachelor-thesis-rol-non-a');
+
+  await first.click();
+  await expect(first).toHaveClass(/is-active/);
+  await expect(deck).toHaveAttribute('data-active-artifact-id', 'bachelor-thesis-lattice-of-bands');
 });
 
 test('Modal Logic Lab screenshots are a screen deck with a live-app affordance', async ({ page }) => {
@@ -69,7 +79,7 @@ test('Modal Logic Lab screenshots are a screen deck with a live-app affordance',
   await expect(deck.locator('a[data-support-artifact-id="modal-logic-lab-live"]')).toHaveAttribute('href', 'https://chrasts.github.io/Modal_Logic_Educational_Game/');
 });
 
-test('Hedgehog House uses a photo fan and visually tethers back to its graph node', async ({ page }) => {
+test('Hedgehog House avoids the inspector lane and visually tethers back to its graph node', async ({ page }) => {
   await bypassIntro(page);
   await page.goto('/#about/woodworking/hedgehog-house');
   await waitArtifactScenes(page);
@@ -78,6 +88,18 @@ test('Hedgehog House uses a photo fan and visually tethers back to its graph nod
   await expect(gallery).toBeVisible();
   await expect(gallery.locator('.artifact-deck-card')).toHaveCount(3);
   await expect(gallery.locator('img')).toHaveCount(3);
+  await expect(gallery).toHaveAttribute('data-artifact-preferred-side', 'right');
+  await expect(gallery).toHaveAttribute('data-artifact-side', 'left');
+  await expect(gallery).toHaveAttribute('data-artifact-collision-adjusted', 'inspector-lane');
+
+  const intersectsInspector = await gallery.evaluate(element => {
+    const detail = document.querySelector('#site-detail-panel');
+    if (!detail || detail.hidden) return false;
+    const a = element.getBoundingClientRect();
+    const b = detail.getBoundingClientRect();
+    return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
+  });
+  expect(intersectsInspector).toBe(false);
 
   await gallery.hover();
   await expect(page.locator('#site-graph .site-graph-node[data-node-id="hedgehog-house"].is-artifact-linked')).toHaveCount(1);

@@ -122,5 +122,12 @@
       script.setAttribute('data-profile-phase-b-object-focus', 'true');
       document.head.appendChild(script);
     }
+    if (!document.querySelector('script[data-profile-phase-b-object-focus-compat]')) {
+      const script = document.createElement('script');
+      script.src = 'phase-b-object-focus-compat.js';
+      script.async = false;
+      script.setAttribute('data-profile-phase-b-object-focus-compat', 'true');
+      document.head.appendChild(script);
+    }
   }
 })();

@@ -91,6 +91,7 @@
 
   if (typeof document !== 'undefined') {
     ensureScript('scene-composer.js', 'data-profile-scene-composer');
+    ensureScript('artifact-scene-layout-compat.js', 'data-profile-artifact-layout-compat');
     ensureStyle('portfolio-refinements.css', 'data-profile-refinements-style');
     ensureScript('portfolio-refinements.js', 'data-profile-refinements');
     ensureStyle('object-focus.css', 'data-profile-object-focus-style');

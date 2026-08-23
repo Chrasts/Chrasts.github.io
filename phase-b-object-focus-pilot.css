@@ -1,5 +1,20 @@
 /* Phase B object-focus pilots. Kept separate until Phase C extracts the stable contract. */
 
+/* The existing full-app viewport rule hides the page footer with a broad `footer`
+   selector. Artifact control rows also use semantic footer elements, so restore
+   only those scene controls here. */
+body[data-root-landing="false"] footer.artifact-focus-footer,
+body[data-root-landing="false"] footer.artifact-deck-footer{
+  display:flex!important
+}
+
+/* The focus viewer lives inside the artifact layer. Lift that owner above the
+   graph route bar while inspecting instead of escalating individual children. */
+body.has-artifact-focus .artifact-scene-layer{
+  z-index:80!important;
+  overflow:visible
+}
+
 .artifact-focus-viewer.is-shared-focus-pending .artifact-focus-media > *,
 .artifact-focus-viewer.is-shared-focus-closing .artifact-focus-media > *{
   opacity:0!important
@@ -77,6 +92,15 @@ body.has-phase-b-object-focus .artifact-tether-layer{
 }
 
 @media(max-width:900px){
+  /* Mobile detail sheets currently share the lower scene area. During the two
+     media pilots the artifact tray is the primary touch target, so keep its
+     scene layer above the detail sheet without changing desktop composition. */
+  body[data-graph-route="about/woodworking/hedgehog-house"] .artifact-scene-layer,
+  body[data-graph-route="work/project/bachelor-thesis"] .artifact-scene-layer,
+  body[data-graph-route="knowledge/logic-math/mathematical-logic/algebraic-logic/quantum-logic-arol"] .artifact-scene-layer{
+    z-index:40!important
+  }
+
   .phase-b-focus-flight{
     box-shadow:0 18px 56px color-mix(in srgb,var(--ink) 24%,transparent)
   }

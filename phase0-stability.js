@@ -152,16 +152,15 @@
     if (title !== 'Atlas' || !hasGraphGlyph) button.replaceChildren(...atlasMarkup());
   };
 
-  /* Synchronous label-write canonicalisation. graph-transitions-v6 and Phase 7
-     used to disagree about which side of ancestor nodes labels belonged on;
-     that disagreement produced a visible one-frame snap after the overlay was
-     removed. Normalising the write itself means the animation's destination is
-     already the same pose that remains after handoff. */
+  /* The base/live renderer owns the settled label pose. Transition overlay
+     labels are explicitly excluded: graph-transitions-v6 must be free to keep
+     the source pose and animate/crossfade it into that live destination. */
   const nativeSetAttribute = Element.prototype.setAttribute;
   let labelWriteGuard = false;
 
   const canonicalLabelPose = label => {
     if (!label?.classList?.contains('site-graph-label')) return null;
+    if (label.closest?.('.v9-transition-overlay')) return null;
     const nodeElement = label.closest?.('.site-graph-node[data-node-id]');
     if (!nodeElement) return null;
     const mode = document.body?.dataset.graphMode;
@@ -197,18 +196,20 @@
 
   const syncCanonicalLabels = () => {
     if (labelWriteGuard) return;
-    document.querySelectorAll('#site-graph .site-graph-node[data-node-id] .site-graph-label').forEach(label => {
-      const pose = canonicalLabelPose(label);
-      if (!pose) return;
-      labelWriteGuard = true;
-      try {
-        nativeSetAttribute.call(label, 'text-anchor', pose.anchor);
-        nativeSetAttribute.call(label, 'x', pose.x);
-        nativeSetAttribute.call(label, 'y', pose.y);
-      } finally {
-        labelWriteGuard = false;
-      }
-    });
+    [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id] .site-graph-label')]
+      .filter(label => !label.closest('.v9-transition-overlay'))
+      .forEach(label => {
+        const pose = canonicalLabelPose(label);
+        if (!pose) return;
+        labelWriteGuard = true;
+        try {
+          nativeSetAttribute.call(label, 'text-anchor', pose.anchor);
+          nativeSetAttribute.call(label, 'x', pose.x);
+          nativeSetAttribute.call(label, 'y', pose.y);
+        } finally {
+          labelWriteGuard = false;
+        }
+      });
   };
 
   const syncCleanup = () => {

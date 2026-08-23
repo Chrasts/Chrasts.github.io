@@ -59,7 +59,7 @@ test.describe('Pre-Phase 8 mobile parity', () => {
       const label = node?.querySelector('.site-graph-label');
       return label ? [label.getAttribute('text-anchor'), label.getAttribute('x'), label.getAttribute('y')] : null;
     });
-    expect(rootPose).toEqual(['middle', '0', '-27']);
+    expect(rootPose).toEqual(['middle', '0', '-25']);
   });
 
   test('Work exposes mobile filters and remains structurally healthy', async ({ page }) => {

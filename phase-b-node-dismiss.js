@@ -5,7 +5,21 @@
   if (!detail) return;
 
   const isOpen = () => !detail.hidden && detail.classList.contains('is-open');
-  const dismiss = () => detail.querySelector('.detail-close')?.click();
+  const dismiss = () => {
+    if (!isOpen()) return;
+
+    /* The graph's Escape path is the canonical deactivation path: in Atlas it
+       clears the pinned node and highlight before closing the inspector, while
+       local focus views simply close the detail. Reusing that path prevents the
+       selected-node synchroniser from immediately reopening an outside-dismissed
+       inspector. */
+    document.dispatchEvent(new KeyboardEvent('keydown', {
+      key: 'Escape',
+      code: 'Escape',
+      bubbles: true,
+      cancelable: true
+    }));
+  };
 
   document.addEventListener('pointerdown', event => {
     if (!isOpen()) return;

@@ -21,6 +21,10 @@
   transition:fill .16s ease,stroke .16s ease,stroke-width .16s ease
 }
 .work-project-anchor-v5 text{pointer-events:none}
+/* Concept nodes sit in the renderer's upper SVG layer. Their oversized invisible
+   pointer circles used to mask the project hitboxes painted below them. Keep the
+   visible concept dot clickable, but let project hitboxes own the surrounding area. */
+body[data-graph-mode="work"] .site-graph-node.is-work-concept .site-graph-hit{pointer-events:none}
 .work-project-anchor-v5:hover .work-project-hitbox-v5,
 .work-project-anchor-v5:focus-visible .work-project-hitbox-v5,
 .work-project-anchor-v5.is-work-strong .work-project-hitbox-v5,
@@ -79,10 +83,32 @@
 .work-concept-project-arrow{color:var(--teal);font-size:16px;line-height:1}
 
 /* Image focus uses the original asset and can switch from fitted overview to
-   native 1:1 pixels for high-resolution inspection. */
-.artifact-focus-media.is-image{overflow:auto;cursor:zoom-in}
+   native 1:1 pixels for high-resolution inspection. The viewer must own the
+   modal layer and its media row must never grow over the action footer. */
+.artifact-focus-viewer{z-index:100!important}
+.artifact-focus-shell{min-height:0;overflow:hidden}
+.artifact-focus-media.is-image{
+  min-width:0;
+  min-height:0;
+  overflow:hidden;
+  cursor:zoom-in
+}
+.artifact-focus-media.is-image img{
+  width:100%;
+  height:100%;
+  max-width:100%;
+  max-height:100%;
+  object-fit:contain
+}
+.artifact-focus-footer{
+  position:relative;
+  z-index:2;
+  flex-wrap:wrap;
+  background:var(--paper)
+}
 .artifact-focus-media.is-image.is-native-scale{
   display:block;
+  overflow:auto;
   padding:18px;
   cursor:zoom-out
 }

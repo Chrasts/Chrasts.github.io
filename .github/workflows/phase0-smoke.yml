@@ -1,4 +1,4 @@
-name: Portfolio browser smoke
+name: Portfolio browser checks
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  smoke:
+  browser-checks:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -21,7 +21,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Check JavaScript syntax
         run: |
@@ -44,18 +44,7 @@ jobs:
           node --check cross-link-travel-v2.js
           node --check phase0-stability.js
           node --check playwright.config.js
-          node --check tests/phase0.spec.js
-          node --check tests/phase0-breakpoint.spec.js
-          node --check tests/phase1-scene.spec.js
-          node --check tests/phase2-root-landing.spec.js
-          node --check tests/phase3-intro.spec.js
-          node --check tests/phase6-cross-link.spec.js
-          node --check tests/radial-geometry.spec.js
-          node --check tests/motion-polish.spec.js
-          node --check tests/intro-unfold.spec.js
-          node --check tests/interaction-consolidation.spec.js
-          node --check tests/phase7-atlas.spec.js
-          node --check tests/phase7-atlas-drag.spec.js
+          for file in tests/*.spec.js; do node --check "$file"; done
 
       - name: Install Playwright test runner
         run: npm install --no-save @playwright/test@1.55.0
@@ -76,7 +65,21 @@ jobs:
           cat /tmp/portfolio-http.log
           exit 1
 
-      - name: Run portfolio smoke tests
+      - name: Run current-contract smoke tests
+        if: github.event_name == 'push'
+        run: |
+          npx playwright test \
+            tests/phase0.spec.js \
+            tests/phase0-breakpoint.spec.js \
+            tests/phase2-root-landing.spec.js \
+            tests/phase6-cross-link.spec.js \
+            tests/radial-geometry.spec.js \
+            tests/interaction-consolidation.spec.js \
+            tests/phase7-atlas-drag.spec.js \
+            tests/pre-phase8-mobile.spec.js
+
+      - name: Run full regression suite
+        if: github.event_name != 'push'
         run: npx playwright test
 
       - name: Upload Playwright diagnostics

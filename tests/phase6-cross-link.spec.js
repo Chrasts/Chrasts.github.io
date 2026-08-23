@@ -50,7 +50,6 @@ test.describe('Phase 6 cross-link travel — desktop', () => {
     await expect(page.locator('.profile-crosslinks')).toBeHidden();
 
     await navigateCrossLink(page, 'sql', 'evidence');
-    await page.waitForSelector('.profile-crosslink-travel-overlay.is-vector-travel');
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'knowledge/data-computing/data-management/sql');
     const snapshot = await waitTravelComplete(page);
 

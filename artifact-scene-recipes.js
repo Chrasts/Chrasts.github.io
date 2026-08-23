@@ -9,6 +9,17 @@
     return node;
   };
 
+  const normaliseRoute = value =>
+    (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
+
+  const bindingOwnsCurrentRoute = binding => {
+    const route = normaliseRoute(document.body.dataset.graphRoute || location.hash);
+    return (binding.targets || []).some(target => {
+      const value = normaliseRoute(target.route);
+      return target.match === 'prefix' ? route === value || route.startsWith(`${value}/`) : route === value;
+    });
+  };
+
   const sceneRoot = binding => {
     const root = element('section', `artifact-object artifact-recipe-${binding.recipe}`);
     root.dataset.artifactScene = binding.id;
@@ -121,7 +132,7 @@
         source,
         artifact,
         owner: 'artifact',
-        ownerValid: () => root.isConnected && !root.hidden && root.dataset.sceneVisible !== 'false'
+        ownerValid: () => root.isConnected && bindingOwnsCurrentRoute(binding)
       });
     }
     return env.openFocus(binding, artifact.id);

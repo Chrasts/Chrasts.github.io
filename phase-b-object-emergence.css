@@ -1,0 +1,412 @@
+/* Phase B object emergence grammar.
+   Artifact scenes are spatial object clusters, not information panels. */
+
+.artifact-scene-layer{
+  overflow:visible
+}
+
+.artifact-object,
+.artifact-object[data-scene-placement="artifact-contextual"],
+.artifact-object[data-scene-placement="artifact-mobile-tray"]{
+  box-sizing:border-box;
+  width:min(520px,44%);
+  height:330px;
+  max-height:none;
+  padding:0;
+  border:0;
+  background:transparent;
+  box-shadow:none;
+  backdrop-filter:none;
+  overflow:visible;
+  pointer-events:none
+}
+
+.artifact-object:hover,
+.artifact-object.is-node-linked{
+  box-shadow:none
+}
+
+.artifact-object-header,
+.artifact-object-description,
+.artifact-deck-footer,
+.artifact-actions{
+  display:none!important
+}
+
+.artifact-emergence-field,
+.artifact-folio-stage{
+  position:absolute;
+  inset:0;
+  margin:0;
+  height:auto;
+  perspective:1200px;
+  pointer-events:none
+}
+
+.artifact-emergence-field::before{
+  content:"";
+  position:absolute;
+  inset:17% 10% 12% 8%;
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 18% 28%,color-mix(in srgb,var(--teal) 20%,transparent) 0 1px,transparent 2px),
+    radial-gradient(circle at 78% 62%,color-mix(in srgb,var(--brown) 22%,transparent) 0 1px,transparent 2px),
+    radial-gradient(circle at 54% 14%,color-mix(in srgb,var(--ink) 13%,transparent) 0 1px,transparent 2px);
+  opacity:.65;
+  pointer-events:none
+}
+
+.artifact-deck-card,
+.artifact-folio-page{
+  appearance:none;
+  border:0;
+  padding:0;
+  color:var(--ink);
+  background:var(--paper);
+  text-align:left;
+  pointer-events:auto;
+  cursor:pointer;
+  outline:none;
+  will-change:transform,filter,opacity;
+  transform-origin:center center;
+  transition:
+    transform .32s cubic-bezier(.18,.84,.22,1),
+    filter .24s ease,
+    box-shadow .28s ease,
+    opacity .18s ease
+}
+
+.artifact-deck-card:focus-visible,
+.artifact-folio-page:focus-visible{
+  outline:2px solid color-mix(in srgb,var(--teal) 78%,transparent);
+  outline-offset:5px
+}
+
+.artifact-deck-preview{
+  position:absolute;
+  inset:0;
+  overflow:hidden;
+  border:0;
+  background:transparent
+}
+
+.artifact-deck-preview img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  transform:scale(1.001);
+  transition:transform .45s cubic-bezier(.18,.84,.22,1),filter .25s ease
+}
+
+.artifact-deck-preview.is-pdf iframe{
+  filter:saturate(.9) contrast(1.02)
+}
+
+.artifact-deck-card:hover .artifact-deck-preview img,
+.artifact-deck-card:focus-visible .artifact-deck-preview img,
+.artifact-deck-card.is-active .artifact-deck-preview img{
+  transform:scale(1.025)
+}
+
+.artifact-object-tag{
+  position:absolute;
+  z-index:4;
+  left:50%;
+  bottom:-25px;
+  max-width:calc(100% - 12px);
+  padding:5px 8px;
+  border:1px solid color-mix(in srgb,var(--line) 70%,transparent);
+  border-radius:999px;
+  background:color-mix(in srgb,var(--paper) 88%,transparent);
+  color:var(--ink);
+  box-shadow:0 7px 22px color-mix(in srgb,var(--ink) 10%,transparent);
+  backdrop-filter:blur(9px);
+  font:720 7.5px/1.15 var(--sans);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  opacity:0;
+  pointer-events:none;
+  transform:translate(-50%,-4px) scale(.96);
+  transition:opacity .16s ease,transform .2s cubic-bezier(.18,.84,.22,1)
+}
+
+.artifact-deck-card:hover .artifact-object-tag,
+.artifact-deck-card:focus-visible .artifact-object-tag,
+.artifact-deck-card.is-active .artifact-object-tag{
+  opacity:.94;
+  transform:translate(-50%,0) scale(1)
+}
+
+.artifact-orbit-actions{
+  position:absolute;
+  z-index:12;
+  right:4px;
+  bottom:1px;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  pointer-events:auto
+}
+
+.artifact-orbit-action{
+  display:inline-flex;
+  align-items:center;
+  min-height:28px;
+  padding:0 9px;
+  border:1px solid color-mix(in srgb,var(--line) 72%,transparent);
+  border-radius:999px;
+  background:color-mix(in srgb,var(--paper) 82%,transparent);
+  color:var(--teal);
+  box-shadow:0 7px 20px color-mix(in srgb,var(--ink) 8%,transparent);
+  backdrop-filter:blur(10px);
+  font:760 7.5px/1 var(--sans);
+  text-decoration:none;
+  transition:transform .18s ease,border-color .18s ease,background .18s ease
+}
+
+.artifact-orbit-action:hover,
+.artifact-orbit-action:focus-visible{
+  border-color:color-mix(in srgb,var(--teal) 58%,var(--line));
+  background:color-mix(in srgb,var(--paper) 95%,transparent);
+  transform:translateY(-2px)
+}
+
+/* Diagram constellation: two independent paper-like specimens. */
+.artifact-object[data-artifact-variant="diagram"]{
+  width:min(500px,43%);
+  height:330px
+}
+
+.artifact-object[data-artifact-variant="diagram"] .artifact-deck-card{
+  position:absolute;
+  width:220px;
+  height:208px;
+  border:1px solid color-mix(in srgb,var(--line) 58%,transparent);
+  border-radius:3px;
+  box-shadow:0 15px 40px color-mix(in srgb,var(--ink) 15%,transparent)
+}
+
+.artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(1){
+  left:9px;
+  top:18px;
+  transform:rotate(-5.5deg) translate3d(0,0,0)
+}
+
+.artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(2){
+  right:8px;
+  top:92px;
+  transform:rotate(4deg) translate3d(0,0,0)
+}
+
+.artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(1):is(:hover,:focus-visible,.is-active){
+  z-index:7;
+  transform:rotate(-1deg) translate3d(7px,-12px,0) scale(1.035);
+  box-shadow:0 25px 58px color-mix(in srgb,var(--ink) 20%,transparent)
+}
+
+.artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(2):is(:hover,:focus-visible,.is-active){
+  z-index:7;
+  transform:rotate(.7deg) translate3d(-7px,-12px,0) scale(1.035);
+  box-shadow:0 25px 58px color-mix(in srgb,var(--ink) 20%,transparent)
+}
+
+/* Screenshot pair: staggered floating screens, with the live app as a satellite action. */
+.artifact-object[data-artifact-variant="screens"]{
+  width:min(540px,46%);
+  height:325px
+}
+
+.artifact-object[data-artifact-variant="screens"] .artifact-deck-card{
+  position:absolute;
+  width:305px;
+  height:194px;
+  overflow:hidden;
+  border:1px solid color-mix(in srgb,var(--line) 62%,transparent);
+  border-radius:8px;
+  box-shadow:0 17px 44px color-mix(in srgb,var(--ink) 16%,transparent)
+}
+
+.artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(1){
+  left:0;
+  top:18px;
+  transform:rotate(-3deg)
+}
+
+.artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(2){
+  right:0;
+  top:104px;
+  transform:rotate(2.5deg)
+}
+
+.artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(1):is(:hover,:focus-visible,.is-active){
+  z-index:7;
+  transform:rotate(-.5deg) translate3d(7px,-10px,0) scale(1.025)
+}
+
+.artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(2):is(:hover,:focus-visible,.is-active){
+  z-index:7;
+  transform:rotate(.5deg) translate3d(-7px,-10px,0) scale(1.025)
+}
+
+/* Photo fan: three loose photographs rather than a gallery window. */
+.artifact-object[data-artifact-variant="fan"]{
+  width:min(500px,44%);
+  height:315px
+}
+
+.artifact-object[data-artifact-variant="fan"] .artifact-deck-card{
+  position:absolute;
+  width:166px;
+  height:198px;
+  overflow:hidden;
+  border:5px solid color-mix(in srgb,var(--paper) 96%,transparent);
+  border-bottom-width:20px;
+  background:var(--paper);
+  box-shadow:0 16px 38px color-mix(in srgb,var(--ink) 16%,transparent)
+}
+
+.artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(1){left:8px;top:74px;transform:rotate(-9deg)}
+.artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(2){left:50%;top:24px;transform:translateX(-50%) rotate(-.5deg)}
+.artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(3){right:8px;top:76px;transform:rotate(8.5deg)}
+
+.artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(1):is(:hover,:focus-visible,.is-active){z-index:8;transform:rotate(-2deg) translate3d(8px,-14px,0) scale(1.045)}
+.artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(2):is(:hover,:focus-visible,.is-active){z-index:8;transform:translateX(-50%) rotate(0deg) translateY(-14px) scale(1.045)}
+.artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(3):is(:hover,:focus-visible,.is-active){z-index:8;transform:rotate(2deg) translate3d(-8px,-14px,0) scale(1.045)}
+
+.artifact-object[data-artifact-variant="fan"] .artifact-deck-preview{
+  inset:0 0 -15px
+}
+
+/* A document is itself the object. Text remains only when it belongs to the document. */
+.artifact-document-object{
+  width:min(400px,35%);
+  height:310px
+}
+
+.artifact-document-object .artifact-folio-shadow-page,
+.artifact-document-object .artifact-folio-page{
+  position:absolute;
+  width:min(292px,78%);
+  height:238px;
+  left:50%;
+  top:24px;
+  border:1px solid color-mix(in srgb,var(--line) 66%,transparent);
+  background:var(--paper)
+}
+
+.artifact-document-object .artifact-folio-shadow-page{
+  transform:translateX(-46%) rotate(5deg);
+  opacity:.38;
+  box-shadow:0 12px 28px color-mix(in srgb,var(--ink) 10%,transparent)
+}
+
+.artifact-document-object .artifact-folio-page{
+  overflow:hidden;
+  transform:translateX(-53%) rotate(-3.2deg);
+  box-shadow:0 18px 46px color-mix(in srgb,var(--ink) 17%,transparent)
+}
+
+.artifact-document-object .artifact-folio-page:is(:hover,:focus-visible){
+  transform:translateX(-51%) rotate(-.7deg) translateY(-9px) scale(1.025);
+  box-shadow:0 26px 62px color-mix(in srgb,var(--ink) 21%,transparent)
+}
+
+.artifact-document-object .artifact-folio-caption{
+  grid-template-columns:1fr;
+  gap:3px;
+  min-height:52px;
+  padding:8px 10px;
+  pointer-events:none
+}
+
+.artifact-document-object .artifact-folio-summary{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis
+}
+
+/* Staggered emergence belongs to the objects themselves, not a containing window. */
+.artifact-object[data-scene-lifecycle="entering"]{
+  animation:none!important
+}
+
+.artifact-object[data-scene-lifecycle="entering"] .artifact-emergent-object{
+  animation:artifact-emergent-object-in .54s cubic-bezier(.16,.84,.2,1) both;
+  animation-delay:var(--artifact-emerge-delay,60ms)
+}
+
+@keyframes artifact-emergent-object-in{
+  0%{opacity:0;filter:blur(7px);scale:.74}
+  58%{opacity:1;filter:blur(0);scale:1.035}
+  100%{opacity:1;filter:blur(0);scale:1}
+}
+
+@media(max-width:900px){
+  .artifact-object[data-scene-placement="artifact-mobile-tray"]{
+    left:0!important;
+    right:0!important;
+    bottom:58px!important;
+    width:100%!important;
+    height:215px;
+    max-height:none;
+    padding:0!important;
+    overflow:visible!important;
+    background:transparent!important;
+    border:0!important;
+    box-shadow:none!important;
+    backdrop-filter:none!important
+  }
+
+  .artifact-emergence-field::before{display:none}
+  .artifact-orbit-actions{right:12px;bottom:-2px}
+  .artifact-orbit-action{min-height:30px;padding:0 10px;font-size:7px}
+
+  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card{
+    width:150px;
+    height:145px
+  }
+  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(1){left:16px;top:16px;transform:rotate(-4deg)}
+  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(2){right:16px;top:48px;transform:rotate(3deg)}
+
+  .artifact-object[data-artifact-variant="screens"] .artifact-deck-card{
+    width:205px;
+    height:130px
+  }
+  .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(1){left:10px;top:16px}
+  .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(2){right:10px;top:58px}
+
+  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card{
+    width:112px;
+    height:137px;
+    border-width:4px;
+    border-bottom-width:15px
+  }
+  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(1){left:12px;top:47px}
+  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(2){left:50%;top:17px}
+  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(3){right:12px;top:49px}
+
+  .artifact-document-object[data-scene-placement="artifact-mobile-tray"]{height:220px}
+  .artifact-document-object .artifact-folio-shadow-page,
+  .artifact-document-object .artifact-folio-page{
+    width:176px;
+    height:178px;
+    top:14px
+  }
+  .artifact-document-object .artifact-folio-caption{min-height:42px;padding:6px 8px}
+  .artifact-document-object .artifact-folio-summary{display:none}
+  .artifact-object-tag{bottom:-22px;font-size:7px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .artifact-deck-card,
+  .artifact-folio-page,
+  .artifact-deck-preview img,
+  .artifact-object-tag,
+  .artifact-orbit-action{
+    transition:none!important
+  }
+  .artifact-object[data-scene-lifecycle="entering"] .artifact-emergent-object{
+    animation:none!important
+  }
+}

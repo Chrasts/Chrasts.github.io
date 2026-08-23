@@ -6,9 +6,28 @@
 
   const isOpen = () => !detail.hidden;
   let pendingDismiss = 0;
+  let dispatchingCanonicalAtlasClear = false;
 
   const dismiss = () => {
     if (!isOpen()) return false;
+
+    if (document.body.dataset.graphMode === 'atlas') {
+      const map = document.querySelector('#site-graph .site-graph-svg');
+      if (map) {
+        dispatchingCanonicalAtlasClear = true;
+        try {
+          map.dispatchEvent(new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true,
+            view: window
+          }));
+        } finally {
+          dispatchingCanonicalAtlasClear = false;
+        }
+        return true;
+      }
+    }
+
     const close = detail.querySelector('.detail-close');
     if (!(close instanceof HTMLButtonElement)) return false;
     close.click();
@@ -16,16 +35,12 @@
   };
 
   document.addEventListener('click', event => {
-    if (!isOpen()) return;
+    if (dispatchingCanonicalAtlasClear || !isOpen()) return;
     const target = event.target;
     if (!(target instanceof Element)) return;
     if (detail.contains(target)) return;
     if (target.closest('#site-graph .site-graph-node')) return;
 
-    /* Capture guarantees the outside gesture is observed even when a scene
-       control stops bubbling. A timer, rather than a microtask, waits until the
-       complete click dispatch has finished so no later handler from the same
-       gesture can reopen the renderer-owned detail panel. */
     clearTimeout(pendingDismiss);
     pendingDismiss = setTimeout(() => {
       pendingDismiss = 0;

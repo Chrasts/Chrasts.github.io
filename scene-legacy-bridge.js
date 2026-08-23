@@ -33,9 +33,6 @@
     }, { reason });
   };
 
-  /* ----------------------------------------------------------------------
-     Camera adapters
-     ---------------------------------------------------------------------- */
   const svg = () => document.querySelector('#site-graph .site-graph-svg');
   const graphCamera = () => {
     const target = svg();
@@ -116,11 +113,6 @@
     zoomAt: (_point, factor) => factor >= 1
       ? clickAtlas('#atlas-zoom-in')
       : clickAtlas('#atlas-zoom-out'),
-    /* User-driven Atlas pan remains owned by site-graph.js. Do not emulate a
-       native pointer sequence here: synthetic pointers cannot safely satisfy
-       setPointerCapture and would make the abstraction less reliable than the
-       implementation it wraps. A direct programmatic pan adapter can replace
-       this once the Atlas camera state is exported by the renderer. */
     pan: () => false,
     transitionTo: () => false,
     serialize: readAtlasTransform
@@ -154,14 +146,6 @@
     serialize: readViewBox
   });
 
-  /* ----------------------------------------------------------------------
-     Transition bridge
-
-     graph-transitions-v6 remains the animation implementation in Phase 1.
-     This observer converts its established body-class lifecycle into formal
-     coordinator phases so new scene objects do not need to know about the
-     legacy overlay implementation.
-     ---------------------------------------------------------------------- */
   let transitionToken = null;
   let lastStableRoute = currentRoute();
   let commitFrame = 0;
@@ -232,8 +216,6 @@
     attributeFilter: ['class', 'data-graph-mode', 'data-graph-route']
   });
 
-  /* The detail panel remains visibility-compatible with the legacy renderer,
-     but its registry lifecycle is refreshed whenever that visibility changes. */
   const detail = document.querySelector('#site-detail-panel');
   if (detail) {
     const detailObserver = new MutationObserver(() => manager.refreshObject('detail-panel', { reason: 'detail-visibility' }));
@@ -255,5 +237,44 @@
   window.addEventListener('resize', () => manager.scheduleRefresh('resize'));
   window.addEventListener('load', () => manager.scheduleRefresh('load'), { once: true });
 
+  const ensureStylesheet = (href, marker) => {
+    if (document.querySelector(`link[${marker}]`)) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    link.setAttribute(marker, 'true');
+    document.head.appendChild(link);
+  };
+
+  const ensureScript = (src, marker, ready, done) => {
+    if (ready()) {
+      done();
+      return;
+    }
+    const existing = document.querySelector(`script[${marker}]`);
+    if (existing) {
+      existing.addEventListener('load', done, { once: true });
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = src;
+    script.async = false;
+    script.setAttribute(marker, 'true');
+    script.addEventListener('load', done, { once: true });
+    document.head.appendChild(script);
+  };
+
+  const bootPhase8 = () => {
+    ensureStylesheet('phase8-semantic-scenes.css', 'data-profile-phase8-style');
+    ensureScript('artifact-data.js', 'data-profile-artifact-data', () => Boolean(window.ProfileArtifacts), () => {
+      ensureScript('phase8-scene-data.js', 'data-profile-phase8-data', () => Boolean(window.PHASE8_SCENE_DATA), () => {
+        ensureScript('phase8-semantic-scenes.js', 'data-profile-phase8-scenes', () => Boolean(window.ProfilePhase8), () => {
+          manager.scheduleRefresh('phase8-bundle-ready');
+        });
+      });
+    });
+  };
+
   syncGraphState('legacy-bridge-boot');
+  bootPhase8();
 })();

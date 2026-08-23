@@ -80,6 +80,7 @@ jobs:
             tests/phase6-cross-link.spec.js \
             tests/radial-geometry.spec.js \
             tests/interaction-consolidation.spec.js \
+            tests/interaction-contracts.spec.js \
             tests/phase7-atlas-drag.spec.js \
             tests/pre-phase8-mobile.spec.js
 

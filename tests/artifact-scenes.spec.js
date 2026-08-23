@@ -233,7 +233,13 @@ test('clicking elsewhere on the node view dismisses the open inspector like its 
   await expect(detail).toBeVisible();
   await expect(detail.locator('.detail-close')).toBeVisible();
 
-  await page.locator('.site-graph-heading').click({ force: true });
+  const outsidePoint = { x: 760, y: 110 };
+  expect(await page.evaluate(({ x, y }) => {
+    const detail = document.querySelector('#site-detail-panel');
+    const target = document.elementFromPoint(x, y);
+    return Boolean(target && detail && !detail.contains(target));
+  }, outsidePoint)).toBe(true);
+  await page.mouse.click(outsidePoint.x, outsidePoint.y);
   await expect(detail).toBeHidden();
   expect((await page.evaluate(() => window.ProfileNodeDetailDismiss.snapshot())).open).toBe(false);
 });

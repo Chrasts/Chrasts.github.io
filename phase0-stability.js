@@ -189,6 +189,7 @@
   };
 
   let storedAtlasButtonMarkup = null;
+  const backButtonMarkup = '<span class="atlas-entry-glyph" aria-hidden="true" style="display:grid;place-items:center;font-size:24px">←</span><span class="atlas-entry-copy"><strong>Profile</strong></span>';
   const syncAtlasEntryButton = () => {
     const button = document.querySelector('.atlas-button');
     if (!button) return;
@@ -202,12 +203,13 @@
       return;
     }
 
-    if (button.dataset.prePhase8Back === 'true') return;
-    if (!storedAtlasButtonMarkup && button.classList.contains('atlas-entry-v7')) storedAtlasButtonMarkup = button.innerHTML;
+    if (!storedAtlasButtonMarkup && button.classList.contains('atlas-entry-v7') && button.dataset.prePhase8Back !== 'true') {
+      storedAtlasButtonMarkup = button.innerHTML;
+    }
     button.dataset.route = 'overview';
     button.dataset.prePhase8Back = 'true';
     button.setAttribute('aria-label', 'Back to profile');
-    button.innerHTML = '<span class="atlas-entry-glyph" aria-hidden="true" style="display:grid;place-items:center;font-size:24px">←</span><span class="atlas-entry-copy"><strong>Profile</strong></span>';
+    if (button.innerHTML !== backButtonMarkup) button.innerHTML = backButtonMarkup;
   };
 
   const repairOverviewTransitionRootLabel = () => {

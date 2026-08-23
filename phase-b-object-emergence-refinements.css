@@ -1,0 +1,40 @@
+/* Phase B object-emergence refinements.
+   Kept in the pilot layer until Phase C/D consolidate focus and composition. */
+
+/* Object names are contextual hints, not standing captions. The active object
+   can remain visually raised without keeping its label permanently visible. */
+.artifact-deck-card.is-active:not(:hover):not(:focus-visible) .artifact-object-tag{
+  opacity:0!important;
+  transform:translate(-50%,-4px) scale(.96)!important
+}
+
+@media(max-width:900px){
+  /* The graph canvas may use route-local offsets on mobile. Inspect is an app
+     stage, so anchor the viewer to the actual application viewport below the
+     persistent 54px header rather than inheriting those graph coordinates. */
+  body.has-artifact-focus .artifact-focus-viewer{
+    position:fixed!important;
+    top:54px!important;
+    right:0!important;
+    bottom:0!important;
+    left:0!important;
+    width:auto!important;
+    height:auto!important;
+    z-index:96!important
+  }
+
+  /* Route-specific artifact z-index rules are declared after the generic focus
+     lift in the earlier pilot stylesheet. Reassert focus ownership last so the
+     graph dock cannot sit on top of inspected media. */
+  body.has-artifact-focus .artifact-scene-layer{
+    z-index:96!important
+  }
+
+  body.has-artifact-focus .mobile-graph-dock,
+  body.has-artifact-focus .mobile-control-sheet,
+  body.has-artifact-focus .mobile-sheet-backdrop{
+    opacity:0!important;
+    visibility:hidden!important;
+    pointer-events:none!important
+  }
+}

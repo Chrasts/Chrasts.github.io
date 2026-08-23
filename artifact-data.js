@@ -1,4 +1,5 @@
 (() => {
+  const root = typeof window !== 'undefined' ? window : globalThis;
   const TYPES = Object.freeze([
     'document',
     'certificate',
@@ -50,10 +51,42 @@
       },
       availability: 'public',
       presentation: { preferredObject: 'interactive', openMode: 'new-tab' }
+    },
+    {
+      id: 'cambridge-b2-certificate',
+      type: 'certificate',
+      title: 'Cambridge English B2 First — Score 170',
+      anchorNodeIds: ['cert-cambridge-b2'],
+      availability: 'planned',
+      presentation: { preferredObject: 'document' }
+    },
+    {
+      id: 'ethics-ai-certificate',
+      type: 'certificate',
+      title: 'Ethics of AI — University of Helsinki',
+      anchorNodeIds: ['cert-ethics-ai'],
+      availability: 'planned',
+      presentation: { preferredObject: 'document' }
+    },
+    {
+      id: 'introduction-ai-certificate',
+      type: 'certificate',
+      title: 'Introduction to Artificial Intelligence — University of Helsinki',
+      anchorNodeIds: ['cert-intro-ai'],
+      availability: 'planned',
+      presentation: { preferredObject: 'document' }
+    },
+    {
+      id: 'esslli-2026-course-timetable',
+      type: 'document',
+      title: 'ESSLLI 2026 Course Timetable',
+      anchorNodeIds: ['esslli'],
+      availability: 'planned',
+      presentation: { preferredObject: 'document' }
     }
   ];
 
-  const graphNodeIds = new Set(window.SITE_DATA?.graph?.nodes?.map(node => node.id) || []);
+  const graphNodeIds = new Set(root.SITE_DATA?.graph?.nodes?.map(node => node.id) || []);
   const deepFreeze = value => {
     if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
     Object.values(value).forEach(deepFreeze);
@@ -99,8 +132,8 @@
     return record.source.kind === 'local' ? record.source.path : record.source.url;
   };
 
-  window.PROFILE_ARTIFACTS = records;
-  window.ProfileArtifacts = Object.freeze({
+  root.PROFILE_ARTIFACTS = records;
+  root.ProfileArtifacts = Object.freeze({
     types: TYPES,
     sourceKinds: SOURCE_KINDS,
     availability: AVAILABILITY,
@@ -118,5 +151,5 @@
     })
   });
 
-  if (issues.length) console.warn('[ProfileArtifacts] manifest issues:', issues);
+  if (issues.length && root.console?.warn) root.console.warn('[ProfileArtifacts] manifest issues:', issues);
 })();

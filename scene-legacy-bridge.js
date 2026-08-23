@@ -264,9 +264,21 @@
     document.head.appendChild(script);
   };
 
+  const bootArtifactScenes = () => {
+    ensureStylesheet('artifact-scenes.css', 'data-profile-artifact-scenes-style');
+    ensureScript('artifact-scene-bindings.js', 'data-profile-artifact-scene-bindings', () => Boolean(window.ARTIFACT_SCENE_BINDINGS), () => {
+      ensureScript('artifact-scene-recipes.js', 'data-profile-artifact-scene-recipes', () => Boolean(window.ProfileArtifactSceneRecipes), () => {
+        ensureScript('artifact-scene-runtime.js', 'data-profile-artifact-scene-runtime', () => Boolean(window.ProfileArtifactScenes), () => {
+          manager.scheduleRefresh('artifact-scenes-bundle-ready');
+        });
+      });
+    });
+  };
+
   const bootPhase8 = () => {
     ensureStylesheet('phase8-semantic-scenes.css', 'data-profile-phase8-style');
     ensureScript('artifact-data.js', 'data-profile-artifact-data', () => Boolean(window.ProfileArtifacts), () => {
+      bootArtifactScenes();
       ensureScript('phase8-scene-data.js', 'data-profile-phase8-data', () => Boolean(window.PHASE8_SCENE_DATA), () => {
         ensureScript('phase8-semantic-scenes.js', 'data-profile-phase8-scenes', () => Boolean(window.ProfilePhase8), () => {
           manager.scheduleRefresh('phase8-bundle-ready');

@@ -37,6 +37,9 @@ jobs:
       - name: Validate artifact manifest
         run: node scripts/validate-artifacts.mjs
 
+      - name: Validate artifact scenes
+        run: node scripts/validate-artifact-scenes.mjs
+
   browser-smoke:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
@@ -98,7 +101,8 @@ jobs:
             tests/interaction-contracts.spec.js \
             tests/phase7-atlas-drag.spec.js \
             tests/pre-phase8-mobile.spec.js \
-            tests/phase8-semantic-scenes.spec.js
+            tests/phase8-semantic-scenes.spec.js \
+            tests/artifact-scenes.spec.js
 
       - name: Upload Playwright diagnostics
         if: failure()

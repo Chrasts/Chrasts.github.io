@@ -98,5 +98,6 @@
     ensureStyle('phase-b-object-emergence-refinements.css', 'data-profile-phase-b-object-emergence-refinements');
     ensureScript('object-focus-controller.js', 'data-profile-object-focus');
     ensureScript('object-focus-certificate-adapter.js', 'data-profile-object-focus-certificate-adapter');
+    ensureScript('node-detail-dismiss.js', 'data-profile-node-detail-dismiss');
   }
 })();

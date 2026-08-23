@@ -5,6 +5,7 @@
   if (!detail) return;
 
   const isOpen = () => !detail.hidden;
+  let pendingDismiss = 0;
 
   const dismiss = () => {
     if (!isOpen()) return false;
@@ -21,16 +22,19 @@
     if (detail.contains(target)) return;
     if (target.closest('#site-graph .site-graph-node')) return;
 
-    /* Capture guarantees we see clicks even when a scene control stops
-       bubbling. Defer until that click has completed, then invoke the exact
-       visible close control rather than inventing a second detail state path. */
-    queueMicrotask(() => {
+    /* Capture guarantees the outside gesture is observed even when a scene
+       control stops bubbling. A timer, rather than a microtask, waits until the
+       complete click dispatch has finished so no later handler from the same
+       gesture can reopen the renderer-owned detail panel. */
+    clearTimeout(pendingDismiss);
+    pendingDismiss = setTimeout(() => {
+      pendingDismiss = 0;
       if (isOpen()) dismiss();
-    });
+    }, 0);
   }, true);
 
   window.ProfileNodeDetailDismiss = Object.freeze({
     dismiss,
-    snapshot: () => ({ open: isOpen() })
+    snapshot: () => ({ open: isOpen(), pending: Boolean(pendingDismiss) })
   });
 })();

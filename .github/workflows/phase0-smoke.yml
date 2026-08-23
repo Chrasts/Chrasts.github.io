@@ -102,7 +102,8 @@ jobs:
             tests/phase7-atlas-drag.spec.js \
             tests/pre-phase8-mobile.spec.js \
             tests/phase8-semantic-scenes.spec.js \
-            tests/artifact-scenes.spec.js
+            tests/artifact-scenes.spec.js \
+            tests/phase-b-object-focus.spec.js
 
       - name: Upload Playwright diagnostics
         if: failure()

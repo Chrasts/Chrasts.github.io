@@ -139,3 +139,49 @@
     pointer-events:none!important
   }
 }
+
+/* Media-deck objects now derive their height from the media itself. The recipe
+   hydrates an exact aspect ratio from image intrinsic dimensions or the first
+   PDF page box. Until that arrives, a neutral 4:3 box prevents layout collapse.
+   This removes both crops and artificial empty tails around smaller media. */
+.artifact-object[data-artifact-recipe="media-deck"] .artifact-deck-card,
+.artifact-object[data-artifact-variant="diagram"] .artifact-deck-card,
+.artifact-object[data-artifact-variant="screens"] .artifact-deck-card,
+.artifact-object[data-artifact-variant="fan"] .artifact-deck-card{
+  height:auto!important;
+  overflow:visible!important
+}
+
+.artifact-object[data-artifact-recipe="media-deck"] .artifact-deck-preview{
+  position:relative!important;
+  inset:auto!important;
+  display:block!important;
+  width:100%!important;
+  height:auto!important;
+  aspect-ratio:4 / 3;
+  overflow:hidden;
+  background:transparent!important
+}
+
+.artifact-object[data-artifact-recipe="media-deck"] .artifact-deck-preview>img,
+.artifact-object[data-artifact-recipe="media-deck"] .artifact-deck-preview>iframe{
+  position:absolute!important;
+  inset:0!important;
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:contain!important;
+  transform:none!important
+}
+
+.artifact-object[data-artifact-recipe="media-deck"] .artifact-deck-card:hover .artifact-deck-preview img,
+.artifact-object[data-artifact-recipe="media-deck"] .artifact-deck-card:focus-visible .artifact-deck-preview img,
+.artifact-object[data-artifact-recipe="media-deck"] .artifact-deck-card.is-active .artifact-deck-preview img{
+  transform:none!important
+}
+
+.artifact-object[data-artifact-recipe="media-deck"] .artifact-deck-preview.is-pdf iframe{
+  background:transparent!important
+}

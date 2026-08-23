@@ -130,5 +130,12 @@
       script.setAttribute('data-profile-phase-b-object-focus-compat', 'true');
       document.head.appendChild(script);
     }
+    if (!document.querySelector('script[data-profile-phase-b-node-dismiss]')) {
+      const script = document.createElement('script');
+      script.src = 'phase-b-node-dismiss.js';
+      script.async = false;
+      script.setAttribute('data-profile-phase-b-node-dismiss', 'true');
+      document.head.appendChild(script);
+    }
   }
 })();

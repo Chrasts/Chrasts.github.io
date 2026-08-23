@@ -18,17 +18,71 @@
     return root;
   };
 
+  const validAspect = ratio => Number.isFinite(ratio) && ratio >= .28 && ratio <= 5;
+  const applyMediaAspect = (frame, ratio, source) => {
+    if (!validAspect(ratio)) return;
+    frame.style.aspectRatio = String(ratio);
+    frame.dataset.mediaAspect = ratio.toFixed(4);
+    frame.dataset.mediaAspectSource = source;
+    frame.dataset.mediaAspectReady = 'true';
+  };
+
+  const pdfPageAspect = async href => {
+    if (!href || /^https?:\/\//i.test(href)) return null;
+    try {
+      const response = await fetch(href, { cache: 'force-cache' });
+      if (!response.ok) return null;
+      const buffer = await response.arrayBuffer();
+      const text = new TextDecoder('latin1').decode(buffer);
+      const readBox = name => {
+        const pattern = new RegExp(`\\/${name}\\s*\\[\\s*(-?\\d*\\.?\\d+)\\s+(-?\\d*\\.?\\d+)\\s+(-?\\d*\\.?\\d+)\\s+(-?\\d*\\.?\\d+)\\s*\\]`);
+        const match = text.match(pattern);
+        if (!match) return null;
+        const [x1, y1, x2, y2] = match.slice(1).map(Number);
+        const width = Math.abs(x2 - x1);
+        const height = Math.abs(y2 - y1);
+        return width > 0 && height > 0 ? width / height : null;
+      };
+      return readBox('CropBox') || readBox('MediaBox');
+    } catch (_) {
+      return null;
+    }
+  };
+
+  const hydratePreviewAspect = (frame, artifact, href, image = null) => {
+    if (image) {
+      const applyImageAspect = () => {
+        if (image.naturalWidth && image.naturalHeight) {
+          applyMediaAspect(frame, image.naturalWidth / image.naturalHeight, 'image');
+        }
+      };
+      image.addEventListener('load', applyImageAspect, { once: true });
+      if (image.complete) queueMicrotask(applyImageAspect);
+      return;
+    }
+
+    if (artifact.mediaType === 'application/pdf') {
+      frame.dataset.mediaAspectPending = 'true';
+      pdfPageAspect(href).then(ratio => {
+        delete frame.dataset.mediaAspectPending;
+        if (ratio) applyMediaAspect(frame, ratio, 'pdf-page');
+      });
+    }
+  };
+
   const mediaPreview = (artifact, href, { className = '', eager = false } = {}) => {
     const frame = element('div', `artifact-media-preview ${className}`.trim());
     frame.dataset.artifactId = artifact.id;
 
     if (/^image\//.test(artifact.mediaType || '')) {
+      frame.classList.add('is-image');
       const image = document.createElement('img');
       image.src = href;
       image.alt = artifact.title || '';
       image.loading = eager ? 'eager' : 'lazy';
       image.decoding = 'async';
       frame.appendChild(image);
+      hydratePreviewAspect(frame, artifact, href, image);
       return frame;
     }
 
@@ -40,12 +94,13 @@
         element('strong', 'artifact-pdf-title', artifact.title)
       );
       const iframe = document.createElement('iframe');
-      iframe.src = `${href}#page=1&toolbar=0&navpanes=0&scrollbar=0&view=FitH`;
+      iframe.src = `${href}#page=1&toolbar=0&navpanes=0&scrollbar=0&view=Fit`;
       iframe.title = `${artifact.title} preview`;
       iframe.tabIndex = -1;
       iframe.loading = 'lazy';
       iframe.setAttribute('aria-hidden', 'true');
       frame.append(label, iframe);
+      hydratePreviewAspect(frame, artifact, href);
       return frame;
     }
 

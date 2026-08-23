@@ -11,7 +11,8 @@ const waitArtifactScenes = async page => {
     window.ProfileArtifactSceneLayout &&
     window.ProfileArtifacts &&
     window.ProfileRefinements &&
-    window.ProfilePhaseBObjectFocus
+    window.ProfilePhaseBObjectFocus &&
+    window.ProfilePhaseBNodeDismiss
   ));
   await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
   await page.waitForTimeout(180);
@@ -54,7 +55,7 @@ test('Simulation Credence is a document object and opens as a clean PDF stage', 
   await expect(viewer).toBeHidden();
 });
 
-test('thesis diagrams emerge as larger viewport-contained independent objects', async ({ page }) => {
+test('thesis diagrams use their PDF page aspect and show the whole page', async ({ page }) => {
   await bypassIntro(page);
   await page.goto('/#work/project/bachelor-thesis');
   await waitArtifactScenes(page);
@@ -70,6 +71,32 @@ test('thesis diagrams emerge as larger viewport-contained independent objects', 
   await expect(cluster.locator('.artifact-object-description')).toHaveCount(0);
   await expect(cluster.locator('.artifact-deck-footer')).toHaveCount(0);
   await expect(cluster.locator('.artifact-object-tag')).toHaveCount(2);
+
+  const previews = cluster.locator('.artifact-deck-preview');
+  await expect(previews.nth(0)).toHaveAttribute('data-media-aspect-ready', 'true', { timeout: 5000 });
+  await expect(previews.nth(1)).toHaveAttribute('data-media-aspect-ready', 'true', { timeout: 5000 });
+  await expect(previews.nth(0).locator('iframe')).toHaveAttribute('src', /view=Fit$/);
+  await expect(previews.nth(1).locator('iframe')).toHaveAttribute('src', /view=Fit$/);
+
+  const mediaGeometry = await Promise.all([first, second].map(async card => card.evaluate(element => {
+    const preview = element.querySelector('.artifact-deck-preview');
+    return {
+      cardWidth: element.offsetWidth,
+      cardHeight: element.offsetHeight,
+      previewWidth: preview.offsetWidth,
+      previewHeight: preview.offsetHeight,
+      ratio: Number(preview.dataset.mediaAspect),
+      source: preview.dataset.mediaAspectSource
+    };
+  })));
+  mediaGeometry.forEach(item => {
+    expect(item.source).toBe('pdf-page');
+    expect(item.ratio).toBeGreaterThan(.28);
+    expect(item.ratio).toBeLessThan(5);
+    expect(Math.abs(item.cardWidth - item.previewWidth)).toBeLessThanOrEqual(4);
+    expect(Math.abs(item.cardHeight - item.previewHeight)).toBeLessThanOrEqual(4);
+    expect(Math.abs(item.previewWidth / item.previewHeight - item.ratio)).toBeLessThan(.03);
+  });
 
   const boxes = await Promise.all([first.boundingBox(), second.boundingBox()]);
   const viewport = page.viewportSize();
@@ -100,7 +127,7 @@ test('thesis diagrams emerge as larger viewport-contained independent objects', 
   await page.keyboard.press('Escape');
 });
 
-test('Modal Logic Lab screenshots are floating screens with a live-app satellite action', async ({ page }) => {
+test('Modal Logic Lab screenshots preserve the full intrinsic image instead of cropping', async ({ page }) => {
   await bypassIntro(page);
   await page.goto('/#work/project/modal-logic-lab');
   await waitArtifactScenes(page);
@@ -111,6 +138,16 @@ test('Modal Logic Lab screenshots are floating screens with a live-app satellite
   await expect(deck.locator('.artifact-deck-card')).toHaveCount(2);
   await expect(deck.locator('img')).toHaveCount(2);
   await expect(deck.locator('a[data-support-artifact-id="modal-logic-lab-live"]')).toHaveAttribute('href', 'https://chrasts.github.io/Modal_Logic_Educational_Game/');
+
+  const preview = deck.locator('.artifact-deck-preview').first();
+  await expect(preview).toHaveAttribute('data-media-aspect-ready', 'true', { timeout: 5000 });
+  expect(await preview.locator('img').evaluate(image => getComputedStyle(image).objectFit)).toBe('contain');
+  const geometry = await preview.evaluate(element => {
+    const card = element.closest('.artifact-deck-card');
+    return { cardHeight: card.offsetHeight, previewHeight: element.offsetHeight, ratio: element.offsetWidth / element.offsetHeight, intrinsic: Number(element.dataset.mediaAspect) };
+  });
+  expect(Math.abs(geometry.cardHeight - geometry.previewHeight)).toBeLessThanOrEqual(4);
+  expect(Math.abs(geometry.ratio - geometry.intrinsic)).toBeLessThan(.03);
 });
 
 test('Hedgehog House is a centered loose photo fan with direct-manipulation focus and graph tether', async ({ page }) => {
@@ -138,11 +175,14 @@ test('Hedgehog House is a centered loose photo fan with direct-manipulation focu
   expect(placement.right).toBeGreaterThan(40);
   expect(placement.width).toBeGreaterThan(520);
 
+  const outside = gallery.locator('.artifact-deck-card[data-artifact-id="hedgehog-house-outside"]');
+  await expect(outside.locator('.artifact-deck-preview')).toHaveAttribute('data-media-aspect-ready', 'true', { timeout: 5000 });
+  expect(await outside.locator('img').evaluate(image => getComputedStyle(image).objectFit)).toBe('contain');
+
   await gallery.hover();
   await expect(page.locator('#site-graph .site-graph-node[data-node-id="hedgehog-house"].is-artifact-linked')).toHaveCount(1);
   await expect(page.locator('.artifact-tether-layer')).toHaveClass(/is-visible/);
 
-  const outside = gallery.locator('.artifact-deck-card[data-artifact-id="hedgehog-house-outside"]');
   await outside.hover();
   await expect(outside).toHaveClass(/is-active/);
   await outside.click();
@@ -180,6 +220,24 @@ test('desktop descriptive inspector ends with its content instead of filling the
   expect(sizing.height).toBeLessThan(sizing.viewportHeight * 0.7);
   expect(sizing.bottomGap).toBeGreaterThan(100);
   expect(Math.abs(sizing.height - sizing.scrollHeight)).toBeLessThanOrEqual(4);
+});
+
+test('clicking elsewhere on the node view dismisses the open inspector like its close button', async ({ page }) => {
+  await bypassIntro(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/#atlas');
+  await waitArtifactScenes(page);
+  await page.waitForFunction(() => Boolean(window.ProfileAtlasLOD) && document.body.dataset.graphMode === 'atlas');
+
+  const node = page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]');
+  const detail = page.locator('#site-detail-panel');
+  await node.click();
+  await expect(detail).toBeVisible();
+  await expect(detail.locator('.detail-close')).toBeVisible();
+
+  await page.locator('.site-graph-heading').click({ force: true });
+  await expect(detail).toBeHidden();
+  expect((await page.evaluate(() => window.ProfilePhaseBNodeDismiss.snapshot())).open).toBe(false);
 });
 
 test('artifact object clusters remain viewport-contained on mobile without a tray window', async ({ page }) => {

@@ -4,18 +4,13 @@
   const detail = document.querySelector('#site-detail-panel');
   if (!detail) return;
 
-  /* `hidden` is the actual visibility state. The `is-open` class is added one
-     animation frame later and must not decide whether an outside click counts. */
   const isOpen = () => !detail.hidden;
 
   const dismiss = () => {
     if (!isOpen()) return false;
-    document.dispatchEvent(new KeyboardEvent('keydown', {
-      key: 'Escape',
-      code: 'Escape',
-      bubbles: true,
-      cancelable: true
-    }));
+    const close = detail.querySelector('.detail-close');
+    if (!(close instanceof HTMLButtonElement)) return false;
+    close.click();
     return true;
   };
 
@@ -25,8 +20,9 @@
     if (!(target instanceof Element)) return;
     if (detail.contains(target)) return;
 
-    /* A graph-node click owns selection/navigation itself. Everything else in
-       the current node view behaves like the explicit close action. */
+    /* Graph nodes retain their own selection/navigation semantics. Any other
+       click in the current node view invokes exactly the same close control the
+       user sees in the inspector. */
     if (target.closest('#site-graph .site-graph-node')) return;
     dismiss();
   });

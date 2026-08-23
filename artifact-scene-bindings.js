@@ -105,5 +105,22 @@
       script.setAttribute('data-profile-refinements', 'true');
       document.head.appendChild(script);
     }
+
+    // Phase B remains an explicit pilot layer. It enhances the three selected
+    // objects without turning the experiment into the reusable Phase C system.
+    if (!document.querySelector('link[data-profile-phase-b-object-focus-style]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'phase-b-object-focus-pilot.css';
+      link.setAttribute('data-profile-phase-b-object-focus-style', 'true');
+      document.head.appendChild(link);
+    }
+    if (!document.querySelector('script[data-profile-phase-b-object-focus]')) {
+      const script = document.createElement('script');
+      script.src = 'phase-b-object-focus-pilot.js';
+      script.async = false;
+      script.setAttribute('data-profile-phase-b-object-focus', 'true');
+      document.head.appendChild(script);
+    }
   }
 })();

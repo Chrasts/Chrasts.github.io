@@ -6,6 +6,7 @@
     'image',
     'diagram',
     'audio',
+    'video',
     'data',
     'interactive',
     'external'
@@ -53,11 +54,79 @@
       presentation: { preferredObject: 'interactive', openMode: 'new-tab' }
     },
     {
+      id: 'modal-logic-lab-screenshot-lab',
+      type: 'image',
+      title: 'Modal Logic Lab — model laboratory',
+      description: 'Screenshot of the model-building laboratory interface.',
+      anchorNodeIds: ['project-modal-logic-lab', 'modal-logic'],
+      source: { kind: 'local', path: 'assets/images/work/modal-logic-lab/lab.png' },
+      mediaType: 'image/png',
+      availability: 'public',
+      presentation: { preferredObject: 'image', role: 'project-preview' }
+    },
+    {
+      id: 'modal-logic-lab-screenshot-learn',
+      type: 'image',
+      title: 'Modal Logic Lab — learning interface',
+      description: 'Screenshot of the guided learning interface.',
+      anchorNodeIds: ['project-modal-logic-lab', 'modal-logic'],
+      source: { kind: 'local', path: 'assets/images/work/modal-logic-lab/learn.png' },
+      mediaType: 'image/png',
+      availability: 'public',
+      presentation: { preferredObject: 'image', role: 'project-preview' }
+    },
+    {
+      id: 'clp-survey-pdf',
+      type: 'document',
+      title: 'The Congruence Lattice Problem — Historical Survey',
+      description: 'Local portfolio copy of the historical survey PDF.',
+      anchorNodeIds: ['project-clp-survey', 'congruence-lattice-problem'],
+      source: { kind: 'local', path: 'assets/documents/work/clp-survey/congruence-lattice-problem.pdf' },
+      mediaType: 'application/pdf',
+      availability: 'public',
+      presentation: { preferredObject: 'document', openMode: 'new-tab' }
+    },
+    {
+      id: 'bachelor-thesis-lattice-of-bands',
+      type: 'diagram',
+      title: 'Lower fragment of the lattice of varieties of bands',
+      description: 'Diagram used in the bachelor-thesis material on associative residuated ortholattices.',
+      anchorNodeIds: ['project-bachelor-thesis', 'quantum-logic-arol'],
+      source: { kind: 'local', path: 'assets/diagrams/work/bachelor-thesis/lattice-of-bands.pdf' },
+      mediaType: 'application/pdf',
+      availability: 'public',
+      presentation: { preferredObject: 'diagram' }
+    },
+    {
+      id: 'bachelor-thesis-rol-non-a',
+      type: 'diagram',
+      title: 'ROL non-A diagram',
+      description: 'Diagram from the bachelor-thesis material; retained under its source naming until a final public caption is assigned.',
+      anchorNodeIds: ['project-bachelor-thesis', 'quantum-logic-arol'],
+      source: { kind: 'local', path: 'assets/diagrams/work/bachelor-thesis/rol-non-a.pdf' },
+      mediaType: 'application/pdf',
+      availability: 'public',
+      presentation: { preferredObject: 'diagram' }
+    },
+    {
+      id: 'simulation-credence-coursework',
+      type: 'document',
+      title: 'Simulation Credence and Its Consequences',
+      description: 'Coursework document on the simulation hypothesis; currently attached broadly to Charles University until a dedicated coursework node is introduced.',
+      anchorNodeIds: ['charles-university'],
+      source: { kind: 'local', path: 'assets/documents/education/coursework/simulation-credence-and-its-consequences.pdf' },
+      mediaType: 'application/pdf',
+      availability: 'public',
+      presentation: { preferredObject: 'document', openMode: 'new-tab' }
+    },
+    {
       id: 'cambridge-b2-certificate',
       type: 'certificate',
       title: 'Cambridge English B2 First — Score 170',
       anchorNodeIds: ['cert-cambridge-b2'],
-      availability: 'planned',
+      source: { kind: 'local', path: 'assets/documents/certificates/cambridge-b2-first.pdf' },
+      mediaType: 'application/pdf',
+      availability: 'public',
       presentation: { preferredObject: 'document' }
     },
     {
@@ -65,16 +134,20 @@
       type: 'certificate',
       title: 'Ethics of AI — University of Helsinki',
       anchorNodeIds: ['cert-ethics-ai'],
-      availability: 'planned',
-      presentation: { preferredObject: 'document' }
+      source: { kind: 'local', path: 'assets/images/certificates/ethics-of-ai.png' },
+      mediaType: 'image/png',
+      availability: 'public',
+      presentation: { preferredObject: 'image' }
     },
     {
       id: 'introduction-ai-certificate',
       type: 'certificate',
       title: 'Introduction to Artificial Intelligence — University of Helsinki',
       anchorNodeIds: ['cert-intro-ai'],
-      availability: 'planned',
-      presentation: { preferredObject: 'document' }
+      source: { kind: 'local', path: 'assets/images/certificates/elements-of-ai-introduction-to-ai.png' },
+      mediaType: 'image/png',
+      availability: 'public',
+      presentation: { preferredObject: 'image' }
     },
     {
       id: 'esslli-2026-course-timetable',

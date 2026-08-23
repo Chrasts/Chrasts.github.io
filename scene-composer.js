@@ -14,6 +14,8 @@
 
   const asNumber = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
   const opposite = side => side === 'left' ? 'right' : 'left';
+  const normaliseRoute = value =>
+    (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
 
   class SceneComposer {
     constructor() {
@@ -35,14 +37,14 @@
         this.observer = new MutationObserver(mutations => {
           if (mutations.some(mutation =>
             mutation.type === 'childList' ||
-            ['hidden', 'data-scene-visible', 'data-scene-placement', 'data-artifact-side'].includes(mutation.attributeName)
+            ['hidden', 'data-scene-visible', 'data-scene-placement'].includes(mutation.attributeName)
           )) this.schedule('scene-dom');
         });
         this.observer.observe(this.canvas, {
           subtree: true,
           childList: true,
           attributes: true,
-          attributeFilter: ['hidden', 'data-scene-visible', 'data-scene-placement', 'data-artifact-side']
+          attributeFilter: ['hidden', 'data-scene-visible', 'data-scene-placement']
         });
       }
 
@@ -52,12 +54,23 @@
     context(extra = {}) {
       return {
         ...scene.manager.context(),
-        route: document.body.dataset.graphRoute || scene.manager.graphState?.route || 'overview',
+        route: normaliseRoute(document.body.dataset.graphRoute || scene.manager.graphState?.route || 'overview'),
         mode: document.body.dataset.graphMode || scene.manager.graphState?.mode || 'overview',
         variant: mobileQuery.matches ? 'mobile' : 'desktop',
         viewport: { width: innerWidth, height: innerHeight },
         ...extra
       };
+    }
+
+    artifactPreferredSide(element, context) {
+      const bindingId = element.dataset.artifactScene;
+      const binding = (window.ARTIFACT_SCENE_BINDINGS || []).find(item => item.id === bindingId);
+      const route = normaliseRoute(context.route);
+      const target = binding?.targets?.find(item => {
+        const value = normaliseRoute(item.route);
+        return item.match === 'prefix' ? route === value || route.startsWith(`${value}/`) : route === value;
+      });
+      return target?.side || element.dataset.artifactPreferredSide || element.dataset.artifactSide || 'right';
     }
 
     inferRequest(id, instance, context) {
@@ -87,7 +100,7 @@
       if (placement === 'artifact-contextual') {
         return {
           zone: 'side-stage',
-          preferredSide: element.dataset.artifactPreferredSide || element.dataset.artifactSide || 'right',
+          preferredSide: this.artifactPreferredSide(element, context),
           allowFlip: true,
           priority: 50,
           role: 'artifact',
@@ -182,7 +195,10 @@
     }
 
     clearComposedGeometry(element) {
-      ['left', 'right', 'top', 'bottom'].forEach(property => element.style.removeProperty(property));
+      if (element.dataset.sceneCompositionOwnsGeometry === 'true') {
+        ['left', 'right', 'top', 'bottom'].forEach(property => element.style.removeProperty(property));
+      }
+      delete element.dataset.sceneCompositionOwnsGeometry;
       delete element.dataset.sceneZone;
       delete element.dataset.sceneSide;
       delete element.dataset.sceneSlot;
@@ -202,6 +218,7 @@
       if (assignment.zone !== 'side-stage' || context.variant === 'mobile') return;
       const inset = this.horizontalInset(assignment.request, assignment.side, context);
       assignment.inset = inset;
+      element.dataset.sceneCompositionOwnsGeometry = 'true';
       element.style.setProperty('top', `${Math.round(assignment.top)}px`, 'important');
       element.style.setProperty('bottom', 'auto', 'important');
       if (assignment.side === 'left') {
@@ -214,7 +231,7 @@
 
       if (assignment.request.role === 'artifact') {
         element.dataset.artifactPreferredSide = assignment.request.preferredSide || assignment.side;
-        element.dataset.artifactSide = assignment.side;
+        if (element.dataset.artifactSide !== assignment.side) element.dataset.artifactSide = assignment.side;
         if (assignment.collisionAdjusted) element.dataset.artifactCollisionAdjusted = 'scene-composer';
         else delete element.dataset.artifactCollisionAdjusted;
       }
@@ -336,7 +353,7 @@
       return {
         sequence: this.sequence,
         reason: this.lastReason,
-        route: document.body.dataset.graphRoute || scene.manager.graphState?.route || 'overview',
+        route: normaliseRoute(document.body.dataset.graphRoute || scene.manager.graphState?.route || 'overview'),
         mode: document.body.dataset.graphMode || scene.manager.graphState?.mode || 'overview',
         variant: mobileQuery.matches ? 'mobile' : 'desktop',
         zones: Object.keys(zones),

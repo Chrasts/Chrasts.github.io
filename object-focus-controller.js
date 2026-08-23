@@ -303,7 +303,6 @@
       const onPointerDown = event => {
         if (event.pointerType === 'mouse' && event.button !== 0) return;
         pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-        try { surface.setPointerCapture(event.pointerId); } catch (_) {}
         image.classList.add('is-dragging');
         moved = false;
         if (pointers.size === 1) {
@@ -319,6 +318,7 @@
       const onPointerMove = event => {
         if (!pointers.has(event.pointerId)) return;
         pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
         if (pointers.size >= 2 && pinchStart) {
           const current = pointerMidpoint();
           if (!current || !pinchStart.distance) return;
@@ -337,6 +337,7 @@
           showReadout();
           return;
         }
+
         if (!dragStart || scale <= 1.01) return;
         const dx = event.clientX - dragStart.x;
         const dy = event.clientY - dragStart.y;
@@ -347,9 +348,9 @@
       };
 
       const onPointerEnd = event => {
+        if (!pointers.has(event.pointerId)) return;
         const wasMoved = moved;
         pointers.delete(event.pointerId);
-        try { surface.releasePointerCapture(event.pointerId); } catch (_) {}
         if (!pointers.size) image.classList.remove('is-dragging');
         if (pointers.size === 1) {
           const [remaining] = [...pointers.values()];
@@ -372,9 +373,9 @@
 
       surface.addEventListener('wheel', onWheel, { passive: false });
       surface.addEventListener('pointerdown', onPointerDown);
-      surface.addEventListener('pointermove', onPointerMove);
-      surface.addEventListener('pointerup', onPointerEnd);
-      surface.addEventListener('pointercancel', onPointerEnd);
+      window.addEventListener('pointermove', onPointerMove, true);
+      window.addEventListener('pointerup', onPointerEnd, true);
+      window.addEventListener('pointercancel', onPointerEnd, true);
       image.addEventListener('dblclick', onDoubleClick);
       apply();
 
@@ -386,11 +387,11 @@
           clearTimeout(readoutTimer);
           surface.removeEventListener('wheel', onWheel);
           surface.removeEventListener('pointerdown', onPointerDown);
-          surface.removeEventListener('pointermove', onPointerMove);
-          surface.removeEventListener('pointerup', onPointerEnd);
-          surface.removeEventListener('pointercancel', onPointerEnd);
+          window.removeEventListener('pointermove', onPointerMove, true);
+          window.removeEventListener('pointerup', onPointerEnd, true);
+          window.removeEventListener('pointercancel', onPointerEnd, true);
           image.removeEventListener('dblclick', onDoubleClick);
-          image.classList.remove('object-focus-primary', 'object-focus-panzoom-media', 'is-zoomed', 'is-transform-animating');
+          image.classList.remove('object-focus-primary', 'object-focus-panzoom-media', 'is-zoomed', 'is-transform-animating', 'is-dragging');
           image.style.removeProperty('--object-focus-media-scale');
           image.style.removeProperty('--object-focus-media-pan-x');
           image.style.removeProperty('--object-focus-media-pan-y');

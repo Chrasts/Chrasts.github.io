@@ -114,6 +114,19 @@
     return tag;
   };
 
+  const openObjectFocus = (root, source, binding, artifact, env) => {
+    const controller = window.ProfileObjectFocus;
+    if (controller?.open) {
+      return controller.open({
+        source,
+        artifact,
+        owner: 'artifact',
+        ownerValid: () => root.isConnected && !root.hidden && root.dataset.sceneVisible !== 'false'
+      });
+    }
+    return env.openFocus(binding, artifact.id);
+  };
+
   const appendOrbitActions = (root, binding, env, { includePrimarySource = null } = {}) => {
     const actions = element('div', 'artifact-orbit-actions');
 
@@ -160,6 +173,7 @@
     page.type = 'button';
     page.dataset.artifactId = artifact.id;
     page.dataset.artifactFocus = artifact.id;
+    page.dataset.objectFocusState = 'active';
     page.setAttribute('aria-label', `Inspect ${artifact.title}`);
     page.appendChild(mediaPreview(artifact, href, { className: 'artifact-folio-preview', eager: true }));
 
@@ -168,7 +182,10 @@
     if (artifact.description) caption.appendChild(element('span', 'artifact-folio-summary', artifact.description));
     page.appendChild(caption);
 
-    page.addEventListener('click', () => env.openFocus(binding, artifact.id));
+    page.addEventListener('click', event => {
+      event.stopPropagation();
+      openObjectFocus(root, page, binding, artifact, env);
+    });
     stage.append(shadowPage, page);
     root.appendChild(stage);
     appendOrbitActions(root, binding, env, { includePrimarySource: artifact });
@@ -193,6 +210,9 @@
         const active = cardId === id;
         card.classList.toggle('is-active', active);
         card.setAttribute('aria-current', active ? 'true' : 'false');
+        if (card.dataset.objectFocusState !== 'inspect') {
+          card.dataset.objectFocusState = active ? 'active' : 'ambient';
+        }
       });
     };
 
@@ -202,6 +222,7 @@
       card.type = 'button';
       card.dataset.artifactId = artifact.id;
       card.dataset.artifactFocus = artifact.id;
+      card.dataset.objectFocusState = index === 0 ? 'active' : 'ambient';
       card.style.setProperty('--artifact-card-index', String(index));
       card.style.setProperty('--artifact-emerge-delay', `${70 + index * 85}ms`);
       card.setAttribute('aria-label', `Inspect ${artifact.title}`);
@@ -216,7 +237,7 @@
       card.addEventListener('click', event => {
         event.stopPropagation();
         activate(artifact.id);
-        env.openFocus(binding, artifact.id);
+        openObjectFocus(root, card, binding, artifact, env);
       });
 
       deck.appendChild(card);

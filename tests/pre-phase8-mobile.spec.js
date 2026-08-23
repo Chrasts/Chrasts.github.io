@@ -11,6 +11,12 @@ const waitSettled = async page => {
   await page.waitForTimeout(180);
 };
 
+const liveProjectRankCount = () => {
+  const projects = [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id^="project-"]')]
+    .filter(element => !element.closest('.v9-transition-overlay'));
+  return new Set(projects.map(element => Math.round(Number(element.dataset.y) / 20) * 20)).size;
+};
+
 test.describe('Pre-Phase 8 mobile parity', () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
@@ -75,7 +81,9 @@ test.describe('Pre-Phase 8 mobile parity', () => {
     await bypassIntro(page);
     await page.goto('/#atlas');
     await waitSettled(page);
-    await page.waitForTimeout(1500);
+    await page.waitForFunction(() => document.body.dataset.globalGeometry === 'radial-atlas');
+    await page.waitForFunction(liveProjectRankCount, null, { timeout: 3_000 });
+    await page.waitForFunction(() => liveProjectRankCount() >= 2, null, { timeout: 3_000 });
 
     await expect(page.locator('.mobile-mode-button')).toHaveText('Layers');
     const atlasButton = page.locator('.graph-routebar .atlas-button');

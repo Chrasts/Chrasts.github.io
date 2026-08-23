@@ -63,15 +63,42 @@ test('active focus root is idempotent and does not re-layout its segment', async
   expect(after).toEqual(before);
 });
 
-test('selecting a Work project from a concept inspector keeps lattice geometry fixed', async ({ page }) => {
+test('Work projects have primary hit targets and concept inspector promotes project choices', async ({ page }) => {
   await page.goto('/#work');
   await waitForStableGraph(page);
+  await page.waitForFunction(() => Boolean(window.ProfileRefinements));
+  await page.waitForFunction(() => document.querySelector('.work-project-anchor-v5[data-hitbox-enhanced="true"]'));
+
+  const directProject = page.locator('.work-project-anchor-v5[data-hitbox-enhanced="true"]:not(.is-filtered-out)').first();
+  const hitbox = directProject.locator('.work-project-hitbox-v5');
+  await expect(hitbox).toBeVisible();
+  const hitboxSize = await hitbox.evaluate(element => ({
+    width: Number(element.getAttribute('width')),
+    height: Number(element.getAttribute('height'))
+  }));
+  expect(hitboxSize.width).toBeGreaterThanOrEqual(104);
+  expect(hitboxSize.height).toBeGreaterThanOrEqual(24);
+
+  const initialGeometry = await nodePositions(page);
+  await hitbox.click();
+  await expect(page.locator('#site-detail-panel')).toHaveClass(/is-work-project-detail-local/);
+  expect(await page.evaluate(() => location.hash.startsWith('#work/project/'))).toBe(true);
+  expect(await nodePositions(page)).toEqual(initialGeometry);
+
+  await page.locator('#site-detail-panel .detail-close').click();
+  await expect(page.locator('#site-detail-panel')).not.toHaveClass(/is-work-project-detail-local/);
+  await page.waitForFunction(() => location.hash === '#work');
 
   const theme = page.locator('.work-theme-label-v5[data-theme-id]').first();
   await expect(theme).toBeVisible();
   await theme.click();
-  const project = page.locator('.work-concept-project').first();
+  const panel = page.locator('#site-detail-panel.is-work-concept-detail');
+  await expect(panel).toBeVisible();
+  await expect(panel).toHaveClass(/has-primary-project-choices/);
+  await expect(panel.locator('.detail-list-title')).toHaveText('Open a project');
+  const project = panel.locator('.work-concept-project').first();
   await expect(project).toBeVisible();
+  await expect(project.locator('.work-concept-project-meta')).not.toBeEmpty();
 
   const before = await nodePositions(page);
   await project.click();

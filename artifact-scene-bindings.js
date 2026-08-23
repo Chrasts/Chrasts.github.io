@@ -87,4 +87,23 @@
     script.setAttribute('data-profile-artifact-layout-contract', 'true');
     document.head.appendChild(script);
   }
+
+  // Shared late-stage interaction refinements stay isolated from the graph
+  // renderer itself: larger Work project targets and rich-media inspection.
+  if (typeof document !== 'undefined') {
+    if (!document.querySelector('link[data-profile-refinements-style]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'portfolio-refinements.css';
+      link.setAttribute('data-profile-refinements-style', 'true');
+      document.head.appendChild(link);
+    }
+    if (!document.querySelector('script[data-profile-refinements]')) {
+      const script = document.createElement('script');
+      script.src = 'portfolio-refinements.js';
+      script.async = false;
+      script.setAttribute('data-profile-refinements', 'true');
+      document.head.appendChild(script);
+    }
+  }
 })();

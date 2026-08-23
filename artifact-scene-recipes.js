@@ -159,12 +159,8 @@
       card.appendChild(label);
       card.addEventListener('click', event => {
         event.stopPropagation();
-        if (activeId === artifact.id && event.detail > 1) env.openFocus(binding, artifact.id);
+        if (activeId === artifact.id) env.openFocus(binding, artifact.id);
         else activate(artifact.id);
-      });
-      card.addEventListener('dblclick', event => {
-        event.preventDefault();
-        env.openFocus(binding, artifact.id);
       });
       deck.appendChild(card);
       cards.set(artifact.id, card);
@@ -172,6 +168,7 @@
 
     const footer = element('footer', 'artifact-deck-footer');
     const status = element('span', 'artifact-deck-status');
+    status.title = 'Select a card, then click it again to enlarge';
     const inspect = element('button', 'artifact-action artifact-deck-inspect', 'Inspect active');
     inspect.type = 'button';
     inspect.addEventListener('click', () => {

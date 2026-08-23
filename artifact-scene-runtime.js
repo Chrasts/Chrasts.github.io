@@ -163,7 +163,9 @@
     setTimeout(() => {
       if (viewer.classList.contains('is-open')) return;
       viewer.hidden = true;
-      viewer.querySelector('.artifact-focus-media').replaceChildren();
+      const media = viewer.querySelector('.artifact-focus-media');
+      media.replaceChildren();
+      media.classList.remove('is-image', 'is-native-scale');
       viewer.querySelector('.artifact-focus-footer').replaceChildren();
       viewerBindingId = null;
       viewerArtifactId = null;
@@ -180,7 +182,11 @@
     viewerArtifactId = artifactId;
     viewer.querySelector('.artifact-focus-title').textContent = artifact.title;
     const media = viewer.querySelector('.artifact-focus-media');
-    media.replaceChildren(focusableMedia(artifact, href));
+    const mediaElement = focusableMedia(artifact, href);
+    const isImage = /^image\//.test(artifact.mediaType || '');
+    media.classList.toggle('is-image', isImage);
+    media.classList.remove('is-native-scale');
+    media.replaceChildren(mediaElement);
     const footer = viewer.querySelector('.artifact-focus-footer');
     footer.replaceChildren();
 
@@ -190,12 +196,30 @@
       description.textContent = artifact.description;
       footer.appendChild(description);
     }
+
+    if (isImage) {
+      const zoom = document.createElement('button');
+      zoom.type = 'button';
+      zoom.className = 'artifact-action artifact-image-zoom';
+      zoom.dataset.artifactImageZoom = 'true';
+      zoom.setAttribute('aria-pressed', 'false');
+      zoom.textContent = 'View 1:1';
+      zoom.addEventListener('click', () => {
+        const native = media.classList.toggle('is-native-scale');
+        zoom.setAttribute('aria-pressed', native ? 'true' : 'false');
+        zoom.textContent = native ? 'Fit image' : 'View 1:1';
+        if (!native) media.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      });
+      footer.appendChild(zoom);
+      mediaElement.addEventListener('dblclick', () => zoom.click());
+    }
+
     const open = document.createElement('a');
     open.className = 'artifact-action';
     open.href = href;
     open.target = '_blank';
     open.rel = 'noreferrer';
-    open.textContent = 'Open original ↗';
+    open.textContent = isImage ? 'Open full resolution ↗' : 'Open original ↗';
     footer.appendChild(open);
 
     viewer.hidden = false;

@@ -1,0 +1,106 @@
+/* Late-stage spatial and interaction refinements shared by graph and artifact layers. */
+
+@media (min-width:901px){
+  /* Rich artifacts stay in one predictable low-left dock instead of competing
+     with route controls and inspector content in the upper corners. */
+  .artifact-object[data-scene-placement="artifact-contextual"]{
+    left:24px!important;
+    right:auto!important;
+    top:auto!important;
+    bottom:22px!important;
+    max-height:calc(100% - 118px)
+  }
+}
+
+/* Work projects are primary interaction targets, not tiny annotations under FCA nodes. */
+.work-project-anchor-v5 .work-project-hitbox-v5{
+  fill:color-mix(in srgb,var(--paper) 88%,transparent);
+  stroke:color-mix(in srgb,var(--line) 88%,transparent);
+  stroke-width:1;
+  vector-effect:non-scaling-stroke;
+  transition:fill .16s ease,stroke .16s ease,stroke-width .16s ease
+}
+.work-project-anchor-v5 text{pointer-events:none}
+.work-project-anchor-v5:hover .work-project-hitbox-v5,
+.work-project-anchor-v5:focus-visible .work-project-hitbox-v5,
+.work-project-anchor-v5.is-work-strong .work-project-hitbox-v5,
+.work-project-anchor-v5.is-selected .work-project-hitbox-v5{
+  fill:color-mix(in srgb,var(--teal) 8%,var(--paper));
+  stroke:var(--teal);
+  stroke-width:1.4
+}
+.work-project-anchor-v5.is-filtered-out .work-project-hitbox-v5{pointer-events:none}
+
+.scene-detail.is-work-concept-detail.has-primary-project-choices .detail-list-title{
+  margin-top:20px;
+  margin-bottom:4px;
+  color:var(--teal);
+  font-size:10px;
+  font-weight:850;
+  letter-spacing:.08em;
+  text-transform:uppercase
+}
+.work-concept-project-helper{
+  margin:0 0 10px;
+  color:var(--muted);
+  font-size:9px;
+  line-height:1.4
+}
+.work-concept-projects.is-primary-project-choice{
+  display:grid;
+  gap:7px;
+  margin-top:0
+}
+.work-concept-projects.is-primary-project-choice .work-concept-project{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  min-height:52px;
+  padding:9px 10px;
+  border:1px solid color-mix(in srgb,var(--teal) 40%,var(--line));
+  border-radius:5px;
+  background:color-mix(in srgb,var(--teal) 4%,var(--paper));
+  color:var(--ink);
+  text-align:left;
+  cursor:pointer;
+  transition:transform .16s ease,border-color .16s ease,background .16s ease
+}
+.work-concept-projects.is-primary-project-choice .work-concept-project:hover,
+.work-concept-projects.is-primary-project-choice .work-concept-project:focus-visible{
+  border-color:var(--teal);
+  background:color-mix(in srgb,var(--teal) 9%,var(--paper));
+  transform:translateX(2px)
+}
+.work-concept-project-copy{display:grid;gap:3px;min-width:0}
+.work-concept-project-title{font:760 10px/1.25 var(--sans)}
+.work-concept-project-meta{color:var(--muted);font:650 8px/1.2 var(--sans)}
+.work-concept-project-arrow{color:var(--teal);font-size:16px;line-height:1}
+
+/* Image focus uses the original asset and can switch from fitted overview to
+   native 1:1 pixels for high-resolution inspection. */
+.artifact-focus-media.is-image{overflow:auto;cursor:zoom-in}
+.artifact-focus-media.is-image.is-native-scale{
+  display:block;
+  padding:18px;
+  cursor:zoom-out
+}
+.artifact-focus-media.is-image.is-native-scale img{
+  max-width:none;
+  max-height:none;
+  width:auto;
+  height:auto;
+  margin:auto
+}
+.artifact-image-zoom[aria-pressed="true"]{color:var(--brown)}
+
+@media(max-width:900px){
+  .work-project-anchor-v5 .work-project-hitbox-v5{stroke-width:1.2}
+  .work-concept-projects.is-primary-project-choice .work-concept-project{min-height:48px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .work-project-anchor-v5 .work-project-hitbox-v5,
+  .work-concept-projects.is-primary-project-choice .work-concept-project{transition:none!important}
+}

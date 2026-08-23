@@ -9,7 +9,8 @@ const waitArtifactScenes = async page => {
   await page.waitForFunction(() => Boolean(
     window.ProfileArtifactScenes &&
     window.ProfileArtifactSceneLayout &&
-    window.ProfileArtifacts
+    window.ProfileArtifacts &&
+    window.ProfileRefinements
   ));
   await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
   await page.waitForTimeout(180);
@@ -79,7 +80,7 @@ test('Modal Logic Lab screenshots are a screen deck with a live-app affordance',
   await expect(deck.locator('a[data-support-artifact-id="modal-logic-lab-live"]')).toHaveAttribute('href', 'https://chrasts.github.io/Modal_Logic_Educational_Game/');
 });
 
-test('Hedgehog House avoids the inspector lane and visually tethers back to its graph node', async ({ page }) => {
+test('Hedgehog House docks low-left, enlarges original images and tethers back to its graph node', async ({ page }) => {
   await bypassIntro(page);
   await page.goto('/#about/woodworking/hedgehog-house');
   await waitArtifactScenes(page);
@@ -88,22 +89,31 @@ test('Hedgehog House avoids the inspector lane and visually tethers back to its 
   await expect(gallery).toBeVisible();
   await expect(gallery.locator('.artifact-deck-card')).toHaveCount(3);
   await expect(gallery.locator('img')).toHaveCount(3);
-  await expect(gallery).toHaveAttribute('data-artifact-preferred-side', 'right');
-  await expect(gallery).toHaveAttribute('data-artifact-side', 'left');
-  await expect(gallery).toHaveAttribute('data-artifact-collision-adjusted', 'inspector-lane');
 
-  const intersectsInspector = await gallery.evaluate(element => {
-    const detail = document.querySelector('#site-detail-panel');
-    if (!detail || detail.hidden) return false;
-    const a = element.getBoundingClientRect();
-    const b = detail.getBoundingClientRect();
-    return !(a.right <= b.left || a.left >= b.right || a.bottom <= b.top || a.top >= b.bottom);
+  const dock = await gallery.evaluate(element => {
+    const scene = element.closest('.scene-canvas').getBoundingClientRect();
+    const box = element.getBoundingClientRect();
+    return { left: box.left - scene.left, bottom: scene.bottom - box.bottom };
   });
-  expect(intersectsInspector).toBe(false);
+  expect(dock.left).toBeLessThan(50);
+  expect(dock.bottom).toBeLessThan(50);
 
   await gallery.hover();
   await expect(page.locator('#site-graph .site-graph-node[data-node-id="hedgehog-house"].is-artifact-linked')).toHaveCount(1);
   await expect(page.locator('.artifact-tether-layer')).toHaveClass(/is-visible/);
+
+  const active = gallery.locator('.artifact-deck-card.is-active');
+  await active.click();
+  const viewer = page.locator('.artifact-focus-viewer');
+  await expect(viewer).toBeVisible();
+  await expect(viewer.locator('.artifact-focus-media img')).toHaveAttribute('src', /assets\/images\/about\/woodworking\/hedgehog-house\/outside\.png$/);
+  const zoom = viewer.locator('[data-artifact-image-zoom="true"]');
+  await expect(zoom).toContainText('View 1:1');
+  await zoom.click();
+  await expect(viewer.locator('.artifact-focus-media')).toHaveClass(/is-native-scale/);
+  await expect(zoom).toHaveAttribute('aria-pressed', 'true');
+  await page.keyboard.press('Escape');
+  await expect(viewer).toBeHidden();
 });
 
 test('artifact scenes collapse to a non-scrolling mobile tray', async ({ page }) => {

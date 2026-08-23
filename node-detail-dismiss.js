@@ -19,13 +19,15 @@
     const target = event.target;
     if (!(target instanceof Element)) return;
     if (detail.contains(target)) return;
-
-    /* Graph nodes retain their own selection/navigation semantics. Any other
-       click in the current node view invokes exactly the same close control the
-       user sees in the inspector. */
     if (target.closest('#site-graph .site-graph-node')) return;
-    dismiss();
-  });
+
+    /* Capture guarantees we see clicks even when a scene control stops
+       bubbling. Defer until that click has completed, then invoke the exact
+       visible close control rather than inventing a second detail state path. */
+    queueMicrotask(() => {
+      if (isOpen()) dismiss();
+    });
+  }, true);
 
   window.ProfileNodeDetailDismiss = Object.freeze({
     dismiss,

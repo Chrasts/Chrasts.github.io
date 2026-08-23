@@ -26,6 +26,7 @@ jobs:
       - name: Check JavaScript syntax
         run: |
           node --check artifact-data.js
+          node --check scripts/validate-artifacts.mjs
           node --check scene-system.js
           node --check scene-definitions.js
           node --check scene-legacy-bridge.js
@@ -46,6 +47,9 @@ jobs:
           node --check phase0-stability.js
           node --check playwright.config.js
           for file in tests/*.spec.js; do node --check "$file"; done
+
+      - name: Validate artifact manifest
+        run: node scripts/validate-artifacts.mjs
 
       - name: Install Playwright test runner
         run: npm install --no-save @playwright/test@1.55.0

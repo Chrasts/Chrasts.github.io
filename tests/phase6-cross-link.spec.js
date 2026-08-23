@@ -16,6 +16,13 @@ const relationGeometry = async (page, sourceId, targetId) => page.evaluate(([sou
   return { vector, direction };
 }, [sourceId, targetId]);
 
+const relationFor = async (page, sourceId, targetId) => page.evaluate(([source, target]) =>
+  window.ProfileCrossLinkTravel.relationsFor(source).find(relation => relation.targetId === target) || null,
+[sourceId, targetId]);
+
+const navigateCrossLink = async (page, targetId, type = null) => page.evaluate(([target, relationType]) =>
+  window.ProfileCrossLinkTravel.navigate(target, relationType), [targetId, type]);
+
 const expectVectorClose = (actual, expected) => {
   expect(actual).not.toBeNull();
   expect(Math.abs(actual.x - expected.x)).toBeLessThan(0.01);
@@ -35,16 +42,14 @@ test.describe('Phase 6 cross-link travel — desktop', () => {
     await page.waitForFunction(() => Boolean(window.ProfileCrossLinkTravel && window.ProfileGeometry));
 
     const expected = await relationGeometry(page, 'project-sql-schema', 'sql');
-    const link = page.locator('.profile-crosslink[data-source-id="project-sql-schema"][data-target-id="sql"]');
-    await expect(link).toBeVisible();
-    await expect(link.locator('.profile-crosslink-relation')).toHaveText('Evidence');
-    expect(await link.getAttribute('data-direction')).toBe(expected.direction);
-    expectVectorClose({
-      x: Number(await link.getAttribute('data-vector-x')),
-      y: Number(await link.getAttribute('data-vector-y'))
-    }, expected.vector);
+    const relation = await relationFor(page, 'project-sql-schema', 'sql');
+    expect(relation).not.toBeNull();
+    expect(relation.label).toBe('Evidence');
+    expect(relation.direction).toBe(expected.direction);
+    expectVectorClose(relation.vector, expected.vector);
+    await expect(page.locator('.profile-crosslinks')).toBeHidden();
 
-    await link.click();
+    await navigateCrossLink(page, 'sql', 'evidence');
     await page.waitForSelector('.profile-crosslink-travel-overlay.is-vector-travel');
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'knowledge/data-computing/data-management/sql');
     const snapshot = await waitTravelComplete(page);
@@ -65,12 +70,13 @@ test.describe('Phase 6 cross-link travel — desktop', () => {
     await page.waitForFunction(() => Boolean(window.ProfileCrossLinkTravel && window.ProfileGeometry));
 
     const expected = await relationGeometry(page, 'esslli', 'sat-smt');
-    const link = page.locator('.profile-crosslink[data-target-id="sat-smt"]');
-    await expect(link).toBeVisible();
-    await expect(link.locator('.profile-crosslink-relation')).toHaveText('Studied topic');
-    expect(await link.getAttribute('data-direction')).toBe(expected.direction);
+    const relation = await relationFor(page, 'esslli', 'sat-smt');
+    expect(relation).not.toBeNull();
+    expect(relation.label).toBe('Studied topic');
+    expect(relation.direction).toBe(expected.direction);
+    await expect(page.locator('.profile-crosslinks')).toBeHidden();
 
-    await link.click();
+    await navigateCrossLink(page, 'sat-smt', 'studied-in');
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'knowledge/logic-math/mathematical-logic/computational-logic/sat-smt');
     const snapshot = await waitTravelComplete(page);
 
@@ -87,12 +93,13 @@ test.describe('Phase 6 cross-link travel — desktop', () => {
     await page.waitForFunction(() => Boolean(window.ProfileCrossLinkTravel && window.ProfileGeometry));
 
     const expected = await relationGeometry(page, 'ceske-priority', 'project-social-workers-survey');
-    const link = page.locator('.profile-crosslink[data-target-id="project-social-workers-survey"]');
-    await expect(link).toBeVisible();
-    await expect(link.locator('.profile-crosslink-relation')).toHaveText('Project');
-    expect(await link.getAttribute('data-direction')).toBe(expected.direction);
+    const relation = await relationFor(page, 'ceske-priority', 'project-social-workers-survey');
+    expect(relation).not.toBeNull();
+    expect(relation.label).toBe('Project');
+    expect(relation.direction).toBe(expected.direction);
+    await expect(page.locator('.profile-crosslinks')).toBeHidden();
 
-    await link.click();
+    await navigateCrossLink(page, 'project-social-workers-survey', 'experience-link');
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'work/project/social-workers-survey');
     const snapshot = await waitTravelComplete(page);
 
@@ -127,10 +134,11 @@ test.describe('Phase 6 reduced motion', () => {
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'education/esslli');
     await page.waitForFunction(() => Boolean(window.ProfileCrossLinkTravel && window.ProfileGeometry));
     const expected = await relationGeometry(page, 'esslli', 'sat-smt');
+    const relation = await relationFor(page, 'esslli', 'sat-smt');
+    expect(relation).not.toBeNull();
+    await expect(page.locator('.profile-crosslinks')).toBeHidden();
 
-    const link = page.locator('.profile-crosslink[data-target-id="sat-smt"]');
-    await expect(link).toBeVisible();
-    await link.click();
+    await navigateCrossLink(page, 'sat-smt', 'studied-in');
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'knowledge/logic-math/mathematical-logic/computational-logic/sat-smt');
     const snapshot = await waitTravelComplete(page);
 
@@ -140,22 +148,24 @@ test.describe('Phase 6 reduced motion', () => {
   });
 });
 
-test.describe('Phase 6 cross-link rail — mobile portrait', () => {
+test.describe('Phase 6 cross-link data — mobile portrait', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
-  test('keeps vector cross-links usable in the mobile local scene', async ({ page }) => {
+  test('keeps vector cross-links available while the legacy rail stays hidden', async ({ page }) => {
     await prepare(page);
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
 
     await page.goto('/#education/esslli');
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'education/esslli');
-    const rail = page.locator('.profile-crosslinks');
-    await expect(rail).toBeVisible();
+    await page.waitForFunction(() => Boolean(window.ProfileCrossLinkTravel));
+    await expect(page.locator('.profile-crosslinks')).toBeHidden();
 
-    const link = rail.locator('.profile-crosslink[data-target-id="logic-for-ai"]');
-    await expect(link).toBeVisible();
-    await link.click();
+    const relation = await relationFor(page, 'esslli', 'logic-for-ai');
+    expect(relation).not.toBeNull();
+    expect(relation.type).toBe('studied-in');
+
+    await navigateCrossLink(page, 'logic-for-ai', 'studied-in');
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'knowledge/logic-math/mathematical-logic/computational-logic/logic-for-ai');
     await waitTravelComplete(page);
 

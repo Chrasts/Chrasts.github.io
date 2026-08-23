@@ -37,9 +37,7 @@
       id: 'bachelor-thesis-diagrams',
       recipe: 'media-deck',
       variant: 'diagram',
-      eyebrow: 'BSc thesis material',
       title: 'Structural diagrams',
-      description: 'Two thesis figures behave as a small specimen deck rather than static attachments.',
       artifactIds: ['bachelor-thesis-lattice-of-bands', 'bachelor-thesis-rol-non-a'],
       targets: [
         { route: 'work/project/bachelor-thesis', anchorNodeId: 'project-bachelor-thesis', side: 'left' },
@@ -50,9 +48,7 @@
       id: 'modal-logic-lab-screens',
       recipe: 'media-deck',
       variant: 'screens',
-      eyebrow: 'Interactive project',
       title: 'Modal Logic Lab interfaces',
-      description: 'Switch between the laboratory and learning views; the live application remains one click away.',
       artifactIds: ['modal-logic-lab-screenshot-lab', 'modal-logic-lab-screenshot-learn'],
       actionArtifactIds: ['modal-logic-lab-live'],
       targets: [
@@ -64,9 +60,7 @@
       id: 'hedgehog-house-gallery',
       recipe: 'media-deck',
       variant: 'fan',
-      eyebrow: 'Woodworking',
-      title: 'Hedgehog house',
-      description: 'A small photo fan showing the exterior, interior and the house in use.',
+      title: 'Hedgehog house photographs',
       artifactIds: ['hedgehog-house-outside', 'hedgehog-house-inside', 'hedgehog-house-visitor'],
       targets: [
         { route: 'about/woodworking/hedgehog-house', anchorNodeId: 'hedgehog-house', side: 'right' }
@@ -77,9 +71,6 @@
   deepFreeze(bindings);
   window.ARTIFACT_SCENE_BINDINGS = bindings;
 
-  // The layout contract is deliberately separate from data and rendering. This
-  // small bootstrap keeps it coupled to the artifact-scene bundle without
-  // putting collision or card-layout logic into the graph renderer.
   if (typeof document !== 'undefined' && !document.querySelector('script[data-profile-artifact-layout-contract]')) {
     const script = document.createElement('script');
     script.src = 'artifact-scene-layout-contract.js';
@@ -88,8 +79,6 @@
     document.head.appendChild(script);
   }
 
-  // Shared late-stage interaction refinements stay isolated from the graph
-  // renderer itself: larger Work project targets and rich-media inspection.
   if (typeof document !== 'undefined') {
     if (!document.querySelector('link[data-profile-refinements-style]')) {
       const link = document.createElement('link');
@@ -106,13 +95,25 @@
       document.head.appendChild(script);
     }
 
-    // Phase B remains an explicit pilot layer. It enhances the three selected
-    // objects without turning the experiment into the reusable Phase C system.
     if (!document.querySelector('link[data-profile-phase-b-object-focus-style]')) {
       const link = document.createElement('link');
       link.rel = 'stylesheet';
       link.href = 'phase-b-object-focus-pilot.css';
       link.setAttribute('data-profile-phase-b-object-focus-style', 'true');
+      document.head.appendChild(link);
+    }
+    if (!document.querySelector('link[data-profile-phase-b-object-emergence-style]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'phase-b-object-emergence.css';
+      link.setAttribute('data-profile-phase-b-object-emergence-style', 'true');
+      document.head.appendChild(link);
+    }
+    if (!document.querySelector('link[data-profile-phase-b-object-emergence-refinements]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'phase-b-object-emergence-refinements.css';
+      link.setAttribute('data-profile-phase-b-object-emergence-refinements', 'true');
       document.head.appendChild(link);
     }
     if (!document.querySelector('script[data-profile-phase-b-object-focus]')) {

@@ -9,21 +9,12 @@
     return node;
   };
 
-  const titleShell = binding => {
+  const sceneRoot = binding => {
     const root = element('section', `artifact-object artifact-recipe-${binding.recipe}`);
     root.dataset.artifactScene = binding.id;
     root.dataset.artifactRecipe = binding.recipe;
     if (binding.variant) root.dataset.artifactVariant = binding.variant;
-
-    const header = element('header', 'artifact-object-header');
-    const heading = element('div', 'artifact-heading-copy');
-    heading.append(
-      element('p', 'artifact-eyebrow', binding.eyebrow || 'Artifact'),
-      element('h3', 'artifact-object-title', binding.title || 'Artifact')
-    );
-    header.appendChild(heading);
-    root.appendChild(header);
-    if (binding.description) root.appendChild(element('p', 'artifact-object-description', binding.description));
+    root.setAttribute('aria-label', binding.title || 'Artifact objects');
     return root;
   };
 
@@ -62,71 +53,80 @@
     return frame;
   };
 
-  const actionsFor = (binding, env, artifact) => {
-    const actions = element('div', 'artifact-actions');
-    const inspect = element('button', 'artifact-action artifact-focus-action', 'Inspect');
-    inspect.type = 'button';
-    inspect.dataset.artifactFocus = artifact.id;
-    inspect.addEventListener('click', event => {
-      event.stopPropagation();
-      env.openFocus(binding, artifact.id);
-    });
-    actions.appendChild(inspect);
+  const objectTag = artifact => {
+    const tag = element('span', 'artifact-object-tag', artifact.title || 'Artifact');
+    tag.setAttribute('aria-hidden', 'true');
+    return tag;
+  };
 
-    const href = env.hrefFor(artifact.id);
-    if (href) {
-      const source = element('a', 'artifact-action', 'Open source ↗');
-      source.href = href;
-      source.target = '_blank';
-      source.rel = 'noreferrer';
-      actions.appendChild(source);
+  const appendOrbitActions = (root, binding, env, { includePrimarySource = null } = {}) => {
+    const actions = element('div', 'artifact-orbit-actions');
+
+    if (includePrimarySource) {
+      const href = env.hrefFor(includePrimarySource.id);
+      if (href) {
+        const source = element('a', 'artifact-orbit-action', 'Source ↗');
+        source.href = href;
+        source.target = '_blank';
+        source.rel = 'noreferrer';
+        source.dataset.sourceArtifactId = includePrimarySource.id;
+        actions.appendChild(source);
+      }
     }
 
     (binding.actionArtifactIds || []).forEach(id => {
       const support = env.artifactFor(id);
       const supportHref = env.hrefFor(id);
       if (!support || !supportHref) return;
-      const link = element('a', 'artifact-action artifact-live-action', `${support.title} ↗`);
+      const link = element('a', 'artifact-orbit-action artifact-live-action', 'Open live ↗');
       link.href = supportHref;
       link.target = '_blank';
       link.rel = 'noreferrer';
       link.dataset.supportArtifactId = id;
+      link.setAttribute('aria-label', `Open ${support.title}`);
       actions.appendChild(link);
     });
-    return actions;
+
+    if (actions.childElementCount) root.appendChild(actions);
   };
 
   const documentFolio = (binding, env) => {
-    const root = titleShell(binding);
-    root.classList.add('artifact-tilt-host');
+    const root = sceneRoot(binding);
+    root.classList.add('artifact-document-object');
     const artifact = env.artifactFor(binding.artifactIds[0]);
     if (!artifact) return root;
     const href = env.hrefFor(artifact.id);
 
-    const stage = element('div', 'artifact-folio-stage artifact-tilt');
+    const stage = element('div', 'artifact-folio-stage');
     const shadowPage = element('div', 'artifact-folio-shadow-page');
-    const page = element('article', 'artifact-folio-page');
+    shadowPage.setAttribute('aria-hidden', 'true');
+
+    const page = element('button', 'artifact-folio-page artifact-emergent-object');
+    page.type = 'button';
     page.dataset.artifactId = artifact.id;
+    page.dataset.artifactFocus = artifact.id;
+    page.setAttribute('aria-label', `Inspect ${artifact.title}`);
     page.appendChild(mediaPreview(artifact, href, { className: 'artifact-folio-preview', eager: true }));
 
-    const caption = element('div', 'artifact-folio-caption');
-    caption.append(
-      element('span', 'artifact-index-label', '01 · document'),
-      element('strong', 'artifact-folio-title', artifact.title)
-    );
+    const caption = element('span', 'artifact-folio-caption');
+    caption.appendChild(element('strong', 'artifact-folio-title', artifact.title));
     if (artifact.description) caption.appendChild(element('span', 'artifact-folio-summary', artifact.description));
     page.appendChild(caption);
-    stage.append(shadowPage, page);
-    root.append(stage, actionsFor(binding, env, artifact));
 
-    page.addEventListener('dblclick', () => env.openFocus(binding, artifact.id));
+    page.addEventListener('click', () => env.openFocus(binding, artifact.id));
+    stage.append(shadowPage, page);
+    root.appendChild(stage);
+    appendOrbitActions(root, binding, env, { includePrimarySource: artifact });
     return root;
   };
 
   const mediaDeck = (binding, env) => {
-    const root = titleShell(binding);
+    const root = sceneRoot(binding);
+    root.classList.add('artifact-emergence-root');
     const artifacts = binding.artifactIds.map(env.artifactFor).filter(Boolean);
-    const deck = element('div', 'artifact-media-deck');
+    const deck = element('div', 'artifact-media-deck artifact-emergence-field');
+    deck.setAttribute('role', 'group');
+    deck.setAttribute('aria-label', binding.title || 'Related media');
     const cards = new Map();
     let activeId = artifacts[0]?.id || null;
 
@@ -137,58 +137,39 @@
       cards.forEach((card, cardId) => {
         const active = cardId === id;
         card.classList.toggle('is-active', active);
-        card.setAttribute('aria-pressed', active ? 'true' : 'false');
+        card.setAttribute('aria-current', active ? 'true' : 'false');
       });
-      const active = env.artifactFor(id);
-      const counter = root.querySelector('.artifact-deck-status');
-      if (counter && active) {
-        const index = artifacts.findIndex(item => item.id === id) + 1;
-        counter.textContent = `${String(index).padStart(2, '0')} / ${String(artifacts.length).padStart(2, '0')} · ${active.title}`;
-      }
     };
 
     artifacts.forEach((artifact, index) => {
       const href = env.hrefFor(artifact.id);
-      const card = element('button', 'artifact-deck-card artifact-tilt');
+      const card = element('button', 'artifact-deck-card artifact-emergent-object');
       card.type = 'button';
       card.dataset.artifactId = artifact.id;
+      card.dataset.artifactFocus = artifact.id;
       card.style.setProperty('--artifact-card-index', String(index));
-      card.setAttribute('aria-pressed', index === 0 ? 'true' : 'false');
-      card.appendChild(mediaPreview(artifact, href, { className: 'artifact-deck-preview', eager: index === 0 }));
-      const label = element('span', 'artifact-deck-label', artifact.title);
-      card.appendChild(label);
+      card.style.setProperty('--artifact-emerge-delay', `${70 + index * 85}ms`);
+      card.setAttribute('aria-label', `Inspect ${artifact.title}`);
+      card.setAttribute('aria-current', index === 0 ? 'true' : 'false');
+      card.append(
+        mediaPreview(artifact, href, { className: 'artifact-deck-preview', eager: index === 0 }),
+        objectTag(artifact)
+      );
+
+      card.addEventListener('pointerenter', () => activate(artifact.id));
+      card.addEventListener('focus', () => activate(artifact.id));
       card.addEventListener('click', event => {
         event.stopPropagation();
-        if (activeId === artifact.id) env.openFocus(binding, artifact.id);
-        else activate(artifact.id);
+        activate(artifact.id);
+        env.openFocus(binding, artifact.id);
       });
+
       deck.appendChild(card);
       cards.set(artifact.id, card);
     });
 
-    const footer = element('footer', 'artifact-deck-footer');
-    const status = element('span', 'artifact-deck-status');
-    status.title = 'Select a card, then click it again to enlarge';
-    const inspect = element('button', 'artifact-action artifact-deck-inspect', 'Inspect active');
-    inspect.type = 'button';
-    inspect.addEventListener('click', () => {
-      if (activeId) env.openFocus(binding, activeId);
-    });
-    footer.append(status, inspect);
-
-    (binding.actionArtifactIds || []).forEach(id => {
-      const artifact = env.artifactFor(id);
-      const href = env.hrefFor(id);
-      if (!artifact || !href) return;
-      const link = element('a', 'artifact-action artifact-live-action', 'Open live app ↗');
-      link.href = href;
-      link.target = '_blank';
-      link.rel = 'noreferrer';
-      link.dataset.supportArtifactId = id;
-      footer.appendChild(link);
-    });
-
-    root.append(deck, footer);
+    root.appendChild(deck);
+    appendOrbitActions(root, binding, env);
     if (activeId) activate(activeId);
     return root;
   };

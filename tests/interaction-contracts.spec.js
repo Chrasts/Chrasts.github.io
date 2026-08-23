@@ -1,18 +1,28 @@
 const { test, expect } = require('@playwright/test');
 
-const waitForStableGraph = async page => {
-  await page.waitForFunction(() => {
-    const body = document.body;
-    return body?.dataset.graphRoute && !body.classList.contains('is-v9-transitioning');
-  });
-  await page.waitForTimeout(80);
-};
-
 const nodePositions = page => page.evaluate(() => Object.fromEntries(
   [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')]
     .filter(element => !element.closest('.v9-transition-overlay'))
     .map(element => [element.dataset.nodeId, [Number(element.dataset.x), Number(element.dataset.y)]])
 ));
+
+const waitForStableGraph = async page => {
+  await page.waitForFunction(() => {
+    const body = document.body;
+    return body?.dataset.graphRoute && !body.classList.contains('is-v9-transitioning');
+  });
+
+  let previous = null;
+  let stableSamples = 0;
+  for (let attempt = 0; attempt < 12 && stableSamples < 2; attempt += 1) {
+    await page.waitForTimeout(140);
+    const current = await nodePositions(page);
+    if (previous && JSON.stringify(current) === JSON.stringify(previous)) stableSamples += 1;
+    else stableSamples = 0;
+    previous = current;
+  }
+  expect(stableSamples).toBeGreaterThanOrEqual(2);
+};
 
 test('active focus root is idempotent and does not re-layout its segment', async ({ page }) => {
   await page.goto('/#education');
@@ -24,6 +34,7 @@ test('active focus root is idempotent and does not re-layout its segment', async
   const after = await nodePositions(page);
 
   expect(await page.evaluate(() => location.hash)).toBe('#education');
+  expect(await page.evaluate(() => document.body.classList.contains('is-v9-transitioning'))).toBe(false);
   expect(after).toEqual(before);
 });
 

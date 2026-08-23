@@ -1,5 +1,11 @@
 (() => {
   const site = window.SITE_DATA;
+  const graphNodes = site?.graph?.nodes || [];
+  const graphNodeMap = new Map(graphNodes.map(node => [node.id, node]));
+  const childrenFor = id => graphNodes.filter(node => node.parentIds?.includes(id));
+  const normaliseRoute = value =>
+    (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
+  const routeForNode = node => node?.route || 'overview';
 
   const patchWorkData = data => {
     if (!data) return;
@@ -186,6 +192,7 @@
   const attributeIds = work?.attributes?.map(attribute => attribute.id) || [];
   const attributeMap = new Map((work?.attributes || []).map(attribute => [attribute.id, attribute]));
   const projects = work?.projects || [];
+  const projectMap = new Map(projects.map(project => [project.id, project]));
 
   const subset = (left, right) => left.every(value => right.includes(value));
   const intersection = arrays => {
@@ -216,6 +223,87 @@
     }, realReduced.matches ? 0 : 220);
   };
 
+  const closeLocalWorkProjectDetail = () => {
+    const panel = detailPanel();
+    if (!panel?.classList.contains('is-work-project-detail-local')) return false;
+    panel.classList.remove('is-open', 'is-work-project-detail-local');
+    if (normaliseRoute(location.hash).startsWith('work/project/')) {
+      history.replaceState(null, '', '#work');
+      document.body.dataset.graphRoute = 'work';
+    }
+    setTimeout(() => {
+      if (!panel.classList.contains('is-open')) panel.hidden = true;
+    }, realReduced.matches ? 0 : 180);
+    return true;
+  };
+
+  const openLocalWorkProjectDetail = projectId => {
+    const project = projectMap.get(projectId);
+    const panel = detailPanel();
+    if (!project || !panel) return false;
+
+    document.body.classList.remove('has-work-concept-detail');
+    panel.classList.remove('is-work-concept-detail', 'is-work-project-detail-local');
+    panel.innerHTML = '';
+    panel.hidden = false;
+    panel.classList.add('is-work-project-detail-local');
+
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'detail-close';
+    close.textContent = '×';
+    close.setAttribute('aria-label', 'Close detail');
+    close.addEventListener('click', closeLocalWorkProjectDetail);
+
+    const eyebrow = document.createElement('p');
+    eyebrow.className = 'detail-eyebrow';
+    eyebrow.textContent = project.type;
+    const heading = document.createElement('h2');
+    heading.textContent = project.title;
+    const summary = document.createElement('p');
+    summary.className = 'detail-summary';
+    summary.textContent = project.description;
+    panel.append(close, eyebrow, heading, summary);
+
+    const tech = document.createElement('p');
+    tech.className = 'detail-meta';
+    tech.textContent = project.tech.join(' · ');
+    panel.appendChild(tech);
+
+    if (project.note) {
+      const note = document.createElement('p');
+      note.className = 'detail-summary detail-note';
+      note.textContent = project.note;
+      panel.appendChild(note);
+    }
+
+    if (project.links?.length) {
+      const linksHeading = document.createElement('p');
+      linksHeading.className = 'detail-list-title';
+      linksHeading.textContent = 'Links';
+      const links = document.createElement('div');
+      links.className = 'detail-node-list';
+      project.links.forEach(link => {
+        const anchor = document.createElement('a');
+        anchor.href = link.href;
+        anchor.target = '_blank';
+        anchor.rel = 'noreferrer';
+        anchor.textContent = link.label;
+        links.appendChild(anchor);
+      });
+      panel.append(linksHeading, links);
+    }
+
+    const route = `work/project/${project.id}`;
+    history.replaceState(null, '', `#${route}`);
+    document.body.dataset.graphRoute = route;
+    document.querySelectorAll('.work-project-anchor-v5[data-project-id]').forEach(element => {
+      element.classList.toggle('is-selected', element.dataset.projectId === project.id);
+    });
+    requestAnimationFrame(() => panel.classList.add('is-open'));
+    return true;
+  };
+
   const openWorkConceptDetail = (themeIds, { exactNode = false } = {}) => {
     const panel = detailPanel();
     if (!work || !panel) return;
@@ -232,6 +320,7 @@
 
     panel.innerHTML = '';
     panel.hidden = false;
+    panel.classList.remove('is-work-project-detail-local');
     panel.classList.add('is-work-concept-detail');
     document.body.classList.add('has-work-concept-detail');
 
@@ -260,10 +349,12 @@
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'work-concept-project';
+        button.dataset.projectId = project.id;
         button.textContent = project.title;
-        button.addEventListener('click', () => {
-          closeWorkConceptDetail();
-          location.hash = `#work/project/${project.id}`;
+        button.addEventListener('click', event => {
+          event.preventDefault();
+          event.stopPropagation();
+          openLocalWorkProjectDetail(project.id);
         });
         list.appendChild(button);
       });
@@ -291,6 +382,14 @@
     if (document.body.dataset.graphMode !== 'work') return false;
     const target = event.target;
 
+    const projectLabel = target.closest?.('.work-project-anchor-v5[data-project-id]');
+    if (projectLabel) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      openLocalWorkProjectDetail(projectLabel.dataset.projectId);
+      return true;
+    }
+
     const conceptNode = target.closest?.('.site-graph-node[data-node-id^="work-concept:"]');
     if (conceptNode) {
       const themes = workConceptThemes(conceptNode);
@@ -312,21 +411,63 @@
     return false;
   };
 
+  const routeFromActivationTarget = target => {
+    const routeElement = target.closest?.('[data-route]');
+    if (routeElement) {
+      return normaliseRoute(routeElement.dataset.route || routeElement.getAttribute('href'));
+    }
+    const nodeElement = target.closest?.('.site-graph-node[data-node-id]');
+    if (!nodeElement) return null;
+    const node = graphNodeMap.get(nodeElement.dataset.nodeId);
+    return node ? normaliseRoute(routeForNode(node)) : null;
+  };
+
+  const interceptRedundantActivation = event => {
+    if (document.body.dataset.graphMode === 'atlas') return false;
+    const route = routeFromActivationTarget(event.target);
+    if (!route) return false;
+    const currentRoute = normaliseRoute(document.body.dataset.graphRoute || location.hash);
+    if (route !== currentRoute) return false;
+
+    const nodeElement = event.target.closest?.('.site-graph-node[data-node-id]');
+    if (nodeElement) {
+      const nodeId = nodeElement.dataset.nodeId;
+      if (!childrenFor(nodeId).length) return false;
+    }
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    return true;
+  };
+
   window.addEventListener('click', event => {
     if (event.button !== 0) return;
+    if (interceptRedundantActivation(event)) return;
     interceptWorkInspection(event);
   }, true);
 
   window.addEventListener('keydown', event => {
-    if ((event.key === 'Enter' || event.key === ' ') && interceptWorkInspection(event)) return;
-    if (event.key === 'Escape' && document.body.classList.contains('has-work-concept-detail')) {
-      closeWorkConceptDetail();
+    if (event.key === 'Enter' || event.key === ' ') {
+      if (interceptRedundantActivation(event)) return;
+      if (interceptWorkInspection(event)) return;
+    }
+    if (event.key === 'Escape') {
+      if (closeLocalWorkProjectDetail()) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
+      if (document.body.classList.contains('has-work-concept-detail')) closeWorkConceptDetail();
     }
   }, true);
 
   window.addEventListener('hashchange', () => {
-    const route = (location.hash || '#overview').replace(/^#/, '');
-    if (!route.startsWith('work')) closeWorkConceptDetail();
+    const route = normaliseRoute(location.hash);
+    if (!route.startsWith('work')) {
+      closeWorkConceptDetail();
+      const panel = detailPanel();
+      panel?.classList.remove('is-work-project-detail-local');
+    }
     if (route !== 'atlas') {
       atlasRootPinned = false;
       atlasRootVisuallyCleared = false;

@@ -423,7 +423,7 @@
   };
 
   const interceptRedundantActivation = event => {
-    if (document.body.dataset.graphMode === 'atlas') return false;
+    if (document.body.dataset.graphMode !== 'focus') return false;
     const route = routeFromActivationTarget(event.target);
     if (!route) return false;
     const currentRoute = normaliseRoute(document.body.dataset.graphRoute || location.hash);

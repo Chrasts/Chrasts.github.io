@@ -10,7 +10,8 @@ const waitArtifactScenes = async page => {
     window.ProfileArtifactScenes &&
     window.ProfileArtifactSceneLayout &&
     window.ProfileArtifacts &&
-    window.ProfileRefinements
+    window.ProfileRefinements &&
+    window.ProfilePhaseBObjectFocus
   ));
   await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
   await page.waitForTimeout(180);
@@ -27,7 +28,7 @@ test('artifact architecture boots with reusable folio and deck recipes', async (
   expect(await page.locator('[data-artifact-scene]').count()).toBe(5);
 });
 
-test('Simulation Credence opens as a live PDF folio with an immersive focus viewer', async ({ page }) => {
+test('Simulation Credence opens as a clean PDF stage without browser-style toolbar chrome', async ({ page }) => {
   await bypassIntro(page);
   await page.goto('/#education/charles-university/coursework/simulation-credence');
   await waitArtifactScenes(page);
@@ -40,8 +41,10 @@ test('Simulation Credence opens as a live PDF folio with an immersive focus view
   await folio.locator('[data-artifact-focus="simulation-credence-coursework"]').click();
   const viewer = page.locator('.artifact-focus-viewer');
   await expect(viewer).toBeVisible();
+  await expect(viewer).toHaveAttribute('data-media-stage', 'phase-b');
+  await expect(viewer).toHaveAttribute('data-media-kind', 'pdf');
   await expect(viewer.locator('.artifact-focus-title')).toContainText('Simulation Credence and Its Consequences');
-  await expect(viewer.locator('.artifact-focus-media iframe')).toHaveAttribute('src', /simulation-credence-and-its-consequences\.pdf#toolbar=1/);
+  await expect(viewer.locator('.artifact-focus-media iframe')).toHaveAttribute('src', /simulation-credence-and-its-consequences\.pdf#toolbar=0&navpanes=0&scrollbar=0&view=FitH/);
   await page.keyboard.press('Escape');
   await expect(viewer).toBeHidden();
 });
@@ -80,7 +83,7 @@ test('Modal Logic Lab screenshots are a screen deck with a live-app affordance',
   await expect(deck.locator('a[data-support-artifact-id="modal-logic-lab-live"]')).toHaveAttribute('href', 'https://chrasts.github.io/Modal_Logic_Educational_Game/');
 });
 
-test('Hedgehog House docks low-left, enlarges original images and tethers back to its graph node', async ({ page }) => {
+test('Hedgehog House docks low-left, opens original images in direct-manipulation focus and tethers to its graph node', async ({ page }) => {
   await bypassIntro(page);
   await page.goto('/#about/woodworking/hedgehog-house');
   await waitArtifactScenes(page);
@@ -105,13 +108,11 @@ test('Hedgehog House docks low-left, enlarges original images and tethers back t
   const active = gallery.locator('.artifact-deck-card.is-active');
   await active.click();
   const viewer = page.locator('.artifact-focus-viewer');
+  await page.waitForFunction(() => window.ProfilePhaseBObjectFocus?.snapshot().phase === 'settled');
   await expect(viewer).toBeVisible();
-  await expect(viewer.locator('.artifact-focus-media img')).toHaveAttribute('src', /assets\/images\/about\/woodworking\/hedgehog-house\/outside\.png$/);
-  const zoom = viewer.locator('[data-artifact-image-zoom="true"]');
-  await expect(zoom).toContainText('View 1:1');
-  await zoom.click();
-  await expect(viewer.locator('.artifact-focus-media')).toHaveClass(/is-native-scale/);
-  await expect(zoom).toHaveAttribute('aria-pressed', 'true');
+  await expect(viewer).toHaveAttribute('data-media-kind', 'image');
+  await expect(viewer.locator('.artifact-focus-media img.phase-b-panzoom-media')).toHaveAttribute('src', /assets\/images\/about\/woodworking\/hedgehog-house\/outside\.png$/);
+  await expect(viewer.locator('[data-artifact-image-zoom="true"]')).toHaveCount(0);
   await page.keyboard.press('Escape');
   await expect(viewer).toBeHidden();
 });

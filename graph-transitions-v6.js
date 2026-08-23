@@ -87,6 +87,49 @@
     element.style.setProperty('opacity', String(value), 'important');
   };
 
+  const labelGeometry = element => {
+    const label = element?.querySelector('.site-graph-label');
+    if (!label) return null;
+    return {
+      anchor: label.getAttribute('text-anchor') || 'middle',
+      x: Number(label.getAttribute('x') || 0),
+      y: Number(label.getAttribute('y') || 0),
+      text: label.textContent || ''
+    };
+  };
+
+  const sameLabelGeometry = (left, right) => Boolean(
+    left && right &&
+    left.anchor === right.anchor &&
+    left.x === right.x &&
+    left.y === right.y &&
+    left.text === right.text
+  );
+
+  const prepareLabelMorph = (overlayNode, liveNode) => {
+    const fromLabel = overlayNode?.querySelector('.site-graph-label');
+    const liveLabel = liveNode?.querySelector('.site-graph-label');
+    if (!fromLabel || !liveLabel) return null;
+    if (sameLabelGeometry(labelGeometry(overlayNode), labelGeometry(liveNode))) return null;
+
+    const targetLabel = liveLabel.cloneNode(true);
+    targetLabel.classList.add('v9-target-label');
+    targetLabel.style.pointerEvents = 'none';
+    setTransitionOpacity(targetLabel, 0);
+    overlayNode.appendChild(targetLabel);
+    return { fromLabel, targetLabel };
+  };
+
+  const paintLabelMorph = (morph, raw) => {
+    if (!morph) return;
+    const phase = Math.max(0, Math.min(1, (raw - .18) / .56));
+    const eased = phase < .5
+      ? 4 * phase * phase * phase
+      : 1 - Math.pow(-2 * phase + 2, 3) / 2;
+    setTransitionOpacity(morph.fromLabel, 1 - eased);
+    setTransitionOpacity(morph.targetLabel, eased);
+  };
+
   const edgePath = (from, to, key, straight = false) => {
     if (!from || !to) return '';
     if (straight || Math.abs(from.x - to.x) < 4) {
@@ -195,7 +238,14 @@
     };
 
     let ordered = [...rankNodes];
-    if (targetId === 'experience' && rank === 1) {
+    const explicitOrder = node => Number.isFinite(node.layoutOrder)
+      ? node.layoutOrder
+      : Number.isFinite(node.timelineOrder)
+        ? node.timelineOrder
+        : Number.POSITIVE_INFINITY;
+    if (ordered.some(node => Number.isFinite(explicitOrder(node)))) {
+      ordered.sort((a, b) => explicitOrder(a) - explicitOrder(b) || a.label.localeCompare(b.label));
+    } else if (targetId === 'experience' && rank === 1) {
       ordered.sort((a, b) => (a.timelineOrder || 0) - (b.timelineOrder || 0));
     } else {
       ordered.sort((a, b) => parentBarycentre(a) - parentBarycentre(b) || a.label.localeCompare(b.label));
@@ -541,7 +591,13 @@
     current.before.forEach((item, id) => {
       const preserved = preservedIds.has(id) && after.has(id);
       if (preserved) {
-        persistent.push({ id, element: item.clone, from: item.point, to: after.get(id) });
+        persistent.push({
+          id,
+          element: item.clone,
+          from: item.point,
+          to: after.get(id),
+          labelMorph: prepareLabelMorph(item.clone, afterElements.get(id))
+        });
       } else {
         leaving.push({ id, element: item.clone, from: item.point });
       }
@@ -602,6 +658,7 @@
       persistent.forEach(item => {
         const point = lerpPoint(item.from, item.to, moveP);
         setPoint(item.element, point);
+        paintLabelMorph(item.labelMorph, raw);
         currentPoints.set(item.id, point);
       });
 

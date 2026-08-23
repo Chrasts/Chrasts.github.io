@@ -90,7 +90,7 @@
   };
 
   if (typeof document !== 'undefined') {
-    ensureScript('artifact-scene-layout-contract.js', 'data-profile-artifact-layout-contract');
+    ensureScript('scene-composer.js', 'data-profile-scene-composer');
     ensureStyle('portfolio-refinements.css', 'data-profile-refinements-style');
     ensureScript('portfolio-refinements.js', 'data-profile-refinements');
     ensureStyle('object-focus.css', 'data-profile-object-focus-style');

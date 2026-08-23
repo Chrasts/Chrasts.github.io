@@ -142,10 +142,9 @@
       rankBuckets.get(rank).push(project);
     });
 
-    /* Some datasets put every project on the same formal rank. In Atlas that
-       degenerates into the flat two-row layout we explicitly want to avoid.
-       Preserve semantic left/right placement, but split that single project
-       rank into three deterministic visual tiers. */
+    /* If the data collapses every project into one formal rank, keep the
+       semantics for horizontal placement but split projects into stable visual
+       tiers. This prevents Atlas from degenerating back into two flat rows. */
     if (rankBuckets.size === 1 && projects.length > 4) {
       const only = [...rankBuckets.values()][0]
         .map(project => {
@@ -203,6 +202,17 @@
     };
     atlasPinFrame = requestAnimationFrame(tick);
   };
+
+  /* Phase 7 and the mobile Atlas runtime can legitimately re-apply their base
+     geometry after their own settling pass. Keep the Work territory pinned to
+     the compatibility geometry for as long as Atlas is open, not only during
+     the first animation window. The cadence is deliberately low: this changes
+     node geometry only, never the Atlas camera, and stops doing work outside
+     Atlas. */
+  const atlasWorkKeeper = window.setInterval(() => {
+    if (document.body?.dataset.graphMode === 'atlas' && !transitionLocked()) applyAtlasWorkLattice();
+  }, 180);
+  window.addEventListener('pagehide', () => clearInterval(atlasWorkKeeper), { once: true });
 
   let storedAtlasButtonMarkup = null;
   const backButtonMarkup = '<span class="atlas-entry-glyph" aria-hidden="true" style="display:grid;place-items:center;font-size:24px">←</span><span class="atlas-entry-copy"><strong>Profile</strong></span>';

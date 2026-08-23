@@ -28,7 +28,7 @@ const openHedgehog = async page => {
   return { active, viewer: page.locator('.artifact-focus-viewer') };
 };
 
-test('Hedgehog House follows Ambient to Active to Inspect and returns to the same source', async ({ page }) => {
+test('Hedgehog House media behaves as emergent objects with direct Inspect', async ({ page }) => {
   await bypassIntro(page);
   await page.goto('/#about/woodworking/hedgehog-house');
   await waitPhaseB(page);
@@ -40,10 +40,13 @@ test('Hedgehog House follows Ambient to Active to Inspect and returns to the sam
 
   await expect(outside).toHaveAttribute('data-object-focus-state', 'active');
   await expect(inside).toHaveAttribute('data-object-focus-state', 'ambient');
+  await expect(gallery.locator('.artifact-object-header')).toHaveCount(0);
+  await expect(gallery.locator('.artifact-object-description')).toHaveCount(0);
+  await expect(gallery.locator('.artifact-deck-footer')).toHaveCount(0);
 
-  await inside.click();
+  await inside.hover();
+  await expect(inside).toHaveClass(/is-active/);
   await expect(inside).toHaveAttribute('data-object-focus-state', 'active');
-  await expect(outside).toHaveAttribute('data-object-focus-state', 'ambient');
 
   await inside.click();
   await waitSettled(page);
@@ -89,16 +92,22 @@ test('certificate stack uses selection first and the same direct-manipulation im
   await expect(ethics).toHaveAttribute('data-object-focus-state', 'active');
 });
 
-test('BSc thesis diagram becomes a clean PDF inspection surface and returns', async ({ page }) => {
+test('BSc thesis diagram is a frameless scene object that opens directly into PDF inspection', async ({ page }) => {
   await bypassIntro(page);
   await page.goto('/#work/project/bachelor-thesis');
   await waitPhaseB(page);
 
-  const deck = page.locator('[data-artifact-scene="bachelor-thesis-diagrams"]');
-  const first = deck.locator('.artifact-deck-card[data-artifact-id="bachelor-thesis-lattice-of-bands"]');
+  const cluster = page.locator('[data-artifact-scene="bachelor-thesis-diagrams"]');
+  const first = cluster.locator('.artifact-deck-card[data-artifact-id="bachelor-thesis-lattice-of-bands"]');
+  const second = cluster.locator('.artifact-deck-card[data-artifact-id="bachelor-thesis-rol-non-a"]');
   const viewer = page.locator('.artifact-focus-viewer');
 
-  await expect(first).toHaveAttribute('data-object-focus-state', 'active');
+  await expect(cluster.locator('.artifact-object-header')).toHaveCount(0);
+  await expect(cluster.locator('.artifact-object-description')).toHaveCount(0);
+  await expect(cluster.locator('.artifact-deck-footer')).toHaveCount(0);
+  await expect(first).toBeVisible();
+  await expect(second).toBeVisible();
+
   await first.click();
   await waitSettled(page);
   await expect(viewer).toHaveAttribute('data-shared-focus-artifact', 'bachelor-thesis-lattice-of-bands');

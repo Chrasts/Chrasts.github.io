@@ -26,6 +26,9 @@
       if (!definition.selector && typeof definition.resolve !== 'function') {
         throw new TypeError(`Scene object ${definition.id} requires selector or resolve().`);
       }
+      if (this.definitions.has(definition.id)) {
+        throw new Error(`Scene object id is already registered: ${definition.id}`);
+      }
 
       const normalized = Object.freeze({
         managedVisibility: true,
@@ -47,6 +50,10 @@
       this.definitions.delete(id);
       this.listeners.forEach(listener => listener({ type: 'unregister', definition }));
       return true;
+    }
+
+    has(id) {
+      return this.definitions.has(id);
     }
 
     get(id) {
@@ -265,7 +272,14 @@
       this.variant = mobileQuery.matches ? 'mobile' : 'desktop';
       this.refreshFrame = 0;
 
-      this.registry.onChange(() => this.scheduleRefresh('registry'));
+      this.registry.onChange(change => {
+        if (change.type === 'unregister') {
+          this.detachInstance(change.definition.id, change.definition, { reason: 'registry-unregister' });
+          this.objectState.delete(change.definition.id);
+          return;
+        }
+        this.scheduleRefresh('registry');
+      });
       mobileQuery.addEventListener?.('change', event => {
         this.variant = event.matches ? 'mobile' : 'desktop';
         this.scheduleRefresh('variant');
@@ -277,21 +291,28 @@
       this.transitions.hook('finish', payload => this.onTransition('finish', payload));
       this.transitions.hook('cancel', payload => this.onTransition('cancel', payload));
 
-      const observer = new MutationObserver(mutations => {
-        const relevant = mutations.some(mutation =>
-          mutation.type === 'childList' ||
-          (mutation.type === 'attributes' && mutation.target === document.body)
-        );
-        if (relevant) this.scheduleRefresh('dom');
-      });
       const observe = () => {
         if (!document.body) return;
-        observer.observe(document.body, {
-          childList: true,
-          subtree: true,
+
+        const stateObserver = new MutationObserver(() => this.scheduleRefresh('graph-state-dom'));
+        stateObserver.observe(document.body, {
           attributes: true,
           attributeFilter: ['data-graph-mode', 'data-graph-route']
         });
+
+        const canvas = document.querySelector('.scene-canvas');
+        if (canvas) {
+          const sceneRootObserver = new MutationObserver(mutations => {
+            if (mutations.some(mutation => mutation.type === 'childList')) {
+              this.scheduleRefresh('scene-root-dom');
+            }
+          });
+          // Scene-object roots are intentionally mounted as direct children of
+          // the scene canvas. Avoid observing the whole graph subtree: graph
+          // transitions create many short-lived nodes that are irrelevant to
+          // scene-object discovery and used to cause refresh feedback loops.
+          sceneRootObserver.observe(canvas, { childList: true });
+        }
       };
       if (document.body) observe();
       else document.addEventListener('DOMContentLoaded', observe, { once: true });
@@ -378,26 +399,59 @@
       return { ...definition, ...variant, variants: definition.variants };
     }
 
+    clearDeclaration(element, definition) {
+      if (!element) return;
+      element.classList.remove('scene-object');
+      delete element.dataset.sceneObject;
+      delete element.dataset.sceneVariant;
+      delete element.dataset.scenePlacement;
+      delete element.dataset.sceneAnchor;
+      delete element.dataset.sceneEnter;
+      delete element.dataset.sceneExit;
+      delete element.dataset.sceneVisible;
+      delete element.dataset.sceneLifecycle;
+      element.style.removeProperty('--scene-z');
+      if (definition?.managedVisibility !== false) element.hidden = false;
+    }
+
+    detachInstance(id, fallbackDefinition = null, meta = {}) {
+      const instance = this.instances.get(id);
+      if (!instance) return false;
+      const definition = instance.definition || fallbackDefinition;
+      if (typeof definition?.unmount === 'function') {
+        definition.unmount(this.objectContext(definition, instance.element, meta));
+      }
+      this.clearDeclaration(instance.element, definition);
+      this.instances.delete(id);
+      return true;
+    }
+
     applyDefinition(definition, meta = {}) {
-      const element = this.resolveElement(definition);
+      const resolved = this.variantDefinition(definition);
+      const element = this.resolveElement(resolved);
       const previousInstance = this.instances.get(definition.id) || null;
+
       if (!element) {
-        if (previousInstance?.element && typeof definition.unmount === 'function') {
-          definition.unmount(this.objectContext(definition, previousInstance.element, meta));
-        }
-        this.instances.delete(definition.id);
+        this.detachInstance(definition.id, resolved, meta);
         return;
       }
 
-      const resolved = this.variantDefinition(definition);
+      if (previousInstance?.element && previousInstance.element !== element) {
+        this.detachInstance(definition.id, previousInstance.definition || resolved, {
+          ...meta,
+          reason: meta.reason || 'scene-element-replaced'
+        });
+      }
+
       const runtime = this.objectState.get(definition.id) || {};
       const context = this.objectContext(resolved, element, meta, runtime);
       const visible = typeof resolved.visible === 'function'
         ? Boolean(resolved.visible(context))
         : Boolean(resolved.visible);
-      const wasVisible = previousInstance?.visible ?? null;
+      const activeInstance = this.instances.get(definition.id) || null;
+      const wasVisible = activeInstance?.visible ?? null;
 
-      if (!previousInstance || previousInstance.element !== element) {
+      if (!activeInstance || activeInstance.element !== element) {
         element.dataset.sceneObject = definition.id;
         element.classList.add('scene-object');
         if (typeof resolved.mount === 'function') resolved.mount(context);
@@ -441,7 +495,9 @@
       const enter = typeof definition.enter === 'string' ? definition.enter : definition.enterPreset;
       const exit = typeof definition.exit === 'string' ? definition.exit : definition.exitPreset;
       if (enter) element.dataset.sceneEnter = enter;
+      else delete element.dataset.sceneEnter;
       if (exit) element.dataset.sceneExit = exit;
+      else delete element.dataset.sceneExit;
 
       const zIndex = definition.zIndex ?? definition.placement?.zIndex;
       if (Number.isFinite(zIndex)) element.style.setProperty('--scene-z', String(zIndex));
@@ -505,7 +561,8 @@
     CameraController,
     TransitionCoordinator,
     SceneManager,
-    MOBILE_QUERY
+    MOBILE_QUERY,
+    normaliseRoute
   });
 
   dispatch('profile:scene-system-ready', { registry, camera, transitions, manager });

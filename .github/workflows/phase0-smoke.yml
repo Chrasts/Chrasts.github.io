@@ -25,30 +25,14 @@ jobs:
 
       - name: Check JavaScript syntax
         run: |
-          node --check artifact-data.js
-          node --check scripts/validate-artifacts.mjs
-          node --check scene-system.js
-          node --check scene-definitions.js
-          node --check scene-legacy-bridge.js
-          node --check phase8-scene-data.js
-          node --check phase8-semantic-scenes.js
-          node --check root-landing.js
-          node --check intro-animation.js
-          node --check motion-polish.js
-          node --check intro-unfold.js
-          node --check intro-state-consistency.js
-          node --check intro-fixes-v3.js
-          node --check radial-geometry.js
-          node --check phase7-pointer-hotfix.js
-          node --check global-geometry-ownership.js
-          node --check graph-transition-prelude.js
-          node --check graph-transitions-v6.js
-          node --check phase7-atlas.js
-          node --check mobile-app.js
-          node --check cross-link-travel-v2.js
-          node --check phase0-stability.js
-          node --check playwright.config.js
-          for file in tests/*.spec.js; do node --check "$file"; done
+          set -euo pipefail
+          for file in *.js scripts/*.mjs tests/*.spec.js; do
+            [ -f "$file" ] || continue
+            node --check "$file"
+          done
+
+      - name: Validate portfolio model
+        run: node scripts/validate-portfolio-model.mjs
 
       - name: Validate artifact manifest
         run: node scripts/validate-artifacts.mjs
@@ -60,7 +44,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: [core, interactions]
+        suite: [core, architecture, interactions]
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -97,6 +81,13 @@ jobs:
             tests/phase0-breakpoint.spec.js \
             tests/phase2-root-landing.spec.js \
             tests/radial-geometry.spec.js
+
+      - name: Run architecture smoke tests
+        if: matrix.suite == 'architecture'
+        run: |
+          npx playwright test \
+            tests/phase1-scene.spec.js \
+            tests/scene-system-contracts.spec.js
 
       - name: Run interaction smoke tests
         if: matrix.suite == 'interactions'

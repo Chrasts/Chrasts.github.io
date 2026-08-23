@@ -1,15 +1,11 @@
-/* Phase B object-focus pilots — media focus stage v2.
-   This deliberately remains a pilot layer until Phase C extracts the reusable contract. */
+/* Reusable Object Focus presentation. Interaction and lifecycle are owned by
+   object-focus-controller.js. Scene recipes only select the source object. */
 
-/* The app-level viewport rule hides the page footer with a broad `footer`
-   selector. Scene controls are semantic footers too, so keep only these visible. */
 body[data-root-landing="false"] footer.artifact-focus-footer,
 body[data-root-landing="false"] footer.artifact-deck-footer{
   display:flex!important
 }
 
-/* Focus is a scene state, not a browser-like modal window. Lift the scene owner
-   above graph chrome, then let the media float directly in the canvas. */
 body.has-artifact-focus .artifact-scene-layer{
   z-index:90!important;
   overflow:visible
@@ -168,24 +164,19 @@ body.has-artifact-focus .artifact-scene-layer{
   transform:translateY(-1px)
 }
 
-/* The old binary 1:1 zoom control is intentionally retired. Images use direct
-   manipulation: wheel/pinch zoom, drag pan and double-click reset. */
 .artifact-image-zoom{display:none!important}
 
-.artifact-focus-viewer.is-shared-focus-pending .artifact-focus-media>*:not(.phase-b-media-hint),
-.artifact-focus-viewer.is-shared-focus-closing .artifact-focus-media>*:not(.phase-b-media-hint){
+.artifact-focus-viewer.is-shared-focus-pending .artifact-focus-media>*:not(.object-focus-media-hint),
+.artifact-focus-viewer.is-shared-focus-closing .artifact-focus-media>*:not(.object-focus-media-hint){
   opacity:0!important
 }
 .artifact-focus-viewer[data-shared-focus-phase="settled"] .artifact-focus-media>*{opacity:1}
 
 [data-object-focus-state="inspect"].is-object-focus-origin{visibility:hidden!important}
 
-/* Image stage ------------------------------------------------------------- */
-.artifact-focus-media[data-media-kind="image"]{
-  cursor:default
-}
+.artifact-focus-media[data-media-kind="image"]{cursor:default}
 
-.artifact-focus-media[data-media-kind="image"] img.phase-b-panzoom-media{
+.artifact-focus-media[data-media-kind="image"] img.object-focus-panzoom-media{
   position:relative!important;
   inset:auto!important;
   display:block;
@@ -200,18 +191,18 @@ body.has-artifact-focus .artifact-scene-layer{
   cursor:grab!important;
   will-change:transform;
   transform:
-    translate3d(var(--phase-b-media-pan-x,0),var(--phase-b-media-pan-y,0),0)
-    scale(var(--phase-b-media-scale,1))!important;
+    translate3d(var(--object-focus-media-pan-x,0),var(--object-focus-media-pan-y,0),0)
+    scale(var(--object-focus-media-scale,1))!important;
   transform-origin:center center!important;
   filter:drop-shadow(0 22px 42px color-mix(in srgb,var(--ink) 26%,transparent))
 }
 
-.artifact-focus-media[data-media-kind="image"] img.phase-b-panzoom-media.is-dragging{cursor:grabbing!important}
-.artifact-focus-media[data-media-kind="image"] img.phase-b-panzoom-media.is-transform-animating{
+.artifact-focus-media[data-media-kind="image"] img.object-focus-panzoom-media.is-dragging{cursor:grabbing!important}
+.artifact-focus-media[data-media-kind="image"] img.object-focus-panzoom-media.is-transform-animating{
   transition:transform .12s cubic-bezier(.2,.8,.2,1)!important
 }
 
-.phase-b-media-zoom-readout{
+.object-focus-media-zoom-readout{
   position:absolute;
   z-index:5;
   top:8px;
@@ -228,9 +219,9 @@ body.has-artifact-focus .artifact-scene-layer{
   backdrop-filter:blur(8px);
   transition:opacity .14s ease,transform .14s ease
 }
-.phase-b-media-zoom-readout.is-visible{opacity:1;transform:translateY(0)}
+.object-focus-media-zoom-readout.is-visible{opacity:1;transform:translateY(0)}
 
-.phase-b-media-hint{
+.object-focus-media-hint{
   position:absolute;
   z-index:5;
   left:50%;
@@ -249,12 +240,10 @@ body.has-artifact-focus .artifact-scene-layer{
   backdrop-filter:blur(8px);
   transition:opacity .18s ease,transform .18s ease
 }
-.phase-b-media-hint.is-visible{opacity:.9;transform:translate(-50%,0)}
-.phase-b-media-hint.is-faded{opacity:0;transform:translate(-50%,3px)}
+.object-focus-media-hint.is-visible{opacity:.9;transform:translate(-50%,0)}
+.object-focus-media-hint.is-faded{opacity:0;transform:translate(-50%,3px)}
 
-/* Documents stay recognisably document-shaped, but no browser-style window or
-   PDF toolbar surrounds them. Native document scrolling remains available. */
-.artifact-focus-media[data-media-kind="pdf"] iframe.phase-b-focus-primary{
+.artifact-focus-media[data-media-kind="pdf"] iframe.object-focus-primary{
   width:min(940px,calc(100% - 48px))!important;
   height:100%!important;
   max-height:calc(100% - 12px);
@@ -264,9 +253,7 @@ body.has-artifact-focus .artifact-scene-layer{
   box-shadow:0 26px 72px color-mix(in srgb,var(--ink) 34%,transparent)
 }
 
-/* Moving media keep their own familiar controls rather than inheriting image
-   gestures. They still live in the same spatial stage and dismiss the same way. */
-.artifact-focus-media[data-media-kind="video"] video.phase-b-focus-primary{
+.artifact-focus-media[data-media-kind="video"] video.object-focus-primary{
   display:block;
   width:auto;
   height:auto;
@@ -277,12 +264,12 @@ body.has-artifact-focus .artifact-scene-layer{
   box-shadow:0 26px 72px color-mix(in srgb,var(--ink) 34%,transparent)
 }
 
-.artifact-focus-media[data-media-kind="audio"] audio.phase-b-focus-primary{
+.artifact-focus-media[data-media-kind="audio"] audio.object-focus-primary{
   width:min(620px,calc(100% - 42px));
   filter:drop-shadow(0 18px 38px color-mix(in srgb,var(--ink) 28%,transparent))
 }
 
-.phase-b-external-focus{
+.object-focus-external{
   display:grid;
   gap:14px;
   width:min(520px,calc(100% - 48px));
@@ -294,10 +281,9 @@ body.has-artifact-focus .artifact-scene-layer{
   text-align:center;
   backdrop-filter:blur(12px)
 }
-.phase-b-external-focus a{color:var(--paper)}
+.object-focus-external a{color:var(--paper)}
 
-/* Shared-element flight --------------------------------------------------- */
-.phase-b-focus-flight{
+.object-focus-flight{
   position:fixed;
   z-index:2147483000;
   overflow:hidden;
@@ -308,7 +294,7 @@ body.has-artifact-focus .artifact-scene-layer{
   background:color-mix(in srgb,var(--paper) 96%,transparent);
   box-shadow:0 28px 82px color-mix(in srgb,var(--ink) 30%,transparent)
 }
-.phase-b-focus-flight-visual{
+.object-focus-flight-visual{
   position:absolute;
   inset:0;
   display:grid;
@@ -317,19 +303,19 @@ body.has-artifact-focus .artifact-scene-layer{
   background:color-mix(in srgb,var(--cream) 34%,var(--paper));
   color:var(--ink)
 }
-.phase-b-focus-flight-visual img{
+.object-focus-flight-visual img{
   display:block;
   width:100%;
   height:100%;
   object-fit:contain
 }
-.phase-b-focus-flight-visual .artifact-pdf-fallback{
+.object-focus-flight-visual .artifact-pdf-fallback{
   position:relative;
   inset:auto;
   width:100%;
   height:100%
 }
-.phase-b-focus-flight-certificate{
+.object-focus-flight-certificate{
   display:grid;
   align-content:end;
   gap:5px;
@@ -339,10 +325,10 @@ body.has-artifact-focus .artifact-scene-layer{
   padding:18px;
   background:var(--paper)
 }
-.phase-b-focus-flight-certificate strong{font:750 12px/1.25 var(--sans)}
-.phase-b-focus-flight-certificate span{color:var(--muted);font:650 9px/1.3 var(--sans)}
-.phase8-certificate-focus-action{order:-1}
-body.has-phase-b-object-focus .artifact-tether-layer{opacity:0!important}
+.object-focus-flight-certificate strong{font:750 12px/1.25 var(--sans)}
+.object-focus-flight-certificate span{color:var(--muted);font:650 9px/1.3 var(--sans)}
+.object-focus-certificate-action{order:-1}
+body.has-object-focus .artifact-tether-layer{opacity:0!important}
 
 @media(max-width:900px){
   body[data-graph-route="about/woodworking/hedgehog-house"] .artifact-scene-layer,
@@ -358,27 +344,29 @@ body.has-phase-b-object-focus .artifact-tether-layer{opacity:0!important}
   .artifact-focus-media{inset:50px 8px 54px!important}
   .artifact-focus-footer{left:10px!important;right:10px!important;bottom:9px!important}
   .artifact-focus-description{display:none!important}
-  .artifact-focus-media[data-media-kind="image"] img.phase-b-panzoom-media{
+  .artifact-focus-footer .artifact-action{padding:7px 9px!important;font-size:8px!important}
+
+  .artifact-focus-media[data-media-kind="image"] img.object-focus-panzoom-media{
     max-width:calc(100% - 16px)!important;
     max-height:calc(100% - 18px)!important
   }
-  .artifact-focus-media[data-media-kind="pdf"] iframe.phase-b-focus-primary{
+  .artifact-focus-media[data-media-kind="pdf"] iframe.object-focus-primary{
     width:calc(100% - 12px)!important;
     max-height:100%;
     border-radius:6px
   }
-  .phase-b-media-hint{bottom:5px;font-size:7px}
-  .phase-b-focus-flight{box-shadow:0 20px 60px color-mix(in srgb,var(--ink) 24%,transparent)}
+  .object-focus-media-hint{bottom:5px;font-size:7px}
+  .object-focus-flight{box-shadow:0 20px 60px color-mix(in srgb,var(--ink) 24%,transparent)}
 }
 
 @media(prefers-reduced-motion:reduce){
-  .phase-b-focus-flight{display:none!important}
+  .object-focus-flight{display:none!important}
   .artifact-focus-backdrop,
   .artifact-focus-close,
   .artifact-focus-footer .artifact-action,
-  .phase-b-media-hint,
-  .phase-b-media-zoom-readout,
-  .phase-b-panzoom-media{
+  .object-focus-media-hint,
+  .object-focus-media-zoom-readout,
+  .object-focus-panzoom-media{
     transition:none!important;
     animation:none!important
   }

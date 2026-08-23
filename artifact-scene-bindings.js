@@ -71,71 +71,33 @@
   deepFreeze(bindings);
   window.ARTIFACT_SCENE_BINDINGS = bindings;
 
-  if (typeof document !== 'undefined' && !document.querySelector('script[data-profile-artifact-layout-contract]')) {
+  const ensureStyle = (href, marker) => {
+    if (document.querySelector(`link[${marker}]`)) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    link.setAttribute(marker, 'true');
+    document.head.appendChild(link);
+  };
+
+  const ensureScript = (src, marker) => {
+    if (document.querySelector(`script[${marker}]`)) return;
     const script = document.createElement('script');
-    script.src = 'artifact-scene-layout-contract.js';
+    script.src = src;
     script.async = false;
-    script.setAttribute('data-profile-artifact-layout-contract', 'true');
+    script.setAttribute(marker, 'true');
     document.head.appendChild(script);
-  }
+  };
 
   if (typeof document !== 'undefined') {
-    if (!document.querySelector('link[data-profile-refinements-style]')) {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'portfolio-refinements.css';
-      link.setAttribute('data-profile-refinements-style', 'true');
-      document.head.appendChild(link);
-    }
-    if (!document.querySelector('script[data-profile-refinements]')) {
-      const script = document.createElement('script');
-      script.src = 'portfolio-refinements.js';
-      script.async = false;
-      script.setAttribute('data-profile-refinements', 'true');
-      document.head.appendChild(script);
-    }
-
-    if (!document.querySelector('link[data-profile-phase-b-object-focus-style]')) {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'phase-b-object-focus-pilot.css';
-      link.setAttribute('data-profile-phase-b-object-focus-style', 'true');
-      document.head.appendChild(link);
-    }
-    if (!document.querySelector('link[data-profile-phase-b-object-emergence-style]')) {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'phase-b-object-emergence.css';
-      link.setAttribute('data-profile-phase-b-object-emergence-style', 'true');
-      document.head.appendChild(link);
-    }
-    if (!document.querySelector('link[data-profile-phase-b-object-emergence-refinements]')) {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'phase-b-object-emergence-refinements.css';
-      link.setAttribute('data-profile-phase-b-object-emergence-refinements', 'true');
-      document.head.appendChild(link);
-    }
-    if (!document.querySelector('script[data-profile-phase-b-object-focus]')) {
-      const script = document.createElement('script');
-      script.src = 'phase-b-object-focus-pilot.js';
-      script.async = false;
-      script.setAttribute('data-profile-phase-b-object-focus', 'true');
-      document.head.appendChild(script);
-    }
-    if (!document.querySelector('script[data-profile-phase-b-object-focus-compat]')) {
-      const script = document.createElement('script');
-      script.src = 'phase-b-object-focus-compat.js';
-      script.async = false;
-      script.setAttribute('data-profile-phase-b-object-focus-compat', 'true');
-      document.head.appendChild(script);
-    }
-    if (!document.querySelector('script[data-profile-phase-b-node-dismiss]')) {
-      const script = document.createElement('script');
-      script.src = 'phase-b-node-dismiss.js';
-      script.async = false;
-      script.setAttribute('data-profile-phase-b-node-dismiss', 'true');
-      document.head.appendChild(script);
-    }
+    ensureScript('artifact-scene-layout-contract.js', 'data-profile-artifact-layout-contract');
+    ensureStyle('portfolio-refinements.css', 'data-profile-refinements-style');
+    ensureScript('portfolio-refinements.js', 'data-profile-refinements');
+    ensureStyle('object-focus.css', 'data-profile-object-focus-style');
+    ensureStyle('phase-b-object-emergence.css', 'data-profile-phase-b-object-emergence-style');
+    ensureStyle('phase-b-object-emergence-refinements.css', 'data-profile-phase-b-object-emergence-refinements');
+    ensureScript('object-focus-controller.js', 'data-profile-object-focus');
+    ensureScript('object-focus-certificate-adapter.js', 'data-profile-object-focus-certificate-adapter');
+    ensureScript('node-detail-dismiss.js', 'data-profile-node-detail-dismiss');
   }
 })();

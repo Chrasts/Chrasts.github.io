@@ -26,13 +26,7 @@
   }
 
   document.documentElement.dataset.profileIntro = introEligible ? 'pending' : 'bypass';
-  window.__PROFILE_INTRO_BOOTSTRAP__ = Object.freeze({
-    eligible: introEligible,
-    initialRoute,
-    initialHash: location.hash,
-    reducedMotion,
-    storageAvailable
-  });
+  window.__PROFILE_INTRO_BOOTSTRAP__ = Object.freeze({ eligible: introEligible, initialRoute, initialHash: location.hash, reducedMotion, storageAvailable });
 
   const ensureStylesheet = (href, marker) => {
     if (document.querySelector(`link[href="${href}"]`)) return;
@@ -126,10 +120,7 @@
       : { zone: 'inspector', side: 'right', preferredSide: 'right', allowFlip: false, blocksSideStage: true, priority: 1000, role: 'inspector' },
     enter: 'inspector-in',
     exit: 'inspector-out',
-    variants: {
-      desktop: { placement: 'inspector-right', enter: 'inspector-in', exit: 'inspector-out' },
-      mobile: { placement: 'detail-sheet', enter: 'sheet-in', exit: 'sheet-out' }
-    }
+    variants: { desktop: { placement: 'inspector-right', enter: 'inspector-in', exit: 'inspector-out' }, mobile: { placement: 'detail-sheet', enter: 'sheet-in', exit: 'sheet-out' } }
   });
 
   scene.manager.scheduleRefresh('phase3-intro-definitions');
@@ -144,6 +135,7 @@
   };
 
   ensureScript('scene-composer.js', 'data-profile-scene-composer');
+  ensureScript('camera-composition.js', 'data-profile-camera-composition');
   ensureScript('phase7-pointer-hotfix.js', 'data-profile-atlas-pointer-hotfix');
   ensureScript('global-geometry-ownership.js', 'data-profile-global-geometry-ownership');
   ensureScript('root-landing.js', 'data-profile-root-landing');

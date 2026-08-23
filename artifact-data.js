@@ -112,8 +112,8 @@
       id: 'simulation-credence-coursework',
       type: 'document',
       title: 'Simulation Credence and Its Consequences',
-      description: 'Coursework document on the simulation hypothesis; currently attached broadly to Charles University until a dedicated coursework node is introduced.',
-      anchorNodeIds: ['charles-university'],
+      description: 'Short coursework formalisation and analysis of credence in the simulation hypothesis.',
+      anchorNodeIds: ['simulation-credence'],
       source: { kind: 'local', path: 'assets/documents/education/coursework/simulation-credence-and-its-consequences.pdf' },
       mediaType: 'application/pdf',
       availability: 'public',
@@ -135,6 +135,7 @@
       title: 'Ethics of AI — University of Helsinki',
       anchorNodeIds: ['cert-ethics-ai'],
       source: { kind: 'local', path: 'assets/images/certificates/ethics-of-ai.png' },
+      verificationUrl: 'https://certificates.mooc.fi/validate/reryypwawai',
       mediaType: 'image/png',
       availability: 'public',
       presentation: { preferredObject: 'image' }
@@ -145,9 +146,104 @@
       title: 'Introduction to Artificial Intelligence — University of Helsinki',
       anchorNodeIds: ['cert-intro-ai'],
       source: { kind: 'local', path: 'assets/images/certificates/elements-of-ai-introduction-to-ai.png' },
+      verificationUrl: 'https://certificates.mooc.fi/validate/6vgxrj7s3fq',
       mediaType: 'image/png',
       availability: 'public',
       presentation: { preferredObject: 'image' }
+    },
+    {
+      id: 'hedgehog-house-outside',
+      type: 'image',
+      title: 'Hedgehog House — exterior',
+      anchorNodeIds: ['hedgehog-house'],
+      source: { kind: 'local', path: 'assets/images/about/woodworking/hedgehog-house/outside.png' },
+      mediaType: 'image/png',
+      availability: 'public',
+      presentation: { preferredObject: 'image', role: 'project-photo' }
+    },
+    {
+      id: 'hedgehog-house-inside',
+      type: 'image',
+      title: 'Hedgehog House — interior',
+      anchorNodeIds: ['hedgehog-house'],
+      source: { kind: 'local', path: 'assets/images/about/woodworking/hedgehog-house/inside.jpg' },
+      mediaType: 'image/jpeg',
+      availability: 'public',
+      presentation: { preferredObject: 'image', role: 'project-photo' }
+    },
+    {
+      id: 'hedgehog-house-visitor',
+      type: 'image',
+      title: 'Hedgehog House — visitor',
+      anchorNodeIds: ['hedgehog-house'],
+      source: { kind: 'local', path: 'assets/images/about/woodworking/hedgehog-house/hedgehog.jpeg' },
+      mediaType: 'image/jpeg',
+      availability: 'public',
+      presentation: { preferredObject: 'image', role: 'project-photo' }
+    },
+    {
+      id: 'mtg-norin-rocco-deck',
+      type: 'external',
+      title: 'Norin the Wary — “Norin not brave, but alive”',
+      description: 'Commander deck with Rocco, Cabaretti Caterer as the hidden commander.',
+      anchorNodeIds: ['mtg'],
+      source: { kind: 'external', url: 'https://moxfield.com/decks/LhyVkd1Sk0OeMiTGYnFXLQ' },
+      availability: 'public',
+      presentation: { preferredObject: 'external', provider: 'Moxfield', openMode: 'new-tab' }
+    },
+    {
+      id: 'mtg-raphael-deck',
+      type: 'external',
+      title: 'Raphael, Fiendish Savior — “rafael”',
+      anchorNodeIds: ['mtg'],
+      source: { kind: 'external', url: 'https://moxfield.com/decks/gOA-TXqrPEO0MpGcYcw3wg' },
+      availability: 'public',
+      presentation: { preferredObject: 'external', provider: 'Moxfield', openMode: 'new-tab' }
+    },
+    {
+      id: 'mtg-adrix-nev-deck',
+      type: 'external',
+      title: 'Adrix and Nev, Twincasters — “twincasters”',
+      anchorNodeIds: ['mtg'],
+      source: { kind: 'external', url: 'https://moxfield.com/decks/2hkN183FlEyAh2IcrEP40A' },
+      availability: 'public',
+      presentation: { preferredObject: 'external', provider: 'Moxfield', openMode: 'new-tab' }
+    },
+    {
+      id: 'mtg-willowdusk-deck',
+      type: 'external',
+      title: 'Willowdusk, Essence Seer — “willowdusk”',
+      anchorNodeIds: ['mtg'],
+      source: { kind: 'external', url: 'https://moxfield.com/decks/bCOv4Caao0-0b_xn1Z8bmQ' },
+      availability: 'public',
+      presentation: { preferredObject: 'external', provider: 'Moxfield', openMode: 'new-tab' }
+    },
+    {
+      id: 'mtg-myrkul-deck',
+      type: 'external',
+      title: 'Myrkul, Lord of Bones — “myrkultok”',
+      anchorNodeIds: ['mtg'],
+      source: { kind: 'external', url: 'https://moxfield.com/decks/T0P5WkI19UOtB6hNZ24Hhg' },
+      availability: 'public',
+      presentation: { preferredObject: 'external', provider: 'Moxfield', openMode: 'new-tab' }
+    },
+    {
+      id: 'mtg-jon-irenicus-deck',
+      type: 'external',
+      title: 'Jon Irenicus, Shattered One — “evil santa”',
+      anchorNodeIds: ['mtg'],
+      source: { kind: 'external', url: 'https://moxfield.com/decks/EMcentbQwk2mU-2gfEHC1A' },
+      availability: 'public',
+      presentation: { preferredObject: 'external', provider: 'Moxfield', openMode: 'new-tab' }
+    },
+    {
+      id: 'mtg-don-andres-deck',
+      type: 'external',
+      title: 'Don Andres, the Renegade — “Don andres”',
+      anchorNodeIds: ['mtg'],
+      source: { kind: 'external', url: 'https://moxfield.com/decks/NyYtHJqlG0-KaQ45o3yz0g' },
+      availability: 'public',
+      presentation: { preferredObject: 'external', provider: 'Moxfield', openMode: 'new-tab' }
     },
     {
       id: 'esslli-2026-course-timetable',
@@ -179,6 +275,9 @@
     (record.anchorNodeIds || []).forEach(nodeId => {
       if (graphNodeIds.size && !graphNodeIds.has(nodeId)) issues.push(`Unknown graph anchor for ${record.id}: ${nodeId}`);
     });
+    if (record.verificationUrl && !/^https:\/\//i.test(record.verificationUrl)) {
+      issues.push(`Verification URL for ${record.id} must use https`);
+    }
 
     if (record.availability === 'planned') return;
     if (!record.source || !SOURCE_KINDS.includes(record.source.kind)) {
@@ -199,11 +298,13 @@
 
   const byId = new Map(records.map(record => [record.id, record]));
   const forNode = nodeId => records.filter(record => record.anchorNodeIds.includes(nodeId));
+  const resolveRecord = recordOrId => typeof recordOrId === 'string' ? byId.get(recordOrId) : recordOrId;
   const hrefFor = recordOrId => {
-    const record = typeof recordOrId === 'string' ? byId.get(recordOrId) : recordOrId;
+    const record = resolveRecord(recordOrId);
     if (!record?.source) return null;
     return record.source.kind === 'local' ? record.source.path : record.source.url;
   };
+  const verificationHrefFor = recordOrId => resolveRecord(recordOrId)?.verificationUrl || null;
 
   root.PROFILE_ARTIFACTS = records;
   root.ProfileArtifacts = Object.freeze({
@@ -214,6 +315,7 @@
     get: id => byId.get(id) || null,
     forNode,
     hrefFor,
+    verificationHrefFor,
     issues: () => issues.slice(),
     snapshot: () => ({
       count: records.length,

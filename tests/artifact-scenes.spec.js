@@ -54,7 +54,7 @@ test('Simulation Credence is a document object and opens as a clean PDF stage', 
   await expect(viewer).toBeHidden();
 });
 
-test('thesis diagrams emerge as two independent objects without panel copy', async ({ page }) => {
+test('thesis diagrams emerge as larger viewport-contained independent objects', async ({ page }) => {
   await bypassIntro(page);
   await page.goto('/#work/project/bachelor-thesis');
   await waitArtifactScenes(page);
@@ -72,9 +72,18 @@ test('thesis diagrams emerge as two independent objects without panel copy', asy
   await expect(cluster.locator('.artifact-object-tag')).toHaveCount(2);
 
   const boxes = await Promise.all([first.boundingBox(), second.boundingBox()]);
+  const viewport = page.viewportSize();
+  expect(viewport).not.toBeNull();
   expect(boxes[0]).not.toBeNull();
   expect(boxes[1]).not.toBeNull();
   expect(Math.abs(boxes[0].x - boxes[1].x) + Math.abs(boxes[0].y - boxes[1].y)).toBeGreaterThan(80);
+  boxes.forEach(box => {
+    expect(box.x).toBeGreaterThanOrEqual(20);
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width - 20);
+    expect(box.y).toBeGreaterThanOrEqual(70);
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height - 20);
+    expect(box.width).toBeGreaterThan(240);
+  });
 
   await second.hover();
   await expect(second).toHaveClass(/is-active/);
@@ -104,7 +113,7 @@ test('Modal Logic Lab screenshots are floating screens with a live-app satellite
   await expect(deck.locator('a[data-support-artifact-id="modal-logic-lab-live"]')).toHaveAttribute('href', 'https://chrasts.github.io/Modal_Logic_Educational_Game/');
 });
 
-test('Hedgehog House is a loose photo fan with direct-manipulation focus and graph tether', async ({ page }) => {
+test('Hedgehog House is a centered loose photo fan with direct-manipulation focus and graph tether', async ({ page }) => {
   await bypassIntro(page);
   await page.goto('/#about/woodworking/hedgehog-house');
   await waitArtifactScenes(page);
@@ -115,13 +124,19 @@ test('Hedgehog House is a loose photo fan with direct-manipulation focus and gra
   await expect(gallery.locator('.artifact-deck-card')).toHaveCount(3);
   await expect(gallery.locator('img')).toHaveCount(3);
 
-  const dock = await gallery.evaluate(element => {
+  const placement = await gallery.evaluate(element => {
     const scene = element.closest('.scene-canvas').getBoundingClientRect();
     const box = element.getBoundingClientRect();
-    return { left: box.left - scene.left, bottom: scene.bottom - box.bottom };
+    return {
+      left: box.left - scene.left,
+      right: scene.right - box.right,
+      width: box.width,
+      sceneWidth: scene.width
+    };
   });
-  expect(dock.left).toBeLessThan(50);
-  expect(dock.bottom).toBeLessThan(50);
+  expect(placement.left).toBeGreaterThan(60);
+  expect(placement.right).toBeGreaterThan(40);
+  expect(placement.width).toBeGreaterThan(520);
 
   await gallery.hover();
   await expect(page.locator('#site-graph .site-graph-node[data-node-id="hedgehog-house"].is-artifact-linked')).toHaveCount(1);
@@ -140,6 +155,31 @@ test('Hedgehog House is a loose photo fan with direct-manipulation focus and gra
   await expect(viewer.locator('[data-artifact-image-zoom="true"]')).toHaveCount(0);
   await page.keyboard.press('Escape');
   await expect(viewer).toBeHidden();
+});
+
+test('desktop descriptive inspector ends with its content instead of filling the scene', async ({ page }) => {
+  await bypassIntro(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/#atlas');
+  await page.waitForFunction(() => Boolean(window.ProfileAtlasLOD) && document.body.dataset.graphMode === 'atlas');
+
+  const node = page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]');
+  await node.click();
+  const detail = page.locator('#site-detail-panel');
+  await expect(detail).toBeVisible();
+
+  const sizing = await detail.evaluate(element => {
+    const box = element.getBoundingClientRect();
+    return {
+      height: box.height,
+      scrollHeight: element.scrollHeight,
+      viewportHeight: innerHeight,
+      bottomGap: innerHeight - box.bottom
+    };
+  });
+  expect(sizing.height).toBeLessThan(sizing.viewportHeight * 0.7);
+  expect(sizing.bottomGap).toBeGreaterThan(100);
+  expect(Math.abs(sizing.height - sizing.scrollHeight)).toBeLessThanOrEqual(4);
 });
 
 test('artifact object clusters remain viewport-contained on mobile without a tray window', async ({ page }) => {

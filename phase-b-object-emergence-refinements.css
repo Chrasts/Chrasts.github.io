@@ -8,6 +8,107 @@
   transform:translate(-50%,-4px) scale(.96)!important
 }
 
+@media(min-width:901px){
+  /* The previous artifact foundation intentionally docked every contextual
+     object at the extreme lower-left. Frameless object clusters need breathing
+     room instead: place them deeper inside the available scene lane and make
+     the visual objects large enough to read as scene content, not thumbnails. */
+  .artifact-object[data-scene-placement="artifact-contextual"][data-artifact-recipe="media-deck"]{
+    top:clamp(92px,16vh,148px)!important;
+    bottom:auto!important;
+    max-height:none!important
+  }
+
+  .artifact-object[data-scene-placement="artifact-contextual"][data-artifact-recipe="media-deck"][data-artifact-side="left"]{
+    left:clamp(72px,11vw,168px)!important;
+    right:auto!important
+  }
+
+  .artifact-object[data-scene-placement="artifact-contextual"][data-artifact-recipe="media-deck"][data-artifact-side="right"]{
+    right:clamp(72px,11vw,168px)!important;
+    left:auto!important
+  }
+
+  /* Work deliberately shifts its canvas underneath the side rails. A left
+     value that is centred in ordinary routes can therefore still start outside
+     the browser viewport. Move media deeper into Work's real free lane, between
+     the left filters and the right project inspector. */
+  body[data-graph-mode="work"] .artifact-object[data-scene-placement="artifact-contextual"][data-artifact-recipe="media-deck"][data-artifact-side="left"]{
+    left:clamp(340px,31vw,450px)!important
+  }
+
+  /* Work side rails are visually narrow but their scene object owns a larger
+     hit area. Keep ambient media above that hit plane. During Inspect the focus
+     layer must regain ownership, so this rule explicitly excludes that state. */
+  body[data-graph-mode="work"]:not(.has-artifact-focus) .artifact-scene-layer{
+    z-index:24!important
+  }
+  body.has-artifact-focus .artifact-scene-layer{
+    z-index:90!important
+  }
+
+  .artifact-object[data-artifact-variant="diagram"]{
+    width:min(620px,52vw)!important;
+    height:370px!important
+  }
+  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card{
+    width:258px!important;
+    height:244px!important
+  }
+  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(1){left:24px!important;top:18px!important}
+  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(2){right:24px!important;top:92px!important}
+
+  .artifact-object[data-artifact-variant="screens"]{
+    width:min(650px,54vw)!important;
+    height:360px!important
+  }
+  .artifact-object[data-artifact-variant="screens"] .artifact-deck-card{
+    width:342px!important;
+    height:218px!important
+  }
+  .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(1){left:18px!important;top:18px!important}
+  .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(2){right:18px!important;top:112px!important}
+
+  .artifact-object[data-artifact-variant="fan"]{
+    width:min(590px,50vw)!important;
+    height:350px!important
+  }
+  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card{
+    width:190px!important;
+    height:228px!important
+  }
+  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(1){left:18px!important;top:78px!important}
+  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(2){top:22px!important}
+  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(3){right:18px!important;top:80px!important}
+
+  /* Descriptive inspectors should end with their content. Older rules pinned
+     both their top and bottom edges, which manufactured a large blank tail. */
+  .scene-detail,
+  #work .work-detail-panel{
+    bottom:auto!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:calc(100vh - 118px)!important;
+    overflow:auto!important
+  }
+
+  #work .work-project-detail{
+    flex:0 0 auto!important;
+    min-height:0!important;
+    justify-content:flex-start!important
+  }
+
+  .site-detail-panel{
+    align-self:start!important;
+    height:fit-content!important;
+    min-height:0!important
+  }
+
+  .phase8-certificate-inspector{
+    min-height:0!important
+  }
+}
+
 @media(max-width:900px){
   /* The graph canvas may use route-local offsets on mobile. Inspect is an app
      stage, so anchor the viewer to the actual application viewport below the

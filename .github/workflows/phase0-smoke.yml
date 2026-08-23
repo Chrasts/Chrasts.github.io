@@ -25,6 +25,7 @@ jobs:
 
       - name: Check JavaScript syntax
         run: |
+          node --check artifact-data.js
           node --check scene-system.js
           node --check scene-definitions.js
           node --check scene-legacy-bridge.js

@@ -29,11 +29,22 @@
     left:auto!important
   }
 
+  /* Work deliberately shifts its canvas underneath the side rails. A left
+     value that is centred in ordinary routes can therefore still start outside
+     the browser viewport. Move media deeper into Work's real free lane, between
+     the left filters and the right project inspector. */
+  body[data-graph-mode="work"] .artifact-object[data-scene-placement="artifact-contextual"][data-artifact-recipe="media-deck"][data-artifact-side="left"]{
+    left:clamp(340px,31vw,450px)!important
+  }
+
   /* Work side rails are visually narrow but their scene object owns a larger
-     hit area. Keep media above that hit plane while leaving the detail inspector
-     above media at its existing z-index. */
-  body[data-graph-mode="work"] .artifact-scene-layer{
+     hit area. Keep ambient media above that hit plane. During Inspect the focus
+     layer must regain ownership, so this rule explicitly excludes that state. */
+  body[data-graph-mode="work"]:not(.has-artifact-focus) .artifact-scene-layer{
     z-index:24!important
+  }
+  body.has-artifact-focus .artifact-scene-layer{
+    z-index:90!important
   }
 
   .artifact-object[data-artifact-variant="diagram"]{

@@ -80,13 +80,11 @@ test('thesis diagrams use their PDF page aspect and show the whole page', async 
 
   const mediaGeometry = await Promise.all([first, second].map(async card => card.evaluate(element => {
     const preview = element.querySelector('.artifact-deck-preview');
-    const cardBox = element.getBoundingClientRect();
-    const previewBox = preview.getBoundingClientRect();
     return {
-      cardWidth: cardBox.width,
-      cardHeight: cardBox.height,
-      previewWidth: previewBox.width,
-      previewHeight: previewBox.height,
+      cardWidth: element.offsetWidth,
+      cardHeight: element.offsetHeight,
+      previewWidth: preview.offsetWidth,
+      previewHeight: preview.offsetHeight,
       ratio: Number(preview.dataset.mediaAspect),
       source: preview.dataset.mediaAspectSource
     };
@@ -145,9 +143,8 @@ test('Modal Logic Lab screenshots preserve the full intrinsic image instead of c
   await expect(preview).toHaveAttribute('data-media-aspect-ready', 'true', { timeout: 5000 });
   expect(await preview.locator('img').evaluate(image => getComputedStyle(image).objectFit)).toBe('contain');
   const geometry = await preview.evaluate(element => {
-    const card = element.closest('.artifact-deck-card').getBoundingClientRect();
-    const box = element.getBoundingClientRect();
-    return { cardHeight: card.height, previewHeight: box.height, ratio: box.width / box.height, intrinsic: Number(element.dataset.mediaAspect) };
+    const card = element.closest('.artifact-deck-card');
+    return { cardHeight: card.offsetHeight, previewHeight: element.offsetHeight, ratio: element.offsetWidth / element.offsetHeight, intrinsic: Number(element.dataset.mediaAspect) };
   });
   expect(Math.abs(geometry.cardHeight - geometry.previewHeight)).toBeLessThanOrEqual(4);
   expect(Math.abs(geometry.ratio - geometry.intrinsic)).toBeLessThan(.03);
@@ -236,7 +233,7 @@ test('clicking elsewhere on the node view dismisses the open inspector like its 
   const detail = page.locator('#site-detail-panel');
   await node.click();
   await expect(detail).toBeVisible();
-  await expect(page.locator('.detail-close')).toBeVisible();
+  await expect(detail.locator('.detail-close')).toBeVisible();
 
   await page.locator('.site-graph-heading').click({ force: true });
   await expect(detail).toBeHidden();

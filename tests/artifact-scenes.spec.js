@@ -71,15 +71,17 @@ test('thesis diagrams emerge as larger viewport-contained independent objects', 
   await expect(cluster.locator('.artifact-deck-footer')).toHaveCount(0);
   await expect(cluster.locator('.artifact-object-tag')).toHaveCount(2);
 
-  const sceneBox = await page.locator('.scene-canvas').boundingBox();
   const boxes = await Promise.all([first.boundingBox(), second.boundingBox()]);
-  expect(sceneBox).not.toBeNull();
+  const viewport = page.viewportSize();
+  expect(viewport).not.toBeNull();
   expect(boxes[0]).not.toBeNull();
   expect(boxes[1]).not.toBeNull();
   expect(Math.abs(boxes[0].x - boxes[1].x) + Math.abs(boxes[0].y - boxes[1].y)).toBeGreaterThan(80);
   boxes.forEach(box => {
-    expect(box.x).toBeGreaterThanOrEqual(sceneBox.x + 20);
-    expect(box.x + box.width).toBeLessThanOrEqual(sceneBox.x + sceneBox.width - 20);
+    expect(box.x).toBeGreaterThanOrEqual(20);
+    expect(box.x + box.width).toBeLessThanOrEqual(viewport.width - 20);
+    expect(box.y).toBeGreaterThanOrEqual(70);
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height - 20);
     expect(box.width).toBeGreaterThan(240);
   });
 
@@ -167,12 +169,16 @@ test('desktop descriptive inspector ends with its content instead of filling the
   await expect(detail).toBeVisible();
 
   const sizing = await detail.evaluate(element => {
-    const style = getComputedStyle(element);
     const box = element.getBoundingClientRect();
-    return { bottom: style.bottom, height: box.height, scrollHeight: element.scrollHeight };
+    return {
+      height: box.height,
+      scrollHeight: element.scrollHeight,
+      viewportHeight: innerHeight,
+      bottomGap: innerHeight - box.bottom
+    };
   });
-  expect(sizing.bottom).toBe('auto');
-  expect(sizing.height).toBeLessThan(780);
+  expect(sizing.height).toBeLessThan(sizing.viewportHeight * 0.7);
+  expect(sizing.bottomGap).toBeGreaterThan(100);
   expect(Math.abs(sizing.height - sizing.scrollHeight)).toBeLessThanOrEqual(4);
 });
 

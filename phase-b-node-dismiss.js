@@ -21,7 +21,7 @@
     }));
   };
 
-  document.addEventListener('pointerdown', event => {
+  document.addEventListener('click', event => {
     if (!isOpen()) return;
     const target = event.target;
     if (!(target instanceof Element)) return;
@@ -31,8 +31,11 @@
        replace the inspector, while a second click in Atlas may centre/zoom it. */
     if (target.closest('#site-graph .site-graph-node')) return;
 
+    /* Run after the page's ordinary click handlers. At this point any route or
+       selection synchronisation caused by the click has settled, so closing the
+       inspector cannot be immediately undone by the same gesture. */
     dismiss();
-  }, true);
+  });
 
   window.ProfilePhaseBNodeDismiss = Object.freeze({
     dismiss,

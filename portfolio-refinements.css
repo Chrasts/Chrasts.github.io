@@ -22,9 +22,16 @@
 }
 .work-project-anchor-v5 text{pointer-events:none}
 /* Concept nodes sit in the renderer's upper SVG layer. Their oversized invisible
-   pointer circles used to mask the project hitboxes painted below them. Keep the
-   visible concept dot clickable, but let project hitboxes own the surrounding area. */
-body[data-graph-mode="work"] .site-graph-node.is-work-concept .site-graph-hit{pointer-events:none}
+   hit circles overlap project labels below them. Removing only that invisible
+   circle leaves the visible concept dot clickable while giving the project card
+   the surrounding pointer area. `display:none` is deliberate here: SVG hit-testing
+   in Chromium can still report a transparent circle as the interception target
+   even when a late stylesheet sets pointer-events:none. */
+body[data-graph-mode="work"] .site-graph-node.is-work-concept .site-graph-hit{
+  display:none!important;
+  pointer-events:none!important
+}
+body[data-graph-mode="work"] .site-graph-node.is-work-concept .site-graph-dot{pointer-events:all}
 .work-project-anchor-v5:hover .work-project-hitbox-v5,
 .work-project-anchor-v5:focus-visible .work-project-hitbox-v5,
 .work-project-anchor-v5.is-work-strong .work-project-hitbox-v5,
@@ -83,17 +90,26 @@ body[data-graph-mode="work"] .site-graph-node.is-work-concept .site-graph-hit{po
 .work-concept-project-arrow{color:var(--teal);font-size:16px;line-height:1}
 
 /* Image focus uses the original asset and can switch from fitted overview to
-   native 1:1 pixels for high-resolution inspection. The viewer must own the
-   modal layer and its media row must never grow over the action footer. */
+   native 1:1 pixels for high-resolution inspection. The action footer is an
+   explicit bottom rail rather than an intrinsic grid row, so a large image can
+   never push View 1:1 outside the viewport. */
 .artifact-focus-viewer{z-index:100!important}
-.artifact-focus-shell{min-height:0;overflow:hidden}
+.artifact-focus-shell{
+  min-height:0;
+  overflow:hidden;
+  grid-template-rows:auto minmax(0,1fr)!important;
+  padding-bottom:58px
+}
 .artifact-focus-media.is-image{
+  position:relative;
   min-width:0;
   min-height:0;
   overflow:hidden;
   cursor:zoom-in
 }
 .artifact-focus-media.is-image img{
+  position:absolute;
+  inset:0;
   width:100%;
   height:100%;
   max-width:100%;
@@ -101,8 +117,13 @@ body[data-graph-mode="work"] .site-graph-node.is-work-concept .site-graph-hit{po
   object-fit:contain
 }
 .artifact-focus-footer{
-  position:relative;
-  z-index:2;
+  position:absolute!important;
+  left:0;
+  right:0;
+  bottom:0;
+  z-index:5;
+  min-height:58px;
+  box-sizing:border-box;
   flex-wrap:wrap;
   background:var(--paper)
 }
@@ -113,6 +134,8 @@ body[data-graph-mode="work"] .site-graph-node.is-work-concept .site-graph-hit{po
   cursor:zoom-out
 }
 .artifact-focus-media.is-image.is-native-scale img{
+  position:static;
+  inset:auto;
   max-width:none;
   max-height:none;
   width:auto;
@@ -120,10 +143,20 @@ body[data-graph-mode="work"] .site-graph-node.is-work-concept .site-graph-hit{po
   margin:auto
 }
 .artifact-image-zoom[aria-pressed="true"]{color:var(--brown)}
+/* A focus viewer is the active inspection surface; the ordinary route inspector
+   must not remain visually above it in a separate stacking context. */
+body.has-artifact-focus #site-detail-panel{
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important
+}
 
 @media(max-width:900px){
   .work-project-anchor-v5 .work-project-hitbox-v5{stroke-width:1.2}
   .work-concept-projects.is-primary-project-choice .work-concept-project{min-height:48px}
+  .artifact-focus-shell{padding-bottom:68px}
+  .artifact-focus-footer{min-height:68px}
+  .artifact-focus-description{display:none}
 }
 
 @media(prefers-reduced-motion:reduce){

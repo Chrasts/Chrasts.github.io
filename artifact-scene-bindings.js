@@ -109,6 +109,13 @@
       link.setAttribute('data-profile-phase-b-object-emergence-style', 'true');
       document.head.appendChild(link);
     }
+    if (!document.querySelector('link[data-profile-phase-b-object-emergence-refinements]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'phase-b-object-emergence-refinements.css';
+      link.setAttribute('data-profile-phase-b-object-emergence-refinements', 'true');
+      document.head.appendChild(link);
+    }
     if (!document.querySelector('script[data-profile-phase-b-object-focus]')) {
       const script = document.createElement('script');
       script.src = 'phase-b-object-focus-pilot.js';

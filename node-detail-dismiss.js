@@ -11,10 +11,6 @@
   const dismiss = () => {
     if (!isOpen()) return false;
 
-    /* Phase 7 already owns one tested Atlas deactivation path: clicking empty
-       map space clears the pinned selection and closes the inspector without
-       resetting the camera. Reuse that path instead of trying to reproduce its
-       private selection state from this small outside-click adapter. */
     if (document.body.dataset.graphMode === 'atlas') {
       const map = document.querySelector('#site-graph .site-graph-svg');
       if (map) {
@@ -44,6 +40,11 @@
     if (!(target instanceof Element)) return;
     if (detail.contains(target)) return;
     if (target.closest('#site-graph .site-graph-node')) return;
+
+    /* Artifact objects are part of the currently activated node scene, not an
+       outside click. Let the artifact own this gesture so opening Object Focus
+       cannot also close the node inspector and invalidate its route owner. */
+    if (target.closest('[data-artifact-scene], .artifact-focus-viewer')) return;
 
     clearTimeout(pendingDismiss);
     pendingDismiss = setTimeout(() => {

@@ -29,6 +29,13 @@
     left:auto!important
   }
 
+  /* Work side rails are visually narrow but their scene object owns a larger
+     hit area. Keep media above that hit plane while leaving the detail inspector
+     above media at its existing z-index. */
+  body[data-graph-mode="work"] .artifact-scene-layer{
+    z-index:24!important
+  }
+
   .artifact-object[data-artifact-variant="diagram"]{
     width:min(620px,52vw)!important;
     height:370px!important

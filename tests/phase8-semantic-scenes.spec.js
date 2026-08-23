@@ -44,7 +44,7 @@ test('Phase 8 exposes coursework as a real document object backed by the artifac
   await expect(shelf.locator('a[href="assets/documents/education/coursework/simulation-credence-and-its-consequences.pdf"]')).toBeVisible();
 });
 
-test('Phase 8 certificate stack lifts and inspects real credential artifacts', async ({ page }) => {
+test('Phase 8 certificate stack keeps every credential directly selectable', async ({ page }) => {
   await bypassIntro(page);
   await page.goto('/#education/credentials');
   await waitPhase8(page);
@@ -54,10 +54,21 @@ test('Phase 8 certificate stack lifts and inspects real credential artifacts', a
   await expect(stack.locator('.phase8-certificate-paper')).toHaveCount(3);
 
   const ethics = stack.locator('.phase8-certificate-paper[data-artifact-id="ethics-ai-certificate"]');
+  const intro = stack.locator('.phase8-certificate-paper[data-artifact-id="introduction-ai-certificate"]');
+  const cambridge = stack.locator('.phase8-certificate-paper[data-artifact-id="cambridge-b2-certificate"]');
+
   await ethics.click();
   await expect(ethics).toHaveClass(/is-active/);
   await expect(stack.locator('.phase8-certificate-inspector')).toContainText('Ethics of AI');
   await expect(stack.locator('a[href="https://certificates.mooc.fi/validate/reryypwawai"]')).toBeVisible();
+
+  await intro.click();
+  await expect(intro).toHaveClass(/is-active/);
+  await expect(stack.locator('.phase8-certificate-inspector')).toContainText('Introduction to Artificial Intelligence');
+
+  await cambridge.click();
+  await expect(cambridge).toHaveClass(/is-active/);
+  await expect(stack.locator('.phase8-certificate-inspector')).toContainText('B2 First');
 });
 
 test('Phase 8 ESSLLI scene renders the selected timetable and semantic topic links', async ({ page }) => {

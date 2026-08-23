@@ -127,12 +127,15 @@ test('Hedgehog House is a loose photo fan with direct-manipulation focus and gra
   await expect(page.locator('#site-graph .site-graph-node[data-node-id="hedgehog-house"].is-artifact-linked')).toHaveCount(1);
   await expect(page.locator('.artifact-tether-layer')).toHaveClass(/is-visible/);
 
-  const active = gallery.locator('.artifact-deck-card.is-active');
-  await active.click();
+  const outside = gallery.locator('.artifact-deck-card[data-artifact-id="hedgehog-house-outside"]');
+  await outside.hover();
+  await expect(outside).toHaveClass(/is-active/);
+  await outside.click();
   const viewer = page.locator('.artifact-focus-viewer');
   await waitSettled(page);
   await expect(viewer).toBeVisible();
   await expect(viewer).toHaveAttribute('data-media-kind', 'image');
+  await expect(viewer).toHaveAttribute('data-shared-focus-artifact', 'hedgehog-house-outside');
   await expect(viewer.locator('.artifact-focus-media img.phase-b-panzoom-media')).toHaveAttribute('src', /assets\/images\/about\/woodworking\/hedgehog-house\/outside\.png$/);
   await expect(viewer.locator('[data-artifact-image-zoom="true"]')).toHaveCount(0);
   await page.keyboard.press('Escape');

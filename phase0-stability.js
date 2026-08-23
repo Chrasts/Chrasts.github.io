@@ -135,12 +135,28 @@
       setPoint(graphNode(id), point);
     });
 
-    const rankBuckets = new Map();
+    let rankBuckets = new Map();
     projects.forEach(project => {
       const rank = Math.max(1, project.lattice?.length || 1);
       if (!rankBuckets.has(rank)) rankBuckets.set(rank, []);
       rankBuckets.get(rank).push(project);
     });
+
+    /* Some datasets put every project on the same formal rank. In Atlas that
+       degenerates into the flat two-row layout we explicitly want to avoid.
+       Preserve semantic left/right placement, but split that single project
+       rank into three deterministic visual tiers. */
+    if (rankBuckets.size === 1 && projects.length > 4) {
+      const only = [...rankBuckets.values()][0]
+        .map(project => {
+          const parents = (project.lattice || []).map(id => themePositions.get(id)).filter(Boolean);
+          const x = parents.length ? parents.reduce((sum, point) => sum + point.x, 0) / parents.length : origin.x;
+          return { project, x };
+        })
+        .sort((a, b) => a.x - b.x || a.project.order - b.project.order);
+      rankBuckets = new Map([[1, []], [2, []], [3, []]]);
+      only.forEach((item, index) => rankBuckets.get((index % 3) + 1).push(item.project));
+    }
 
     [...rankBuckets.keys()].sort((a, b) => a - b).forEach((rank, rankIndex) => {
       const desired = rankBuckets.get(rank).map(project => {

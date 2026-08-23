@@ -11,9 +11,9 @@ permissions:
   contents: read
 
 jobs:
-  browser-checks:
+  static-validation:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 5
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -51,6 +51,23 @@ jobs:
       - name: Validate artifact manifest
         run: node scripts/validate-artifacts.mjs
 
+  browser-smoke:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [core, interactions]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
       - name: Install Playwright test runner
         run: npm install --no-save @playwright/test@1.55.0
 
@@ -70,29 +87,74 @@ jobs:
           cat /tmp/portfolio-http.log
           exit 1
 
-      - name: Run current-contract smoke tests
-        if: github.event_name == 'push'
+      - name: Run core smoke tests
+        if: matrix.suite == 'core'
         run: |
           npx playwright test \
             tests/phase0.spec.js \
             tests/phase0-breakpoint.spec.js \
             tests/phase2-root-landing.spec.js \
+            tests/radial-geometry.spec.js
+
+      - name: Run interaction smoke tests
+        if: matrix.suite == 'interactions'
+        run: |
+          npx playwright test \
             tests/phase6-cross-link.spec.js \
-            tests/radial-geometry.spec.js \
             tests/interaction-consolidation.spec.js \
             tests/interaction-contracts.spec.js \
             tests/phase7-atlas-drag.spec.js \
             tests/pre-phase8-mobile.spec.js
 
+      - name: Upload Playwright diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results-${{ matrix.suite }}-${{ github.run_attempt }}
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  full-regression:
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install Playwright test runner
+        run: npm install --no-save @playwright/test@1.55.0
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start static site
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/portfolio-http.log 2>&1 &
+          echo $! > /tmp/portfolio-http.pid
+          for i in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/portfolio-http.log
+          exit 1
+
       - name: Run full regression suite
-        if: github.event_name != 'push'
         run: npx playwright test
 
       - name: Upload Playwright diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-test-results-${{ github.run_attempt }}
+          name: playwright-full-regression-${{ github.run_attempt }}
           path: test-results/
           if-no-files-found: ignore
           retention-days: 7

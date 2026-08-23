@@ -67,7 +67,15 @@
     const node = nodeMap.get(id);
     if (!node) return Infinity;
     if (sectionId === 'work' && node.type === 'work-theme') return 1;
-    if (sectionId === 'work' && node.type === 'project') return 2;
+    if (sectionId === 'work' && node.type === 'project') {
+      // Work is a concept lattice, not a tree. Project depth is determined by
+      // how many Work-theme concepts it instantiates. This keeps 1-, 2- and
+      // 3-theme projects on distinct canonical Atlas tiers on every viewport.
+      const themeParentCount = (node.parentIds || [])
+        .filter(parentId => nodeMap.get(parentId)?.type === 'work-theme')
+        .length;
+      return 1 + Math.max(1, themeParentCount);
+    }
     const nextTrail = new Set(trail).add(id);
     const values = (node.parentIds || [])
       .filter(parentId => parentId === sectionId || sectionFor(parentId) === sectionId)

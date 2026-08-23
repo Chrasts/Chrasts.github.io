@@ -7,6 +7,9 @@
   const stack = () => document.querySelector('.phase8-certificate-stack');
   const inspector = () => document.querySelector('.phase8-certificate-inspector');
   const root = () => document.querySelector('[data-phase8-object="certificate-stack"]');
+  const currentRoute = () => (document.body.dataset.graphRoute || location.hash || 'overview')
+    .replace(/^#/, '')
+    .replace(/^\/+|\/+$/g, '');
 
   const syncStates = () => {
     stack()?.querySelectorAll('.phase8-certificate-paper[data-artifact-id]').forEach(paper => {
@@ -27,7 +30,10 @@
       source,
       artifactId: source.dataset.artifactId,
       owner: 'certificate',
-      ownerValid: () => sceneRoot.isConnected && !sceneRoot.hidden && sceneRoot.dataset.sceneVisible !== 'false'
+      ownerValid: () => {
+        const route = currentRoute();
+        return route === 'education/credentials' || route.startsWith('education/credentials/');
+      }
     });
   };
 

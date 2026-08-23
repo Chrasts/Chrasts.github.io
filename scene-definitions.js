@@ -270,6 +270,17 @@
     managedVisibility: false,
     visible: ({ element }) => !element.hidden || element.classList.contains('is-open'),
     placement: 'inspector',
+    composition: context => context.variant === 'mobile'
+      ? { zone: 'mobile-tray', role: 'inspector' }
+      : {
+          zone: 'inspector',
+          side: 'right',
+          preferredSide: 'right',
+          allowFlip: false,
+          blocksSideStage: true,
+          priority: 1000,
+          role: 'inspector'
+        },
     enter: 'inspector-in',
     exit: 'inspector-out',
     variants: {
@@ -297,6 +308,7 @@
     document.head.appendChild(script);
   };
 
+  ensureScript('scene-composer.js', 'data-profile-scene-composer');
   ensureScript('phase7-pointer-hotfix.js', 'data-profile-atlas-pointer-hotfix');
   ensureScript('global-geometry-ownership.js', 'data-profile-global-geometry-ownership');
   ensureScript('root-landing.js', 'data-profile-root-landing');

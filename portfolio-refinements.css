@@ -90,15 +90,23 @@ body[data-graph-mode="work"] .site-graph-node.is-work-concept .site-graph-dot{po
 .work-concept-project-arrow{color:var(--teal);font-size:16px;line-height:1}
 
 /* Image focus uses the original asset and can switch from fitted overview to
-   native 1:1 pixels for high-resolution inspection. The action footer is an
-   explicit bottom rail rather than an intrinsic grid row, so a large image can
-   never push View 1:1 outside the viewport. */
-.artifact-focus-viewer{z-index:100!important}
+   native 1:1 pixels for high-resolution inspection. The viewer itself owns the
+   available scene box; its shell is explicitly bounded to that box and the
+   action footer remains a normal grid row, so controls cannot be clipped below
+   the artifact layer. */
+.artifact-focus-viewer{
+  z-index:100!important;
+  box-sizing:border-box;
+  padding:18px!important
+}
 .artifact-focus-shell{
+  width:min(960px,100%)!important;
+  height:100%!important;
+  max-height:650px!important;
   min-height:0;
   overflow:hidden;
-  grid-template-rows:auto minmax(0,1fr)!important;
-  padding-bottom:58px
+  grid-template-rows:auto minmax(0,1fr) auto!important;
+  padding-bottom:0
 }
 .artifact-focus-media.is-image{
   position:relative;
@@ -117,12 +125,12 @@ body[data-graph-mode="work"] .site-graph-node.is-work-concept .site-graph-dot{po
   object-fit:contain
 }
 .artifact-focus-footer{
-  position:absolute!important;
-  left:0;
-  right:0;
-  bottom:0;
+  position:relative!important;
+  left:auto;
+  right:auto;
+  bottom:auto;
   z-index:5;
-  min-height:58px;
+  min-height:52px;
   box-sizing:border-box;
   flex-wrap:wrap;
   background:var(--paper)
@@ -154,8 +162,9 @@ body.has-artifact-focus #site-detail-panel{
 @media(max-width:900px){
   .work-project-anchor-v5 .work-project-hitbox-v5{stroke-width:1.2}
   .work-concept-projects.is-primary-project-choice .work-concept-project{min-height:48px}
-  .artifact-focus-shell{padding-bottom:68px}
-  .artifact-focus-footer{min-height:68px}
+  .artifact-focus-viewer{padding:10px!important}
+  .artifact-focus-shell{max-height:none!important}
+  .artifact-focus-footer{min-height:58px}
   .artifact-focus-description{display:none}
 }
 

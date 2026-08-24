@@ -129,7 +129,7 @@ test('BSc thesis diagram opens directly into Object Focus PDF inspection', async
   await expect(viewer).toHaveAttribute('data-media-kind', 'pdf');
   await expect(viewer).toHaveAttribute('data-media-stage', 'object-focus');
   await expect(first).toHaveAttribute('data-object-focus-state', 'inspect');
-  await expect(viewer.locator('.artifact-focus-media iframe')).toHaveAttribute('src', /lattice-of-bands\.pdf#toolbar=0&navpanes=0&scrollbar=0&view=FitH/);
+  await expect(viewer.locator('.artifact-focus-media iframe')).toHaveAttribute('src', /lattice-of-bands\.pdf#toolbar=1&navpanes=0&scrollbar=0&view=Fit/);
 
   await page.locator('.artifact-focus-close').click();
   await expect(viewer).toBeHidden({ timeout: 2000 });

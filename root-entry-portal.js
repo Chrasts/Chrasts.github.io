@@ -245,8 +245,11 @@
       if (event.key === 'Escape') {
         event.preventDefault();
         event.stopImmediatePropagation();
-        closePortal('keyboard-escape');
+        // Move focus first: root focusin legitimately opens the portal. Closing
+        // after that event makes Escape the final semantic state instead of
+        // immediately reopening the portal we just reversed.
         rootNode?.focus?.({ preventScroll: true });
+        closePortal('keyboard-escape');
         return;
       }
       if (!['Enter', ' '].includes(event.key)) return;

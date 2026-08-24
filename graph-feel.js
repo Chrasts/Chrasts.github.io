@@ -2,69 +2,77 @@
   if (window.ProfileGraphFeel) return;
 
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  const interaction = window.ProfileNodeInteraction;
+  const halos = window.ProfileHaloRenderer;
+  const rootId = window.SITE_DATA?.graph?.rootId || 'stepan-chrast';
+  if (!interaction || !halos) return;
+
   let root = null;
   let frame = 0;
   let sequence = 0;
-  let input = 'pointer';
   let phase = 'idle';
-  let activeNodeId = null;
-  let pressedNodeId = null;
   let activatingNodeId = null;
   let activationTimer = 0;
+  let dragging = false;
+  let renderedState = null;
 
   const liveNode = element => element?.closest?.('#site-graph .site-graph-node[data-node-id]') || null;
   const liveSvg = element => element?.closest?.('#site-graph .site-graph-svg') || null;
 
-  const setRootState = () => {
-    if (!root) return;
-    root.dataset.graphFeel = phase;
-    root.dataset.graphInput = input;
-    if (activeNodeId) root.dataset.graphActiveNode = activeNodeId;
-    else delete root.dataset.graphActiveNode;
-    if (pressedNodeId) root.dataset.graphPressedNode = pressedNodeId;
-    else delete root.dataset.graphPressedNode;
+  const haloStateFor = (node, record) => {
+    if (!record) return node.dataset.nodeId === rootId ? 'root-entry' : 'idle';
+    if (record.state === interaction.STATES.TRANSITIONING) return 'transitioning';
+    if (node.classList.contains('is-feel-activating') || record.state === interaction.STATES.ACTIVE) return 'active';
+    if (record.state === interaction.STATES.FOCUSED) return 'focus';
+    if (record.state === interaction.STATES.HOVERED) return 'hover';
+    if (record.state === interaction.STATES.SELECTED) return 'selected';
+    if (record.state === interaction.STATES.ENTRY_READY) return 'root-entry';
+    if (record.artifactLinked || record.relation !== 'none') return 'related';
+    return 'idle';
   };
 
-  const ensureHalo = node => {
-    if (node.querySelector(':scope > .site-graph-halo')) return;
-    const dot = node.querySelector(':scope > .site-graph-dot');
-    if (!dot) return;
-    const halo = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    halo.classList.add('site-graph-halo');
-    const radius = Number(dot.getAttribute('r') || 6);
-    halo.setAttribute('r', String(radius + Math.max(5, radius * .55)));
-    halo.setAttribute('fill', 'none');
-    halo.setAttribute('pointer-events', 'none');
-    halo.setAttribute('aria-hidden', 'true');
-    node.insertBefore(halo, dot);
-  };
-
-  const ensureHalos = () => {
-    root?.querySelectorAll('.site-graph-node[data-node-id]').forEach(ensureHalo);
+  const updatePhase = state => {
+    if (state.transitioning) phase = 'transition';
+    else if (dragging) phase = 'dragging';
+    else if (state.pressedNodeId) phase = 'pressed';
+    else if (state.primaryNodeId) phase = 'preview';
+    else phase = 'idle';
   };
 
   const syncVisualState = () => {
     frame = 0;
     if (!root) return;
-    ensureHalos();
+    halos.attach(root);
+    const state = interaction.snapshot();
+    updatePhase(state);
+
+    root.dataset.graphFeel = phase;
+    root.dataset.graphInput = state.input;
+    if (state.primaryNodeId) root.dataset.graphActiveNode = state.primaryNodeId;
+    else delete root.dataset.graphActiveNode;
+    if (state.pressedNodeId) root.dataset.graphPressedNode = state.pressedNodeId;
+    else delete root.dataset.graphPressedNode;
 
     root.querySelectorAll('.site-graph-node[data-node-id]').forEach(node => {
       const id = node.dataset.nodeId;
-      node.classList.toggle('is-feel-origin', Boolean(activeNodeId && id === activeNodeId));
-      node.classList.toggle('is-feel-pressed', Boolean(pressedNodeId && id === pressedNodeId));
-      node.classList.toggle('is-feel-activating', Boolean(activatingNodeId && id === activatingNodeId));
+      const record = interaction.stateFor(id);
+      const direct = state.primaryNodeId === id;
+      node.classList.toggle('is-feel-origin', direct);
+      node.classList.toggle('is-feel-pressed', state.pressedNodeId === id);
+      node.classList.toggle('is-feel-activating', activatingNodeId === id);
+      halos.setState(node, haloStateFor(node, record), { relation: record?.relation || 'none' });
     });
 
     root.querySelectorAll('.site-graph-edges path').forEach(edge => {
-      const active = edge.classList.contains('is-upstream') ||
+      const related = edge.classList.contains('is-upstream') ||
         edge.classList.contains('is-downstream') ||
         edge.classList.contains('is-lateral') ||
         edge.classList.contains('is-work-strong') ||
         edge.classList.contains('is-work-soft');
-      edge.classList.toggle('is-graph-flowing', Boolean(activeNodeId && active));
+      edge.classList.toggle('is-graph-flowing', Boolean(state.primaryNodeId && related));
     });
 
-    setRootState();
+    renderedState = state;
     sequence += 1;
     dispatchEvent(new CustomEvent('profile:graph-feel', { detail: snapshot() }));
   };
@@ -72,35 +80,6 @@
   const schedule = () => {
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(() => requestAnimationFrame(syncVisualState));
-  };
-
-  const setPreview = (node, modality) => {
-    if (!node) return;
-    input = modality;
-    activeNodeId = node.dataset.nodeId || null;
-    phase = pressedNodeId ? 'pressed' : 'preview';
-    schedule();
-  };
-
-  const clearPreview = node => {
-    if (node && activeNodeId && node.dataset.nodeId !== activeNodeId) return;
-    activeNodeId = null;
-    phase = pressedNodeId ? 'pressed' : 'idle';
-    schedule();
-  };
-
-  const press = node => {
-    if (!node) return;
-    pressedNodeId = node.dataset.nodeId || null;
-    activeNodeId = pressedNodeId;
-    phase = 'pressed';
-    schedule();
-  };
-
-  const release = () => {
-    pressedNodeId = null;
-    phase = activeNodeId ? 'preview' : 'idle';
-    schedule();
   };
 
   const activate = node => {
@@ -119,90 +98,43 @@
     if (!root) return false;
     if (root.dataset.graphFeelBound === 'true') return true;
     root.dataset.graphFeelBound = 'true';
-    setRootState();
-    ensureHalos();
-
-    root.addEventListener('pointerover', event => {
-      const node = liveNode(event.target);
-      if (!node) return;
-      if (event.relatedTarget && node.contains(event.relatedTarget)) return;
-      setPreview(node, 'pointer');
-    }, true);
-
-    root.addEventListener('pointerout', event => {
-      const node = liveNode(event.target);
-      if (!node) return;
-      if (event.relatedTarget && node.contains(event.relatedTarget)) return;
-      clearPreview(node);
-    }, true);
-
-    root.addEventListener('focusin', event => {
-      const node = liveNode(event.target);
-      if (node) setPreview(node, 'keyboard');
-    });
-    root.addEventListener('focusout', event => {
-      const node = liveNode(event.target);
-      if (node) clearPreview(node);
-    });
+    interaction.attach();
+    halos.attach(root);
 
     root.addEventListener('pointerdown', event => {
-      input = 'pointer';
-      const node = liveNode(event.target);
-      if (node && event.button === 0) {
-        press(node);
-        return;
-      }
-      if (event.button === 0 && liveSvg(event.target) && document.body.dataset.graphMode === 'atlas') {
-        phase = 'dragging';
-        activeNodeId = null;
-        setRootState();
+      if (event.button === 0 && liveSvg(event.target) && !liveNode(event.target) && document.body.dataset.graphMode === 'atlas') {
+        dragging = true;
+        schedule();
       }
     }, true);
-
     root.addEventListener('pointerup', event => {
-      if (liveNode(event.target) && event.button === 0) activate(liveNode(event.target));
-      release();
-    }, true);
-    root.addEventListener('pointercancel', release, true);
-
-    root.addEventListener('keydown', event => {
       const node = liveNode(event.target);
-      if (!node || !['Enter', ' '].includes(event.key)) return;
-      input = 'keyboard';
-      press(node);
+      if (node && event.button === 0) activate(node);
+      dragging = false;
+      schedule();
+    }, true);
+    root.addEventListener('pointercancel', () => {
+      dragging = false;
+      schedule();
     }, true);
     root.addEventListener('keyup', event => {
       const node = liveNode(event.target);
-      if (!node || !['Enter', ' '].includes(event.key)) return;
-      activate(node);
-      release();
+      if (node && ['Enter', ' '].includes(event.key)) activate(node);
     }, true);
 
     new MutationObserver(mutations => {
-      if (mutations.some(mutation => mutation.type === 'childList')) {
-        ensureHalos();
-        schedule();
-      }
+      if (mutations.some(mutation => mutation.type === 'childList')) schedule();
     }).observe(root, { childList: true, subtree: true });
 
+    window.addEventListener('profile:node-interaction', schedule);
     window.addEventListener('profile:artifact-scenes-ready', schedule);
     window.addEventListener('profile:scene-state', schedule);
     window.addEventListener('profile:atlas-lod-change', schedule);
-    window.addEventListener('profile:transition-begin', () => {
-      phase = 'transition';
-      activeNodeId = null;
-      pressedNodeId = null;
-      schedule();
-    });
-    window.addEventListener('profile:transition-finish', () => {
-      phase = 'idle';
-      schedule();
-    });
-    window.addEventListener('profile:transition-cancel', () => {
-      phase = 'idle';
-      schedule();
-    });
+    window.addEventListener('profile:transition-begin', schedule);
+    window.addEventListener('profile:transition-finish', schedule);
+    window.addEventListener('profile:transition-cancel', schedule);
 
+    schedule();
     return true;
   };
 
@@ -216,16 +148,18 @@
   };
 
   function snapshot() {
+    const state = renderedState || interaction.snapshot();
     return {
       sequence,
       phase,
-      input,
-      activeNodeId,
-      pressedNodeId,
+      input: state.input,
+      activeNodeId: state.primaryNodeId,
+      pressedNodeId: state.pressedNodeId,
       activatingNodeId,
       reducedMotion: reduced.matches,
-      haloCount: root?.querySelectorAll('.site-graph-halo').length || 0,
-      flowingEdgeCount: root?.querySelectorAll('.site-graph-edges path.is-graph-flowing').length || 0
+      haloCount: halos.snapshot().ringCount,
+      flowingEdgeCount: root?.querySelectorAll('.site-graph-edges path.is-graph-flowing').length || 0,
+      nodeInteractionSequence: state.sequence
     };
   }
 

@@ -1,8 +1,8 @@
 # V3.1 Phase C — Soft Node Dynamics
 
-Status: implementation candidate
+Status: reviewed implementation
 
-Primary specification: `Interactive Graph Portfolio - Agent-Executable Master Roadmap V3.1.md`, Phase C and sections 30–33. The V3.1 supplement retains the displacement-model and node-dynamics ownership details.
+Primary specification: `Interactive Graph Portfolio - Agent-Executable Master Roadmap V3.1.md`, Phase C and sections 30–33. The V3.1 supplement retains the displacement-model, stress-testing and node-dynamics ownership details.
 
 ## Product target
 
@@ -24,12 +24,12 @@ This is deliberately not a force-directed layout.
 
 ### Canonical graph renderer owns
 
-- `data-x`
-- `data-y`
-- route-to-route geometry
-- canonical edge paths
-- node topology
-- Work FCA geometry
+- `data-x`;
+- `data-y`;
+- route-to-route geometry;
+- canonical edge paths;
+- node topology;
+- Work FCA geometry.
 
 `node-dynamics.js` never writes `data-x` or `data-y`.
 
@@ -37,11 +37,11 @@ This is deliberately not a force-directed layout.
 
 Per live node:
 
-- `offsetX`
-- `offsetY`
-- spring velocity
-- temporary scale response
-- interaction targets
+- `offsetX`;
+- `offsetY`;
+- spring velocity;
+- temporary scale response;
+- interaction targets.
 
 For edges it owns only a temporary visual path derived from the existing canonical quadratic path. The exact canonical `d` value is restored when the field settles or structural motion takes ownership.
 
@@ -49,7 +49,7 @@ For edges it owns only a temporary visual path derived from the existing canonic
 
 Node dynamics suspends and resets on `profile:transition-begin` and resumes only after transition finish/cancel. Pointer/keyboard activation also clears the field before click/keyboard route handling can capture structural geometry.
 
-The dynamics layer is also inert while the profile intro state is `pending` or `running`. During that ownership window it does not process graph child-list mutations, so the Intro Atlas reveal/condensation remains the sole owner of its temporary SVG wrappers and geometry.
+The dynamics layer is inert throughout the V3.1 entry ownership window: `pending`, `preparing`, `running`, and the explicit `is-atlas-reveal` presentation state. It therefore cannot compete with Phase E while critical resources are preparing or while the live Atlas reveal is active.
 
 ## Field model
 
@@ -70,7 +70,7 @@ The active node itself has zero translation. This is intentional: the pointer ta
 
 Offsets and scale use critically damped / near-critically-damped spring integration with bounded velocity. Animation stops once all values reach their target tolerance; there is no permanent requestAnimationFrame loop.
 
-Current offset is clamped to the mode's `maxDisplacement`, including any transient spring overshoot.
+Current offset is clamped to the mode's `maxDisplacement`, including transient spring overshoot.
 
 When the field reaches rest with no active node, the implementation performs one explicit canonical cleanup pass. This prevents tolerance/write-threshold residue from surviving as a sub-pixel transform or adapted edge path.
 
@@ -85,7 +85,7 @@ Desktop baseline:
 | Work | 175 | 13 | 1.045 |
 | Atlas | 210 | 10 | 1.038 |
 
-Atlas intentionally combines a wider influence radius with the smallest displacement clamp. The production Atlas spacing puts the nearest top-level Knowledge neighbours at roughly 159 canonical SVG units, so the previous 140-unit experiment could scale the active node without moving any neighbour. The wider field reaches the local topology while preserving a small maximum movement.
+Atlas intentionally combines a wider influence radius with the smallest displacement clamp. The production Atlas spacing puts the nearest top-level Knowledge neighbours at roughly 159 canonical SVG units, so the previous 140-unit experiment could scale the active node without moving any neighbour. The wider field reaches local topology while preserving a small maximum movement.
 
 Coarse-pointer/mobile composition uses a substantially weaker field and slightly smaller radius.
 
@@ -107,7 +107,7 @@ When either endpoint moves temporarily:
 
 This retains the renderer's chosen curve character instead of duplicating `site-graph.js` edge-generation mathematics.
 
-## Label attachment
+## Label and halo attachment
 
 The temporary translation is applied to the existing `.site-graph-node` SVG group. Dot, label, metadata and halo therefore share the same temporary translation automatically.
 
@@ -153,7 +153,7 @@ snapshot()
 
 `snapshot()` reports the current mode tuning, maximum displacement, moving-node count, adapted-edge count and suspension state.
 
-## Acceptance tests
+## Acceptance and stress tests
 
 `tests/node-dynamics.spec.js` verifies:
 
@@ -165,9 +165,11 @@ snapshot()
 6. edges adapt while endpoints move;
 7. spring return restores exact canonical node transforms and edge paths;
 8. route transitions preempt ephemeral motion;
-9. reduced-motion interaction keeps semantics but disables displacement.
+9. reduced-motion interaction keeps semantics but disables displacement;
+10. rapid hover retargeting in a zoomed Atlas cannot accumulate overlapping fields or exceed the clamp;
+11. mobile/coarse composition weakens displacement instead of reusing desktop tuning.
 
-The existing Intro regression suite additionally guards against Phase C taking structural ownership during the live Atlas intro.
+The Phase E intro regression suite additionally verifies that Phase C remains suspended during both entry preparation and the live Atlas reveal.
 
 ## Explicit non-goals
 

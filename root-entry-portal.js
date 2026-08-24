@@ -58,7 +58,7 @@
       const circle = document.createElementNS(SVG_NS, 'circle');
       circle.setAttribute('cx', '0');
       circle.setAttribute('cy', '0');
-      circle.setAttribute('r', '14.6');
+      circle.setAttribute('r', '26.5');
       clip.appendChild(circle);
       defs.appendChild(clip);
     }
@@ -69,10 +69,10 @@
     const image = document.createElementNS(SVG_NS, 'image');
     image.classList.add('root-entry-portrait');
     image.dataset.rootEntryPortrait = 'true';
-    image.setAttribute('x', '-15');
-    image.setAttribute('y', '-15');
-    image.setAttribute('width', '30');
-    image.setAttribute('height', '30');
+    image.setAttribute('x', '-27');
+    image.setAttribute('y', '-27');
+    image.setAttribute('width', '54');
+    image.setAttribute('height', '54');
     image.setAttribute('href', 'assets/stepan-chrast.jpg');
     image.setAttributeNS(XLINK_NS, 'href', 'assets/stepan-chrast.jpg');
     image.setAttribute('preserveAspectRatio', 'xMidYMid slice');

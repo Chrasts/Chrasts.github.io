@@ -12,6 +12,16 @@
   const initialHash = bootstrap.initialHash ?? location.hash;
   const svgNS = 'http://www.w3.org/2000/svg';
   const sections = ['work', 'knowledge', 'experience', 'education', 'about'];
+  const timing = Object.freeze({
+    atlasStill: 1300,
+    wakeStart: 350,
+    wakeEnd: 1200,
+    clustersStart: 1850,
+    clustersEnd: 3000,
+    branchesStart: 3000,
+    absorptionStart: 3450,
+    end: 4300
+  });
 
   const state = {
     eligible: Boolean(bootstrap.eligible),
@@ -290,21 +300,34 @@
 
   const condensationWindow = record => {
     if (record.depth <= 0) return null;
-    if (record.depth === 1) return { start: 1900, end: 2200 };
-    if (record.depth === 2) return { start: 820, end: 1420 };
+    if (record.depth === 1) return { start: timing.absorptionStart, end: timing.end };
+    if (record.depth === 2) return { start: timing.clustersStart, end: timing.clustersEnd };
     const deep = Math.max(3, record.depth);
-    const start = 450 + Math.max(0, 5 - deep) * 72 + (record.id.length % 5) * 13;
-    const end = Math.min(1270, start + 610 + Math.min(120, (deep - 3) * 35));
+    const start = timing.atlasStill + Math.max(0, 5 - deep) * 110 + (record.id.length % 5) * 22;
+    const end = Math.min(2850, start + 1080 + Math.min(180, (deep - 3) * 48));
     return { start, end };
   };
 
+  const updateIdleMotion = elapsed => {
+    if (elapsed >= timing.atlasStill) return;
+    nodeRecords.forEach(record => {
+      if (!record.dot || record.id === rootId) return;
+      const phase = (record.id.length % 9) * .37;
+      const amplitude = record.depth === 1 ? .035 : record.depth === 2 ? .025 : .015;
+      const pulse = 1 + Math.sin(elapsed / 260 + phase) * amplitude;
+      record.dot.style.setProperty('transform', `scale(${pulse.toFixed(4)})`, 'important');
+      record.dot.style.setProperty('transform-origin', 'center', 'important');
+      record.dot.style.setProperty('transform-box', 'fill-box', 'important');
+    });
+  };
+
   const updateWake = elapsed => {
-    const p = clamp01((elapsed - 250) / 400);
+    const p = clamp01((elapsed - timing.wakeStart) / Math.max(1, timing.wakeEnd - timing.wakeStart));
     tracedEdges.forEach((record, index) => {
       const local = clamp01((p - index * .08) / .76);
       const traced = ease(local);
       record.element.style.setProperty('stroke-dashoffset', String(record.length * (1 - traced)), 'important');
-      const fade = elapsed > 570 ? 1 - clamp01((elapsed - 570) / 180) : 1;
+      const fade = elapsed > 1000 ? 1 - clamp01((elapsed - 1000) / 300) : 1;
       record.element.style.setProperty('opacity', String(.26 + .66 * Math.sin(Math.PI * local) * fade), 'important');
     });
   };
@@ -312,13 +335,13 @@
   const updateCamera = elapsed => {
     const camera = window.ProfileCameraComposition;
     if (!camera?.focusNode) return;
-    if (elapsed >= 850 && !document.body.dataset.phaseHCameraFollow) {
+    if (elapsed >= 1900 && !document.body.dataset.phaseHCameraFollow) {
       document.body.dataset.phaseHCameraFollow = 'true';
-      camera.focusNode(rootId, { scale: 1.36 });
+      camera.focusNode(rootId, { scale: 1.30 });
     }
-    if (elapsed >= 1540 && !document.body.dataset.phaseHCameraPush) {
+    if (elapsed >= 3350 && !document.body.dataset.phaseHCameraPush) {
       document.body.dataset.phaseHCameraPush = 'true';
-      camera.focusNode(rootId, { scale: state.mobile ? 1.48 : 1.64 });
+      camera.focusNode(rootId, { scale: state.mobile ? 1.48 : 1.62 });
     }
   };
 
@@ -378,8 +401,8 @@
       record.element.setAttribute('d', edgePath(from, to, record.element));
       const cross = !['hierarchy', 'hierarchy-alt', 'work-lattice'].includes(record.type);
       if (cross) {
-        if (elapsed < 650 && tracedEdges.includes(record)) return;
-        const opacity = .12 * (1 - smooth(clamp01((elapsed - 480) / 260)));
+        if (elapsed < timing.atlasStill && tracedEdges.includes(record)) return;
+        const opacity = .12 * (1 - smooth(clamp01((elapsed - 1150) / 450)));
         record.element.style.setProperty('opacity', String(opacity), 'important');
         return;
       }
@@ -393,11 +416,11 @@
   };
 
   const stageForElapsed = elapsed => {
-    if (elapsed < 250) return 'atlas';
-    if (elapsed < 650) return 'wake';
-    if (elapsed < 1250) return 'condensing';
-    if (elapsed < 1900) return 'branches';
-    if (elapsed < 2200) return 'absorbing';
+    if (elapsed < 500) return 'atlas';
+    if (elapsed < timing.atlasStill) return 'wake';
+    if (elapsed < timing.branchesStart) return 'condensing';
+    if (elapsed < timing.absorptionStart) return 'branches';
+    if (elapsed < timing.end) return 'absorbing';
     return 'handoff';
   };
 
@@ -413,6 +436,8 @@
       record.label?.style.removeProperty('opacity');
       record.meta?.style.removeProperty('opacity');
       record.dot?.style.removeProperty('transform');
+      record.dot?.style.removeProperty('transform-origin');
+      record.dot?.style.removeProperty('transform-box');
       record.dot?.style.removeProperty('stroke-width');
       delete record.element.dataset.phaseHTier;
       delete record.element.dataset.phaseHDepth;
@@ -476,6 +501,8 @@
     shell.setAttribute('aria-hidden', 'true');
     const sharedDot = document.createElement('span');
     sharedDot.className = 'phase-h-root-handoff-dot';
+    const sharedPortrait = document.createElement('span');
+    sharedPortrait.className = 'phase-h-root-handoff-portrait';
     const sharedLabel = document.createElement('span');
     sharedLabel.className = 'phase-h-root-handoff-label';
     sharedLabel.textContent = nodeMap.get(rootId)?.label || 'Štěpán Chrast';
@@ -485,9 +512,10 @@
     Object.assign(sharedLabel.style, {
       left: `${labelRect.left}px`, top: `${labelRect.top}px`, width: `${labelRect.width}px`, height: `${labelRect.height}px`
     });
+    sharedDot.appendChild(sharedPortrait);
     shell.append(sharedDot, sharedLabel);
     document.body.appendChild(shell);
-    sharedHandoff = { shell, dot: sharedDot, label: sharedLabel, dotRect, labelRect };
+    sharedHandoff = { shell, dot: sharedDot, portrait: sharedPortrait, label: sharedLabel, dotRect, labelRect };
     return sharedHandoff;
   };
 
@@ -495,32 +523,51 @@
     if (!handoff) return;
     await raf();
     await raf();
-    const targetDot = document.querySelector('.root-node-dot');
+    const targetPortrait = document.querySelector('.hero-visual.profile-identity .portrait');
     const targetTitle = document.querySelector('.hero-copy h1');
-    const dotRect = targetDot?.getBoundingClientRect();
+    const portraitRect = targetPortrait?.getBoundingClientRect();
     const titleRect = targetTitle?.getBoundingClientRect();
-    if (!dotRect?.width || !titleRect?.width) return;
+    if (!portraitRect?.width || !titleRect?.width) return;
 
-    const duration = reducedMotion ? 120 : fast ? 220 : 430;
-    const dotDx = dotRect.left + dotRect.width / 2 - (handoff.dotRect.left + handoff.dotRect.width / 2);
-    const dotDy = dotRect.top + dotRect.height / 2 - (handoff.dotRect.top + handoff.dotRect.height / 2);
-    const dotScale = Math.max(.4, Math.min(4, dotRect.width / handoff.dotRect.width));
+    const duration = reducedMotion ? 120 : fast ? 260 : 720;
+    const targetRadius = getComputedStyle(targetPortrait).borderRadius || '18px';
     const labelDx = titleRect.left + titleRect.width / 2 - (handoff.labelRect.left + handoff.labelRect.width / 2);
     const labelDy = titleRect.top + titleRect.height * .42 - (handoff.labelRect.top + handoff.labelRect.height / 2);
     const labelScale = Math.max(1, Math.min(4.8, titleRect.width / Math.max(1, handoff.labelRect.width)));
 
     const dotAnimation = handoff.dot.animate([
-      { transform: 'translate(0px,0px) scale(1)', opacity: 1 },
-      { transform: `translate(${dotDx}px,${dotDy}px) scale(${dotScale})`, opacity: .96 }
-    ], { duration, easing: 'cubic-bezier(.18,.74,.2,1)', fill: 'forwards' });
+      {
+        left: `${handoff.dotRect.left}px`,
+        top: `${handoff.dotRect.top}px`,
+        width: `${handoff.dotRect.width}px`,
+        height: `${handoff.dotRect.height}px`,
+        borderRadius: '50%',
+        borderColor: 'var(--teal)',
+        boxShadow: '0 0 0 8px color-mix(in srgb,var(--teal) 7%,transparent)'
+      },
+      {
+        left: `${portraitRect.left}px`,
+        top: `${portraitRect.top}px`,
+        width: `${portraitRect.width}px`,
+        height: `${portraitRect.height}px`,
+        borderRadius: targetRadius,
+        borderColor: 'transparent',
+        boxShadow: '0 18px 48px color-mix(in srgb,var(--ink) 10%,transparent)'
+      }
+    ], { duration, easing: 'cubic-bezier(.16,.76,.18,1)', fill: 'forwards' });
+    const portraitAnimation = handoff.portrait.animate([
+      { opacity: 0 },
+      { opacity: 0, offset: .28 },
+      { opacity: 1 }
+    ], { duration, easing: 'ease-out', fill: 'forwards' });
     const labelAnimation = handoff.label.animate([
       { transform: 'translate(0px,0px) scale(1)', opacity: 1 },
-      { transform: `translate(${labelDx}px,${labelDy}px) scale(${labelScale})`, opacity: .12 }
-    ], { duration, easing: 'cubic-bezier(.18,.74,.2,1)', fill: 'forwards' });
+      { transform: `translate(${labelDx}px,${labelDy}px) scale(${labelScale})`, opacity: .08 }
+    ], { duration: Math.max(160, duration * .78), easing: 'cubic-bezier(.18,.74,.2,1)', fill: 'forwards' });
 
     await Promise.race([
-      Promise.allSettled([dotAnimation.finished, labelAnimation.finished]),
-      wait(duration + 80)
+      Promise.allSettled([dotAnimation.finished, portraitAnimation.finished, labelAnimation.finished]),
+      wait(duration + 100)
     ]);
   };
 
@@ -538,7 +585,7 @@
     cleanupGraphMotion({ restoreEdges: false });
     const overviewReady = await internalRoute('overview');
     if (!overviewReady) {
-      document.body.classList.remove('is-profile-intro-v2', 'is-phase-h-handoff');
+      document.body.classList.remove('is-profile-intro-v2', 'is-phase-h-handoff', 'is-phase-h-portrait-landed');
       removeIntroChrome();
       state.running = false;
       state.stage = 'complete';
@@ -550,12 +597,14 @@
     await waitFor(() => window.ProfileRootLanding?.isActive?.() === true, 1800);
     document.body.classList.add('is-phase-h-landing-revealed');
     await animateSharedHandoff(handoff, fast);
+    document.body.classList.add('is-phase-h-portrait-landed');
+    await wait(reducedMotion ? 0 : 34);
     sharedHandoff?.shell?.remove();
     sharedHandoff = null;
 
     document.body.classList.remove('is-profile-intro-v2', 'is-phase-h-handoff');
     await wait(reducedMotion ? 20 : fast ? 70 : 150);
-    document.body.classList.remove('is-phase-h-landing-revealed');
+    document.body.classList.remove('is-phase-h-landing-revealed', 'is-phase-h-portrait-landed');
     removeIntroChrome();
     document.documentElement.dataset.profileIntro = 'complete';
     state.running = false;
@@ -589,7 +638,7 @@
     sharedHandoff?.shell?.remove();
     sharedHandoff = null;
     removeIntroChrome();
-    document.body.classList.remove('is-profile-intro-v2', 'is-phase-h-handoff', 'is-phase-h-landing-revealed');
+    document.body.classList.remove('is-profile-intro-v2', 'is-phase-h-handoff', 'is-phase-h-landing-revealed', 'is-phase-h-portrait-landed');
     document.documentElement.dataset.profileIntro = 'complete';
     state.running = false;
     state.stage = 'complete';
@@ -677,8 +726,9 @@
       stage(stageForElapsed(elapsed));
       updateWake(elapsed);
       updateCondensation(elapsed);
+      updateIdleMotion(elapsed);
       updateCamera(elapsed);
-      if (elapsed >= 2200) return resolve(true);
+      if (elapsed >= timing.end) return resolve(true);
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
@@ -857,6 +907,7 @@
       liveGraphPresent: Boolean(document.querySelector('#site-graph .site-graph-svg')),
       cloneOverlayPresent: Boolean(document.querySelector('.profile-intro-overlay')),
       sharedHandoffPresent: Boolean(sharedHandoff?.shell?.isConnected),
+      timing,
       transitionToken
     };
   }

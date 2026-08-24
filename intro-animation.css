@@ -183,7 +183,7 @@ body.is-profile-intro-v2[data-phase-h-intro-stage="branches"] #site-graph .site-
   position:fixed;
   display:block;
   transform-origin:center;
-  will-change:transform,opacity;
+  will-change:transform,opacity,left,top,width,height,border-radius;
 }
 
 .phase-h-root-handoff-dot{
@@ -192,6 +192,16 @@ body.is-profile-intro-v2[data-phase-h-intro-stage="branches"] #site-graph .site-
   border:2px solid var(--teal);
   box-sizing:border-box;
   box-shadow:0 0 0 8px color-mix(in srgb,var(--teal) 7%,transparent);
+  overflow:hidden;
+}
+
+.phase-h-root-handoff-portrait{
+  position:absolute;
+  inset:-2px;
+  display:block;
+  background:url("assets/stepan-chrast.jpg") center 38%/cover no-repeat;
+  opacity:0;
+  will-change:opacity;
 }
 
 .phase-h-root-handoff-label{
@@ -214,14 +224,22 @@ body.is-profile-intro-v2.is-phase-h-handoff .hero-visual.profile-identity{
   opacity:0!important;
 }
 
-body.is-profile-intro-v2.is-phase-h-handoff.is-phase-h-landing-revealed .hero-copy > *,
-body.is-profile-intro-v2.is-phase-h-handoff.is-phase-h-landing-revealed .hero-visual.profile-identity{
+body.is-profile-intro-v2.is-phase-h-handoff.is-phase-h-landing-revealed .hero-copy > *{
   opacity:1!important;
-  transition:opacity .42s .08s cubic-bezier(.18,.72,.2,1)!important;
+  transition:opacity .46s .08s cubic-bezier(.18,.72,.2,1)!important;
 }
 
 body.is-profile-intro-v2.is-phase-h-handoff.is-phase-h-landing-revealed .hero-copy h1{
   transition-delay:.20s!important;
+}
+
+body.is-profile-intro-v2.is-phase-h-handoff.is-phase-h-landing-revealed .hero-visual.profile-identity{
+  opacity:0!important;
+}
+
+body.is-profile-intro-v2.is-phase-h-handoff.is-phase-h-landing-revealed.is-phase-h-portrait-landed .hero-visual.profile-identity{
+  opacity:1!important;
+  transition:opacity .18s ease!important;
 }
 
 /* --------------------------------------------------------------------------

@@ -9,6 +9,7 @@
   const explorer = document.querySelector('#site-explorer');
   const status = document.querySelector('#site-graph-status');
   const trigger = document.querySelector('[data-root-activate]');
+  const portraitTrigger = document.querySelector('.hero-visual.profile-identity');
   const atlasTrigger = document.querySelector('.root-atlas-affordance');
 
   let rootActivated = false;
@@ -87,8 +88,21 @@
     if (routeNow() === 'overview') setActive(true, { reason: 'root-reset' });
   };
 
+  if (portraitTrigger) {
+    portraitTrigger.dataset.rootPortraitActivate = 'true';
+    portraitTrigger.setAttribute('role', 'button');
+    portraitTrigger.setAttribute('tabindex', '0');
+    portraitTrigger.setAttribute('aria-label', 'Open the profile map');
+    portraitTrigger.setAttribute('aria-describedby', document.querySelector('.hero-copy .intro')?.id || 'root-intro');
+    portraitTrigger.addEventListener('keydown', event => {
+      if (!active || (event.key !== 'Enter' && event.key !== ' ')) return;
+      event.preventDefault();
+      activate();
+    });
+  }
+
   window.addEventListener('click', event => {
-    const rootControl = event.target.closest?.('[data-root-activate]');
+    const rootControl = event.target.closest?.('[data-root-activate], [data-root-portrait-activate]');
     if (rootControl) {
       event.preventDefault();
       activate();

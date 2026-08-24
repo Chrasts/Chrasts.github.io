@@ -67,6 +67,34 @@ test.describe('Phase H Intro Animation 2.0 — desktop', () => {
     expect(errors).toEqual([]);
   });
 
+  test('holds the Atlas readable before the slower structural condensation begins', async ({ page }) => {
+    await freshSession(page);
+    await page.goto('/');
+    const running = await waitRunning(page);
+
+    expect(running.timing.atlasStill).toBeGreaterThanOrEqual(1_100);
+    expect(running.timing.end).toBeGreaterThanOrEqual(4_000);
+
+    await page.waitForFunction(() => {
+      const snapshot = window.ProfileIntro?.snapshot?.();
+      return snapshot?.stage === 'wake' && snapshot.elapsed >= 650 && snapshot.elapsed < snapshot.timing.atlasStill;
+    }, null, { timeout: 4_000 });
+
+    const idle = await page.evaluate(() => {
+      const wrappers = [...document.querySelectorAll('#site-graph .phase-h-node-motion')];
+      const structuralMoves = wrappers.filter(wrapper => {
+        const transform = wrapper.getAttribute('transform') || '';
+        return transform && transform !== 'translate(0.00 0.00) scale(1.0000)';
+      }).length;
+      const breathingDots = [...document.querySelectorAll('#site-graph .site-graph-node:not([data-node-id="stepan-chrast"]) .site-graph-dot')]
+        .filter(dot => dot.style.transform.includes('scale(')).length;
+      return { structuralMoves, breathingDots };
+    });
+
+    expect(idle.structuralMoves).toBe(0);
+    expect(idle.breathingDots).toBeGreaterThan(5);
+  });
+
   test('keeps the same root DOM node through semantic condensation and exposes a readable five-branch phase', async ({ page }) => {
     await freshSession(page);
     await page.goto('/');
@@ -78,12 +106,13 @@ test.describe('Phase H Intro Animation 2.0 — desktop', () => {
     });
 
     await waitAtLeast(page, 'condensing');
-    const moved = await page.evaluate(() => {
-      const deep = [...document.querySelectorAll('#site-graph .site-graph-node[data-phase-h-tier="deep"]')][0];
-      const wrapper = deep?.querySelector(':scope > .phase-h-node-motion');
-      return Boolean(wrapper && wrapper.getAttribute('transform') && wrapper.getAttribute('transform') !== 'translate(0.00 0.00) scale(1.0000)');
-    });
-    expect(moved).toBe(true);
+    await page.waitForFunction(() => {
+      return [...document.querySelectorAll('#site-graph .site-graph-node[data-phase-h-tier="deep"]')].some(deep => {
+        const wrapper = deep.querySelector(':scope > .phase-h-node-motion');
+        const transform = wrapper?.getAttribute('transform') || '';
+        return transform && transform !== 'translate(0.00 0.00) scale(1.0000)';
+      });
+    }, null, { timeout: 4_000 });
 
     await page.waitForFunction(() => window.ProfileIntro?.snapshot().stage === 'branches', null, { timeout: 8_000 });
     const branches = await page.evaluate(() => ({
@@ -103,7 +132,7 @@ test.describe('Phase H Intro Animation 2.0 — desktop', () => {
     expect(branches.deepVisible).toBeLessThanOrEqual(2);
   });
 
-  test('automatically folds into the stable root landing with no second gateway click', async ({ page }) => {
+  test('automatically folds into the portrait-led root landing with direct Atlas access', async ({ page }) => {
     await freshSession(page);
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
@@ -116,10 +145,25 @@ test.describe('Phase H Intro Animation 2.0 — desktop', () => {
     expect(completed.cloneOverlayPresent).toBe(false);
     expect(await page.evaluate(() => sessionStorage.getItem('profileIntroSeen'))).toBe('true');
     await expect(page.locator('.root-node-trigger')).toBeVisible();
-    await expect(page.locator('.hero-visual.profile-identity')).toBeVisible();
+    const portrait = page.locator('.hero-visual.profile-identity[data-root-portrait-activate]');
+    await expect(portrait).toBeVisible();
+    await expect(portrait).toHaveAttribute('role', 'button');
+    await expect(portrait).toHaveAttribute('aria-label', 'Open the profile map');
+    await expect(page.locator('.root-atlas-affordance')).toBeVisible();
     await expect(page.locator('.phase-h-latent-stub')).toHaveCount(5);
     await expect(page.locator('#site-explorer')).toBeHidden();
     expect(errors).toEqual([]);
+  });
+
+  test('the portrait itself opens the profile map', async ({ page }) => {
+    await freshSession(page);
+    await page.goto('/');
+    await waitComplete(page);
+
+    await page.locator('.hero-visual.profile-identity[data-root-portrait-activate]').click();
+    await page.waitForFunction(() => document.body.dataset.rootLanding === 'false', null, { timeout: 3_000 });
+    await expect(page.locator('#site-explorer')).toBeVisible();
+    expect(await page.evaluate(() => document.body.dataset.graphRoute)).toBe('overview');
   });
 
   test('Escape and Tab immediately complete the intro to an accessible root landing', async ({ page }) => {
@@ -240,6 +284,7 @@ test.describe('Phase H mobile composition', () => {
 
     await waitComplete(page);
     await expect(page.locator('.root-node-trigger')).toBeVisible();
+    await expect(page.locator('.hero-visual.profile-identity[data-root-portrait-activate]')).toBeVisible();
     await expect(page.locator('.phase-h-latent-stub')).toHaveCount(5);
   });
 });

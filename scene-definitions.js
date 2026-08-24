@@ -85,6 +85,7 @@
   ensureStylesheet('intro-animation.css', 'data-profile-intro-style');
   ensureStylesheet('motion-polish.css', 'data-profile-motion-polish-style');
   ensureStylesheet('graph-feel.css', 'data-profile-graph-feel-style');
+  ensureStylesheet('node-dynamics.css', 'data-profile-node-dynamics-style');
   ensureStylesheet('intro-unfold.css', 'data-profile-intro-unfold-style');
   ensureStylesheet('intro-fixes-v3.css', 'data-profile-intro-fixes-v3-style');
   prepareRootLandingDom();
@@ -141,6 +142,7 @@
   ensureScript('halo-renderer.js', 'data-profile-halo-renderer');
   ensureScript('node-interaction-state.js', 'data-profile-node-interaction');
   ensureScript('graph-feel.js', 'data-profile-graph-feel');
+  ensureScript('node-dynamics.js', 'data-profile-node-dynamics');
   ensureScript('phase7-pointer-hotfix.js', 'data-profile-atlas-pointer-hotfix');
   ensureScript('global-geometry-ownership.js', 'data-profile-global-geometry-ownership');
   ensureScript('root-landing.js', 'data-profile-root-landing');

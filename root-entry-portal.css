@@ -2,7 +2,7 @@
 
 #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .root-entry-portrait{
   opacity:0;
-  transform:scale(.38);
+  transform:scale(.24);
   transform-box:fill-box;
   transform-origin:center;
   filter:saturate(.72) contrast(.96);
@@ -11,6 +11,10 @@
     transform .42s cubic-bezier(.16,.78,.18,1),
     filter .32s ease;
   pointer-events:none
+}
+
+#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-label{
+  transition:transform .34s cubic-bezier(.18,.76,.2,1),fill .24s ease,font-weight .24s ease
 }
 
 #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .root-entry-action{
@@ -56,7 +60,7 @@ body[data-graph-mode="atlas"] #site-graph .site-graph-node[data-node-id="stepan-
 }
 
 body[data-graph-mode="atlas"] #site-graph .site-graph-node[data-node-id="stepan-chrast"].is-root-entry-open > .site-graph-dot{
-  opacity:.13;
+  opacity:.10;
   stroke-width:1.25!important;
   transition:opacity .26s ease,stroke-width .26s ease,fill .26s ease
 }
@@ -70,18 +74,19 @@ body[data-graph-mode="atlas"] #site-graph .site-graph-node[data-node-id="stepan-
 body[data-graph-mode="atlas"] #site-graph .site-graph-node[data-node-id="stepan-chrast"].is-root-entry-open > .site-graph-halo--primary{
   opacity:.62!important;
   stroke-width:1.65!important;
-  transform:scale(1.09)!important
+  transform:scale(1.28)!important
 }
 
 body[data-graph-mode="atlas"] #site-graph .site-graph-node[data-node-id="stepan-chrast"].is-root-entry-open > .site-graph-halo--secondary{
   opacity:.29!important;
-  transform:scale(1.08)!important;
+  transform:scale(1.06)!important;
   stroke-dasharray:2 5
 }
 
 body[data-graph-mode="atlas"] #site-graph .site-graph-node[data-node-id="stepan-chrast"].is-root-entry-open > .site-graph-label{
   fill:var(--ink);
-  font-weight:760
+  font-weight:760;
+  transform:translateY(-18px)
 }
 
 body[data-graph-mode="atlas"] #site-graph .site-graph-node[data-node-id="stepan-chrast"].is-root-entry-open > .root-entry-action:focus-visible .root-entry-action-rule{
@@ -110,11 +115,6 @@ body.is-atlas-reveal #site-graph .root-entry-action{
 }
 
 @media(max-width:900px),(pointer:coarse){
-  #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .root-entry-action .root-entry-action-hit{
-    x:-62px;
-    width:124px;
-    height:36px
-  }
   #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .root-entry-action .root-entry-action-label{
     font-size:9px
   }
@@ -123,7 +123,8 @@ body.is-atlas-reveal #site-graph .root-entry-action{
 @media(prefers-reduced-motion:reduce){
   #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .root-entry-portrait,
   #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .root-entry-action,
-  #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-dot{
+  #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-dot,
+  #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-label{
     transition:none!important
   }
   body[data-graph-mode="atlas"] #site-graph .site-graph-node[data-node-id="stepan-chrast"].is-root-entry-open > .site-graph-halo--secondary{

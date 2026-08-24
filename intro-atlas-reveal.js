@@ -8,9 +8,8 @@
   const scene = window.ProfileScene;
   const rootId = graph.rootId || 'stepan-chrast';
   const nodeMap = new Map(graph.nodes.map(node => [node.id, node]));
-  const sections = new Set(['work', 'knowledge', 'experience', 'education', 'about']);
   const reducedMotion = Boolean(bootstrap.reducedMotion) || matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const mobile = matchMedia('(max-width: 900px)').matches;
+  const mobileQuery = matchMedia('(max-width: 900px)');
   const STATES = Object.freeze({
     PREPARING: 'PREPARING',
     ATLAS_REVEAL: 'ATLAS_REVEAL',
@@ -51,7 +50,7 @@
     realGraph: true,
     persistentRoot: true,
     reducedMotion,
-    mobile,
+    mobile: mobileQuery.matches,
     criticalReady: false,
     readiness: {},
     revealedWaves: [],
@@ -196,6 +195,14 @@
   const recordWave = wave => {
     if (!state.revealedWaves.includes(wave)) state.revealedWaves.push(wave);
   };
+  const syncLabelDensity = () => {
+    if (!state.revealedWaves.includes('labels')) return;
+    nodeElements.forEach(node => {
+      const wave = node.dataset.introWave;
+      const visible = wave === 'root' || wave === 'primary' || wave === 'territory' || (!mobileQuery.matches && wave === 'intermediate');
+      node.classList.toggle('is-intro-label-revealed', visible);
+    });
+  };
 
   const revealWave = wave => {
     if (state.revealedWaves.includes(wave)) return;
@@ -226,12 +233,7 @@
       return;
     }
     if (wave === 'labels') {
-      nodeElements.forEach(node => {
-        const nodeWave = node.dataset.introWave;
-        if (nodeWave === 'root' || nodeWave === 'primary' || nodeWave === 'territory' || (!mobile && nodeWave === 'intermediate')) {
-          node.classList.add('is-intro-label-revealed');
-        }
-      });
+      syncLabelDensity();
       document.body?.classList.add('is-atlas-reveal-late');
       return;
     }
@@ -296,41 +298,61 @@
     5200);
     if (!graphReady || currentGeneration !== generation) return false;
 
-    const modulesReady = await waitFor(() => Boolean(
-      window.ProfileAtlasLOD &&
-      window.ProfileGeometry &&
-      window.ProfileHaloRenderer &&
-      window.ProfileNodeInteraction &&
-      window.ProfileCameraComposition?.boot?.() &&
-      window.ProfileCameraMateriality?.snapshot?.().ready &&
-      window.ProfileScene?.transitions
-    ), 4200);
+    const criticalCss = await waitFor(() => Boolean(
+      document.querySelector('link[data-profile-intro-atlas-style]')?.sheet
+    ), 2200);
 
-    const fontReady = document.fonts?.ready ? await withTimeout(document.fonts.ready, 1400) : true;
+    const modulesReady = await waitFor(() => {
+      const halo = window.ProfileHaloRenderer?.snapshot?.();
+      return Boolean(
+        window.ProfileAtlasLOD &&
+        window.ProfileGeometry &&
+        halo?.ringCount >= graph.nodes.length &&
+        halo?.rootRingCount >= 2 &&
+        window.ProfileNodeInteraction &&
+        window.ProfileCameraComposition?.boot?.() &&
+        window.ProfileCameraMateriality?.snapshot?.().ready &&
+        window.ProfileScene?.transitions
+      );
+    }, 4200);
+
+    const fontReady = document.fonts?.ready ? await withTimeout(document.fonts.ready, 2200) : true;
     const portrait = new Image();
     portrait.src = 'assets/stepan-chrast.jpg';
     const portraitReady = await withTimeout(
-      typeof portrait.decode === 'function' ? portrait.decode() : new Promise(resolve => {
+      typeof portrait.decode === 'function' ? portrait.decode() : new Promise((resolve, reject) => {
         portrait.onload = resolve;
-        portrait.onerror = resolve;
+        portrait.onerror = reject;
       }),
-    1200);
+    2200);
 
     await raf();
     window.ProfileAtlasLOD?.fit?.({ immediate: true });
     await raf();
     await raf();
     const classified = classifyLiveAtlas();
+    const rootPoint = window.ProfileGeometry?.atlasPoint?.(rootId);
+    const rootGeometry = Boolean(
+      classified &&
+      Number.isFinite(rootPoint?.x) &&
+      Number.isFinite(rootPoint?.y) &&
+      Number.isFinite(Number(rootElement?.dataset.x)) &&
+      Number.isFinite(Number(rootElement?.dataset.y))
+    );
 
     state.readiness = {
       atlasRoute,
       graph: graphReady,
+      css: criticalCss,
       modules: modulesReady,
       fonts: fontReady,
       portrait: portraitReady,
+      rootGeometry,
       classified
     };
-    state.criticalReady = Boolean(atlasRoute && graphReady && modulesReady && classified);
+    state.criticalReady = Boolean(
+      atlasRoute && graphReady && criticalCss && modulesReady && fontReady && portraitReady && rootGeometry && classified
+    );
     return state.criticalReady;
   };
 
@@ -348,6 +370,25 @@
     frame = 0;
     state.interrupted = reason === 'interrupted';
     state.keyboardCompletion = reason === 'keyboard';
+
+    if (document.body?.dataset.graphMode !== 'atlas') {
+      const recovered = await internalRoute('atlas');
+      if (!recovered) {
+        cleanupRevealPresentation();
+        removeSkip();
+        document.documentElement.dataset.profileIntro = 'bypass';
+        if (document.body) document.body.dataset.entryState = 'FALLBACK';
+        state.state = STATES.BYPASSED;
+        state.stage = 'fallback';
+        state.running = false;
+        state.result = 'fallback';
+        markSeen();
+        emit('fallback', { reason: 'atlas-route-unavailable' });
+        return false;
+      }
+    }
+
+    if (!nodeElements.length) classifyLiveAtlas();
     revealEverything();
     setStage('settle');
     window.ProfileCameraComposition?.fit?.({ duration: reducedMotion ? 0 : 360 });
@@ -505,14 +546,15 @@
     state.result = null;
     state.revealedWaves = [];
     state.startedAt = performance.now();
+    state.mobile = mobileQuery.matches;
     document.documentElement.dataset.profileIntro = 'preparing';
     if (document.body) document.body.dataset.entryState = STATES.PREPARING;
-    markSeen();
     installParticipant();
     bindInteractions();
 
     const ready = await criticalReadiness(currentGeneration);
     if (!ready || currentGeneration !== generation) {
+      if (currentGeneration !== generation) return false;
       return completeToReady('fallback');
     }
 
@@ -547,9 +589,15 @@
     return prepareAndRun();
   };
 
+  mobileQuery.addEventListener?.('change', event => {
+    state.mobile = event.matches;
+    if (state.state === STATES.ATLAS_REVEAL) syncLabelDensity();
+  });
+
   function snapshot() {
     return {
       ...state,
+      mobile: mobileQuery.matches,
       route: normaliseRoute(document.body?.dataset.graphRoute || location.hash),
       graphMode: document.body?.dataset.graphMode || null,
       rootLanding: document.body?.dataset.rootLanding === 'true',

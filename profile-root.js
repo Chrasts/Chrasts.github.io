@@ -19,24 +19,14 @@
   let bootFrame = 0;
   let bootAttempts = 0;
   let legacyRetiredByPhaseH = false;
-  let stableEntryObserved = false;
 
-  const mode = () => document.body?.dataset.graphMode || scene.manager?.graphState?.mode || null;
-  const route = () => document.body?.dataset.graphRoute || scene.manager?.graphState?.route || (location.hash || '#overview').slice(1);
+  const mode = () => document.body?.dataset.graphMode || null;
+  const route = () => document.body?.dataset.graphRoute || (location.hash || '#overview').slice(1);
   const rootLanding = () => document.body?.dataset.rootLanding || null;
   const introState = () => window.ProfileIntro?.snapshot?.().state || null;
   const introStable = () => {
     const marker = document.documentElement.dataset.profileIntro || '';
-    const state = introState();
-    const activelyRevealing = ['pending', 'preparing', 'running'].includes(marker) || ['PREPARING', 'ATLAS_REVEAL'].includes(state);
-    if (activelyRevealing) {
-      stableEntryObserved = false;
-      return false;
-    }
-    if (['bypass', 'ready', 'complete'].includes(marker) || ['ATLAS_READY', 'BYPASSED'].includes(state)) {
-      stableEntryObserved = true;
-    }
-    return stableEntryObserved;
+    return ['bypass', 'ready', 'complete'].includes(marker) || ['ATLAS_READY', 'BYPASSED'].includes(introState());
   };
   const overviewActive = () => mode() === 'overview' && rootLanding() === 'false';
   const quickAvailable = () => introStable() && Boolean(mode()) && (mode() !== 'overview' || rootLanding() === 'false');
@@ -387,6 +377,15 @@
     bootFrame = requestAnimationFrame(ensureBoot);
   };
 
+  // Quick Overview is a modal scene. While it is open, Escape belongs to this
+  // owner and must not leak to the graph-level Escape router (Atlas -> Overview).
+  addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !quickDialog?.open) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    closeQuickOverview('escape');
+  }, true);
+
   addEventListener('profile:root-landing', () => sync('root-landing'));
   addEventListener('profile:atlas-ready', () => sync('atlas-ready'));
   addEventListener('profile:intro-completed', () => sync('intro-completed'));
@@ -408,7 +407,6 @@
       rootLanding: rootLanding(),
       introState: introState(),
       legacyRetiredByPhaseH,
-      stableEntryObserved,
       quickOpen: Boolean(quickDialog?.open),
       globalQuickVisible: Boolean(globalQuickTrigger?.isConnected && !globalQuickTrigger.hidden),
       branchCount: sections.filter(id => document.querySelector(`#site-graph .site-graph-node[data-node-id="${CSS.escape(id)}"][data-profile-root-branch="true"]`)).length,

@@ -131,17 +131,32 @@ test.describe('V3.1 Phase E live Atlas reveal — desktop', () => {
     expect(await page.evaluate(() => sessionStorage.getItem('profileIntroSeen'))).toBe('true');
   });
 
-  test('waits for the critical live environment before exposing the reveal', async ({ page }) => {
+  test('waits for every critical initial resource and gives the reveal exclusive material-motion ownership', async ({ page }) => {
     await freshSession(page);
     await page.goto('/');
     const reveal = await waitReveal(page);
     expect(reveal.criticalReady).toBe(true);
     expect(reveal.readiness.atlasRoute).toBe(true);
     expect(reveal.readiness.graph).toBe(true);
+    expect(reveal.readiness.css).toBe(true);
     expect(reveal.readiness.modules).toBe(true);
+    expect(reveal.readiness.fonts).toBe(true);
+    expect(reveal.readiness.portrait).toBe(true);
+    expect(reveal.readiness.rootGeometry).toBe(true);
     expect(reveal.readiness.classified).toBe(true);
     expect(reveal.rootPresent).toBe(true);
     expect(reveal.graphMode).toBe('atlas');
+
+    const ownership = await page.evaluate(() => ({
+      dynamics: window.ProfileNodeDynamics?.snapshot?.(),
+      camera: window.ProfileCameraMateriality?.snapshot?.(),
+      cameraMoving: document.querySelector('#site-graph')?.classList.contains('is-camera-25d-moving') || false
+    }));
+    expect(ownership.dynamics.suspended).toBe(true);
+    expect(ownership.dynamics.suspensionReason).toBe('intro');
+    expect(ownership.dynamics.maxDisplacement).toBeLessThan(.05);
+    expect(ownership.camera.introBlocked).toBe(true);
+    expect(ownership.cameraMoving).toBe(false);
   });
 
   test('reveals labels after geometry and wakes cross-links late', async ({ page }) => {
@@ -162,6 +177,22 @@ test.describe('V3.1 Phase E live Atlas reveal — desktop', () => {
 
     await page.waitForFunction(() => window.ProfileIntro.snapshot().revealedWaves.includes('cross'));
     expect(await page.locator('#site-graph .site-graph-edges path[data-intro-edge-wave="cross"].is-intro-revealed').count()).toBeGreaterThan(0);
+  });
+
+  test('label density recomposes when the viewport crosses the mobile breakpoint during reveal', async ({ page }) => {
+    await freshSession(page);
+    await page.goto('/');
+    await waitReveal(page);
+    await page.waitForFunction(() => window.ProfileIntro.snapshot().revealedWaves.includes('labels'));
+    await page.waitForFunction(() => document.querySelectorAll('#site-graph .site-graph-node[data-intro-wave="intermediate"].is-intro-label-revealed').length > 0);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForFunction(() => window.ProfileIntro.snapshot().mobile === true);
+    await page.waitForFunction(() => document.querySelectorAll('#site-graph .site-graph-node[data-intro-wave="intermediate"].is-intro-label-revealed').length === 0);
+
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.waitForFunction(() => window.ProfileIntro.snapshot().mobile === false);
+    await page.waitForFunction(() => document.querySelectorAll('#site-graph .site-graph-node[data-intro-wave="intermediate"].is-intro-label-revealed').length > 0);
   });
 
   test('Escape and Tab accelerate safely into ATLAS_READY; Tab restores keyboard focus to root', async ({ page }) => {

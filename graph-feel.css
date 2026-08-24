@@ -72,7 +72,8 @@
 }
 
 #site-graph .site-graph-node.is-feel-pressed > .site-graph-dot{
-  transform:scale(1.06)!important;
+  filter:drop-shadow(0 0 2px color-mix(in srgb,var(--teal) 34%,transparent));
+  stroke-width:2.45!important;
   transition-duration:.07s!important
 }
 

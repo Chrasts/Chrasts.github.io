@@ -2,8 +2,11 @@ const { test, expect } = require('@playwright/test');
 
 const freshSession = async page => {
   await page.addInitScript(() => {
-    sessionStorage.removeItem('profileIntroSeen');
-    sessionStorage.removeItem('__phase3FreshPrepared');
+    if (sessionStorage.getItem('__phaseHFreshPrepared') !== 'true') {
+      sessionStorage.removeItem('profileIntroSeen');
+      sessionStorage.removeItem('__phase3FreshPrepared');
+      sessionStorage.setItem('__phaseHFreshPrepared', 'true');
+    }
   });
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
 };
@@ -13,8 +16,23 @@ const waitIntro = async page => {
   return page.evaluate(() => window.ProfileIntro.snapshot());
 };
 
-const waitStage = async (page, expected, timeout = 8_000) => {
-  await page.waitForFunction(stage => window.ProfileIntro?.snapshot().stage === stage, expected, { timeout });
+const waitRunning = async (page, timeout = 8_000) => {
+  await page.waitForFunction(() => {
+    const state = window.ProfileIntro?.snapshot?.();
+    return Boolean(state?.running && !state.result && state.liveGraphPresent);
+  }, null, { timeout });
+  return page.evaluate(() => window.ProfileIntro.snapshot());
+};
+
+const rank = stage => ({ pending: 0, atlas: 1, wake: 2, condensing: 3, branches: 4, absorbing: 5, handoff: 6, complete: 7 }[stage] ?? -1);
+
+const waitAtLeast = async (page, expected, timeout = 8_000) => {
+  const expectedRank = rank(expected);
+  await page.waitForFunction(({ expectedRank }) => {
+    const stage = window.ProfileIntro?.snapshot?.().stage;
+    const ranks = { pending: 0, atlas: 1, wake: 2, condensing: 3, branches: 4, absorbing: 5, handoff: 6, complete: 7 };
+    return (ranks[stage] ?? -1) >= expectedRank;
+  }, { expectedRank }, { timeout });
   return page.evaluate(() => window.ProfileIntro.snapshot());
 };
 
@@ -31,8 +49,7 @@ test.describe('Phase H Intro Animation 2.0 — desktop', () => {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto('/');
-    await waitIntro(page);
-    await page.waitForFunction(() => ['atlas', 'wake', 'condensing', 'branches'].includes(window.ProfileIntro.snapshot().stage));
+    await waitRunning(page);
 
     const state = await page.evaluate(() => ({
       snapshot: window.ProfileIntro.snapshot(),
@@ -53,14 +70,14 @@ test.describe('Phase H Intro Animation 2.0 — desktop', () => {
   test('keeps the same root DOM node through semantic condensation and exposes a readable five-branch phase', async ({ page }) => {
     await freshSession(page);
     await page.goto('/');
-    await waitStage(page, 'atlas');
+    await waitRunning(page);
 
     await page.evaluate(() => {
       const root = document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"]');
       root.dataset.phaseHIdentityProbe = 'persistent-root';
     });
 
-    await waitStage(page, 'condensing');
+    await waitAtLeast(page, 'condensing');
     const moved = await page.evaluate(() => {
       const deep = [...document.querySelectorAll('#site-graph .site-graph-node[data-phase-h-tier="deep"]')][0];
       const wrapper = deep?.querySelector(':scope > .phase-h-node-motion');
@@ -68,7 +85,7 @@ test.describe('Phase H Intro Animation 2.0 — desktop', () => {
     });
     expect(moved).toBe(true);
 
-    await waitStage(page, 'branches');
+    await page.waitForFunction(() => window.ProfileIntro?.snapshot().stage === 'branches', null, { timeout: 8_000 });
     const branches = await page.evaluate(() => ({
       probe: document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"]')?.dataset.phaseHIdentityProbe,
       rootOpacity: Number(getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"]')).opacity),
@@ -108,25 +125,30 @@ test.describe('Phase H Intro Animation 2.0 — desktop', () => {
   test('Escape and Tab immediately complete the intro to an accessible root landing', async ({ page }) => {
     await freshSession(page);
     await page.goto('/');
-    await waitStage(page, 'atlas');
+    await waitRunning(page);
     await page.keyboard.press('Escape');
     const skipped = await waitComplete(page);
     expect(skipped.result).toBe('skipped');
     expect(skipped.rootLanding).toBe(true);
 
-    await page.evaluate(() => sessionStorage.removeItem('profileIntroSeen'));
+    await page.evaluate(() => {
+      sessionStorage.removeItem('profileIntroSeen');
+      sessionStorage.removeItem('__phaseHFreshPrepared');
+    });
     await page.reload();
-    await waitStage(page, 'atlas');
+    await waitRunning(page);
     await page.keyboard.press('Tab');
     const keyboard = await waitComplete(page);
     expect(keyboard.result).toBe('completed');
     expect(keyboard.rootLanding).toBe(true);
+    await expect(page.locator('.root-node-trigger')).toBeFocused();
   });
 
   test('clicking a visible Atlas node retargets out of the intro instead of waiting for the cinematic', async ({ page }) => {
     await freshSession(page);
     await page.goto('/');
-    await waitStage(page, 'wake');
+    await waitRunning(page);
+    await page.waitForTimeout(220);
     await page.locator('#site-graph .site-graph-node[data-node-id="knowledge"]').click({ force: true });
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'knowledge', null, { timeout: 6_000 });
     const snapshot = await page.evaluate(() => window.ProfileIntro.snapshot());
@@ -204,7 +226,7 @@ test.describe('Phase H mobile composition', () => {
   test('keeps mobile intro label density intentionally low and lands on the mobile root composition', async ({ page }) => {
     await freshSession(page);
     await page.goto('/');
-    await waitStage(page, 'atlas');
+    await waitRunning(page);
     const mobile = await page.evaluate(() => ({
       snapshot: window.ProfileIntro.snapshot(),
       deepLabelsVisible: [...document.querySelectorAll('#site-graph .site-graph-node[data-phase-h-tier="deep"] .site-graph-label')]

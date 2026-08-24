@@ -1,10 +1,10 @@
 const { test, expect } = require('@playwright/test');
 
-const boot = async (page, route = 'knowledge', { reducedMotion = false } = {}) => {
+const boot = async (page, route = 'knowledge', { reducedMotion = false, viewport = { width: 1280, height: 800 } } = {}) => {
   if (reducedMotion) await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.addInitScript(() => sessionStorage.setItem('profileIntroSeen', 'true'));
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
-  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.setViewportSize(viewport);
   await page.goto(`/#${route}`);
   await page.waitForFunction(() => Boolean(window.ProfileNodeDynamics && window.ProfileNodeInteraction && window.ProfileGraphFeel));
   await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
@@ -86,6 +86,42 @@ test.describe('V3.1 Phase C soft node dynamics', () => {
     expect(near[0].displacement).toBeGreaterThan(.35);
     expect(far.length).toBeGreaterThan(0);
     expect(Math.max(...far.map(item => item.displacement))).toBeLessThan(.08);
+  });
+
+  test('rapid Atlas retargeting at zoom does not accumulate overlapping fields or violate the clamp', async ({ page }) => {
+    await boot(page, 'atlas');
+    const before = await canonicalNodes(page);
+    await page.evaluate(() => window.ProfileAtlasLOD?.setScale?.(1.8, { immediate: true }));
+    await page.locator('#site-graph .site-graph-node[data-node-id="knowledge"]').hover({ force: true });
+    await expect.poll(() => page.evaluate(() => window.ProfileNodeDynamics.snapshot().activeNodeId)).toBe('knowledge');
+    await page.locator('#site-graph .site-graph-node[data-node-id="experience"]').hover({ force: true });
+    await page.locator('#site-graph .site-graph-node[data-node-id="education"]').hover({ force: true });
+    await expect.poll(() => page.evaluate(() => window.ProfileNodeDynamics.snapshot().activeNodeId)).toBe('education');
+    await page.waitForTimeout(120);
+
+    const snapshot = await page.evaluate(() => window.ProfileNodeDynamics.snapshot());
+    expect(snapshot.config.mode).toBe('atlas');
+    expect(snapshot.maxDisplacement).toBeLessThanOrEqual(snapshot.config.maxDisplacement + .05);
+    expect(snapshot.movingNodeCount).toBeLessThan(snapshot.nodeCount);
+
+    const after = await canonicalNodes(page);
+    for (const [id, point] of Object.entries(before)) {
+      expect(after[id].x).toBe(point.x);
+      expect(after[id].y).toBe(point.y);
+    }
+  });
+
+  test('mobile composition weakens the field rather than reusing desktop displacement', async ({ page }) => {
+    await boot(page, 'atlas', { viewport: { width: 390, height: 844 } });
+    const node = page.locator('#site-graph .site-graph-node[data-node-id="knowledge"]');
+    await node.hover({ force: true });
+    await expect.poll(() => page.evaluate(() => window.ProfileNodeDynamics.snapshot().activeNodeId)).toBe('knowledge');
+    await page.waitForTimeout(140);
+
+    const snapshot = await page.evaluate(() => window.ProfileNodeDynamics.snapshot());
+    expect(snapshot.config.mode).toBe('atlas');
+    expect(snapshot.config.maxDisplacement).toBeLessThan(6);
+    expect(snapshot.maxDisplacement).toBeLessThanOrEqual(snapshot.config.maxDisplacement + .05);
   });
 
   test('leaving a node springs every visual offset and adapted edge exactly back to rest', async ({ page }) => {

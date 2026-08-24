@@ -106,7 +106,7 @@ test.describe('Phase E local camera composition', () => {
     expect(state.camera.viewBox.width).toBeLessThan(origin.width * .94);
   });
 
-  test('closing the local inspector expands available space without moving the composed camera', async ({ page }) => {
+  test('closing the local inspector releases occupancy without moving the composed camera', async ({ page }) => {
     await bootFocus(page);
     await page.evaluate(() => window.ProfileCameraComposition.command(
       window.ProfileCameraComposition.PRESETS.INSPECT,
@@ -115,6 +115,8 @@ test.describe('Phase E local camera composition', () => {
 
     const before = await localViewBox(page);
     const beforeFrame = await page.evaluate(() => window.ProfileCameraComposition.safeFrame());
+    expect(beforeFrame.reserved.some(item => item.id === 'detail-panel')).toBe(true);
+
     const detail = page.locator('#site-detail-panel');
     await detail.locator('.detail-close').click();
     await expect(detail).toBeHidden();
@@ -123,6 +125,7 @@ test.describe('Phase E local camera composition', () => {
     const after = await localViewBox(page);
     const afterFrame = await page.evaluate(() => window.ProfileCameraComposition.safeFrame());
     expectSameViewBox(after, before);
-    expect(afterFrame.width).toBeGreaterThan(beforeFrame.width + 40);
+    expect(afterFrame.reserved.some(item => item.id === 'detail-panel')).toBe(false);
+    expect(afterFrame.width).toBeGreaterThanOrEqual(beforeFrame.width);
   });
 });

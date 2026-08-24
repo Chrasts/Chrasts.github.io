@@ -63,7 +63,7 @@
   stroke:var(--graph-downstream,var(--teal))
 }
 
-#site-graph .site-graph-node[data-halo-state="related"].is-artifact-linked > .site-graph-halo--primary{
+#site-graph .site-graph-node.is-artifact-linked:is([data-halo-state="related"],[data-halo-state="selected"]) > .site-graph-halo--primary{
   opacity:.44;
   stroke-width:1.5;
   transform:scale(1.06);
@@ -128,13 +128,13 @@ body[data-graph-mode="atlas"] #site-graph[data-graph-feel="dragging"] .site-grap
 }
 
 @keyframes graph-root-halo-turn{
-  from{transform:scale(1) rotate(0deg)}
-  to{transform:scale(1) rotate(360deg)}
+  from{stroke-dashoffset:0}
+  to{stroke-dashoffset:-28}
 }
 
 @media(prefers-reduced-motion:reduce){
   #site-graph .site-graph-halo{transition-duration:.01ms!important}
-  #site-graph .site-graph-node[data-halo-state="related"].is-artifact-linked > .site-graph-halo--primary,
+  #site-graph .site-graph-node.is-artifact-linked:is([data-halo-state="related"],[data-halo-state="selected"]) > .site-graph-halo--primary,
   #site-graph .site-graph-node[data-halo-state="root-entry"] > .site-graph-halo--secondary,
   #site-graph .site-graph-node.is-feel-activating > .site-graph-halo--primary,
   #site-graph .site-graph-edges path.is-graph-flowing{

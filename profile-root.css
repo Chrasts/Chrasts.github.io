@@ -3,7 +3,8 @@
 .profile-root-brief{
   max-width:min(540px,54vw);
   margin-top:8px;
-  color:var(--ink)
+  color:var(--ink);
+  pointer-events:auto
 }
 
 .profile-root-brief[hidden],
@@ -110,7 +111,13 @@
 }
 
 body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready .site-graph-heading{
+  z-index:18;
   max-width:min(580px,58vw)
+}
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready .site-graph-heading > #site-graph-kicker,
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready .site-graph-heading > #site-graph-title{
+  display:none
 }
 
 /* Phase F's portrait remains the one identity material. Phase H merely changes
@@ -290,24 +297,30 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-read
 }
 
 @media(max-width:900px){
-  .profile-root-brief{
-    max-width:min(390px,88vw)
+  body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready .site-graph-heading{
+    display:block!important;
+    position:absolute!important;
+    z-index:46!important;
+    top:50px!important;
+    left:max(14px,env(safe-area-inset-left))!important;
+    right:max(14px,env(safe-area-inset-right))!important;
+    width:auto!important;
+    max-width:none!important;
+    pointer-events:none!important
   }
 
-  body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready .site-graph-heading{
-    max-width:min(410px,92vw)
+  .profile-root-brief{
+    max-width:min(390px,calc(100vw - 28px));
+    margin-top:0
   }
 
   .profile-root-name{
     font-size:clamp(27px,8.5vw,38px)
   }
 
-  .profile-root-summary{
-    display:none
-  }
-
+  .profile-root-summary,
   .profile-root-guide{
-    max-width:330px
+    display:none
   }
 
   .quick-overview-global-trigger{
@@ -340,7 +353,6 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-read
   .profile-root-role{font-size:8px}
   .profile-root-actions{gap:6px 10px}
   .profile-root-action{font-size:9px}
-  .profile-root-guide{font-size:8px}
   .quick-overview-header h2{font-size:32px}
 }
 

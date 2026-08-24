@@ -121,7 +121,7 @@ test.describe('Phase G interruptible transition coordination', () => {
     const node = page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]');
     await node.click();
     await expect(node).toHaveClass(/is-previewed/);
-    await node.click();
+    expect(await page.evaluate(() => window.ProfileCameraComposition.command('INSPECT', { nodeId: 'sat-smt' }))).toBe(true);
     await page.waitForFunction(() => window.ProfileTransitionCoordination.snapshot().cameraActive === true);
     await page.locator('#main-nav [data-route="knowledge"]').click();
 

@@ -70,6 +70,21 @@ test.describe('V3.1 Phase B node interaction foundation', () => {
     expect(after.ringCount).toBe(before.ringCount);
   });
 
+  test('root entry semantics stay confined to Atlas instead of leaking into expanded Overview', async ({ page }) => {
+    await boot(page, 'overview');
+    await page.waitForFunction(() => Boolean(window.ProfileRootLanding));
+    if (await page.evaluate(() => window.ProfileRootLanding.isActive())) {
+      await page.evaluate(() => window.ProfileRootLanding.activate({ focusGraph: false }));
+    }
+    await page.waitForFunction(() => document.body.dataset.rootLanding === 'false');
+    await page.evaluate(() => window.ProfileGraphFeel.refresh());
+    await page.waitForTimeout(100);
+
+    const state = await page.evaluate(() => window.ProfileNodeInteraction.stateFor('stepan-chrast'));
+    expect(state.state).not.toBe('entry-ready');
+    await expect(page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]')).not.toHaveAttribute('data-halo-state', 'root-entry');
+  });
+
   test('transition state deterministically overrides direct interaction and settles back', async ({ page }) => {
     await boot(page, 'knowledge');
     const node = page.locator('#site-graph .site-graph-node[data-node-id="logic-math"]');

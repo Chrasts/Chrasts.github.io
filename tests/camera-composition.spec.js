@@ -26,10 +26,11 @@ test.describe('Phase E camera composition', () => {
     const svgBox = await svg.boundingBox();
     expect(frameBefore.right).toBeLessThan(svgBox.x + svgBox.width - 30);
 
-    const transformBefore = await page.locator('#site-graph .site-graph-svg > g').getAttribute('transform');
+    const camera = page.locator('#site-graph .site-graph-svg > g').first();
+    const transformBefore = await camera.getAttribute('transform');
     await node.click();
     await page.waitForTimeout(650);
-    const transformAfter = await page.locator('#site-graph .site-graph-svg > g').getAttribute('transform');
+    const transformAfter = await camera.getAttribute('transform');
     expect(transformAfter).not.toBe(transformBefore);
 
     const result = await page.evaluate(() => {
@@ -57,7 +58,7 @@ test.describe('Phase E camera composition', () => {
     await node.click();
     await page.waitForTimeout(650);
 
-    const camera = page.locator('#site-graph .site-graph-svg > g');
+    const camera = page.locator('#site-graph .site-graph-svg > g').first();
     const beforeTransform = await camera.getAttribute('transform');
     const beforeFrame = await page.evaluate(() => window.ProfileCameraComposition.safeFrame());
     await detail.locator('.detail-close').click();
@@ -68,5 +69,34 @@ test.describe('Phase E camera composition', () => {
 
     expect(afterTransform).toBe(beforeTransform);
     expect(afterFrame.width).toBeGreaterThan(beforeFrame.width + 80);
+  });
+
+  test('INSPECT, PEEK, MAKE_ROOM and RETURN share one retargetable camera state layer', async ({ page }) => {
+    await bootAtlas(page);
+    const api = await page.evaluate(() => ({ ...window.ProfileCameraComposition.PRESETS }));
+    expect(api).toEqual({ MAKE_ROOM: 'MAKE_ROOM', INSPECT: 'INSPECT', PEEK: 'PEEK', RETURN: 'RETURN' });
+
+    const origin = await page.evaluate(() => window.ProfileAtlasLOD.snapshot().targetCamera);
+    expect(await page.evaluate(() => window.ProfileCameraComposition.command('INSPECT', { nodeId: 'sat-smt' }))).toBe(true);
+    await page.waitForTimeout(90);
+    let state = await page.evaluate(() => window.ProfileCameraComposition.snapshot());
+    expect(state.activePreset).toBe('INSPECT');
+    expect(state.lastFocus.id).toBe('sat-smt');
+    expect(state.memory.some(item => item.key.endsWith(':inspect-origin'))).toBe(true);
+
+    expect(await page.evaluate(() => window.ProfileCameraComposition.command('PEEK', { nodeId: 'modal-logic' }))).toBe(true);
+    expect(await page.evaluate(() => window.ProfileCameraComposition.command('MAKE_ROOM', { nodeId: 'knowledge' }))).toBe(true);
+    await page.waitForTimeout(420);
+    state = await page.evaluate(() => window.ProfileCameraComposition.snapshot());
+    expect(state.activePreset).toBe('MAKE_ROOM');
+    expect(state.lastFocus.id).toBe('knowledge');
+
+    expect(await page.evaluate(() => window.ProfileCameraComposition.command('RETURN', { slot: 'inspect-origin', immediate: true }))).toBe(true);
+    const returned = await page.evaluate(() => window.ProfileAtlasLOD.snapshot().targetCamera);
+    expect(returned.scale).toBeCloseTo(origin.scale, 3);
+    expect(returned.x).toBeCloseTo(origin.x, 1);
+    expect(returned.y).toBeCloseTo(origin.y, 1);
+    state = await page.evaluate(() => window.ProfileCameraComposition.snapshot());
+    expect(state.activePreset).toBe('RETURN');
   });
 });

@@ -49,8 +49,8 @@
     if (pressedNodeId === id) return STATES.ACTIVE;
     if (focusedNodeId === id) return STATES.FOCUSED;
     if (hoveredNodeId === id) return STATES.HOVERED;
-    if (selectedByRenderer(node)) return STATES.SELECTED;
     if (rootEntryReady(id)) return STATES.ENTRY_READY;
+    if (selectedByRenderer(node)) return STATES.SELECTED;
     return STATES.IDLE;
   };
 

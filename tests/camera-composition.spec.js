@@ -42,7 +42,7 @@ test.describe('Phase E camera composition', () => {
 
     const camera = page.locator('#site-graph .site-graph-svg > g').first();
     const transformBefore = await camera.getAttribute('transform');
-    await node.click();
+    expect(await page.evaluate(() => window.ProfileCameraComposition.command('INSPECT', { nodeId: 'sat-smt' }))).toBe(true);
     await waitAtlasCameraSettled(page);
     const transformAfter = await camera.getAttribute('transform');
     expect(transformAfter).not.toBe(transformBefore);

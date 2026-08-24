@@ -147,6 +147,7 @@
 
   function snapshot() {
     const state = interaction.snapshot();
+    updatePhase(state);
     return {
       sequence,
       phase,

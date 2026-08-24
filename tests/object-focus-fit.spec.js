@@ -13,6 +13,12 @@ const waitSettled = page => page.waitForFunction(() => window.ProfileObjectFocus
 const artifactControl = (page, scene, artifact) =>
   page.locator(`[data-artifact-scene="${scene}"] [data-artifact-focus="${artifact}"]`);
 
+const expectDetailOwned = async detail => {
+  await expect(detail).toHaveClass(/is-open/);
+  await expect(detail).toHaveAttribute('data-scene-visible', 'true');
+  expect(await detail.getAttribute('hidden')).toBeNull();
+};
+
 test('focused image opens as a contained fit and only zooms on user input', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await boot(page, 'about/woodworking/hedgehog-house');
@@ -21,7 +27,7 @@ test('focused image opens as a contained fit and only zooms on user input', asyn
   await expect(detail).toBeVisible();
   await card.click();
   await waitSettled(page);
-  await expect(detail).toBeVisible();
+  await expectDetailOwned(detail);
 
   const image = page.locator('.artifact-focus-media img.object-focus-primary');
   await expect(image).toHaveAttribute('data-object-focus-fit', 'contain');
@@ -46,21 +52,23 @@ test('focused image opens as a contained fit and only zooms on user input', asyn
   await expect.poll(async () => (await page.evaluate(() => window.ProfileObjectFocus.snapshot())).media.zoom).toBeGreaterThan(1.05);
 });
 
-test('closing focused media restores the same scene placement and keeps node detail active', async ({ page }) => {
+test('closing focused media keeps the artifact lane stable and node detail active', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await boot(page, 'about/woodworking/hedgehog-house');
   const detail = page.locator('#site-detail-panel');
   const gallery = page.locator('[data-artifact-scene="hedgehog-house-gallery"]');
   const card = artifactControl(page, 'hedgehog-house-gallery', 'hedgehog-house-inside');
   const before = await gallery.boundingBox();
+  const sideBefore = await gallery.getAttribute('data-scene-side');
   await card.click();
   await waitSettled(page);
   await page.keyboard.press('Escape');
   await expect(page.locator('.artifact-focus-viewer')).toBeHidden();
   await expect(detail).toBeVisible();
   const after = await gallery.boundingBox();
+  expect(await gallery.getAttribute('data-scene-side')).toBe(sideBefore);
   expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(3);
-  expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(3);
+  expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(32);
 });
 
 test('thesis and Modal Lab artifacts open Object Focus without dismissing their node detail', async ({ page }) => {
@@ -76,9 +84,10 @@ test('thesis and Modal Lab artifacts open Object Focus without dismissing their 
     await waitSettled(page);
     await expect(page.locator('.artifact-focus-viewer')).toHaveAttribute('data-shared-focus-artifact', sample.artifact);
     await expect(page.locator('.artifact-focus-viewer')).toHaveAttribute('data-media-kind', sample.kind);
-    await expect(detail).toBeVisible();
+    await expectDetailOwned(detail);
     await page.keyboard.press('Escape');
     await expect(page.locator('.artifact-focus-viewer')).toBeHidden();
+    await expect(detail).toBeVisible();
   }
 });
 

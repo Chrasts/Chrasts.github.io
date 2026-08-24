@@ -63,12 +63,20 @@ test.describe('Global fan v3 geometry', () => {
 
 test.describe('Intro source geometry', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
-  test('first-session Phase H motion originates from the canonical fan-v3 Atlas', async ({ page }) => {
-    await page.addInitScript(() => { sessionStorage.removeItem('profileIntroSeen'); sessionStorage.removeItem('__phase3FreshPrepared'); });
+  test('first-session V3.1 reveal originates from the canonical fan-v3 Atlas', async ({ page }) => {
+    await page.addInitScript(() => {
+      sessionStorage.removeItem('profileIntroSeen');
+      sessionStorage.removeItem('__v31IntroFreshPrepared');
+    });
     await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
     await page.goto('/');
-    await page.waitForFunction(() => Boolean(window.ProfileIntro?.__phaseH && window.ProfileIntro.snapshot().running && document.querySelector('#site-graph .phase-h-node-motion')), null, {timeout:8000});
+    await page.waitForFunction(() => Boolean(
+      window.ProfileIntro?.__v31 &&
+      window.ProfileIntro.snapshot().state === 'ATLAS_REVEAL' &&
+      window.ProfileIntro.snapshot().running
+    ), null, {timeout:8000});
     await waitFan(page);
+    await expect(page.locator('#site-graph .phase-h-node-motion')).toHaveCount(0);
 
     const positions = await page.evaluate(() => {
       const geometry = window.ProfileGeometry;

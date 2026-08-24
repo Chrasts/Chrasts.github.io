@@ -29,7 +29,7 @@
     return marker === 'bypass' || ['ATLAS_READY', 'BYPASSED'].includes(introState());
   };
   const overviewActive = () => mode() === 'overview' && rootLanding() === 'false';
-  const quickAvailable = () => rootLanding() === 'false' && introStable() && Boolean(mode());
+  const quickAvailable = () => introStable() && Boolean(mode()) && (mode() !== 'overview' || rootLanding() === 'false');
   const legacyRootNeedsRetirement = () => mode() === 'overview' && rootLanding() === 'true' && introStable();
   const track = name => { try { window.umami?.track?.(name); } catch (_) {} };
 

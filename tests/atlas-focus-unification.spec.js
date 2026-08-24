@@ -102,16 +102,25 @@ test.describe('V3.1 Phase I Atlas / Focus unification', () => {
     await waitSettled(page);
     const geometry = await page.evaluate(() => {
       const node = document.querySelector('#site-graph .site-graph-node[data-node-id="sat-smt"]');
-      const svg = document.querySelector('#site-graph .site-graph-svg');
-      const n = node.getBoundingClientRect();
-      const s = svg.getBoundingClientRect();
+      const box = node.getBoundingClientRect();
+      const frame = window.ProfileCameraComposition.safeFrame();
       return {
-        distance: Math.hypot(n.left + n.width / 2 - (s.left + s.width / 2), n.top + n.height / 2 - (s.top + s.height / 2)),
+        nodeLeft: box.left,
+        nodeRight: box.right,
+        nodeTop: box.top,
+        nodeBottom: box.bottom,
+        frameLeft: frame.left,
+        frameRight: frame.right,
+        frameTop: frame.top,
+        frameBottom: frame.bottom,
         camera: window.ProfileAtlasLOD.snapshot().camera,
         last: window.ProfileAtlasFocus.snapshot().lastResult
       };
     });
-    expect(geometry.distance).toBeLessThan(260);
+    expect(geometry.nodeLeft).toBeGreaterThanOrEqual(geometry.frameLeft - 14);
+    expect(geometry.nodeRight).toBeLessThanOrEqual(geometry.frameRight + 14);
+    expect(geometry.nodeTop).toBeGreaterThanOrEqual(geometry.frameTop - 14);
+    expect(geometry.nodeBottom).toBeLessThanOrEqual(geometry.frameBottom + 14);
     expect(geometry.camera.scale).toBeGreaterThan(1.2);
     expect(geometry.last.direction).toBe('focus-to-atlas');
     expect(geometry.last.anchorId).toBe('sat-smt');

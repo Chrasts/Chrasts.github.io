@@ -60,7 +60,15 @@ test.describe('Phase F graph feel', () => {
 
   test('artifact tether and graph halo reinforce the same linked node', async ({ page }) => {
     await boot(page, 'about/woodworking/hedgehog-house');
-    await page.waitForFunction(() => Boolean(window.ProfileArtifactScenes));
+    await page.waitForFunction(() => Boolean(
+      window.ProfileArtifactScenes &&
+      window.ProfileArtifactSceneLayout &&
+      window.ProfileArtifacts &&
+      window.ProfileRefinements &&
+      window.ProfileObjectFocus &&
+      window.ProfileNodeDetailDismiss
+    ));
+    await page.waitForTimeout(180);
     const gallery = page.locator('[data-artifact-scene="hedgehog-house-gallery"]');
     await expect(gallery).toBeVisible();
     await gallery.hover();

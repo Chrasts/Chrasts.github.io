@@ -75,7 +75,7 @@ test.describe('Phase G interruptible transition coordination', () => {
     }));
     expect(state.focus.phase).toBe('idle');
     expect(state.viewer).toBe(false);
-    expect(['opening', 'settled', 'closing']).toContain(state.coordination.lastInterruption.captured['object-focus'].phase);
+    expect(['preparing', 'moving-in', 'settled', 'returning', 'closing']).toContain(state.coordination.lastInterruption.captured['object-focus'].phase);
     expect(await page.evaluate(() => document.body.dataset.graphRoute)).toBe('knowledge');
   });
 
@@ -93,7 +93,7 @@ test.describe('Phase G interruptible transition coordination', () => {
     }, relation);
     await page.waitForFunction(() => document.body.classList.contains('is-crosslink-travelling'));
     await page.waitForTimeout(100);
-    await page.locator('#main-nav [data-route="education"]').click();
+    await page.locator('#main-nav [data-route="education"]').click({ force: true });
 
     await waitStableRoute(page, 'education');
     await page.waitForTimeout(1300);

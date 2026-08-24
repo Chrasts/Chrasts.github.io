@@ -5,6 +5,7 @@
   const graph = site?.graph;
   if (!graph?.nodes?.length) return;
 
+  const sceneTransitions = window.ProfileScene?.transitions || null;
   const nodeMap = new Map(graph.nodes.map(node => [node.id, node]));
   const rootId = graph.rootId;
   const rootNode = nodeMap.get(rootId);
@@ -392,15 +393,115 @@
      Transition state
      ---------------------------------------------------------------------- */
   let pending = null;
+  let activeTransition = null;
+  let carriedSnapshot = null;
   let transitionFrame = 0;
+  let transitionOperation = 0;
   let lastStableRoute = normaliseRoute(document.body.dataset.graphRoute || location.hash);
 
   const currentRouteNode = route =>
     routeNode(route) || (route.startsWith('work') ? nodeMap.get('work') : rootNode);
 
+  const opacityOf = element => {
+    const value = Number.parseFloat(getComputedStyle(element).opacity);
+    return Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 1;
+  };
+
+  const flattenTransitionClone = source => {
+    const clone = source.cloneNode(true);
+    clone.removeAttribute('tabindex');
+    clone.style.pointerEvents = 'none';
+    const sourceFrom = source.querySelector('.site-graph-label:not(.v9-target-label)');
+    const sourceTarget = source.querySelector('.v9-target-label');
+    const cloneFrom = clone.querySelector('.site-graph-label:not(.v9-target-label)');
+    if (sourceFrom && sourceTarget && cloneFrom && opacityOf(sourceTarget) > opacityOf(sourceFrom)) {
+      ['text-anchor', 'x', 'y'].forEach(name => {
+        const value = sourceTarget.getAttribute(name);
+        if (value != null) cloneFrom.setAttribute(name, value);
+      });
+      cloneFrom.textContent = sourceTarget.textContent || cloneFrom.textContent;
+    }
+    clone.querySelectorAll('.v9-target-label').forEach(label => label.remove());
+    clone.querySelectorAll('.site-graph-label').forEach(label => label.style.removeProperty('opacity'));
+    clone.classList.remove('is-feel-pressed', 'is-feel-activating');
+    return clone;
+  };
+
+  const visualOverlayNodes = () => activeTransition?.overlayNodes || pending?.overlayNodes || null;
+
+  const captureVisualSnapshot = () => {
+    const source = visualOverlayNodes();
+    if (!source) return null;
+    const before = new Map();
+    source.querySelectorAll(':scope > .site-graph-node[data-node-id]').forEach(element => {
+      const opacity = opacityOf(element);
+      if (opacity <= .015) return;
+      const id = element.dataset.nodeId;
+      before.set(id, {
+        point: pointOf(element),
+        clone: flattenTransitionClone(element),
+        opacity
+      });
+    });
+    return before.size ? {
+      before,
+      route: normaliseRoute(document.body.dataset.graphRoute || location.hash),
+      capturedAt: performance.now()
+    } : null;
+  };
+
+  const cleanupTransitionShell = current => {
+    current?.overlay?.remove();
+    const camera = graphCamera();
+    camera?.style.removeProperty('opacity');
+    current?.camera?.style?.removeProperty?.('opacity');
+    document.body.classList.remove('is-v9-transitioning');
+    window.__GRAPH_V6_FORCE_SNAP__ = false;
+  };
+
+  const interruptTransition = ({ reason = 'interrupted', preserveVisual = true } = {}) => {
+    const hadTransition = Boolean(pending || activeTransition || document.body.classList.contains('is-v9-transitioning'));
+    if (!hadTransition) return false;
+    const snapshot = preserveVisual ? captureVisualSnapshot() : null;
+    transitionOperation += 1;
+    cancelAnimationFrame(transitionFrame);
+    transitionFrame = 0;
+    pending?.overlay?.remove();
+    activeTransition?.overlay?.remove();
+    pending = null;
+    activeTransition = null;
+    const camera = graphCamera();
+    camera?.style.removeProperty('opacity');
+    document.body.classList.remove('is-v9-transitioning');
+    window.__GRAPH_V6_FORCE_SNAP__ = false;
+    carriedSnapshot = snapshot;
+    window.dispatchEvent(new CustomEvent('profile:graph-transition-interrupted', {
+      detail: {
+        reason,
+        route: normaliseRoute(document.body.dataset.graphRoute || location.hash),
+        capturedNodeCount: snapshot?.before?.size || 0,
+        operation: transitionOperation
+      }
+    }));
+    return true;
+  };
+
+  sceneTransitions?.registerParticipant?.('graph-transition', {
+    capture: () => ({
+      active: Boolean(pending || activeTransition || document.body.classList.contains('is-v9-transitioning')),
+      route: normaliseRoute(document.body.dataset.graphRoute || location.hash),
+      nodeCount: visualOverlayNodes()?.querySelectorAll(':scope > .site-graph-node[data-node-id]').length || 0,
+      operation: transitionOperation
+    }),
+    cancel: payload => interruptTransition({ reason: payload?.reason || 'coordinator-interrupt' })
+  });
+
   const prepare = ({ targetId = null, targetRoute = null, trigger = 'click' } = {}) => {
     if (document.body.dataset.graphMode === 'atlas') return;
-    if (document.body.classList.contains('is-v9-transitioning') || externalTransitionOwnsRoute()) return;
+    if (externalTransitionOwnsRoute()) return;
+    if (document.body.classList.contains('is-v9-transitioning') || pending || activeTransition) {
+      interruptTransition({ reason: 'direct-retarget' });
+    }
 
     const svg = graphSvg();
     const camera = graphCamera();
@@ -437,26 +538,37 @@
     svg.appendChild(overlay);
 
     const before = new Map();
+    const carried = carriedSnapshot;
+    carriedSnapshot = null;
 
-    nodeElements().forEach(element => {
-      const id = element.dataset.nodeId;
-      const clone = element.cloneNode(true);
-      clone.removeAttribute('tabindex');
-      clone.style.pointerEvents = 'none';
-      setTransitionOpacity(clone, 1);
-      const point = pointOf(element);
-      setPoint(clone, point);
-      overlayNodes.appendChild(clone);
-      before.set(id, { point, clone });
-    });
+    if (carried?.before?.size) {
+      carried.before.forEach((item, id) => {
+        const clone = item.clone;
+        clone.style.pointerEvents = 'none';
+        setTransitionOpacity(clone, item.opacity);
+        setPoint(clone, item.point);
+        overlayNodes.appendChild(clone);
+        before.set(id, { point: item.point, clone, opacity: item.opacity });
+      });
+    } else {
+      nodeElements().forEach(element => {
+        const id = element.dataset.nodeId;
+        const clone = element.cloneNode(true);
+        clone.removeAttribute('tabindex');
+        clone.style.pointerEvents = 'none';
+        setTransitionOpacity(clone, 1);
+        const point = pointOf(element);
+        setPoint(clone, point);
+        overlayNodes.appendChild(clone);
+        before.set(id, { point, clone, opacity: 1 });
+      });
+    }
 
-    // Old edges and Work decorations are deliberately not copied.
-    // They disappear at the exact start of the route change. In true reduced
-    // motion there is no visible overlay, so the live renderer must stay on.
     if (!reduced.matches) camera.style.opacity = '0';
     document.body.classList.add('is-v9-transitioning');
     window.__GRAPH_V6_FORCE_SNAP__ = true;
 
+    const operation = ++transitionOperation;
     pending = {
       currentRoute,
       targetRoute: resolvedTargetRoute,
@@ -464,6 +576,8 @@
       targetId: targetNode?.id || targetId || routeTargetId(resolvedTargetRoute),
       direction,
       trigger,
+      operation,
+      retargeted: Boolean(carried?.before?.size),
       before,
       overlay,
       overlayEdges,
@@ -527,6 +641,7 @@
   };
 
   const finishTransition = current => {
+    if (!current || current.operation !== transitionOperation || activeTransition !== current) return false;
     const mode = document.body.dataset.graphMode;
     if (mode === 'focus') reflowFocus();
     else syncUnderlyingEdges();
@@ -537,26 +652,30 @@
     document.body.classList.remove('is-v9-transitioning');
     window.__GRAPH_V6_FORCE_SNAP__ = false;
     lastStableRoute = normaliseRoute(document.body.dataset.graphRoute || location.hash);
+    activeTransition = null;
 
-    // Defensive reconciliation: if the base renderer finishes one frame later,
-    // restore node/edge agreement after it has settled.
     requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (current.operation !== transitionOperation) return;
       if (document.body.classList.contains('is-v9-transitioning')) return;
       if (document.body.dataset.graphMode === 'focus') reflowFocus();
       else syncUnderlyingEdges();
     }));
+    return true;
   };
 
   const startTransition = () => {
     if (!pending) return;
     const current = pending;
     pending = null;
+    if (current.operation !== transitionOperation) {
+      cleanupTransitionShell(current);
+      return;
+    }
+    activeTransition = current;
 
     if (externalTransitionOwnsRoute() || current.targetRoute === 'atlas') {
-      current.overlay.remove();
-      document.body.classList.remove('is-v9-transitioning');
-      window.__GRAPH_V6_FORCE_SNAP__ = false;
-      current.camera?.style.removeProperty('opacity');
+      cleanupTransitionShell(current);
+      activeTransition = null;
       return;
     }
 
@@ -565,9 +684,8 @@
 
     const camera = graphCamera();
     if (!camera) {
-      current.overlay.remove();
-      document.body.classList.remove('is-v9-transitioning');
-      window.__GRAPH_V6_FORCE_SNAP__ = false;
+      cleanupTransitionShell(current);
+      activeTransition = null;
       return;
     }
     current.camera = camera;
@@ -596,10 +714,16 @@
           element: item.clone,
           from: item.point,
           to: after.get(id),
+          fromOpacity: Number.isFinite(item.opacity) ? item.opacity : 1,
           labelMorph: prepareLabelMorph(item.clone, afterElements.get(id))
         });
       } else {
-        leaving.push({ id, element: item.clone, from: item.point });
+        leaving.push({
+          id,
+          element: item.clone,
+          from: item.point,
+          fromOpacity: Number.isFinite(item.opacity) ? item.opacity : 1
+        });
       }
     });
 
@@ -651,6 +775,7 @@
     const started = performance.now();
 
     const frame = now => {
+      if (current.operation !== transitionOperation || activeTransition !== current) return;
       const raw = clamp01((now - started) / duration);
       const moveP = ease(raw);
       const currentPoints = new Map();
@@ -658,6 +783,7 @@
       persistent.forEach(item => {
         const point = lerpPoint(item.from, item.to, moveP);
         setPoint(item.element, point);
+        setTransitionOpacity(item.element, item.fromOpacity + (1 - item.fromOpacity) * moveP);
         paintLabelMorph(item.labelMorph, raw);
         currentPoints.set(item.id, point);
       });
@@ -673,20 +799,20 @@
           const point = lerpPoint(item.from, movingTarget, collapseP);
           setPoint(item.element, point);
           const fade = clamp01((collapseRaw - .58) / .42);
-          setTransitionOpacity(item.element, 1 - ease(fade));
+          setTransitionOpacity(item.element, item.fromOpacity * (1 - ease(fade)));
         });
       } else if (current.direction === 'down') {
         const fadeRaw = clamp01(raw / .12);
         leaving.forEach(item => {
           const away = outwardPoint(item.from, targetBefore || targetAfter, item.id);
           setPoint(item.element, lerpPoint(item.from, away, ease(fadeRaw)));
-          setTransitionOpacity(item.element, 1 - ease(fadeRaw));
+          setTransitionOpacity(item.element, item.fromOpacity * (1 - ease(fadeRaw)));
         });
       } else {
         const fadeRaw = clamp01(raw / .48);
         leaving.forEach(item => {
           setPoint(item.element, item.from);
-          setTransitionOpacity(item.element, 1 - ease(fadeRaw));
+          setTransitionOpacity(item.element, item.fromOpacity * (1 - ease(fadeRaw)));
         });
       }
 
@@ -734,8 +860,6 @@
         return;
       }
 
-      // Before revealing the real renderer, force it to the exact geometry
-      // represented by the last animation frame. This is the critical handoff.
       commitFinalGeometry({ afterElements, after, finalEdges, activeNode, camera });
       finishTransition(current);
     };
@@ -800,7 +924,10 @@
   }, true);
 
   window.addEventListener('popstate', () => {
-    if (pending || document.body.dataset.graphMode === 'atlas' || externalTransitionOwnsRoute()) return;
+    if (document.body.dataset.graphMode === 'atlas' || externalTransitionOwnsRoute()) return;
+    if (pending || activeTransition || document.body.classList.contains('is-v9-transitioning')) {
+      interruptTransition({ reason: 'history-retarget' });
+    }
     const targetRoute = normaliseRoute(location.hash);
     const currentRoute = normaliseRoute(document.body.dataset.graphRoute || lastStableRoute);
     if (targetRoute === currentRoute || targetRoute === 'atlas') return;
@@ -813,7 +940,7 @@
 
   window.addEventListener('hashchange', () => {
     if (pending && !externalTransitionOwnsRoute()) scheduleTransition();
-    else lastStableRoute = normaliseRoute(document.body.dataset.graphRoute || location.hash);
+    else if (!activeTransition) lastStableRoute = normaliseRoute(document.body.dataset.graphRoute || location.hash);
   });
 
   window.addEventListener('load', () => {
@@ -832,5 +959,24 @@
       if (document.body.dataset.graphMode === 'focus') reflowFocus();
       else syncUnderlyingEdges();
     }, 140);
+  });
+
+  window.ProfileGraphTransitions = Object.freeze({
+    interrupt: options => interruptTransition(options || {}),
+    capture: () => {
+      const snapshot = captureVisualSnapshot();
+      return snapshot ? {
+        route: snapshot.route,
+        capturedAt: snapshot.capturedAt,
+        nodeCount: snapshot.before.size
+      } : null;
+    },
+    snapshot: () => ({
+      operation: transitionOperation,
+      pending: pending ? { from: pending.currentRoute, to: pending.targetRoute, retargeted: pending.retargeted } : null,
+      active: activeTransition ? { from: activeTransition.currentRoute, to: activeTransition.targetRoute, retargeted: activeTransition.retargeted } : null,
+      carriedNodeCount: carriedSnapshot?.before?.size || 0,
+      transitioning: document.body.classList.contains('is-v9-transitioning')
+    })
   });
 })();

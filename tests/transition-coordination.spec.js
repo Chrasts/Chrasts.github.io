@@ -93,7 +93,7 @@ test.describe('Phase G interruptible transition coordination', () => {
     }, relation);
     await page.waitForFunction(() => document.body.classList.contains('is-crosslink-travelling'));
     await page.waitForTimeout(100);
-    await page.locator('#main-nav [data-route="education"]').click({ force: true });
+    await page.locator('#main-nav [data-route="education"]').click();
 
     await waitStableRoute(page, 'education');
     await page.waitForTimeout(1300);

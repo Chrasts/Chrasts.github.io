@@ -20,30 +20,6 @@
     stroke-width .18s ease
 }
 
-#site-graph .site-graph-dot{
-  transition:
-    fill .18s ease,
-    stroke .18s ease,
-    stroke-width .18s ease,
-    transform .24s cubic-bezier(.18,.88,.24,1.12)!important
-}
-
-#site-graph .site-graph-label{
-  transition:
-    fill .18s ease,
-    opacity .18s ease,
-    font-weight .18s ease!important
-}
-
-#site-graph .site-graph-edges path{
-  stroke-linecap:round;
-  transition:
-    stroke .18s ease,
-    stroke-width .2s cubic-bezier(.18,.88,.24,1.08),
-    opacity .18s ease,
-    filter .18s ease!important
-}
-
 #site-graph .site-graph-node:is(:hover,:focus-visible,.is-feel-origin) > .site-graph-halo{
   opacity:.44;
   transform:scale(1)
@@ -68,7 +44,7 @@
 }
 
 #site-graph .site-graph-node.is-artifact-linked > .site-graph-halo{
-  opacity:.42;
+  opacity:.42!important;
   transform:scale(1.08);
   stroke-width:1.5;
   animation:graph-feel-linked-pulse 1.7s ease-in-out infinite
@@ -121,8 +97,8 @@ body[data-graph-mode="atlas"] #site-graph[data-graph-feel="dragging"] .site-grap
 }
 
 @keyframes graph-feel-linked-pulse{
-  from{opacity:.28;transform:scale(.98)}
-  to{opacity:.48;transform:scale(1.1)}
+  from{transform:scale(.98)}
+  to{transform:scale(1.1)}
 }
 
 @keyframes graph-feel-edge-breathe{
@@ -131,12 +107,7 @@ body[data-graph-mode="atlas"] #site-graph[data-graph-feel="dragging"] .site-grap
 }
 
 @media(prefers-reduced-motion:reduce){
-  #site-graph .site-graph-halo,
-  #site-graph .site-graph-dot,
-  #site-graph .site-graph-label,
-  #site-graph .site-graph-edges path{
-    transition-duration:.01ms!important
-  }
+  #site-graph .site-graph-halo{transition-duration:.01ms!important}
   #site-graph .site-graph-node.is-artifact-linked > .site-graph-halo,
   #site-graph .site-graph-node.is-feel-activating > .site-graph-halo,
   #site-graph .site-graph-edges path.is-graph-flowing{

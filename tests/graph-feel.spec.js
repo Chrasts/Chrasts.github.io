@@ -60,17 +60,26 @@ test.describe('Phase F graph feel', () => {
 
   test('artifact tether and graph halo reinforce the same linked node', async ({ page }) => {
     await boot(page, 'about/woodworking/hedgehog-house');
-    await page.waitForFunction(() => Boolean(window.ProfileArtifactScenes));
+    await page.waitForFunction(() => Boolean(
+      window.ProfileArtifactScenes &&
+      window.ProfileArtifactSceneLayout &&
+      window.ProfileArtifacts &&
+      window.ProfileRefinements &&
+      window.ProfileObjectFocus &&
+      window.ProfileNodeDetailDismiss
+    ));
+    await page.waitForTimeout(180);
     const gallery = page.locator('[data-artifact-scene="hedgehog-house-gallery"]');
     await expect(gallery).toBeVisible();
     await gallery.hover();
 
     const node = page.locator('#site-graph .site-graph-node[data-node-id="hedgehog-house"]');
     await expect(node).toHaveClass(/is-artifact-linked/);
+    await expect(page.locator('.artifact-tether-layer')).toHaveClass(/is-visible/);
+
     await page.evaluate(() => window.ProfileGraphFeel.refresh());
     const halo = node.locator(':scope > .site-graph-halo');
     await expect.poll(() => haloOpacity(halo)).toBeGreaterThan(.3);
-    await expect(page.locator('.artifact-tether-layer')).toHaveClass(/is-visible/);
   });
 
   test('reduced motion keeps graph feel semantics but removes repeating animation', async ({ page }) => {

@@ -2,8 +2,11 @@ const { test, expect } = require('@playwright/test');
 
 const freshIntro = async page => {
   await page.addInitScript(() => {
-    sessionStorage.removeItem('profileIntroSeen');
-    sessionStorage.removeItem('__phase3FreshPrepared');
+    if (sessionStorage.getItem('__phaseHMotionFresh') !== 'true') {
+      sessionStorage.removeItem('profileIntroSeen');
+      sessionStorage.removeItem('__phase3FreshPrepared');
+      sessionStorage.setItem('__phaseHMotionFresh', 'true');
+    }
   });
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
 };
@@ -16,96 +19,46 @@ const bypassIntro = async page => {
 test.describe('Intro motion polish', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('Enter profile surrounds the real root, starts passive and highlights both ring and root on hover', async ({ page }) => {
+  test('Phase H wakes the real network without restoring the old Enter gateway', async ({ page }) => {
     await freshIntro(page);
     await page.goto('/#overview');
-    await page.waitForFunction(() => window.ProfileIntro?.snapshot().stage === 'atlas' && window.ProfileIntro.snapshot().waiting);
+    await page.waitForFunction(() => {
+      const state = window.ProfileIntro?.snapshot?.();
+      return Boolean(state?.running && state.realGraph && document.querySelector('#site-graph .phase-h-node-motion'));
+    }, null, { timeout: 8_000 });
     await page.waitForFunction(() => Boolean(window.ProfileMotionPolish));
-    await page.waitForTimeout(80);
+    await page.waitForTimeout(360);
 
-    const enter = page.locator('.profile-intro-enter');
-    const root = page.locator('.profile-intro-graph .site-graph-node[data-node-id="stepan-chrast"]');
-    const rootDot = root.locator('.site-graph-dot');
-    const rootLabel = root.locator('.site-graph-label');
-
-    await expect(enter).toBeVisible();
-    await expect(enter.locator('small')).toHaveCount(0);
-    await expect(enter).toHaveText(/Enter profile/i);
-    await expect(enter).not.toContainText(/Condense the Atlas/i);
-    await expect(enter).toHaveAttribute('aria-label', 'Enter profile');
+    await expect(page.locator('.profile-intro-enter')).toHaveCount(0);
+    await expect(page.locator('.profile-intro-overlay')).toHaveCount(0);
+    const root = page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]');
     await expect(root).toBeVisible();
-    await expect(rootLabel).toContainText('Štěpán Chrast');
+    await expect(root.locator('.site-graph-label')).toContainText('Štěpán Chrast');
 
-    expect(await page.evaluate(() => document.activeElement?.classList?.contains('profile-intro-enter'))).toBe(false);
-
-    const before = await enter.evaluate(element => ({
-      color: getComputedStyle(element).color,
-      transform: getComputedStyle(element).transform,
-      background: getComputedStyle(element).backgroundColor,
-      outerWidth: parseFloat(getComputedStyle(element, '::after').borderTopWidth),
-      labelSize: parseFloat(getComputedStyle(element.querySelector('span')).fontSize)
+    const wake = await page.evaluate(() => ({
+      wrappers: document.querySelectorAll('#site-graph .phase-h-node-motion').length,
+      traced: [...document.querySelectorAll('#site-graph .site-graph-edges path')]
+        .filter(edge => parseFloat(edge.style.strokeDasharray || '0') > 0).length,
+      stage: window.ProfileIntro.snapshot().stage,
+      enterActive: window.ProfileMotionPolish.snapshot().enterActive
     }));
-    const rootBefore = await rootDot.evaluate(dot => ({
-      stroke: getComputedStyle(dot).stroke,
-      transform: getComputedStyle(dot).transform
-    }));
-
-    expect(before.outerWidth).toBeGreaterThanOrEqual(2);
-    expect(before.labelSize).toBeGreaterThanOrEqual(12);
-    expect(before.background === 'rgba(0, 0, 0, 0)' || before.background === 'transparent').toBe(true);
-
-    await enter.hover();
-    await page.waitForTimeout(180);
-    const after = await enter.evaluate(element => ({
-      color: getComputedStyle(element).color,
-      transform: getComputedStyle(element).transform,
-      outerColor: getComputedStyle(element, '::after').borderTopColor
-    }));
-    const rootAfter = await rootDot.evaluate(dot => ({
-      stroke: getComputedStyle(dot).stroke,
-      transform: getComputedStyle(dot).transform
-    }));
-
-    expect(after.color).not.toBe(before.color);
-    expect(after.transform).not.toBe(before.transform);
-    expect(after.outerColor).not.toBe(rootBefore.stroke);
-    expect(rootAfter.stroke).not.toBe(rootBefore.stroke);
-    expect(rootAfter.transform).not.toBe(rootBefore.transform);
-    expect(await page.evaluate(() => window.ProfileMotionPolish.snapshot().enterActive)).toBe(true);
+    expect(wake.wrappers).toBeGreaterThan(5);
+    expect(wake.traced).toBeGreaterThan(0);
+    expect(wake.enterActive).toBe(false);
   });
 
-  test('final condensation removes converging labels and morphs the root into the portrait', async ({ page }) => {
+  test('final condensation cleans cinematic transforms and hands directly to the stable identity landing', async ({ page }) => {
     await freshIntro(page);
     await page.goto('/#overview');
-    await page.waitForFunction(() => window.ProfileIntro?.snapshot().stage === 'atlas' && window.ProfileIntro.snapshot().waiting);
-    await page.locator('.profile-intro-enter').click();
+    await page.waitForFunction(() => window.ProfileIntro?.snapshot().stage === 'complete', null, { timeout: 10_000 });
 
-    await page.waitForSelector('.profile-intro-overlay.is-root-merge[data-stage="root"]', { timeout: 8_000 });
-    await page.waitForTimeout(190);
-    const rootMerge = await page.evaluate(() => {
-      const labels = [...document.querySelectorAll(
-        '.profile-intro-overlay .site-graph-node:not([data-intro-tier="root"]) .site-graph-label, ' +
-        '.profile-intro-overlay .site-graph-node:not([data-intro-tier="root"]) .site-graph-meta'
-      )];
-      return labels.filter(label => {
-        const style = getComputedStyle(label);
-        return style.visibility !== 'hidden' && Number(style.opacity) > 0.02;
-      }).length;
-    });
-    expect(rootMerge).toBe(0);
-
-    await page.waitForFunction(() => window.ProfileIntro?.snapshot().stage === 'identity', null, { timeout: 8_000 });
-    await expect(page.locator('.profile-intro-overlay')).toHaveClass(/is-root-morphing/);
-    await expect(page.locator('.profile-intro-identity')).toBeVisible();
-    await page.waitForFunction(() => window.ProfileMotionPolish?.snapshot().introMorphComplete === true, null, { timeout: 2_000 });
-
-    const stackedAtIdentity = await page.evaluate(() => [...document.querySelectorAll(
-      '.profile-intro-overlay .site-graph-node:not([data-intro-tier="root"]) .site-graph-label'
-    )].filter(label => {
-      const style = getComputedStyle(label);
-      return style.visibility !== 'hidden' && Number(style.opacity) > 0.02;
-    }).length);
-    expect(stackedAtIdentity).toBe(0);
+    await expect(page.locator('.profile-intro-enter')).toHaveCount(0);
+    await expect(page.locator('.profile-intro-identity')).toHaveCount(0);
+    await expect(page.locator('.profile-intro-overlay')).toHaveCount(0);
+    await expect(page.locator('#site-graph .phase-h-node-motion')).toHaveCount(0);
+    await expect(page.locator('.hero-visual.profile-identity')).toBeVisible();
+    await expect(page.locator('.hero-copy h1')).toContainText('Štěpán');
+    expect(await page.evaluate(() => window.ProfileRootLanding.isActive())).toBe(true);
   });
 });
 

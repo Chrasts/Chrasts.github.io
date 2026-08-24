@@ -166,26 +166,16 @@ test.describe('Final graph interaction consolidation', () => {
   });
 });
 
-test.describe('Gateway orbit', () => {
+test.describe('Phase H gateway retirement', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('rotates before and during hover and disappears immediately after Enter', async ({ page }) => {
+  test('never restores the old Enter gateway or orbit controls', async ({ page }) => {
     await freshIntro(page);
     await page.goto('/');
-    await page.waitForFunction(() => window.ProfileIntroUnfold?.snapshot?.().completed === true, null, { timeout: 9_000 });
-    const enter = page.locator('.profile-intro-enter');
-    const outer = enter.locator('.profile-intro-gateway-orbit.is-outer');
-    await expect(outer).toHaveCount(1);
-    const before = await outer.evaluate(element => ({ name: getComputedStyle(element).animationName, state: getComputedStyle(element).animationPlayState }));
-    expect(before.name).toContain('profile-gateway-spin');
-    expect(before.state).toBe('running');
-
-    await enter.hover();
-    const hovered = await outer.evaluate(element => ({ name: getComputedStyle(element).animationName, state: getComputedStyle(element).animationPlayState }));
-    expect(hovered.name).toBe(before.name);
-    expect(hovered.state).toBe('running');
-
-    await enter.click();
-    await expect(enter).toBeHidden();
+    await page.waitForFunction(() => Boolean(window.ProfileIntro?.__phaseH));
+    await expect(page.locator('.profile-intro-enter')).toHaveCount(0);
+    await expect(page.locator('.profile-intro-gateway-orbit')).toHaveCount(0);
+    await page.waitForFunction(() => ['completed', 'skipped'].includes(window.ProfileIntro.snapshot().result), null, { timeout: 9_000 });
+    expect(await page.evaluate(() => window.ProfileRootLanding?.isActive?.())).toBe(true);
   });
 });

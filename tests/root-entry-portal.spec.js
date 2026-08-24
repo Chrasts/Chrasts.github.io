@@ -14,6 +14,7 @@ const bootAtlas = async (page, { reducedMotion = false } = {}) => {
 };
 
 const root = page => page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]').first();
+const rootHit = page => root(page).locator(':scope > .site-graph-hit');
 const action = page => root(page).locator(':scope > [data-root-entry-action]');
 
 const canonicalRoot = page => root(page).evaluate(node => ({
@@ -55,7 +56,7 @@ test.describe('V3.1 Phase F root entry portal — desktop', () => {
     expect(structure.rootMaterial).toBe('shared-root');
     expect(structure.legacyOverlays).toBe(0);
 
-    await root(page).hover();
+    await rootHit(page).hover();
     await expect.poll(() => page.evaluate(() => window.ProfileRootEntryPortal.snapshot().open)).toBe(true);
     await page.waitForTimeout(460);
 
@@ -86,7 +87,7 @@ test.describe('V3.1 Phase F root entry portal — desktop', () => {
   test('pointer reversal restores the latent root without changing canonical geometry', async ({ page }) => {
     await bootAtlas(page);
     const before = await canonicalRoot(page);
-    await root(page).hover();
+    await rootHit(page).hover();
     await expect.poll(() => page.evaluate(() => window.ProfileRootEntryPortal.snapshot().open)).toBe(true);
 
     await page.mouse.move(12, 12);
@@ -104,7 +105,7 @@ test.describe('V3.1 Phase F root entry portal — desktop', () => {
 
   test('root activation opens the portal instead of the Atlas inspector', async ({ page }) => {
     await bootAtlas(page);
-    await root(page).click();
+    await rootHit(page).click();
     await expect.poll(() => page.evaluate(() => window.ProfileRootEntryPortal.snapshot().open)).toBe(true);
     expect(await page.locator('#site-detail-panel.is-open').count()).toBe(0);
     expect(await page.evaluate(() => document.body.dataset.graphMode)).toBe('atlas');
@@ -127,7 +128,7 @@ test.describe('V3.1 Phase F root entry portal — desktop', () => {
   test('Enter profile commits to expanded Overview without resurrecting the standalone hero root', async ({ page }) => {
     await bootAtlas(page);
     await root(page).evaluate(node => { node.dataset.phaseFCommitProbe = 'same-root'; });
-    await root(page).hover();
+    await rootHit(page).hover();
     await expect.poll(() => page.evaluate(() => window.ProfileRootEntryPortal.snapshot().open)).toBe(true);
     await action(page).click();
 
@@ -159,8 +160,10 @@ test.describe('V3.1 Phase F root entry portal — desktop', () => {
     expect(result.heroVisible).toBe(false);
   });
 
-  test('Phase G can claim Enter profile through the cancelable handoff without triggering the fallback route', async ({ page }) => {
+  test('Phase G can claim Enter profile and keep the shared root material until explicit release', async ({ page }) => {
     await bootAtlas(page);
+    await rootHit(page).hover();
+    await expect.poll(() => page.evaluate(() => window.ProfileRootEntryPortal.snapshot().open)).toBe(true);
     await page.evaluate(() => {
       window.__phaseFDelegated = null;
       addEventListener('profile:enter-profile-request', event => {
@@ -171,16 +174,24 @@ test.describe('V3.1 Phase F root entry portal — desktop', () => {
 
     const accepted = await page.evaluate(() => window.ProfileRootEntryPortal.enterProfile('phase-g-contract-test'));
     expect(accepted).toBe(true);
-    const state = await page.evaluate(() => ({
+    let state = await page.evaluate(() => ({
       delegated: window.__phaseFDelegated,
       route: document.body.dataset.graphRoute,
       mode: document.body.dataset.graphMode,
-      portal: window.ProfileRootEntryPortal.snapshot()
+      portal: window.ProfileRootEntryPortal.snapshot(),
+      rootState: document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"]')?.dataset.rootEntryPortal
     }));
     expect(state.delegated).toEqual({ source: 'phase-g-contract-test', rootId: 'stepan-chrast' });
     expect(state.route).toBe('atlas');
     expect(state.mode).toBe('atlas');
-    expect(state.portal.entering).toBe(false);
+    expect(state.portal.entering).toBe(true);
+    expect(state.portal.open).toBe(true);
+    expect(state.rootState).toBe('entering');
+
+    await page.evaluate(() => window.ProfileRootEntryPortal.releaseEntry({ keepOpen: true, reason: 'phase-g-cancel-test' }));
+    state = await page.evaluate(() => window.ProfileRootEntryPortal.snapshot());
+    expect(state.entering).toBe(false);
+    expect(state.open).toBe(true);
   });
 
   test('fresh-session ATLAS_READY exposes the root portal without restoring retired intro intermediaries', async ({ page }) => {
@@ -190,7 +201,7 @@ test.describe('V3.1 Phase F root entry portal — desktop', () => {
     await page.waitForFunction(() => window.ProfileIntro?.snapshot?.().state === 'ATLAS_READY', null, { timeout: 8_000 });
     await page.waitForFunction(() => window.ProfileRootEntryPortal?.snapshot?.().available === true);
 
-    await root(page).hover();
+    await rootHit(page).hover();
     await expect.poll(() => page.evaluate(() => window.ProfileRootEntryPortal.snapshot().open)).toBe(true);
     expect(await page.locator('.profile-intro-overlay,.profile-intro-enter,.profile-intro-identity').count()).toBe(0);
   });
@@ -202,7 +213,7 @@ test.describe('V3.1 Phase F mobile / reduced motion', () => {
     const page = await context.newPage();
     await bootAtlas(page);
 
-    await root(page).click({ force: true });
+    await rootHit(page).click({ force: true });
     await expect.poll(() => page.evaluate(() => window.ProfileRootEntryPortal.snapshot().open)).toBe(true);
     const state = await page.evaluate(() => window.ProfileRootEntryPortal.snapshot());
     expect(state.coarsePointer).toBe(true);
@@ -213,7 +224,7 @@ test.describe('V3.1 Phase F mobile / reduced motion', () => {
 
   test('reduced motion preserves portal semantics without reveal transitions', async ({ page }) => {
     await bootAtlas(page, { reducedMotion: true });
-    await root(page).hover();
+    await rootHit(page).hover();
     await expect.poll(() => page.evaluate(() => window.ProfileRootEntryPortal.snapshot().open)).toBe(true);
     const state = await page.evaluate(() => {
       const node = document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"]');

@@ -1,5 +1,8 @@
 /* Phase F — graph feel and microinteraction layer. */
 
+/* Scene visibility regression guard exposed by the D/E full-suite pass. */
+.scene-detail[hidden]{display:none!important}
+
 #site-graph .site-graph-halo{
   fill:none;
   stroke:var(--teal);

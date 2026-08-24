@@ -89,7 +89,7 @@
   };
 
   if (portraitTrigger) {
-    portraitTrigger.dataset.rootActivate = 'true';
+    portraitTrigger.dataset.rootPortraitActivate = 'true';
     portraitTrigger.setAttribute('role', 'button');
     portraitTrigger.setAttribute('tabindex', '0');
     portraitTrigger.setAttribute('aria-label', 'Open the profile map');
@@ -102,7 +102,7 @@
   }
 
   window.addEventListener('click', event => {
-    const rootControl = event.target.closest?.('[data-root-activate]');
+    const rootControl = event.target.closest?.('[data-root-activate], [data-root-portrait-activate]');
     if (rootControl) {
       event.preventDefault();
       activate();

@@ -23,7 +23,11 @@ const openAndEnter = async page => {
   await expect.poll(() => page.evaluate(() => window.ProfileRootEntryPortal.snapshot().open)).toBe(true);
   const action = page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"] > [data-root-entry-action]');
   await action.click();
-  await page.waitForFunction(() => window.ProfileAtlasCondensation.snapshot().state === 'CONDENSING');
+  // Reduced-motion condensation is intentionally very short, so the browser
+  // may advance from CONDENSING to COMMITTING/COMPLETE between polling frames.
+  await page.waitForFunction(() => ['CONDENSING', 'COMMITTING', 'COMPLETE'].includes(
+    window.ProfileAtlasCondensation.snapshot().state
+  ));
 };
 
 const nodePoint = (page, id) => page.evaluate(nodeId => {
@@ -79,7 +83,9 @@ test.describe('V3.1 Phase G semantic Atlas condensation', () => {
     const dot = movement.tx * intended.x + movement.ty * intended.y;
     expect(dot).toBeGreaterThan(0);
     expect(movement.edgePrimary).toBe('true');
-    expect(Number(movement.edgeDash.split(/\s+/)[0])).toBeLessThan(.9);
+    // Chromium may serialize SVG dash lengths as `0.42px, 1px`; parseFloat
+    // intentionally reads the semantic leading length rather than CSS syntax.
+    expect(parseFloat(movement.edgeDash)).toBeLessThan(.9);
     expect(movement.parentMass).toBeGreaterThan(.04);
     expect(movement.portal.entering).toBe(true);
     expect(movement.rootPortraitOpacity).toBeGreaterThan(.8);
@@ -93,7 +99,7 @@ test.describe('V3.1 Phase G semantic Atlas condensation', () => {
     const state = await page.evaluate(() => {
       const snapshot = window.ProfileAtlasCondensation.snapshot();
       const primary = [...document.querySelectorAll('#site-graph [data-condense-primary="true"]')]
-        .map(edge => Number((edge.style.strokeDasharray || '1').split(/\s+/)[0]));
+        .map(edge => parseFloat(edge.style.strokeDasharray || '1'));
       return { snapshot, primary };
     });
 
@@ -103,7 +109,7 @@ test.describe('V3.1 Phase G semantic Atlas condensation', () => {
     expect(waves.indexOf('territories')).toBeGreaterThan(waves.indexOf('intermediate'));
     expect(waves.indexOf('branches')).toBeGreaterThan(waves.indexOf('territories'));
     expect(state.snapshot.primaryEdgeCount).toBeGreaterThan(5);
-    expect(state.primary.some(value => value < .45)).toBe(true);
+    expect(state.primary.some(value => Number.isFinite(value) && value < .45)).toBe(true);
     expect(state.snapshot.parentMassPeak).toBeGreaterThan(.1);
     expect(state.snapshot.maxTravel).toBeGreaterThan(80);
   });

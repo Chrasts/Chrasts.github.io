@@ -85,6 +85,7 @@
   }
 
   let frame = 0;
+  let cancelRestoreFrame = 0;
   let participantInstalled = false;
   let records = [];
   let edgeRecords = [];
@@ -390,6 +391,23 @@
     requestAnimationFrame(check);
   });
 
+  const atlasGeometryReady = () => {
+    if (mode() !== 'atlas' || document.body?.dataset.graphRoute !== 'atlas') return false;
+    const root = liveNode(rootId);
+    const expected = geometry.atlasPoint?.(rootId);
+    if (!root || !expected) return false;
+    const x = Number(root.dataset.x);
+    const y = Number(root.dataset.y);
+    return Number.isFinite(x) && Number.isFinite(y) && Math.hypot(x - expected.x, y - expected.y) < .05;
+  };
+
+  const restoreAtlasCamera = () => {
+    if (!state.initialCamera || mode() !== 'atlas') return;
+    window.ProfileAtlasLOD?.setScale?.(state.initialCamera.scale, { immediate: true });
+    window.ProfileAtlasLOD?.panTo?.(state.initialCamera.x, state.initialCamera.y, { immediate: true });
+    window.ProfileAtlasLOD?.applyLOD?.(state.initialCamera.scale);
+  };
+
   const focusRoot = () => requestAnimationFrame(() => requestAnimationFrame(() => {
     liveNode(rootId)?.focus?.({ preventScroll: true });
   }));
@@ -465,20 +483,67 @@
     frame = requestAnimationFrame(tick);
   };
 
-  const cancelFromCoordinator = payload => {
-    if (!state.running) return false;
-    const targetRoute = payload?.targetRoute || null;
-    state.generation += 1;
-    cancelAnimationFrame(frame);
-    frame = 0;
-    const keepPortal = !targetRoute || targetRoute === 'atlas';
-    cleanup({ result: 'cancelled', keepPortal, restoreCamera: keepPortal });
+  const finalizeCancellation = ({ reason, targetRoute, keepPortal }) => {
+    cancelAnimationFrame(cancelRestoreFrame);
+    cancelRestoreFrame = 0;
+    if (keepPortal) {
+      restoreAtlasCamera();
+      window.ProfileRootEntryPortal?.releaseEntry?.({
+        keepOpen: true,
+        reason: 'atlas-condensation:cancelled-restored'
+      });
+    }
     state.state = STATES.CANCELLED;
     state.completedAt = performance.now();
     state.elapsed = state.startedAt ? state.completedAt - state.startedAt : 0;
     state.token = null;
     if (status && keepPortal) status.textContent = 'Atlas restored. Enter profile when ready.';
-    emit('cancelled', { reason: payload?.reason || 'transition-cancel', targetRoute });
+    emit('cancelled', { reason, targetRoute });
+  };
+
+  const restoreCancellationDestination = ({ reason, targetRoute, keepPortal }) => {
+    if (!keepPortal) {
+      finalizeCancellation({ reason, targetRoute, keepPortal });
+      return;
+    }
+
+    const started = performance.now();
+    const check = () => {
+      cancelRestoreFrame = 0;
+      if (atlasGeometryReady()) {
+        finalizeCancellation({ reason, targetRoute, keepPortal });
+        return;
+      }
+      if (performance.now() - started > 2800) {
+        // Keep the public state truthful even on an unexpected renderer failure:
+        // CANCELLED means the Atlas route has actually been restored, never merely requested.
+        if (location.hash !== '#atlas') location.hash = '#atlas';
+        cancelRestoreFrame = requestAnimationFrame(check);
+        return;
+      }
+      cancelRestoreFrame = requestAnimationFrame(check);
+    };
+
+    if (location.hash !== '#atlas') location.hash = '#atlas';
+    else if (mode() !== 'atlas') dispatchEvent(new HashChangeEvent('hashchange'));
+    check();
+  };
+
+  const cancelFromCoordinator = payload => {
+    if (!state.running) return false;
+    const targetRoute = payload?.targetRoute || null;
+    const reason = payload?.reason || 'transition-cancel';
+    state.generation += 1;
+    cancelAnimationFrame(frame);
+    frame = 0;
+    cancelAnimationFrame(cancelRestoreFrame);
+    cancelRestoreFrame = 0;
+    const keepPortal = !targetRoute || targetRoute === 'atlas';
+
+    // Remove transient condensation material immediately, but do not publish
+    // CANCELLED until the semantic destination and canonical geometry agree.
+    cleanup({ result: 'cancelled', keepPortal: false, restoreCamera: false });
+    restoreCancellationDestination({ reason, targetRoute, keepPortal });
     return true;
   };
 
@@ -499,6 +564,8 @@
     status = document.querySelector('#site-graph-status');
     if (!graphRoot) return false;
 
+    cancelAnimationFrame(cancelRestoreFrame);
+    cancelRestoreFrame = 0;
     const generation = ++state.generation;
     state.state = STATES.PREPARING;
     state.running = true;

@@ -101,6 +101,7 @@ jobs:
             tests/phase3-intro.spec.js \
             tests/root-entry-portal.spec.js \
             tests/atlas-condensation.spec.js \
+            tests/profile-root.spec.js \
             tests/motion-polish.spec.js \
             tests/intro-unfold.spec.js \
             tests/phase6-cross-link.spec.js \

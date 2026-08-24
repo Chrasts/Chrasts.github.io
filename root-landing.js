@@ -12,8 +12,11 @@
   const portraitTrigger = document.querySelector('.hero-visual.profile-identity');
   const atlasTrigger = document.querySelector('.root-atlas-affordance');
 
-  let rootActivated = false;
-  let active = normaliseRoute(location.hash) === 'overview';
+  // Phase H treats the standalone root as a first-session compatibility
+  // bootstrap only. If scene-definitions starts with rootLanding=false, the
+  // practical graph root is already the committed state.
+  let active = document.body?.dataset.rootLanding === 'true';
+  let rootActivated = !active;
   let unfoldingTimer = 0;
 
   const routeNow = () => normaliseRoute(document.body.dataset.graphRoute || location.hash);
@@ -124,7 +127,10 @@
     const routeControl = event.target.closest?.('[data-route]');
     if (!routeControl || !active) return;
     const route = normaliseRoute(routeControl.dataset.route || routeControl.getAttribute('href'));
-    if (route !== 'overview') setActive(false, { reason: `root-route:${route}` });
+    if (route !== 'overview') {
+      rootActivated = true;
+      setActive(false, { reason: `root-route:${route}` });
+    }
   }, true);
 
   window.addEventListener('hashchange', () => {
@@ -132,6 +138,9 @@
     if (route === 'overview') {
       setActive(!rootActivated, { reason: 'root-route-overview' });
     } else {
+      // Once the old bootstrap is left, normal navigation must never resurrect
+      // it. This is the Phase H retirement boundary.
+      rootActivated = true;
       setActive(false, { reason: `root-hash:${route}` });
     }
   });

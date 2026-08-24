@@ -5,7 +5,7 @@
   const normaliseRoute = value =>
     (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
   const initialRoute = normaliseRoute(location.hash);
-  const initialRootLanding = initialRoute === 'overview';
+  const initialOverview = initialRoute === 'overview';
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   let storageAvailable = true;
@@ -19,14 +19,25 @@
   const earlyIntroState = document.documentElement.dataset.profileIntro;
   const introEligible = earlyIntroState
     ? earlyIntroState === 'pending'
-    : initialRootLanding && storageAvailable && !introSeen;
+    : initialOverview && storageAvailable && !introSeen;
+  // Phase H retires the old standalone root as a normal destination. It is
+  // retained only as an internal first-session bootstrap while Intro owns the
+  // screen. Same-session Overview starts directly in the practical graph root.
+  const initialRootLanding = initialOverview && introEligible;
 
-  if (!initialRootLanding && storageAvailable && !introSeen) {
+  if (!initialOverview && storageAvailable && !introSeen) {
     try { sessionStorage.setItem('profileIntroSeen', 'true'); } catch (_) {}
   }
 
   document.documentElement.dataset.profileIntro = introEligible ? 'pending' : 'bypass';
-  window.__PROFILE_INTRO_BOOTSTRAP__ = Object.freeze({ eligible: introEligible, initialRoute, initialHash: location.hash, reducedMotion, storageAvailable });
+  window.__PROFILE_INTRO_BOOTSTRAP__ = Object.freeze({
+    eligible: introEligible,
+    initialRoute,
+    initialHash: location.hash,
+    initialRootLanding,
+    reducedMotion,
+    storageAvailable
+  });
 
   if (introEligible && !document.querySelector('style[data-profile-intro-readiness-guard]')) {
     const guard = document.createElement('style');
@@ -100,6 +111,7 @@
   ensureStylesheet('intro-fixes-v3.css', 'data-profile-intro-fixes-v3-style');
   ensureStylesheet('root-entry-portal.css', 'data-profile-root-entry-portal-style');
   ensureStylesheet('atlas-condensation.css', 'data-profile-atlas-condensation-style');
+  ensureStylesheet('profile-root.css', 'data-profile-root-overview-style');
   prepareRootLandingDom();
 
   document.body.dataset.rootLanding = initialRootLanding ? 'true' : 'false';
@@ -137,7 +149,7 @@
     variants: { desktop: { placement: 'inspector-right', enter: 'inspector-in', exit: 'inspector-out' }, mobile: { placement: 'detail-sheet', enter: 'sheet-in', exit: 'sheet-out' } }
   });
 
-  scene.manager.scheduleRefresh('v3-1-atlas-condensation-definitions');
+  scene.manager.scheduleRefresh('v3-1-profile-root-definitions');
 
   const ensureScript = (src, marker) => {
     if (document.querySelector(`script[${marker}]`)) return;
@@ -164,4 +176,5 @@
   ensureScript('intro-atlas-reveal.js', 'data-profile-intro-atlas-reveal');
   ensureScript('root-entry-portal.js', 'data-profile-root-entry-portal');
   ensureScript('atlas-condensation.js', 'data-profile-atlas-condensation');
+  ensureScript('profile-root.js', 'data-profile-root-overview');
 })();

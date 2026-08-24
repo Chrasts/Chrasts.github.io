@@ -138,7 +138,7 @@ test.describe('V3.1 Phase F root entry portal — desktop', () => {
     expect(await page.evaluate(() => document.body.dataset.graphMode)).toBe('atlas');
   });
 
-  test('Enter profile commits to expanded Overview without resurrecting the standalone hero root', async ({ page }) => {
+  test('Enter profile reaches expanded Overview without resurrecting the standalone hero root', async ({ page }) => {
     await bootAtlas(page);
     await root(page).evaluate(node => { node.dataset.phaseFCommitProbe = 'same-root'; });
     await rootHit(page).hover();
@@ -173,38 +173,43 @@ test.describe('V3.1 Phase F root entry portal — desktop', () => {
     expect(result.heroVisible).toBe(false);
   });
 
-  test('Phase G can claim Enter profile and keep the shared root material until explicit release', async ({ page }) => {
+  test('Phase G claims Enter profile while the shared root material stays continuous through cancellation', async ({ page }) => {
     await bootAtlas(page);
+    await page.waitForFunction(() => Boolean(window.ProfileAtlasCondensation));
     await rootHit(page).hover();
     await expect.poll(() => page.evaluate(() => window.ProfileRootEntryPortal.snapshot().open)).toBe(true);
-    await page.evaluate(() => {
-      window.__phaseFDelegated = null;
-      addEventListener('profile:enter-profile-request', event => {
-        window.__phaseFDelegated = { source: event.detail.source, rootId: event.detail.rootId };
-        event.preventDefault();
-      }, { once: true });
-    });
 
     const accepted = await page.evaluate(() => window.ProfileRootEntryPortal.enterProfile('phase-g-contract-test'));
     expect(accepted).toBe(true);
+    await page.waitForFunction(() => window.ProfileAtlasCondensation.snapshot().state === 'CONDENSING');
+
     let state = await page.evaluate(() => ({
-      delegated: window.__phaseFDelegated,
       route: document.body.dataset.graphRoute,
       mode: document.body.dataset.graphMode,
       portal: window.ProfileRootEntryPortal.snapshot(),
-      rootState: document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"]')?.dataset.rootEntryPortal
+      condensation: window.ProfileAtlasCondensation.snapshot(),
+      rootState: document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"]')?.dataset.rootEntryPortal,
+      portraitOpacity: Number(getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .root-entry-portrait')).opacity)
     }));
-    expect(state.delegated).toEqual({ source: 'phase-g-contract-test', rootId: 'stepan-chrast' });
     expect(state.route).toBe('atlas');
     expect(state.mode).toBe('atlas');
     expect(state.portal.entering).toBe(true);
     expect(state.portal.open).toBe(true);
+    expect(state.condensation.running).toBe(true);
     expect(state.rootState).toBe('entering');
+    expect(state.portraitOpacity).toBeGreaterThan(.8);
 
-    await page.evaluate(() => window.ProfileRootEntryPortal.releaseEntry({ keepOpen: true, reason: 'phase-g-cancel-test' }));
-    state = await page.evaluate(() => window.ProfileRootEntryPortal.snapshot());
-    expect(state.entering).toBe(false);
-    expect(state.open).toBe(true);
+    await page.evaluate(() => window.ProfileAtlasCondensation.cancel('phase-f-g-contract-cancel'));
+    await page.waitForFunction(() => window.ProfileAtlasCondensation.snapshot().state === 'CANCELLED');
+    state = await page.evaluate(() => ({
+      portal: window.ProfileRootEntryPortal.snapshot(),
+      condensation: window.ProfileAtlasCondensation.snapshot(),
+      mode: document.body.dataset.graphMode
+    }));
+    expect(state.mode).toBe('atlas');
+    expect(state.condensation.running).toBe(false);
+    expect(state.portal.entering).toBe(false);
+    expect(state.portal.open).toBe(true);
   });
 
   test('fresh-session ATLAS_READY exposes the root portal without restoring retired intro intermediaries', async ({ page }) => {

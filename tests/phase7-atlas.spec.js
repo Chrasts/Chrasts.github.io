@@ -198,20 +198,18 @@ test.describe('Phase 7 Atlas selection and inspector', () => {
     await page.waitForFunction(() => Boolean(window.ProfileAtlasLOD) && document.body.dataset.graphMode === 'atlas');
   });
 
-  test('single click opens compact details, second click centres and zooms', async ({ page }) => {
+  test('single click opens compact details; repeated activation enters the selected local graph', async ({ page }) => {
     const node = page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]');
     await node.click();
     await expect(page.locator('#site-detail-panel')).toBeVisible();
     await expect(page.locator('#site-detail-panel .atlas-open-local')).toHaveText('Explore this section');
-    await expect(page.locator('#site-detail-panel')).toContainText('Click the selected node again to centre and zoom.');
     expect((await page.evaluate(() => window.ProfileAtlasLOD.snapshot())).selectedNodeId).toBe('sat-smt');
 
-    const before = await page.evaluate(() => window.ProfileAtlasLOD.snapshot().camera);
     await node.click();
-    await page.waitForTimeout(450);
-    const after = await page.evaluate(() => window.ProfileAtlasLOD.snapshot().camera);
-    expect(after.scale).toBeGreaterThan(before.scale);
-    expect((await page.evaluate(() => window.ProfileAtlasLOD.snapshot())).selectedNodeId).toBe('sat-smt');
+    await page.waitForFunction(() => document.body.classList.contains('is-atlas-focus-transitioning'));
+    await page.waitForFunction(() => document.body.dataset.graphMode === 'focus' && document.body.dataset.graphRoute.endsWith('/sat-smt'));
+    await page.waitForFunction(() => !window.ProfileAtlasFocus.snapshot().active, null, { timeout: 6000 });
+    await expect(page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]')).toHaveClass(/is-selected/);
   });
 
   test('clicking empty map clears both inspector and node focus without resetting camera', async ({ page }) => {

@@ -41,7 +41,7 @@ Phase F only changes presentation while the root portal is open. It never adds r
 
 - one SVG portrait material directly inside the live root group;
 - one compact SVG `Enter profile` action directly inside the same root group;
-- latent/open/manual-open portal state;
+- latent/open/manual-open/entering portal state;
 - pointer, keyboard and coarse-pointer reversal semantics;
 - the semantic `profile:enter-profile-request` handoff.
 
@@ -55,7 +55,9 @@ It deliberately performs no Phase G condensation.
 
 Phase G can claim `profile:enter-profile-request` by calling `preventDefault()` on that cancelable event. Once claimed, Phase F does not perform its direct Overview fallback.
 
-This keeps the portal/material layer independent from structural condensation motion.
+The open portrait/root material is then **locked in the `entering` state** instead of collapsing back to the abstract dot. Phase G owns structural motion and explicitly calls `ProfileRootEntryPortal.releaseEntry()` after commit or cancellation. A cancelled condensation can use `keepOpen: true` to return to the same readable Atlas root state.
+
+This keeps the portal/material layer independent from structural condensation motion while preserving one continuous root identity across the handoff.
 
 ## Shared-root portrait
 
@@ -101,7 +103,7 @@ Portal reversal is presentation-only:
 - halo presentation returns to GraphFeel ownership;
 - root canonical transform and graph topology are unchanged.
 
-Route changes and structural transitions force a clean close.
+Route changes and structural transitions force a clean close unless structural entry ownership has already been delegated to Phase G.
 
 ## `Enter profile` fallback
 
@@ -135,7 +137,7 @@ No information or action is motion-dependent.
 8. keyboard focus and Escape expose/reverse the same semantic state;
 9. direct `Enter profile` fallback reaches expanded Overview with all five branches and no standalone root landing;
 10. the root DOM identity survives that fallback handoff;
-11. Phase G can claim the cancelable entry request without route fallback;
+11. Phase G can claim the cancelable entry request while keeping the root material open until explicit release;
 12. fresh-session `ATLAS_READY` exposes the portal;
 13. coarse-pointer activation creates a stable second-tap action;
 14. reduced motion preserves the same semantics without reveal transitions.

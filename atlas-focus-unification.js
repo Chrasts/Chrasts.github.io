@@ -8,6 +8,7 @@
   const rootId = graph.rootId || 'stepan-chrast';
   const nodeMap = new Map(graph.nodes.map(node => [node.id, node]));
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const desktop = matchMedia('(min-width: 901px)');
   const svgNS = 'http://www.w3.org/2000/svg';
   const MAX_BRIDGE_NODES = 14;
   const DURATION = 680;
@@ -15,6 +16,7 @@
   let generation = 0;
   let active = null;
   let frame = 0;
+  let copyFrame = 0;
   let lastResult = null;
 
   const normaliseRoute = value =>
@@ -55,6 +57,7 @@
 
   const liveNode = id => [...document.querySelectorAll(`#site-graph .site-graph-node[data-node-id="${CSS.escape(id)}"]`)]
     .find(element => !element.closest('.v9-transition-overlay')) || null;
+  const selectedAtlasNode = () => document.querySelector('#site-graph .site-graph-node.is-previewed[data-node-id]');
 
   const primaryPath = node => {
     const path = [];
@@ -132,12 +135,13 @@
     clone.querySelectorAll('[tabindex]').forEach(element => element.removeAttribute('tabindex'));
     clone.querySelectorAll('[id]').forEach(element => element.removeAttribute('id'));
     clone.style.pointerEvents = 'none';
-    clone.style.removeProperty('opacity');
     materialiseStyles(source, clone, { root: true });
     clone.style.removeProperty('transform');
     clone.style.removeProperty('transform-origin');
     clone.style.removeProperty('transform-box');
     clone.style.removeProperty('scale');
+    clone.style.removeProperty('opacity');
+    clone.classList.remove('is-atlas-lod-hidden', 'is-muted-soft', 'is-filtered-work');
     clone.querySelectorAll('.v9-target-label').forEach(element => element.remove());
     return clone;
   };
@@ -217,6 +221,12 @@
     else dispatchEvent(new HashChangeEvent('hashchange'));
   };
 
+  const ensureCameraComposition = async () => {
+    window.ProfileCameraComposition?.boot?.();
+    if (!window.ProfileCameraComposition) return true;
+    return waitFor(() => Boolean(window.ProfileCameraComposition?.snapshot?.().booted), 1600);
+  };
+
   const targetReady = async ({ targetMode, targetRoute, anchorId, direction, generation: expectedGeneration }) => {
     const reached = await waitFor(() =>
       expectedGeneration === generation &&
@@ -228,13 +238,21 @@
     await raf();
     await raf();
     await wait(reducedMotion.matches ? 0 : 470);
+    if (expectedGeneration !== generation) return false;
+
+    await ensureCameraComposition();
     if (direction === 'focus-to-atlas') {
       scene.camera.use('atlas');
-      scene.camera.focus(anchorId, { immediate: true, minScale: 1.28, maxScale: 1.72 });
+      const focused = window.ProfileCameraComposition?.focusNode?.(anchorId, {
+        immediate: true,
+        minScale: 1.28,
+        maxScale: 1.72
+      });
+      if (!focused) window.ProfileAtlasLOD?.focusNode?.(anchorId, { immediate: true });
       await raf();
       await raf();
     } else {
-      scene.camera.use('desktop-local');
+      if (desktop.matches) scene.camera.use('desktop-local');
       window.ProfileGeometry?.stabilize?.(900);
       window.ProfileGeometry?.apply?.();
       window.ProfileAtlasLOD?.applyLocalLabelPolicy?.();
@@ -263,6 +281,12 @@
       targetRoute: current?.targetRoute || null,
       finishedAt: performance.now()
     };
+  };
+
+  const cancelTransition = (token, result, reason = result) => {
+    cleanup({ result });
+    scene.transitions.cancel(token, { reason });
+    return false;
   };
 
   const paint = (current, source, target, raw) => {
@@ -376,17 +400,12 @@
     if (!history) setRoute(targetRoute);
     const ready = await targetReady({ targetMode, targetRoute, anchorId, direction, generation: operation });
     if (!ready || operation !== generation || active?.token !== token) {
-      scene.transitions.cancel(token, { reason: 'target-unavailable' });
-      cleanup({ result: 'target-unavailable' });
-      return false;
+      return cancelTransition(token, 'target-unavailable');
     }
 
     const target = capture(ids, anchorId);
-    if (!target.nodes.has(anchorId)) {
-      scene.transitions.cancel(token, { reason: 'anchor-unavailable' });
-      cleanup({ result: 'anchor-unavailable' });
-      return false;
-    }
+    if (!target.nodes.has(anchorId)) return cancelTransition(token, 'anchor-unavailable');
+
     scene.transitions.commit(token, { sourceNodeCount: source.nodes.size, targetNodeCount: target.nodes.size });
     paint(active, source, target, 0);
     const completed = await animate(active, source, target, operation);
@@ -394,6 +413,7 @@
 
     active.overlay.classList.add('is-finishing');
     await wait(reducedMotion.matches ? 0 : 70);
+    if (operation !== generation || active?.token !== token) return false;
     active.overlay.remove();
     document.body?.classList.remove('is-atlas-focus-transitioning');
     if (document.body) {
@@ -410,19 +430,37 @@
       liveNode(anchorId)?.focus?.({ preventScroll: true });
       window.ProfileNodeInteraction?.refresh?.();
       window.ProfileHaloRenderer?.refresh?.();
+      scheduleCopySync();
     });
     return true;
   };
 
-  const focusIntent = target => {
+  const routableAtlasAnchor = target => {
     if (mode() !== 'atlas') return null;
-    const node = target?.closest?.('#site-graph .site-graph-node.is-previewed[data-node-id]');
-    if (!node) return null;
-    const anchor = nodeMap.get(node.dataset.nodeId);
-    const targetRoute = routeForNode(anchor);
+
+    const inspectorAction = target?.closest?.('#site-detail-panel .atlas-open-local');
+    if (inspectorAction) {
+      const selected = selectedAtlasNode();
+      const anchor = selected ? nodeMap.get(selected.dataset.nodeId) : null;
+      const targetRoute = routeForNode(anchor);
+      return anchor && isFocusRoute(targetRoute) ? { anchorId: anchor.id, targetRoute } : null;
+    }
+
+    const selectedNode = target?.closest?.('#site-graph .site-graph-node.is-previewed[data-node-id]');
+    if (selectedNode) {
+      const anchor = nodeMap.get(selectedNode.dataset.nodeId);
+      const targetRoute = routeForNode(anchor);
+      return anchor && isFocusRoute(targetRoute) ? { anchorId: anchor.id, targetRoute } : null;
+    }
+
+    const routeControl = target?.closest?.('[data-route], [data-route-target]');
+    if (!routeControl) return null;
+    const targetRoute = normaliseRoute(routeControl.dataset.route || routeControl.dataset.routeTarget || routeControl.getAttribute('href'));
     if (!isFocusRoute(targetRoute)) return null;
-    return { anchorId: anchor.id, targetRoute };
+    const anchor = nodeForRoute(targetRoute);
+    return anchor ? { anchorId: anchor.id, targetRoute } : null;
   };
+
   const atlasIntent = target => {
     if (mode() !== 'focus') return null;
     const control = target?.closest?.('[data-route="atlas"], [data-route-target="atlas"]');
@@ -432,9 +470,28 @@
     return { anchorId: current.id, targetRoute: 'atlas' };
   };
 
+  const syncCopy = () => {
+    copyFrame = 0;
+    if (mode() !== 'atlas') return;
+    const help = document.querySelector('#site-graph-help');
+    if (help) help.textContent = 'Hover to trace structure and connections. Click a node for details; re-activate a local item to open the same node at local scale.';
+
+    const detail = document.querySelector('#site-detail-panel');
+    const selected = selectedAtlasNode();
+    if (!detail || detail.hidden || !selected) return;
+    const anchor = nodeMap.get(selected.dataset.nodeId);
+    const targetRoute = routeForNode(anchor);
+    const hint = detail.querySelector('.atlas-repeat-click-hint');
+    if (hint && isFocusRoute(targetRoute)) hint.textContent = 'Activate the selected node again, or use the action below, to open it at local scale.';
+  };
+  function scheduleCopySync() {
+    cancelAnimationFrame(copyFrame);
+    copyFrame = requestAnimationFrame(() => requestAnimationFrame(syncCopy));
+  }
+
   addEventListener('click', event => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.defaultPrevented) return;
-    const focus = focusIntent(event.target);
+    const focus = routableAtlasAnchor(event.target);
     if (focus) {
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -451,7 +508,7 @@
 
   addEventListener('keydown', event => {
     if (!['Enter', ' '].includes(event.key) || event.defaultPrevented) return;
-    const focus = focusIntent(event.target);
+    const focus = routableAtlasAnchor(event.target);
     if (focus) {
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -490,10 +547,27 @@
     }
   });
 
+  const detail = document.querySelector('#site-detail-panel');
+  if (detail) new MutationObserver(scheduleCopySync).observe(detail, {
+    subtree: true,
+    childList: true,
+    attributes: true,
+    attributeFilter: ['hidden', 'class']
+  });
+  if (document.body) new MutationObserver(scheduleCopySync).observe(document.body, {
+    attributes: true,
+    attributeFilter: ['data-graph-mode', 'data-graph-route']
+  });
+  addEventListener('profile:node-interaction', scheduleCopySync);
+  addEventListener('profile:scene-state', scheduleCopySync);
+  addEventListener('hashchange', scheduleCopySync);
+
   reducedMotion.addEventListener?.('change', () => {
     if (!active || !reducedMotion.matches) return;
+    const token = active.token;
     ++generation;
     cleanup({ result: 'reduced-motion-change' });
+    scene.transitions.cancel(token, { reason: 'reduced-motion-change' });
   });
 
   function snapshot() {
@@ -526,5 +600,6 @@
     snapshot
   });
 
+  scheduleCopySync();
   dispatchEvent(new CustomEvent('profile:atlas-focus-ready', { detail: snapshot() }));
 })();

@@ -14,6 +14,7 @@
   let activatingNodeId = null;
   let activationTimer = 0;
   let dragging = false;
+  let renderedState = null;
 
   const liveNode = element => element?.closest?.('#site-graph .site-graph-node[data-node-id]') || null;
   const liveSvg = element => element?.closest?.('#site-graph .site-graph-svg') || null;
@@ -30,11 +31,11 @@
     return 'idle';
   };
 
-  const updatePhase = snapshot => {
-    if (snapshot.transitioning) phase = 'transition';
+  const updatePhase = state => {
+    if (state.transitioning) phase = 'transition';
     else if (dragging) phase = 'dragging';
-    else if (snapshot.pressedNodeId) phase = 'pressed';
-    else if (snapshot.primaryNodeId) phase = 'preview';
+    else if (state.pressedNodeId) phase = 'pressed';
+    else if (state.primaryNodeId) phase = 'preview';
     else phase = 'idle';
   };
 
@@ -71,6 +72,7 @@
       edge.classList.toggle('is-graph-flowing', Boolean(state.primaryNodeId && related));
     });
 
+    renderedState = state;
     sequence += 1;
     dispatchEvent(new CustomEvent('profile:graph-feel', { detail: snapshot() }));
   };
@@ -146,8 +148,7 @@
   };
 
   function snapshot() {
-    const state = interaction.snapshot();
-    updatePhase(state);
+    const state = renderedState || interaction.snapshot();
     return {
       sequence,
       phase,

@@ -68,6 +68,7 @@ test.describe('V3.1 Phase G semantic Atlas condensation', () => {
         edgeDash: edge?.style.strokeDasharray || '',
         edgePrimary: edge?.dataset.condensePrimary || null,
         parentMass: Number(parent?.style.getPropertyValue('--condense-parent-mass') || 0),
+        parentMassPeak: window.ProfileAtlasCondensation.snapshot().parentMassPeak,
         portal: window.ProfileRootEntryPortal.snapshot(),
         rootPortraitOpacity: Number(getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .root-entry-portrait')).opacity)
       };
@@ -86,7 +87,9 @@ test.describe('V3.1 Phase G semantic Atlas condensation', () => {
     // Chromium may serialize SVG dash lengths as `0.42px, 1px`; parseFloat
     // intentionally reads the semantic leading length rather than CSS syntax.
     expect(parseFloat(movement.edgeDash)).toBeLessThan(.9);
-    expect(movement.parentMass).toBeGreaterThan(.04);
+    // Instantaneous parent mass may already have relaxed if CI samples this
+    // child after its absorption frame; the runtime records the actual peak.
+    expect(movement.parentMassPeak).toBeGreaterThan(.1);
     expect(movement.portal.entering).toBe(true);
     expect(movement.rootPortraitOpacity).toBeGreaterThan(.8);
   });

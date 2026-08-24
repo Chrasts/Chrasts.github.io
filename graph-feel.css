@@ -102,7 +102,11 @@ body[data-graph-mode="atlas"] #site-graph[data-graph-feel="dragging"] .site-grap
   cursor:grabbing!important
 }
 
-#site-graph[data-graph-feel="transition"] .site-graph-halo,
+#site-graph[data-graph-feel="transition"] .site-graph-halo{
+  opacity:0!important;
+  animation:none!important
+}
+
 #site-graph[data-graph-feel="transition"] .site-graph-edges path.is-graph-flowing{
   animation:none!important
 }

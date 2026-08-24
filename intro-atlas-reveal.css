@@ -1,0 +1,137 @@
+/* ========================================================================== 
+   V3.1 Phase E — live Atlas reveal
+   ========================================================================== */
+
+html[data-profile-intro="pending"] .hero,
+html[data-profile-intro="preparing"] .hero{
+  opacity:0!important;
+  pointer-events:none!important
+}
+
+body.is-atlas-reveal #site-explorer{
+  opacity:1!important;
+  visibility:visible!important
+}
+body.is-atlas-reveal .hero{
+  opacity:0!important;
+  pointer-events:none!important
+}
+body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave]{
+  opacity:.045!important;
+  transition:opacity .62s cubic-bezier(.22,.72,.2,1),filter .62s ease
+}
+body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave] .site-graph-dot{
+  transform:scale(.72);
+  transform-box:fill-box;
+  transform-origin:center;
+  transition:transform .68s cubic-bezier(.18,.78,.18,1),fill .28s ease,stroke .28s ease,stroke-width .28s ease
+}
+body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave] .site-graph-label,
+body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave] .site-graph-meta{
+  opacity:0!important;
+  transition:opacity .48s ease,fill .28s ease
+}
+
+body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave="root"]{
+  opacity:1!important
+}
+body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave="root"] .site-graph-dot{
+  transform:scale(1.10)
+}
+body.is-atlas-reveal #site-graph .site-graph-node.is-intro-revealed{
+  opacity:1!important
+}
+body.is-atlas-reveal #site-graph .site-graph-node.is-intro-revealed .site-graph-dot{
+  transform:scale(1)
+}
+body.is-atlas-reveal #site-graph .site-graph-node.is-intro-label-revealed .site-graph-label,
+body.is-atlas-reveal #site-graph .site-graph-node.is-intro-label-revealed .site-graph-meta{
+  opacity:1!important
+}
+
+body.is-atlas-reveal #site-graph .site-graph-edges path[data-intro-edge-wave]{
+  opacity:.025!important;
+  stroke-dasharray:var(--intro-edge-length,1) var(--intro-edge-length,1)!important;
+  stroke-dashoffset:var(--intro-edge-length,1)!important;
+  transition:stroke-dashoffset .82s cubic-bezier(.2,.72,.18,1),opacity .62s ease,stroke .24s ease
+}
+body.is-atlas-reveal #site-graph .site-graph-edges path.is-intro-revealed{
+  opacity:.68!important;
+  stroke-dashoffset:0!important
+}
+body.is-atlas-reveal #site-graph .site-graph-edges path[data-intro-edge-wave="cross"].is-intro-revealed{
+  opacity:.32!important
+}
+
+body.is-atlas-reveal #site-graph .site-graph-node:not([data-node-id="stepan-chrast"]){
+  pointer-events:none
+}
+body.is-atlas-reveal.is-atlas-reveal-late #site-graph .site-graph-node[data-intro-wave="primary"]{
+  pointer-events:auto
+}
+body.is-atlas-reveal #site-graph .site-graph-node[data-node-id="stepan-chrast"]{
+  pointer-events:auto
+}
+
+body.is-atlas-reveal #atlas-controls{
+  opacity:.18!important;
+  pointer-events:none!important;
+  transition:opacity .45s ease
+}
+body.is-atlas-ready #atlas-controls{
+  opacity:1!important;
+  pointer-events:auto!important
+}
+
+.atlas-reveal-skip{
+  position:fixed;
+  z-index:150;
+  top:18px;
+  right:22px;
+  border:0;
+  border-bottom:1px solid color-mix(in srgb,var(--ink) 24%,transparent);
+  padding:7px 2px 5px;
+  background:transparent;
+  color:var(--muted);
+  font:650 10px/1.2 var(--sans);
+  letter-spacing:.065em;
+  text-transform:uppercase;
+  cursor:pointer;
+  opacity:.72;
+  transition:opacity .18s ease,border-color .18s ease,color .18s ease
+}
+.atlas-reveal-skip:hover,
+.atlas-reveal-skip:focus-visible{
+  color:var(--teal);
+  border-color:var(--teal);
+  opacity:1;
+  outline:none
+}
+
+body.is-atlas-reveal[data-atlas-reveal-stage="settle"] #site-graph{
+  --atlas-reveal-settle:1
+}
+body.is-atlas-reveal[data-atlas-reveal-stage="settle"] #site-graph .site-graph-node[data-node-id="stepan-chrast"] .site-graph-dot{
+  transform:scale(1.035)
+}
+
+@media(max-width:900px){
+  .atlas-reveal-skip{top:12px;right:14px}
+  body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave="deep"] .site-graph-label,
+  body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave="intermediate"] .site-graph-label,
+  body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave="deep"] .site-graph-meta,
+  body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave="intermediate"] .site-graph-meta{
+    opacity:0!important
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave],
+  body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave] .site-graph-dot,
+  body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave] .site-graph-label,
+  body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave] .site-graph-meta,
+  body.is-atlas-reveal #site-graph .site-graph-edges path[data-intro-edge-wave],
+  .atlas-reveal-skip{
+    transition:none!important
+  }
+}

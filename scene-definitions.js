@@ -84,6 +84,7 @@
   ensureStylesheet('root-landing.css', 'data-profile-root-landing-style');
   ensureStylesheet('intro-animation.css', 'data-profile-intro-style');
   ensureStylesheet('motion-polish.css', 'data-profile-motion-polish-style');
+  ensureStylesheet('graph-feel.css', 'data-profile-graph-feel-style');
   ensureStylesheet('intro-unfold.css', 'data-profile-intro-unfold-style');
   ensureStylesheet('intro-fixes-v3.css', 'data-profile-intro-fixes-v3-style');
   prepareRootLandingDom();
@@ -135,7 +136,9 @@
   };
 
   ensureScript('scene-composer.js', 'data-profile-scene-composer');
+  ensureScript('atlas-drag-activation-guard.js', 'data-profile-atlas-drag-activation-guard');
   ensureScript('camera-composition.js', 'data-profile-camera-composition');
+  ensureScript('graph-feel.js', 'data-profile-graph-feel');
   ensureScript('phase7-pointer-hotfix.js', 'data-profile-atlas-pointer-hotfix');
   ensureScript('global-geometry-ownership.js', 'data-profile-global-geometry-ownership');
   ensureScript('root-landing.js', 'data-profile-root-landing');

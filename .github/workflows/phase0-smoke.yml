@@ -107,7 +107,8 @@ jobs:
             tests/object-focus.spec.js \
             tests/object-focus-fit.spec.js \
             tests/camera-composition.spec.js \
-            tests/camera-composition-local.spec.js
+            tests/camera-composition-local.spec.js \
+            tests/graph-feel.spec.js
 
       - name: Upload Playwright diagnostics
         if: failure()

@@ -180,6 +180,10 @@ test.describe('V3.1 Phase E live Atlas reveal — desktop', () => {
     await page.goto('/');
     await waitReveal(page);
     await page.waitForFunction(() => window.ProfileIntro.snapshot().revealedWaves.includes('labels'));
+    await page.waitForFunction(() => {
+      const layer = document.querySelector('#site-graph .atlas-territory-label-layer');
+      return Boolean(layer && Number(getComputedStyle(layer).opacity) > .5);
+    });
 
     const labels = await page.evaluate(() => {
       const layer = document.querySelector('#site-graph .atlas-territory-label-layer');

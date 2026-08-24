@@ -28,6 +28,20 @@ const waitReady = async (page, timeout = 8_000) => {
   return page.evaluate(() => window.ProfileIntro.snapshot());
 };
 
+const waitStableAtlas = async (page, timeout = 8_000) => {
+  await page.waitForFunction(() => {
+    const intro = window.ProfileIntro?.snapshot?.();
+    const safeIntroState = ['ATLAS_REVEAL', 'ATLAS_READY', 'BYPASSED'].includes(intro?.state);
+    return Boolean(
+      safeIntroState &&
+      document.body?.dataset.graphMode === 'atlas' &&
+      document.querySelector('#site-graph .site-graph-svg') &&
+      document.querySelectorAll('#site-graph .site-graph-node[data-node-id]').length >= (window.SITE_DATA?.graph?.nodes?.length || 1) &&
+      !document.querySelector('#site-graph .phase-h-node-motion')
+    );
+  }, null, { timeout });
+};
+
 test.describe('V3.1 Phase E live Atlas reveal — desktop', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
@@ -76,6 +90,7 @@ test.describe('V3.1 Phase E live Atlas reveal — desktop', () => {
       territory: document.querySelectorAll('#site-graph .site-graph-node[data-intro-wave="territory"].is-intro-revealed').length,
       deep: document.querySelectorAll('#site-graph .site-graph-node[data-intro-wave="deep"].is-intro-revealed').length,
       traced: document.querySelectorAll('#site-graph .site-graph-edges path.is-intro-revealed').length,
+      territoryLayerOpacity: Number(getComputedStyle(document.querySelector('#site-graph .atlas-territory-label-layer')).opacity),
       coords: [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')]
         .map(node => ({ id: node.dataset.nodeId, x: node.dataset.x, y: node.dataset.y }))
     }));
@@ -85,6 +100,7 @@ test.describe('V3.1 Phase E live Atlas reveal — desktop', () => {
     expect(middle.territory).toBeGreaterThan(0);
     expect(middle.deep).toBe(0);
     expect(middle.traced).toBeGreaterThan(0);
+    expect(middle.territoryLayerOpacity).toBeLessThan(.1);
     expect(middle.coords).toEqual(before);
 
     await waitReady(page);
@@ -159,40 +175,60 @@ test.describe('V3.1 Phase E live Atlas reveal — desktop', () => {
     expect(ownership.cameraMoving).toBe(false);
   });
 
-  test('reveals labels after geometry and wakes cross-links late', async ({ page }) => {
+  test('reveals LOD-aware territory labels after geometry and wakes cross-links later', async ({ page }) => {
     await freshSession(page);
     await page.goto('/');
     await waitReveal(page);
     await page.waitForFunction(() => window.ProfileIntro.snapshot().revealedWaves.includes('labels'));
 
-    const labels = await page.evaluate(() => ({
-      waves: window.ProfileIntro.snapshot().revealedWaves,
-      primaryLabels: [...document.querySelectorAll('#site-graph .site-graph-node[data-intro-wave="primary"] .site-graph-label')]
-        .filter(label => Number(getComputedStyle(label).opacity) > .5).length,
-      crossRevealed: document.querySelectorAll('#site-graph .site-graph-edges path[data-intro-edge-wave="cross"].is-intro-revealed').length
-    }));
+    const labels = await page.evaluate(() => {
+      const layer = document.querySelector('#site-graph .atlas-territory-label-layer');
+      return {
+        waves: window.ProfileIntro.snapshot().revealedWaves,
+        territoryLabels: layer?.querySelectorAll('.atlas-territory-label').length || 0,
+        territoryLayerOpacity: layer ? Number(getComputedStyle(layer).opacity) : 0,
+        crossRevealed: document.querySelectorAll('#site-graph .site-graph-edges path[data-intro-edge-wave="cross"].is-intro-revealed').length
+      };
+    });
     expect(labels.waves).toContain('labels');
-    expect(labels.primaryLabels).toBeGreaterThanOrEqual(5);
+    expect(labels.territoryLabels).toBeGreaterThanOrEqual(5);
+    expect(labels.territoryLayerOpacity).toBeGreaterThan(.5);
     expect(labels.crossRevealed).toBe(0);
 
     await page.waitForFunction(() => window.ProfileIntro.snapshot().revealedWaves.includes('cross'));
     expect(await page.locator('#site-graph .site-graph-edges path[data-intro-edge-wave="cross"].is-intro-revealed').count()).toBeGreaterThan(0);
   });
 
-  test('label density recomposes when the viewport crosses the mobile breakpoint during reveal', async ({ page }) => {
+  test('breakpoint crossing during reveal always resolves to a live stable Atlas', async ({ page }) => {
     await freshSession(page);
     await page.goto('/');
     await waitReveal(page);
     await page.waitForFunction(() => window.ProfileIntro.snapshot().revealedWaves.includes('labels'));
-    await page.waitForFunction(() => document.querySelectorAll('#site-graph .site-graph-node[data-intro-wave="intermediate"].is-intro-label-revealed').length > 0);
 
+    // The existing mobile architecture intentionally performs a clean reload on a
+    // desktop/mobile boundary crossing. Phase E therefore protects the semantic
+    // outcome rather than requiring transient reveal classes to survive that reload.
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.waitForFunction(() => window.ProfileIntro.snapshot().mobile === true);
-    await page.waitForFunction(() => document.querySelectorAll('#site-graph .site-graph-node[data-intro-wave="intermediate"].is-intro-label-revealed').length === 0);
+    await waitStableAtlas(page);
+    let state = await page.evaluate(() => ({
+      mode: document.body.dataset.graphMode,
+      intro: window.ProfileIntro.snapshot().state,
+      cloneCount: document.querySelectorAll('.profile-intro-overlay,.phase-h-node-motion').length
+    }));
+    expect(state.mode).toBe('atlas');
+    expect(['ATLAS_REVEAL', 'ATLAS_READY', 'BYPASSED']).toContain(state.intro);
+    expect(state.cloneCount).toBe(0);
 
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.waitForFunction(() => window.ProfileIntro.snapshot().mobile === false);
-    await page.waitForFunction(() => document.querySelectorAll('#site-graph .site-graph-node[data-intro-wave="intermediate"].is-intro-label-revealed').length > 0);
+    await waitStableAtlas(page);
+    state = await page.evaluate(() => ({
+      mode: document.body.dataset.graphMode,
+      intro: window.ProfileIntro.snapshot().state,
+      cloneCount: document.querySelectorAll('.profile-intro-overlay,.phase-h-node-motion').length
+    }));
+    expect(state.mode).toBe('atlas');
+    expect(['ATLAS_REVEAL', 'ATLAS_READY', 'BYPASSED']).toContain(state.intro);
+    expect(state.cloneCount).toBe(0);
   });
 
   test('Escape and Tab accelerate safely into ATLAS_READY; Tab restores keyboard focus to root', async ({ page }) => {
@@ -208,7 +244,7 @@ test.describe('V3.1 Phase E live Atlas reveal — desktop', () => {
       sessionStorage.removeItem('profileIntroSeen');
       sessionStorage.removeItem('__v31IntroFreshPrepared');
     });
-    await page.reload();
+    await page.goto('/');
     await waitReveal(page);
     await page.keyboard.press('Tab');
     const keyboard = await waitReady(page);

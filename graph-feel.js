@@ -33,6 +33,8 @@
     halo.classList.add('site-graph-halo');
     const radius = Number(dot.getAttribute('r') || 6);
     halo.setAttribute('r', String(radius + Math.max(5, radius * .55)));
+    halo.setAttribute('fill', 'none');
+    halo.setAttribute('pointer-events', 'none');
     halo.setAttribute('aria-hidden', 'true');
     node.insertBefore(halo, dot);
   };

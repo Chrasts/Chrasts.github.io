@@ -129,13 +129,12 @@
       return { width: rect.width || request.element.offsetWidth || 0, height: rect.height || request.element.offsetHeight || 0 };
     }
 
-    sideCost(side, request, lane, blockers, context, size) {
+    sideCost(side, request, lane, context, size) {
       const preferredPenalty = request.preferredSide && side !== request.preferredSide ? 36 : 0;
-      const blockerPenalty = blockers.has(side) ? 280 : 0;
       const used = lane[side].used;
       const top = zones['side-stage'].top + used;
       const overflow = Math.max(0, top + size.height - (context.viewport.height - 64));
-      return preferredPenalty + blockerPenalty + used * .075 + overflow * 4.5;
+      return preferredPenalty + used * .075 + overflow * 4.5;
     }
 
     chooseSide(request, lane, blockers, context, size) {
@@ -153,9 +152,16 @@
         if (!blockers.has(alternate)) return alternate;
       }
 
+      /* Fixed occupancy is a hard constraint. Overflow and stacking heuristics
+         may choose between available lanes, but they must never place a flexible
+         scene object underneath an inspector simply because the other lane is
+         taller. */
       const alternate = opposite(preferred);
-      const preferredCost = this.sideCost(preferred, request, lane, blockers, context, size);
-      const alternateCost = this.sideCost(alternate, request, lane, blockers, context, size);
+      if (blockers.has(preferred) && !blockers.has(alternate)) return alternate;
+      if (!blockers.has(preferred) && blockers.has(alternate)) return preferred;
+
+      const preferredCost = this.sideCost(preferred, request, lane, context, size);
+      const alternateCost = this.sideCost(alternate, request, lane, context, size);
       return alternateCost + .01 < preferredCost ? alternate : preferred;
     }
 

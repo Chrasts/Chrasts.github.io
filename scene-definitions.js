@@ -84,6 +84,7 @@
   ensureStylesheet('root-landing.css', 'data-profile-root-landing-style');
   ensureStylesheet('intro-animation.css', 'data-profile-intro-style');
   ensureStylesheet('motion-polish.css', 'data-profile-motion-polish-style');
+  ensureStylesheet('graph-feel.css', 'data-profile-graph-feel-style');
   ensureStylesheet('intro-unfold.css', 'data-profile-intro-unfold-style');
   ensureStylesheet('intro-fixes-v3.css', 'data-profile-intro-fixes-v3-style');
   prepareRootLandingDom();
@@ -104,7 +105,7 @@
   scene.registry.register({ id: 'root-profile-copy', selector: '.hero-copy', managedVisibility: false, visible: rootLanding, anchorNodeId: 'stepan-chrast', placement: 'identity-copy', enter: 'from-left', exit: 'to-left', variants: { desktop: { placement: 'identity-copy-left', enter: 'from-left', exit: 'to-left' }, mobile: { placement: 'identity-copy-centre', enter: 'fade-up', exit: 'fade-left' } } });
   scene.registry.register({ id: 'portrait', selector: '.hero-visual.profile-identity', managedVisibility: false, visible: rootLanding, anchorNodeId: 'stepan-chrast', placement: 'identity-portrait', enter: 'from-right', exit: 'to-right', variants: { desktop: { placement: 'identity-portrait-right', enter: 'from-right', exit: 'to-right' }, mobile: { placement: 'identity-portrait-top', enter: 'fade-scale', exit: 'fade-right' } } });
   scene.registry.register({ id: 'root-activate-control', selector: '[data-root-activate]', managedVisibility: false, visible: rootLanding, anchorNodeId: 'stepan-chrast', placement: 'root-primary-action', enter: 'root-affordance-in', exit: 'root-affordance-out', variants: { desktop: { placement: 'root-primary-action' }, mobile: { placement: 'root-primary-action-centre' } } });
-  scene.registry.register({ id: 'root-atlas-affordance', selector: '.root-atlas-affordance', managedVisibility: false, visible: rootLanding, anchorNodeId: 'stepan-chrast', placement: 'root-secondary-action', enter: 'utility-up', exit: 'utility-down', variants: { desktop: { placement: 'root-secondary-action' }, mobile: { placement: 'root-secondary-action-centre' } } });
+  scene.registry.register({ id: 'root-atlas-affordance', selector: '.root-atlas-affordance', managedVisibility: false, visible: rootLanding, anchorNodeId: 'stepan-chrast', placement: 'root-secondary-action', enter: 'utility-up', exit: 'utility-down', variants: { desktop: { placement: 'root-secondary-action' }, mobile: { placement: 'root-secondary-action-centre', enter: 'fade-up', exit: 'fade-down' } } });
   scene.registry.register({ id: 'profile-graph-stage', selector: '#site-explorer', managedVisibility: false, visible: graphScene, anchorNodeId: 'stepan-chrast', placement: 'graph-stage', enter: 'graph-unfold', exit: 'graph-fold', variants: { desktop: { placement: 'graph-stage-desktop' }, mobile: { placement: 'graph-stage-mobile' } } });
   scene.registry.register({ id: 'work-controls', selector: '.integrated-work-controls', visible: work, anchorNodeId: 'work', placement: 'work-rails', enter: 'rails-in', exit: 'rails-out', variants: { desktop: { placement: 'work-side-rails', enter: 'rails-in', exit: 'rails-out' }, mobile: { placement: 'control-sheet', enter: 'sheet-in', exit: 'sheet-out' } } });
   scene.registry.register({ id: 'atlas-controls', selector: '#atlas-controls', visible: atlas, anchorNodeId: 'stepan-chrast', placement: 'atlas-toolbar', enter: 'utility-up', exit: 'utility-down', variants: { desktop: { placement: 'atlas-bottom-toolbar', enter: 'utility-up', exit: 'utility-down' }, mobile: { placement: 'control-sheet', enter: 'sheet-in', exit: 'sheet-out' } } });
@@ -136,6 +137,7 @@
 
   ensureScript('scene-composer.js', 'data-profile-scene-composer');
   ensureScript('camera-composition.js', 'data-profile-camera-composition');
+  ensureScript('graph-feel.js', 'data-profile-graph-feel');
   ensureScript('phase7-pointer-hotfix.js', 'data-profile-atlas-pointer-hotfix');
   ensureScript('global-geometry-ownership.js', 'data-profile-global-geometry-ownership');
   ensureScript('root-landing.js', 'data-profile-root-landing');

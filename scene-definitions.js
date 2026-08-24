@@ -138,6 +138,8 @@
   ensureScript('scene-composer.js', 'data-profile-scene-composer');
   ensureScript('atlas-drag-activation-guard.js', 'data-profile-atlas-drag-activation-guard');
   ensureScript('camera-composition.js', 'data-profile-camera-composition');
+  ensureScript('halo-renderer.js', 'data-profile-halo-renderer');
+  ensureScript('node-interaction-state.js', 'data-profile-node-interaction');
   ensureScript('graph-feel.js', 'data-profile-graph-feel');
   ensureScript('phase7-pointer-hotfix.js', 'data-profile-atlas-pointer-hotfix');
   ensureScript('global-geometry-ownership.js', 'data-profile-global-geometry-ownership');

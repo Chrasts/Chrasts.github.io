@@ -4,7 +4,7 @@
   max-width:min(540px,54vw);
   margin-top:8px;
   color:var(--ink);
-  pointer-events:auto
+  pointer-events:none
 }
 
 .profile-root-brief[hidden],
@@ -50,7 +50,8 @@
   flex-wrap:wrap;
   align-items:center;
   gap:7px 13px;
-  margin-top:12px
+  margin-top:12px;
+  pointer-events:auto
 }
 
 .profile-root-action,

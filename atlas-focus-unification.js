@@ -7,8 +7,9 @@
 
   const rootId = graph.rootId || 'stepan-chrast';
   const nodeMap = new Map(graph.nodes.map(node => [node.id, node]));
-  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-  const desktop = matchMedia('(min-width: 901px)');
+  const realMatchMedia = window.__GRAPH_V6_REAL_MATCH_MEDIA__ || window.matchMedia.bind(window);
+  const reducedMotion = realMatchMedia('(prefers-reduced-motion: reduce)');
+  const desktop = realMatchMedia('(min-width: 901px)');
   const svgNS = 'http://www.w3.org/2000/svg';
   const MAX_BRIDGE_NODES = 14;
   const DURATION = 680;

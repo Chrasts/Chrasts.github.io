@@ -166,16 +166,17 @@ test.describe('Final graph interaction consolidation', () => {
   });
 });
 
-test.describe('Phase H gateway retirement', () => {
+test.describe('V3.1 entry retirement', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('never restores the old Enter gateway or orbit controls', async ({ page }) => {
+  test('never restores the old Enter gateway and stays in ATLAS_READY after reveal', async ({ page }) => {
     await freshIntro(page);
     await page.goto('/');
-    await page.waitForFunction(() => Boolean(window.ProfileIntro?.__phaseH));
+    await page.waitForFunction(() => Boolean(window.ProfileIntro?.__v31));
     await expect(page.locator('.profile-intro-enter')).toHaveCount(0);
     await expect(page.locator('.profile-intro-gateway-orbit')).toHaveCount(0);
-    await page.waitForFunction(() => ['completed', 'skipped'].includes(window.ProfileIntro.snapshot().result), null, { timeout: 9_000 });
-    expect(await page.evaluate(() => window.ProfileRootLanding?.isActive?.())).toBe(true);
+    await page.waitForFunction(() => window.ProfileIntro.snapshot().state === 'ATLAS_READY', null, { timeout: 8_000 });
+    expect(await page.evaluate(() => window.ProfileRootLanding?.isActive?.())).toBe(false);
+    expect(await page.evaluate(() => document.body.dataset.graphMode)).toBe('atlas');
   });
 });

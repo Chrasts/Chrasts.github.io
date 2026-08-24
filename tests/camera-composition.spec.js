@@ -11,6 +11,18 @@ const bootAtlas = async page => {
   await page.waitForTimeout(240);
 };
 
+const waitInspectorReservation = page => page.waitForFunction(() =>
+  window.ProfileCameraComposition.safeFrame()?.reserved?.some(item => item.id === 'detail-panel')
+);
+
+const waitAtlasCameraSettled = page => page.waitForFunction(() => {
+  const state = window.ProfileAtlasLOD?.snapshot();
+  if (!state?.camera || !state?.targetCamera) return false;
+  return Math.abs(state.camera.x - state.targetCamera.x) < .1 &&
+    Math.abs(state.camera.y - state.targetCamera.y) < .1 &&
+    Math.abs(state.camera.scale - state.targetCamera.scale) < .001;
+});
+
 test.describe('Phase E camera composition', () => {
   test('selected Atlas node focuses into the composed safe frame instead of behind the inspector', async ({ page }) => {
     await bootAtlas(page);
@@ -21,6 +33,7 @@ test.describe('Phase E camera composition', () => {
     await node.click();
     await expect(detail).toBeVisible();
     await expect(node).toHaveClass(/is-previewed/);
+    await waitInspectorReservation(page);
 
     const frameBefore = await page.evaluate(() => window.ProfileCameraComposition.safeFrame());
     const svgBox = await svg.boundingBox();
@@ -29,7 +42,7 @@ test.describe('Phase E camera composition', () => {
     const camera = page.locator('#site-graph .site-graph-svg > g').first();
     const transformBefore = await camera.getAttribute('transform');
     await node.click();
-    await page.waitForTimeout(650);
+    await waitAtlasCameraSettled(page);
     const transformAfter = await camera.getAttribute('transform');
     expect(transformAfter).not.toBe(transformBefore);
 
@@ -55,8 +68,8 @@ test.describe('Phase E camera composition', () => {
     const node = page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]');
     const detail = page.locator('#site-detail-panel');
     await node.click();
-    await node.click();
-    await page.waitForTimeout(650);
+    await waitInspectorReservation(page);
+    expect(await page.evaluate(() => window.ProfileCameraComposition.command('INSPECT', { nodeId: 'sat-smt', immediate: true }))).toBe(true);
 
     const camera = page.locator('#site-graph .site-graph-svg > g').first();
     const beforeTransform = await camera.getAttribute('transform');

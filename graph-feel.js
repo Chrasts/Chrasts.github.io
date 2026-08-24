@@ -20,7 +20,7 @@
   const liveSvg = element => element?.closest?.('#site-graph .site-graph-svg') || null;
 
   const haloStateFor = (node, record) => {
-    if (!record) return node.dataset.nodeId === rootId ? 'root-entry' : 'idle';
+    if (!record) return 'idle';
     if (record.state === interaction.STATES.TRANSITIONING) return 'transitioning';
     if (node.classList.contains('is-feel-activating') || record.state === interaction.STATES.ACTIVE) return 'active';
     if (record.state === interaction.STATES.FOCUSED) return 'focus';

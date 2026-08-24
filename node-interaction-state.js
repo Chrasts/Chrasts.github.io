@@ -35,12 +35,7 @@
     if (node.classList.contains('is-work-soft')) return 'work-soft';
     return 'none';
   };
-  const rootEntryReady = id => {
-    if (id !== rootId) return false;
-    const mode = document.body?.dataset.graphMode;
-    const route = document.body?.dataset.graphRoute || 'overview';
-    return mode === 'atlas' || route === 'overview';
-  };
+  const rootEntryReady = id => id === rootId && document.body?.dataset.graphMode === 'atlas';
 
   const stateForNode = node => {
     const id = node?.dataset?.nodeId;

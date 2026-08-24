@@ -2,10 +2,9 @@ const { test, expect } = require('@playwright/test');
 
 const freshIntro = async page => {
   await page.addInitScript(() => {
-    if (sessionStorage.getItem('__phaseHMotionFresh') !== 'true') {
+    if (sessionStorage.getItem('__v31MotionFresh') !== 'true') {
       sessionStorage.removeItem('profileIntroSeen');
-      sessionStorage.removeItem('__phase3FreshPrepared');
-      sessionStorage.setItem('__phaseHMotionFresh', 'true');
+      sessionStorage.setItem('__v31MotionFresh', 'true');
     }
   });
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
@@ -16,49 +15,47 @@ const bypassIntro = async page => {
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
 };
 
-test.describe('Intro motion polish', () => {
+test.describe('V3.1 Atlas reveal motion', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('Phase H wakes the real network without restoring the old Enter gateway', async ({ page }) => {
+  test('wakes the real network without restoring the retired gateway or Phase H motion wrappers', async ({ page }) => {
     await freshIntro(page);
-    await page.goto('/#overview');
-    await page.waitForFunction(() => {
-      const state = window.ProfileIntro?.snapshot?.();
-      return Boolean(state?.running && state.realGraph && document.querySelector('#site-graph .phase-h-node-motion'));
-    }, null, { timeout: 8_000 });
+    await page.goto('/');
+    await page.waitForFunction(() => window.ProfileIntro?.snapshot?.().state === 'ATLAS_REVEAL', null, { timeout: 8_000 });
+    await page.waitForFunction(() => window.ProfileIntro.snapshot().revealedWaves.includes('primary'));
     await page.waitForFunction(() => Boolean(window.ProfileMotionPolish));
-    await page.waitForTimeout(360);
 
     await expect(page.locator('.profile-intro-enter')).toHaveCount(0);
     await expect(page.locator('.profile-intro-overlay')).toHaveCount(0);
+    await expect(page.locator('#site-graph .phase-h-node-motion')).toHaveCount(0);
     const root = page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]');
     await expect(root).toBeVisible();
     await expect(root.locator('.site-graph-label')).toContainText('Štěpán Chrast');
 
     const wake = await page.evaluate(() => ({
-      wrappers: document.querySelectorAll('#site-graph .phase-h-node-motion').length,
-      traced: [...document.querySelectorAll('#site-graph .site-graph-edges path')]
-        .filter(edge => parseFloat(edge.style.strokeDasharray || '0') > 0).length,
+      traced: document.querySelectorAll('#site-graph .site-graph-edges path.is-intro-revealed').length,
       stage: window.ProfileIntro.snapshot().stage,
+      state: window.ProfileIntro.snapshot().state,
       enterActive: window.ProfileMotionPolish.snapshot().enterActive
     }));
-    expect(wake.wrappers).toBeGreaterThan(5);
     expect(wake.traced).toBeGreaterThan(0);
+    expect(wake.state).toBe('ATLAS_REVEAL');
     expect(wake.enterActive).toBe(false);
   });
 
-  test('final condensation cleans cinematic transforms and hands directly to the stable identity landing', async ({ page }) => {
+  test('cleans reveal-only styling and leaves the stable live Atlas instead of identity handoff', async ({ page }) => {
     await freshIntro(page);
-    await page.goto('/#overview');
-    await page.waitForFunction(() => window.ProfileIntro?.snapshot().stage === 'complete', null, { timeout: 10_000 });
+    await page.goto('/');
+    await page.waitForFunction(() => window.ProfileIntro?.snapshot?.().state === 'ATLAS_READY', null, { timeout: 8_000 });
 
     await expect(page.locator('.profile-intro-enter')).toHaveCount(0);
     await expect(page.locator('.profile-intro-identity')).toHaveCount(0);
     await expect(page.locator('.profile-intro-overlay')).toHaveCount(0);
     await expect(page.locator('#site-graph .phase-h-node-motion')).toHaveCount(0);
-    await expect(page.locator('.hero-visual.profile-identity')).toBeVisible();
-    await expect(page.locator('.hero-copy h1')).toContainText('Štěpán');
-    expect(await page.evaluate(() => window.ProfileRootLanding.isActive())).toBe(true);
+    await expect(page.locator('#site-graph .site-graph-node[data-intro-wave]')).toHaveCount(0);
+    await expect(page.locator('#site-graph .site-graph-edges path[data-intro-edge-wave]')).toHaveCount(0);
+    expect(await page.evaluate(() => document.body.dataset.graphMode)).toBe('atlas');
+    expect(await page.evaluate(() => window.ProfileRootLanding.isActive())).toBe(false);
   });
 });
 

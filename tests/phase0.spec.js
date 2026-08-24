@@ -10,7 +10,10 @@ const waitReady = async page => {
 };
 
 const settle = async page => {
-  await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
+  await page.waitForFunction(() =>
+    !document.body.classList.contains('is-v9-transitioning') &&
+    !document.body.classList.contains('is-atlas-handoff')
+  );
   await page.waitForTimeout(90);
 };
 

@@ -23,7 +23,7 @@ States:
 - `active`
 - `transitioning`
 - `selected`
-- `entry-ready` for the persistent profile root
+- `entry-ready` for the persistent profile root while it is the Atlas entry portal
 
 Deterministic precedence:
 
@@ -46,7 +46,7 @@ It does **not** derive a second graph relationship model.
 
 ### `ProfileHaloRenderer` — `halo-renderer.js`
 
-Owns halo DOM and semantic halo presets.
+Owns halo DOM and semantic halo presets, but does not decide which semantic preset applies.
 
 Presets:
 
@@ -60,6 +60,8 @@ Presets:
 - `transitioning`
 
 Ordinary nodes receive one halo primitive. The profile root receives two rings and is currently the only richer halo object.
+
+Every newly created halo starts in `idle`. The renderer does not infer root-entry semantics from node identity; `ProfileNodeInteraction` / `ProfileGraphFeel` supply that state.
 
 Repeated refresh is idempotent; renderer rerenders must not accumulate rings.
 
@@ -93,11 +95,13 @@ This avoids a second relationship calculation inside the interaction layer.
 
 ## Root halo
 
-The root has an explicit `entry-ready` node state in Overview/Atlas and maps to `root-entry` halo presentation.
+The root has an explicit `entry-ready` node state **only in Atlas**, where it can serve as the V3.1 entry portal, and maps to `root-entry` halo presentation.
 
-The generic renderer `is-selected` class does not override this identity-specific state. Direct hover/focus/press still takes precedence.
+Expanded Overview does not reuse the entry state. This prevents the temporary Atlas entry affordance from leaking into the later Profile Root semantics owned by Phase H.
 
-Phase F will later add portrait/entry portal behaviour; Phase B only establishes the visual/state primitive.
+The generic renderer `is-selected` class does not override the identity-specific Atlas entry state. Direct hover/focus/press still takes precedence.
+
+Phase F will add portrait/entry portal behaviour; Phase B only establishes the visual/state primitive.
 
 ## Keyboard and reduced motion
 
@@ -115,7 +119,7 @@ Their existing direct hit-target and focus semantics remain intact. When Work pr
 
 This phase intentionally does not move nodes.
 
-Canonical coordinates remain owned by the graph/geometry layer. Phase C should add a distinct ephemeral dynamics owner for:
+Canonical coordinates remain owned by the graph/geometry layer. Phase C adds a distinct ephemeral dynamics owner for:
 
 - interaction offset;
 - spring velocity;
@@ -126,12 +130,13 @@ Canonical coordinates remain owned by the graph/geometry layer. Phase C should a
 
 ## Regression coverage
 
-`tests/graph-feel.spec.js` now verifies:
+`tests/graph-feel.spec.js` verifies:
 
 - pointer → canonical `hovered` state;
 - keyboard → canonical `focused` state;
 - semantic relation nodes receive `related` halo state;
-- root uses `entry-ready` + two-ring `root-entry` halo;
+- Atlas root uses `entry-ready` + two-ring `root-entry` halo;
+- expanded Overview root does not leak `entry-ready` / `root-entry`;
 - halo refresh is idempotent;
 - transition state overrides direct interaction and settles cleanly;
 - previous graph-feel compatibility behaviour still works;
@@ -146,7 +151,7 @@ Canonical coordinates remain owned by the graph/geometry layer. Phase C should a
 - [x] reusable HaloRenderer
 - [x] hover/focus/active/selected/transition states
 - [x] semantic relationship response
-- [x] root halo state
+- [x] Atlas-specific root halo state
 - [x] keyboard equivalent
 - [x] reduced-motion equivalent
 - [x] no canonical geometry changes
@@ -154,6 +159,6 @@ Canonical coordinates remain owned by the graph/geometry layer. Phase C should a
 
 ### Experiential
 
-The interaction layer now supports materially distinct direct, related, selected and root states instead of treating every node as a static SVG control with one generic hover ring.
+The interaction layer supports materially distinct direct, related, selected and Atlas-entry root states instead of treating every node as a static SVG control with one generic hover ring.
 
-Phase C is still required for true local spatial pressure/materiality; Phase B deliberately does not claim that displacement/physics acceptance yet.
+Phase C remains the owner of true local spatial pressure/materiality; Phase B deliberately does not claim displacement/physics ownership.

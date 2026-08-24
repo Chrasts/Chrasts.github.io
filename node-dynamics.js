@@ -56,7 +56,9 @@
   });
   const liveNodes = () => [...(root?.querySelectorAll('.site-graph-node[data-node-id]') || [])]
     .filter(node => !node.closest('.v9-transition-overlay'));
-  const introOwned = () => ['pending', 'running'].includes(document.documentElement?.dataset.profileIntro || '');
+  const introOwned = () =>
+    ['pending', 'preparing', 'running'].includes(document.documentElement?.dataset.profileIntro || '') ||
+    document.body?.classList.contains('is-atlas-reveal');
   const blocked = () => Boolean(
     reducedMotion.matches ||
     suspended ||

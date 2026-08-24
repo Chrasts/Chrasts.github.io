@@ -1,6 +1,6 @@
 # V3.1 Phase D — Camera and 2.5D
 
-Status: implementation candidate
+Status: reviewed implementation
 
 Primary specification: V3.1 Phase D plus the roadmap's 2.5D / Camera 2.0 sections. The supplement retains the semantic depth-channel and camera-action vocabulary.
 
@@ -71,6 +71,7 @@ Current mapping:
 - graph decorations → graph base;
 - normal nodes → graph base;
 - selected / previewed / directly active nodes → graph active;
+- halo primitives inherit the depth channel of their owning node;
 - composed scene objects → scene object / scene active;
 - focused artifact surfaces → focus;
 - inspector / graph controls → HUD.
@@ -84,9 +85,9 @@ The live graph keeps its canonical 2D coordinates.
 During a semantic camera move, the three stable SVG layer groups receive very small differential transforms:
 
 ```text
-edges       ≈ 0.30 × camera-derived parallax
- decorations ≈ 0.58 × camera-derived parallax
- nodes       ≈ 0.86 × camera-derived parallax
+edges        ≈ 0.30 × camera-derived parallax
+decorations  ≈ 0.58 × camera-derived parallax
+nodes        ≈ 0.86 × camera-derived parallax
 ```
 
 The active node's canonical graph transform is untouched.
@@ -179,9 +180,9 @@ The layer immediately yields to structural owners during:
 - graph route transitions;
 - cross-link travel;
 - Atlas handoff;
-- intro ownership.
+- V3.1 entry preparation and live Atlas reveal.
 
-This preserves the central transition-ownership model.
+The intro ownership check covers `pending`, `preparing`, `running` and the explicit `is-atlas-reveal` presentation state. This prevents the camera materiality spring from competing with Phase E's reveal choreography.
 
 Phase J can later integrate semantic camera motion into ordinary graph navigation without rewriting Phase D.
 
@@ -211,13 +212,16 @@ The materiality layer:
 
 1. one upgraded semantic camera API over the existing adapter;
 2. deterministic semantic depth channels;
-3. differential parallax during INSPECT;
-4. no canonical node-coordinate mutation;
-5. clean settle to zero presentation residue;
-6. in-flight semantic retargeting;
-7. Atlas use of the same semantic layer;
-8. active-node foreground depth;
-9. reduced-motion semantic equivalence.
+3. actual `.site-graph-halo` primitives inherit active-node depth;
+4. differential parallax during INSPECT;
+5. no canonical node-coordinate mutation;
+6. clean settle to zero presentation residue;
+7. in-flight semantic retargeting;
+8. Atlas use of the same semantic layer;
+9. active-node foreground depth;
+10. reduced-motion semantic equivalence.
+
+The Phase E intro regression suite verifies that camera materiality reports intro blocking and does not start a 2.5D response while the entry sequence owns motion.
 
 Existing camera-composition tests remain regression guards for exact safe-frame, inspect, make-room, peek and return behaviour.
 

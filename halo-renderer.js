@@ -55,7 +55,7 @@
     }
 
     existing.slice(required).forEach(ring => ring.remove());
-    if (!node.dataset.haloState) node.dataset.haloState = isRoot ? 'root-entry' : 'idle';
+    if (!node.dataset.haloState) node.dataset.haloState = 'idle';
     return existing.slice(0, required);
   };
 

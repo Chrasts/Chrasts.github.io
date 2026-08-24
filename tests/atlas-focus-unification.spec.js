@@ -155,9 +155,10 @@ test.describe('V3.1 Phase I Atlas / Focus unification', () => {
 });
 
 test.describe('V3.1 Phase I reduced motion', () => {
-  test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+  test.use({ viewport: { width: 1440, height: 900 } });
 
   test('keeps the same anchor and route semantics without a bridge flight', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await bypassIntro(page);
     await page.goto('/#atlas');
     await waitReady(page);

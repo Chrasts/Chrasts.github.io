@@ -340,8 +340,16 @@
     adaptEdges();
     frameCount += 1;
 
-    if (settleExact()) frame = requestAnimationFrame(tick);
-    else lastTime = 0;
+    if (settleExact()) {
+      frame = requestAnimationFrame(tick);
+      return;
+    }
+
+    if (!activeId) {
+      records.forEach(restoreNode);
+      restoreEdges();
+    }
+    lastTime = 0;
   };
 
   function wake() {

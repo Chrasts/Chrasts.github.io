@@ -2,12 +2,13 @@
   if (window.ProfileCameraComposition) return;
 
   const scene = window.ProfileScene;
-  const geometry = window.ProfileGeometry;
-  if (!scene?.camera || !geometry) return;
+  if (!scene?.camera) return;
 
   let booted = false;
   let sequence = 0;
   let lastFocus = null;
+  let bootFrame = 0;
+  let bootAttempts = 0;
 
   const graphSvg = () => document.querySelector('#site-graph .site-graph-svg');
   const visible = element => Boolean(element && !element.hidden && element.getClientRects().length);
@@ -52,14 +53,20 @@
     const minWidth = Math.min(520, rect.width * .46);
     const minHeight = Math.min(380, rect.height * .48);
     if (right - left < minWidth) {
-      const centre = rect.left + rect.width / 2;
-      left = Math.max(rect.left + gap, centre - minWidth / 2);
-      right = Math.min(rect.right - gap, left + minWidth);
+      if (reserved.some(item => item.side === 'right') && !reserved.some(item => item.side === 'left')) {
+        left = rect.left + gap;
+        right = Math.min(rect.right - gap, left + minWidth);
+      } else if (reserved.some(item => item.side === 'left') && !reserved.some(item => item.side === 'right')) {
+        right = rect.right - gap;
+        left = Math.max(rect.left + gap, right - minWidth);
+      } else {
+        const centre = rect.left + rect.width / 2;
+        left = Math.max(rect.left + gap, centre - minWidth / 2);
+        right = Math.min(rect.right - gap, left + minWidth);
+      }
     }
     if (bottom - top < minHeight) {
-      const centre = rect.top + rect.height / 2;
-      top = Math.max(rect.top + gap, centre - minHeight / 2);
-      bottom = Math.min(rect.bottom - gap, top + minHeight);
+      top = Math.max(rect.top + gap, bottom - minHeight);
     }
 
     return {
@@ -77,11 +84,12 @@
 
   const focusAtlasNode = (nodeOrId, options = {}) => {
     const atlas = window.ProfileAtlasLOD;
+    const geometry = window.ProfileGeometry;
     const svg = graphSvg();
     const id = typeof nodeOrId === 'string' ? nodeOrId : nodeOrId?.id || nodeOrId?.dataset?.nodeId;
-    const point = id ? geometry.atlasPoint?.(id) : null;
+    const point = id ? geometry?.atlasPoint?.(id) : null;
     const frame = safeFrame();
-    if (!atlas || !svg || !point || !frame || document.body.dataset.graphMode !== 'atlas') return false;
+    if (!atlas || !geometry || !svg || !point || !frame || document.body.dataset.graphMode !== 'atlas') return false;
 
     const viewBox = svg.viewBox?.baseVal;
     const rect = svg.getBoundingClientRect();
@@ -106,6 +114,7 @@
 
   const snapshotState = () => ({
     sequence,
+    booted,
     mode: document.body.dataset.graphMode || 'overview',
     route: document.body.dataset.graphRoute || 'overview',
     safeFrame: safeFrame(),
@@ -115,7 +124,7 @@
   const boot = () => {
     if (booted) return true;
     const atlasBase = scene.camera.adapters?.get?.('atlas');
-    if (!atlasBase || !window.ProfileAtlasLOD) return false;
+    if (!atlasBase || !window.ProfileAtlasLOD || !window.ProfileGeometry) return false;
 
     scene.camera.registerAdapter('atlas', {
       ...atlasBase,
@@ -123,22 +132,29 @@
       serialize: () => ({ ...atlasBase.serialize?.(), composition: safeFrame() })
     });
     booted = true;
+    cancelAnimationFrame(bootFrame);
+    bootFrame = 0;
     window.dispatchEvent(new CustomEvent('profile:camera-composition-ready', { detail: snapshotState() }));
     return true;
   };
 
-  window.addEventListener('load', boot, { once: true });
+  const ensureBoot = () => {
+    if (boot()) return;
+    if (bootAttempts++ > 300) return;
+    cancelAnimationFrame(bootFrame);
+    bootFrame = requestAnimationFrame(ensureBoot);
+  };
+
+  window.addEventListener('load', ensureBoot, { once: true });
   window.addEventListener('profile:scene-state', () => {
-    boot();
+    ensureBoot();
     window.dispatchEvent(new CustomEvent('profile:camera-safe-frame', { detail: snapshotState() }));
   });
   window.addEventListener('profile:scene-composition', () => {
+    ensureBoot();
     window.dispatchEvent(new CustomEvent('profile:camera-safe-frame', { detail: snapshotState() }));
   });
 
-  /* Replace only the second activation of an already selected Atlas node. The
-     first click keeps Phase 7 selection semantics. The second uses the composed
-     safe frame instead of the geometric centre of the full SVG. */
   window.addEventListener('click', event => {
     if (!booted || document.body.dataset.graphMode !== 'atlas' || event.button !== 0) return;
     const node = event.target.closest?.('#site-graph .site-graph-node.is-previewed[data-node-id]');
@@ -163,5 +179,5 @@
     boot,
     snapshot: snapshotState
   });
-  boot();
+  ensureBoot();
 })();

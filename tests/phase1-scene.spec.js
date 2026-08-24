@@ -10,12 +10,14 @@ const settle = async page => {
 
 const boot = async page => {
   await page.addInitScript(() => sessionStorage.setItem('profileIntroSeen', 'true'));
-  await page.route('https://cloud.umami.is/**', route => route.abort());
+  await page.route('https://cloud.umami.is/**', response => response.abort());
   await page.goto('/#overview');
   await page.waitForFunction(() => Boolean(window.ProfileScene?.manager));
   await page.waitForFunction(() => Boolean(window.ProfileRootLanding));
+  await page.waitForFunction(() => Boolean(window.ProfileRootOverview));
   await page.waitForFunction(() => Boolean(document.body.dataset.graphMode));
   await page.waitForFunction(() => Boolean(document.querySelector('#site-graph .site-graph-svg')));
+  await page.waitForFunction(() => document.body.dataset.rootLanding === 'false');
   await settle(page);
   await page.waitForFunction(() => window.ProfileScene.manager.snapshot().objects.length >= 5);
 };
@@ -60,22 +62,32 @@ test.describe('Phase 1 scene architecture — desktop', () => {
       expect(definition.desktop).toBe(true);
       expect(definition.mobile).toBe(true);
     }
+
+    const profileRoot = registry.find(item => item.id === 'profile-root-brief');
+    expect(profileRoot).toBeTruthy();
+    expect(profileRoot.hasVisible).toBe(true);
+    expect(profileRoot.hasPlacement).toBe(true);
   });
 
-  test('overview exposes desktop scene composition without changing graph semantics', async ({ page }) => {
+  test('overview exposes the practical Profile Root without changing graph semantics', async ({ page }) => {
     await boot(page);
 
     const snapshot = await page.evaluate(() => window.ProfileScene.manager.snapshot());
     expect(snapshot.variant).toBe('desktop');
     expect(snapshot.graphState.mode).toBe('overview');
     expect(snapshot.graphState.route).toBe('overview');
-    expect(snapshot.graphState.rootLanding).toBe(true);
+    expect(snapshot.graphState.rootLanding).toBe(false);
     expect(await page.evaluate(() => window.ProfileScene.camera.activeName)).toBe('desktop-local');
 
+    // The Phase 2 hero scene stays registered for first-session compatibility,
+    // but Phase H makes the graph-native Profile Root the same-session Overview.
     await expect(page.locator('.hero-copy')).toHaveAttribute('data-scene-object', 'root-profile-copy');
     await expect(page.locator('.hero-copy')).toHaveAttribute('data-scene-placement', 'identity-copy-left');
     await expect(page.locator('.hero-visual.profile-identity')).toHaveAttribute('data-scene-placement', 'identity-portrait-right');
-    await expect(page.locator('.hero')).toHaveAttribute('data-scene-visible', 'true');
+    await expect(page.locator('.hero')).toHaveAttribute('data-scene-visible', 'false');
+    await expect(page.locator('.profile-root-brief')).toHaveAttribute('data-scene-object', 'profile-root-brief');
+    await expect(page.locator('.profile-root-brief')).toHaveAttribute('data-scene-visible', 'true');
+    await expect(page.locator('.profile-root-brief')).toBeVisible();
   });
 
   test('Work and Atlas select their declared objects and camera adapters', async ({ page }) => {
@@ -142,7 +154,7 @@ test.describe('Phase 1 scene architecture — desktop', () => {
 test.describe('Phase 1 scene architecture — mobile', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
-  test('uses mobile variants while preserving the same scene object identities', async ({ page }) => {
+  test('uses mobile variants while preserving the practical root and scene object identities', async ({ page }) => {
     await boot(page);
     await page.waitForFunction(() => Boolean(window.MobileProfileScene));
     await page.waitForTimeout(120);
@@ -150,12 +162,15 @@ test.describe('Phase 1 scene architecture — mobile', () => {
     const snapshot = await page.evaluate(() => window.ProfileScene.manager.snapshot());
     expect(snapshot.variant).toBe('mobile');
     expect(snapshot.graphState.mode).toBe('overview');
-    expect(snapshot.graphState.rootLanding).toBe(true);
+    expect(snapshot.graphState.rootLanding).toBe(false);
     expect(await page.evaluate(() => window.ProfileScene.camera.activeName)).toBe('mobile-local');
 
     await expect(page.locator('.hero-copy')).toHaveAttribute('data-scene-object', 'root-profile-copy');
     await expect(page.locator('.hero-copy')).toHaveAttribute('data-scene-placement', 'identity-copy-centre');
     await expect(page.locator('.hero-visual.profile-identity')).toHaveAttribute('data-scene-placement', 'identity-portrait-top');
+    await expect(page.locator('.hero')).toHaveAttribute('data-scene-visible', 'false');
+    await expect(page.locator('.profile-root-brief')).toHaveAttribute('data-scene-visible', 'true');
+    await expect(page.locator('.profile-root-brief')).toBeVisible();
 
     await unfoldRoot(page);
     await expect(page.locator('.menu-button')).toBeVisible();

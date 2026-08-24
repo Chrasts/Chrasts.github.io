@@ -63,11 +63,30 @@ test.describe('Global fan v3 geometry', () => {
 
 test.describe('Intro source geometry', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
-  test('first-session clone is captured from fan v3', async ({ page }) => {
+  test('first-session Phase H motion originates from the canonical fan-v3 Atlas', async ({ page }) => {
     await page.addInitScript(() => { sessionStorage.removeItem('profileIntroSeen'); sessionStorage.removeItem('__phase3FreshPrepared'); });
-    await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {}); await page.goto('/');
-    await page.waitForFunction(() => window.ProfileIntroUnfold?.snapshot().completed === true, null, {timeout:8000}); await waitFan(page);
-    const p=await page.evaluate(() => { const n=id=>{const e=document.querySelector(`.profile-intro-graph .site-graph-node[data-node-id="${id}"]`);return{x:Number(e.dataset.introOriginX),y:Number(e.dataset.introOriginY)}};return{r:n('stepan-chrast'),k:n('knowledge'),e:n('education'),a:n('about'),x:n('experience'),w:n('work')}; });
-    expect(p.k.x).toBeGreaterThan(p.r.x); expect(p.e.y).toBeLessThan(p.r.y); expect(p.a.y).toBeLessThan(p.r.y); expect(p.x.x).toBeLessThan(p.r.x); expect(p.w.y).toBeGreaterThan(p.r.y);
+    await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
+    await page.goto('/');
+    await page.waitForFunction(() => Boolean(window.ProfileIntro?.__phaseH && window.ProfileIntro.snapshot().running && document.querySelector('#site-graph .phase-h-node-motion')), null, {timeout:8000});
+    await waitFan(page);
+
+    const positions = await page.evaluate(() => {
+      const geometry = window.ProfileGeometry;
+      const read = id => {
+        const element = document.querySelector(`#site-graph .site-graph-node[data-node-id="${id}"]`);
+        const canonical = geometry.atlasPoint(id);
+        return {
+          x: Number(element.dataset.x), y: Number(element.dataset.y),
+          expectedX: canonical.x, expectedY: canonical.y
+        };
+      };
+      return Object.fromEntries(['stepan-chrast','knowledge','education','about','experience','work'].map(id => [id, read(id)]));
+    });
+
+    Object.values(positions).forEach(value => {
+      expect(Math.hypot(value.x - value.expectedX, value.y - value.expectedY)).toBeLessThan(2);
+    });
+    const r=positions['stepan-chrast'], k=positions.knowledge, e=positions.education, a=positions.about, x=positions.experience, w=positions.work;
+    expect(k.x).toBeGreaterThan(r.x); expect(e.y).toBeLessThan(r.y); expect(a.y).toBeLessThan(r.y); expect(x.x).toBeLessThan(r.x); expect(w.y).toBeGreaterThan(r.y);
   });
 });

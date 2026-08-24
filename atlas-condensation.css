@@ -1,0 +1,96 @@
+/* V3.1 Phase G — semantic Atlas condensation. */
+
+body.is-atlas-condensing #site-graph .site-graph-svg{
+  pointer-events:none;
+  cursor:progress
+}
+
+body.is-atlas-condensing #atlas-controls,
+body.is-atlas-condensing .atlas-controls{
+  pointer-events:none!important;
+  opacity:.42!important;
+  transition:opacity .18s ease
+}
+
+body.is-atlas-condensing #site-graph .atlas-territory-label-layer{
+  opacity:0!important;
+  transition:opacity .24s ease!important
+}
+
+#site-graph .atlas-condense-motion{
+  transform-box:view-box;
+  transform-origin:0 0;
+  will-change:transform,opacity
+}
+
+body.is-atlas-condensing #site-graph .site-graph-node[data-condense-progress] > .site-graph-halo{
+  transform-box:fill-box;
+  transform-origin:center;
+  will-change:transform,opacity
+}
+
+body.is-atlas-condensing #site-graph .site-graph-node.is-condense-parent .site-graph-dot{
+  scale:calc(1 + var(--condense-parent-mass,0) * .052)!important;
+  filter:brightness(calc(1 + var(--condense-parent-mass,0) * .10));
+  transition:filter .08s linear!important
+}
+
+body.is-atlas-condensing #site-graph .site-graph-node.is-condense-parent > .site-graph-halo--primary{
+  opacity:calc(.34 + var(--condense-parent-mass,0) * .36)!important;
+  stroke-width:calc(1.25px + var(--condense-parent-mass,0) * .8px)!important
+}
+
+body.is-atlas-condensing #site-graph .site-graph-node.is-condense-parent > .site-graph-halo--secondary{
+  opacity:calc(.12 + var(--condense-parent-mass,0) * .22)!important
+}
+
+body.is-atlas-condensing #site-graph .site-graph-node.is-condense-absorbed{
+  pointer-events:none
+}
+
+body.is-atlas-condensing #site-graph .site-graph-edges path[data-condense-primary="true"]{
+  stroke-linecap:round;
+  transition:none!important
+}
+
+body.is-atlas-condensing #site-graph .site-graph-edges path[data-condense-context="true"]{
+  transition:none!important
+}
+
+body.is-atlas-condensation-committing #site-graph .atlas-condense-motion{
+  pointer-events:none
+}
+
+body.is-atlas-condensing #site-graph .site-graph-node[data-node-id="stepan-chrast"].is-root-entry-entering > .root-entry-portrait{
+  opacity:1!important;
+  transform:scale(1)!important;
+  filter:saturate(.94) contrast(1.03)!important
+}
+
+body.is-atlas-condensing #site-graph .site-graph-node[data-node-id="stepan-chrast"].is-root-entry-entering > .root-entry-action{
+  opacity:.18!important;
+  pointer-events:none!important
+}
+
+body.is-atlas-condensing #site-graph .site-graph-node[data-node-id="stepan-chrast"].is-condense-parent > .root-entry-portrait{
+  scale:calc(1 + var(--condense-parent-mass,0) * .035);
+  transform-origin:center
+}
+
+@media(max-width:900px),(pointer:coarse){
+  body.is-atlas-condensing #atlas-controls,
+  body.is-atlas-condensing .atlas-controls{
+    opacity:.28!important
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  body.is-atlas-condensing #site-graph .atlas-condense-motion,
+  body.is-atlas-condensing #site-graph .site-graph-node,
+  body.is-atlas-condensing #site-graph .site-graph-halo,
+  body.is-atlas-condensing #site-graph .site-graph-dot,
+  body.is-atlas-condensing #site-graph .atlas-territory-label-layer{
+    transition:none!important;
+    animation:none!important
+  }
+}

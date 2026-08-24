@@ -99,6 +99,7 @@
   ensureStylesheet('camera-materiality.css', 'data-profile-camera-materiality-style');
   ensureStylesheet('intro-fixes-v3.css', 'data-profile-intro-fixes-v3-style');
   ensureStylesheet('root-entry-portal.css', 'data-profile-root-entry-portal-style');
+  ensureStylesheet('atlas-condensation.css', 'data-profile-atlas-condensation-style');
   prepareRootLandingDom();
 
   document.body.dataset.rootLanding = initialRootLanding ? 'true' : 'false';
@@ -136,7 +137,7 @@
     variants: { desktop: { placement: 'inspector-right', enter: 'inspector-in', exit: 'inspector-out' }, mobile: { placement: 'detail-sheet', enter: 'sheet-in', exit: 'sheet-out' } }
   });
 
-  scene.manager.scheduleRefresh('v3-1-root-entry-definitions');
+  scene.manager.scheduleRefresh('v3-1-atlas-condensation-definitions');
 
   const ensureScript = (src, marker) => {
     if (document.querySelector(`script[${marker}]`)) return;
@@ -162,4 +163,5 @@
   ensureScript('intro-fixes-v3.js', 'data-profile-intro-fixes-v3');
   ensureScript('intro-atlas-reveal.js', 'data-profile-intro-atlas-reveal');
   ensureScript('root-entry-portal.js', 'data-profile-root-entry-portal');
+  ensureScript('atlas-condensation.js', 'data-profile-atlas-condensation');
 })();

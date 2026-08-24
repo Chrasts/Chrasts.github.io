@@ -10,7 +10,7 @@
     overview: Object.freeze({ influenceRadius: 260, maxDisplacement: 22, activeScale: 1.055, relatedScale: .014 }),
     focus: Object.freeze({ influenceRadius: 220, maxDisplacement: 18, activeScale: 1.052, relatedScale: .012 }),
     work: Object.freeze({ influenceRadius: 175, maxDisplacement: 13, activeScale: 1.045, relatedScale: .010 }),
-    atlas: Object.freeze({ influenceRadius: 140, maxDisplacement: 10, activeScale: 1.038, relatedScale: .008 })
+    atlas: Object.freeze({ influenceRadius: 210, maxDisplacement: 10, activeScale: 1.038, relatedScale: .008 })
   });
   const SPRING = Object.freeze({ stiffness: 70, damping: 16.5, maxVelocity: 110 });
   const SCALE_SPRING = Object.freeze({ stiffness: 92, damping: 19, maxVelocity: 1.1 });
@@ -56,11 +56,12 @@
   });
   const liveNodes = () => [...(root?.querySelectorAll('.site-graph-node[data-node-id]') || [])]
     .filter(node => !node.closest('.v9-transition-overlay'));
+  const introOwned = () => ['pending', 'running'].includes(document.documentElement?.dataset.profileIntro || '');
   const blocked = () => Boolean(
     reducedMotion.matches ||
     suspended ||
     document.body?.classList.contains('is-v9-transitioning') ||
-    document.documentElement?.dataset.profileIntro === 'running'
+    introOwned()
   );
 
   const stableAngle = value => {
@@ -382,6 +383,7 @@
     }, true);
 
     mutationObserver = new MutationObserver(mutations => {
+      if (introOwned()) return;
       if (mutations.some(mutation => mutation.type === 'childList')) {
         hardReset({ restore: false });
         syncRecords();
@@ -398,8 +400,8 @@
     window.addEventListener('profile:transition-cancel', resume);
 
     const environmentChanged = () => {
-      if (document.documentElement.dataset.profileIntro === 'running' || document.body.classList.contains('is-v9-transitioning')) {
-        if (!suspended) suspend(document.documentElement.dataset.profileIntro === 'running' ? 'intro' : 'transition');
+      if (introOwned() || document.body.classList.contains('is-v9-transitioning')) {
+        if (!suspended) suspend(introOwned() ? 'intro' : 'transition');
       } else if (suspended && suspensionReason === 'intro') {
         resume();
       }
@@ -408,6 +410,7 @@
     environmentObserver = new MutationObserver(environmentChanged);
     environmentObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-profile-intro'] });
     environmentObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    environmentChanged();
 
     return true;
   };

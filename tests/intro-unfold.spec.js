@@ -41,14 +41,14 @@ test.describe('V3.1 entry retirement guards', () => {
   });
 });
 
-test.describe('Bypassed Overview identity remains compatible until the V3.1 root phases replace it', () => {
+test.describe('Phase H practical Overview preserves root inspector geometry', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('clicking the expanded Štěpán node still opens profile info without reorganising the Overview', async ({ page }) => {
+  test('clicking the expanded Štěpán node opens profile info without reorganising the five-branch Overview', async ({ page }) => {
     await bypass(page);
     await page.goto('/#overview');
-    await page.waitForFunction(() => Boolean(window.ProfileRootLanding && window.ProfileIntroFixesV3));
-    await page.evaluate(() => window.ProfileRootLanding.activate({ focusGraph: false }));
+    await page.waitForFunction(() => Boolean(window.ProfileRootLanding && window.ProfileIntroFixesV3 && window.ProfileRootOverview));
+    await page.waitForFunction(() => window.ProfileRootOverview.snapshot().visible === true);
     await page.waitForFunction(() => document.body.dataset.globalCompass === 'fan-v3');
 
     const ids = ['work', 'knowledge', 'education', 'about', 'experience'];

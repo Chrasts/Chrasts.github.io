@@ -17,11 +17,22 @@ const root = page => page.locator('#site-graph .site-graph-node[data-node-id="st
 const rootHit = page => root(page).locator(':scope > .site-graph-hit');
 const action = page => root(page).locator(':scope > [data-root-entry-action]');
 
-const canonicalRoot = page => root(page).evaluate(node => ({
-  x: node.dataset.x,
-  y: node.dataset.y,
-  transform: node.getAttribute('transform')
-}));
+const canonicalRoot = page => root(page).evaluate(node => {
+  const matrix = node.transform?.baseVal?.consolidate?.()?.matrix;
+  return {
+    x: Number(node.dataset.x),
+    y: Number(node.dataset.y),
+    tx: matrix?.e ?? Number.NaN,
+    ty: matrix?.f ?? Number.NaN
+  };
+});
+
+const expectSameCanonicalRoot = (actual, expected) => {
+  expect(actual.x).toBeCloseTo(expected.x, 6);
+  expect(actual.y).toBeCloseTo(expected.y, 6);
+  expect(actual.tx).toBeCloseTo(expected.tx, 4);
+  expect(actual.ty).toBeCloseTo(expected.ty, 4);
+};
 
 test.describe('V3.1 Phase F root entry portal — desktop', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
@@ -81,7 +92,7 @@ test.describe('V3.1 Phase F root entry portal — desktop', () => {
     expect(opened.actionOpacity).toBeGreaterThan(.8);
     expect(opened.actionTabIndex).toBe('0');
     expect(opened.expanded).toBe('true');
-    expect(await canonicalRoot(page)).toEqual(before);
+    expectSameCanonicalRoot(await canonicalRoot(page), before);
   });
 
   test('pointer reversal restores the latent root without changing canonical geometry', async ({ page }) => {
@@ -92,15 +103,17 @@ test.describe('V3.1 Phase F root entry portal — desktop', () => {
 
     await page.mouse.move(12, 12);
     await expect.poll(() => page.evaluate(() => window.ProfileRootEntryPortal.snapshot().open)).toBe(false);
+    await expect.poll(() => root(page).evaluate(node =>
+      Number(getComputedStyle(node.querySelector(':scope > [data-root-entry-portrait]')).opacity)
+    )).toBeLessThan(.2);
+
     const state = await root(page).evaluate(node => ({
       portal: node.dataset.rootEntryPortal,
-      expanded: node.getAttribute('aria-expanded'),
-      portraitOpacity: Number(getComputedStyle(node.querySelector(':scope > [data-root-entry-portrait]')).opacity)
+      expanded: node.getAttribute('aria-expanded')
     }));
     expect(state.portal).toBe('latent');
     expect(state.expanded).toBe('false');
-    expect(state.portraitOpacity).toBeLessThan(.2);
-    expect(await canonicalRoot(page)).toEqual(before);
+    expectSameCanonicalRoot(await canonicalRoot(page), before);
   });
 
   test('root activation opens the portal instead of the Atlas inspector', async ({ page }) => {

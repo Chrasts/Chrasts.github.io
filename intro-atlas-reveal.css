@@ -55,6 +55,19 @@ body.is-atlas-reveal #site-graph .site-graph-node.is-intro-label-revealed .site-
   opacity:1!important
 }
 
+/* Phase E owns the Atlas territory-label layer until the semantic label wave.
+   Far/medium Atlas LOD intentionally hides ordinary territory-node labels, so
+   the dedicated LOD label layer is the canonical readable territory surface. */
+body.is-atlas-reveal #site-graph .atlas-territory-label-layer{
+  opacity:0!important;
+  transition:opacity .48s ease
+}
+body.is-atlas-reveal[data-atlas-reveal-stage="labels"] #site-graph .atlas-territory-label-layer,
+body.is-atlas-reveal[data-atlas-reveal-stage="crosslinks"] #site-graph .atlas-territory-label-layer,
+body.is-atlas-reveal[data-atlas-reveal-stage="settle"] #site-graph .atlas-territory-label-layer{
+  opacity:1!important
+}
+
 body.is-atlas-reveal #site-graph .site-graph-edges path[data-intro-edge-wave]{
   opacity:.025!important;
   stroke-dasharray:var(--intro-edge-length,1) var(--intro-edge-length,1)!important;
@@ -137,6 +150,7 @@ body.is-atlas-reveal[data-atlas-reveal-stage="settle"] #site-graph .site-graph-n
   body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave] .site-graph-label,
   body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave] .site-graph-meta,
   body.is-atlas-reveal #site-graph .site-graph-edges path[data-intro-edge-wave],
+  body.is-atlas-reveal #site-graph .atlas-territory-label-layer,
   .atlas-reveal-skip{
     transition:none!important
   }

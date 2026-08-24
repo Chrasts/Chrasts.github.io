@@ -3,12 +3,8 @@
     const style = document.createElement('style');
     style.dataset.phaseHPointerGuard = 'true';
     style.textContent = [
-      'body.is-profile-intro-v2[data-phase-h-intro-stage="condensing"] #site-graph .site-graph-node[data-phase-h-tier="cluster"],',
-      'body.is-profile-intro-v2[data-phase-h-intro-stage="condensing"] #site-graph .site-graph-node[data-phase-h-tier="cluster"] *,',
-      'body.is-profile-intro-v2[data-phase-h-intro-stage="condensing"] #site-graph .site-graph-node[data-phase-h-tier="deep"],',
-      'body.is-profile-intro-v2[data-phase-h-intro-stage="condensing"] #site-graph .site-graph-node[data-phase-h-tier="deep"] *,',
-      'body.is-profile-intro-v2[data-phase-h-intro-stage="five-branches"] #site-graph .site-graph-node:not([data-phase-h-tier="root"]):not([data-phase-h-tier="section"]),',
-      'body.is-profile-intro-v2[data-phase-h-intro-stage="five-branches"] #site-graph .site-graph-node:not([data-phase-h-tier="root"]):not([data-phase-h-tier="section"]) *{pointer-events:none!important}'
+      'body.is-profile-intro-v2 #site-graph .site-graph-node:not([data-node-id="stepan-chrast"]):not([data-node-id="work"]):not([data-node-id="knowledge"]):not([data-node-id="experience"]):not([data-node-id="education"]):not([data-node-id="about"]),',
+      'body.is-profile-intro-v2 #site-graph .site-graph-node:not([data-node-id="stepan-chrast"]):not([data-node-id="work"]):not([data-node-id="knowledge"]):not([data-node-id="experience"]):not([data-node-id="education"]):not([data-node-id="about"]) *{pointer-events:none!important}'
     ].join('');
     document.head.appendChild(style);
   }

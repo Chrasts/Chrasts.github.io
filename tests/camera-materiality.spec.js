@@ -37,6 +37,7 @@ test.describe('V3.1 Phase D camera + 2.5D', () => {
     const state = await page.evaluate(() => {
       const camera = window.ProfileCameraComposition;
       const materiality = window.ProfileCameraMateriality.snapshot();
+      const active = document.querySelector('#site-graph .site-graph-node[data-node-id="hedgehog-house"]');
       return {
         adapter: window.ProfileScene.camera.activeName,
         upgraded: camera.__camera25d,
@@ -45,7 +46,9 @@ test.describe('V3.1 Phase D camera + 2.5D', () => {
         depth: camera.DEPTH,
         materialityDepth: materiality.depthChannels,
         layers: [...document.querySelectorAll('#site-graph .site-graph-edges,#site-graph .site-graph-decorations,#site-graph .site-graph-nodes')]
-          .map(element => element.dataset.depthChannel)
+          .map(element => element.dataset.depthChannel),
+        activeNodeDepth: active?.dataset.depthChannel,
+        activeHaloDepths: [...(active?.querySelectorAll(':scope > .site-graph-halo') || [])].map(ring => ring.dataset.depthChannel)
       };
     });
 
@@ -54,6 +57,9 @@ test.describe('V3.1 Phase D camera + 2.5D', () => {
     expect(state.methods).toHaveLength(11);
     expect(state.depth).toEqual(state.materialityDepth);
     expect(state.layers).toEqual(['DEPTH_BACKGROUND', 'DEPTH_GRAPH_BASE', 'DEPTH_GRAPH_BASE']);
+    expect(state.activeNodeDepth).toBe('DEPTH_GRAPH_ACTIVE');
+    expect(state.activeHaloDepths.length).toBeGreaterThan(0);
+    expect(state.activeHaloDepths.every(depth => depth === 'DEPTH_GRAPH_ACTIVE')).toBe(true);
   });
 
   test('INSPECT produces differential parallax without mutating canonical node geometry and settles cleanly', async ({ page }) => {

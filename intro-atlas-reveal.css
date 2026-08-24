@@ -2,6 +2,12 @@
    V3.1 Phase E — live Atlas reveal
    ========================================================================== */
 
+html[data-profile-intro="preparing"] body > .site-header,
+html[data-profile-intro="preparing"] body > footer{
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important
+}
 html[data-profile-intro="pending"] .hero,
 html[data-profile-intro="preparing"] .hero{
   opacity:0!important;
@@ -78,7 +84,7 @@ body.is-atlas-reveal #atlas-controls{
   pointer-events:none!important;
   transition:opacity .45s ease
 }
-body.is-atlas-ready #atlas-controls{
+body.is-atlas-ready[data-graph-mode="atlas"] #atlas-controls{
   opacity:1!important;
   pointer-events:auto!important
 }

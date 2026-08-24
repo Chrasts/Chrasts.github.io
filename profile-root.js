@@ -15,6 +15,7 @@
   let globalQuickTrigger = null;
   let quickDialog = null;
   let lastFocus = null;
+  let pendingFocusRestore = null;
   let bootFrame = 0;
   let bootAttempts = 0;
   let legacyRetiredByPhaseH = false;
@@ -118,6 +119,7 @@
 
     const quick = element('button', 'profile-root-action profile-root-quick-trigger', 'Quick overview');
     quick.type = 'button';
+    quick.setAttribute('aria-haspopup', 'dialog');
     quick.addEventListener('click', () => openQuickOverview('profile-root'));
     actions.appendChild(quick);
 
@@ -147,6 +149,16 @@
     const item = element('div', 'quick-overview-fact');
     item.append(element('dt', '', label), element('dd', '', value));
     container.appendChild(item);
+  };
+
+  const restoreQuickFocus = () => {
+    const target = pendingFocusRestore;
+    pendingFocusRestore = null;
+    lastFocus = null;
+    if (!target?.isConnected) return;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      target.focus?.({ preventScroll: true });
+    }));
   };
 
   const ensureQuickDialog = () => {
@@ -238,8 +250,7 @@
     });
     quickDialog.addEventListener('close', () => {
       document.body.classList.remove('is-quick-overview-open');
-      lastFocus?.focus?.({ preventScroll: true });
-      lastFocus = null;
+      restoreQuickFocus();
     });
     quickDialog.addEventListener('click', event => {
       if (event.target === quickDialog) closeQuickOverview('backdrop');
@@ -254,6 +265,7 @@
     lastFocus = document.activeElement instanceof HTMLElement
       ? document.activeElement
       : (globalQuickTrigger || brief?.querySelector('.profile-root-quick-trigger'));
+    pendingFocusRestore = null;
     if (!dialog.open) dialog.showModal();
     document.body.classList.add('is-quick-overview-open');
     scene.manager.setObjectState('profile-quick-overview', { open: true, source });
@@ -263,6 +275,9 @@
 
   function closeQuickOverview(reason = 'api') {
     if (!quickDialog?.open) return false;
+    const shouldRestoreFocus = !['route', 'context-change'].includes(reason);
+    pendingFocusRestore = shouldRestoreFocus ? lastFocus : null;
+    if (!shouldRestoreFocus) lastFocus = null;
     quickDialog.close(reason);
     scene.manager.setObjectState('profile-quick-overview', { open: false, reason });
     return true;
@@ -287,7 +302,7 @@
         id: 'profile-quick-trigger',
         selector: '.quick-overview-global-trigger',
         managedVisibility: false,
-        visible: () => quickAvailable(),
+        visible: () => quickAvailable() && !overviewActive(),
         anchorNodeId: rootId,
         placement: 'profile-utility',
         composition: { zone: 'unmanaged', role: 'profile-utility' },
@@ -339,7 +354,7 @@
 
     const profileVisible = overviewActive();
     if (brief) brief.hidden = !profileVisible;
-    if (globalQuickTrigger) globalQuickTrigger.hidden = !quickAvailable();
+    if (globalQuickTrigger) globalQuickTrigger.hidden = !quickAvailable() || profileVisible;
     document.body.classList.toggle('is-profile-root-ready', profileVisible);
     if (!quickAvailable() && quickDialog?.open) closeQuickOverview('context-change');
     scene.manager.scheduleRefresh(`profile-root:${reason}`);

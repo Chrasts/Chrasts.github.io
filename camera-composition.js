@@ -4,15 +4,26 @@
   const scene = window.ProfileScene;
   if (!scene?.camera) return;
 
+  const PRESETS = Object.freeze({
+    MAKE_ROOM: 'MAKE_ROOM',
+    INSPECT: 'INSPECT',
+    PEEK: 'PEEK',
+    RETURN: 'RETURN'
+  });
+
   let booted = false;
   let sequence = 0;
+  let operation = 0;
   let lastFocus = null;
+  let activePreset = null;
   let bootFrame = 0;
   let bootAttempts = 0;
+  const memory = new Map();
 
   const graphSvg = () => document.querySelector('#site-graph .site-graph-svg');
   const visible = element => Boolean(element && !element.hidden && element.getClientRects().length);
   const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
+  const routeKey = slot => `${document.body.dataset.graphMode || 'overview'}:${document.body.dataset.graphRoute || 'overview'}:${slot}`;
 
   const safeFrame = () => {
     const svg = graphSvg();
@@ -65,9 +76,7 @@
         right = Math.min(rect.right - gap, left + minWidth);
       }
     }
-    if (bottom - top < minHeight) {
-      top = Math.max(rect.top + gap, bottom - minHeight);
-    }
+    if (bottom - top < minHeight) top = Math.max(rect.top + gap, bottom - minHeight);
 
     return {
       left,
@@ -80,6 +89,33 @@
       centerY: (top + bottom) / 2,
       reserved
     };
+  };
+
+  const atlasState = () => {
+    const snapshot = window.ProfileAtlasLOD?.snapshot?.() || {};
+    const camera = snapshot.targetCamera || snapshot.camera;
+    if (!camera || !Number.isFinite(camera.scale)) return null;
+    return { x: camera.x, y: camera.y, scale: camera.scale };
+  };
+
+  const remember = (slot, state = atlasState()) => {
+    if (!state) return false;
+    memory.set(routeKey(slot), { ...state });
+    return true;
+  };
+
+  const recalled = slot => {
+    const state = memory.get(routeKey(slot));
+    return state ? { ...state } : null;
+  };
+
+  const applyAtlasState = (state, options = {}) => {
+    const atlas = window.ProfileAtlasLOD;
+    if (!atlas || !state) return false;
+    const immediate = Boolean(options.immediate);
+    atlas.setScale?.(state.scale, { immediate });
+    atlas.panTo?.(state.x, state.y, { immediate });
+    return true;
   };
 
   const focusAtlasNode = (nodeOrId, options = {}) => {
@@ -95,30 +131,110 @@
     const rect = svg.getBoundingClientRect();
     if (!viewBox?.width || !viewBox?.height || !rect.width || !rect.height) return false;
 
-    const snapshot = atlas.snapshot?.() || {};
-    const currentScale = snapshot.targetCamera?.scale || snapshot.scale || 1;
-    const scale = clamp(options.scale || Math.max(1.35, currentScale * 1.28), 1.35, 2.25);
+    const current = atlasState() || { x: 0, y: 0, scale: 1 };
+    const minScale = Number.isFinite(options.minScale) ? options.minScale : 1.35;
+    const maxScale = Number.isFinite(options.maxScale) ? options.maxScale : 2.25;
+    const requestedScale = Number.isFinite(options.scale) ? options.scale : Math.max(minScale, current.scale * 1.28);
+    const scale = clamp(requestedScale, minScale, maxScale);
     const safeX = viewBox.x + (frame.centerX - rect.left) * viewBox.width / rect.width;
     const safeY = viewBox.y + (frame.centerY - rect.top) * viewBox.height / rect.height;
-    const x = safeX - point.x * scale;
-    const y = safeY - point.y * scale;
-    const immediate = Boolean(options.immediate);
+    const state = {
+      x: safeX - point.x * scale,
+      y: safeY - point.y * scale,
+      scale
+    };
 
-    atlas.setScale?.(scale, { immediate });
-    atlas.panTo?.(x, y, { immediate });
+    applyAtlasState(state, options);
     lastFocus = { id, scale, safeCenter: { x: frame.centerX, y: frame.centerY }, reserved: frame.reserved };
-    sequence += 1;
-    window.dispatchEvent(new CustomEvent('profile:camera-composition', { detail: snapshotState() }));
     return true;
+  };
+
+  const selectedAtlasNodeId = () =>
+    document.querySelector('#site-graph .site-graph-node.is-previewed[data-node-id]')?.dataset.nodeId || null;
+
+  const dispatchState = (preset, token, extra = {}) => {
+    sequence += 1;
+    activePreset = preset;
+    window.dispatchEvent(new CustomEvent('profile:camera-composition', {
+      detail: { ...snapshotState(), token, ...extra }
+    }));
+  };
+
+  const command = (preset, options = {}) => {
+    if (!Object.values(PRESETS).includes(preset)) return false;
+    if (!boot()) return false;
+    const token = ++operation;
+    const nodeId = options.nodeId || selectedAtlasNodeId();
+
+    if (preset === PRESETS.INSPECT) {
+      const key = routeKey('inspect-origin');
+      if (!memory.has(key)) remember('inspect-origin');
+      const success = Boolean(nodeId && focusAtlasNode(nodeId, {
+        ...options,
+        minScale: 1.35,
+        maxScale: 2.25
+      }));
+      if (success) dispatchState(preset, token, { nodeId });
+      return success;
+    }
+
+    if (preset === PRESETS.MAKE_ROOM) {
+      if (!nodeId) return false;
+      const current = atlasState();
+      const success = focusAtlasNode(nodeId, {
+        ...options,
+        scale: options.scale ?? Math.max(1.05, current?.scale || 1.05),
+        minScale: 1.05,
+        maxScale: 2.25
+      });
+      if (success) dispatchState(preset, token, { nodeId });
+      return success;
+    }
+
+    if (preset === PRESETS.PEEK) {
+      if (!nodeId) return false;
+      remember('peek-origin');
+      const current = atlasState();
+      const success = focusAtlasNode(nodeId, {
+        ...options,
+        scale: options.scale ?? Math.max(1.08, Math.min(1.22, current?.scale || 1.08)),
+        minScale: 1.05,
+        maxScale: 1.35
+      });
+      if (success) dispatchState(preset, token, { nodeId });
+      return success;
+    }
+
+    const slot = options.slot || (memory.has(routeKey('peek-origin')) ? 'peek-origin' : 'inspect-origin');
+    const state = recalled(slot);
+    if (!state) return false;
+    const success = applyAtlasState(state, options);
+    if (success) {
+      memory.delete(routeKey(slot));
+      dispatchState(preset, token, { slot });
+    }
+    return success;
+  };
+
+  const sceneAwareFit = options => {
+    if (document.body.dataset.graphMode !== 'atlas') return scene.camera.fit(null, options || {});
+    const nodeId = selectedAtlasNodeId();
+    if (nodeId && safeFrame()?.reserved?.length) return command(PRESETS.MAKE_ROOM, { ...options, nodeId });
+    const atlasBase = scene.camera.adapters?.get?.('atlas');
+    return atlasBase?.__compositionBaseFit?.(null, options || {}) ?? false;
   };
 
   const snapshotState = () => ({
     sequence,
+    operation,
     booted,
+    activePreset,
     mode: document.body.dataset.graphMode || 'overview',
     route: document.body.dataset.graphRoute || 'overview',
     safeFrame: safeFrame(),
-    lastFocus
+    camera: atlasState(),
+    lastFocus,
+    memory: [...memory.entries()].map(([key, state]) => ({ key, ...state }))
   });
 
   const boot = () => {
@@ -126,10 +242,16 @@
     const atlasBase = scene.camera.adapters?.get?.('atlas');
     if (!atlasBase || !window.ProfileAtlasLOD || !window.ProfileGeometry) return false;
 
+    const baseFit = atlasBase.fit?.bind(atlasBase);
     scene.camera.registerAdapter('atlas', {
       ...atlasBase,
-      focus: (node, options = {}) => focusAtlasNode(node, options),
-      serialize: () => ({ ...atlasBase.serialize?.(), composition: safeFrame() })
+      __compositionBaseFit: baseFit,
+      focus: (node, options = {}) => command(PRESETS.INSPECT, {
+        ...options,
+        nodeId: typeof node === 'string' ? node : node?.id || node?.dataset?.nodeId
+      }),
+      fit: (_bounds, options = {}) => sceneAwareFit(options),
+      serialize: () => ({ ...atlasBase.serialize?.(), composition: snapshotState() })
     });
     booted = true;
     cancelAnimationFrame(bootFrame);
@@ -161,7 +283,7 @@
     if (!node) return;
     event.preventDefault();
     event.stopImmediatePropagation();
-    scene.camera.focus(node.dataset.nodeId);
+    command(PRESETS.INSPECT, { nodeId: node.dataset.nodeId });
   }, true);
 
   window.addEventListener('keydown', event => {
@@ -170,12 +292,20 @@
     if (!node) return;
     event.preventDefault();
     event.stopImmediatePropagation();
-    scene.camera.focus(node.dataset.nodeId);
+    command(PRESETS.INSPECT, { nodeId: node.dataset.nodeId });
   }, true);
 
   window.ProfileCameraComposition = Object.freeze({
+    PRESETS,
     safeFrame,
-    focusNode: focusAtlasNode,
+    focusNode: (node, options) => command(PRESETS.INSPECT, {
+      ...(options || {}),
+      nodeId: typeof node === 'string' ? node : node?.id || node?.dataset?.nodeId
+    }),
+    command,
+    fit: sceneAwareFit,
+    remember,
+    recalled,
     boot,
     snapshot: snapshotState
   });

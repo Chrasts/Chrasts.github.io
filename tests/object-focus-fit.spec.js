@@ -10,12 +10,14 @@ const boot = async (page, route) => {
 };
 
 const waitSettled = page => page.waitForFunction(() => window.ProfileObjectFocus?.snapshot().phase === 'settled');
+const artifactControl = (page, scene, artifact) =>
+  page.locator(`[data-artifact-scene="${scene}"] [data-artifact-focus="${artifact}"]`);
 
 test('focused image opens as a contained fit and only zooms on user input', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await boot(page, 'about/woodworking/hedgehog-house');
   const detail = page.locator('#site-detail-panel');
-  const card = page.locator('[data-artifact-scene="hedgehog-house-gallery"] [data-artifact-id="hedgehog-house-outside"]');
+  const card = artifactControl(page, 'hedgehog-house-gallery', 'hedgehog-house-outside');
   await expect(detail).toBeVisible();
   await card.click();
   await waitSettled(page);
@@ -49,7 +51,7 @@ test('closing focused media restores the same scene placement and keeps node det
   await boot(page, 'about/woodworking/hedgehog-house');
   const detail = page.locator('#site-detail-panel');
   const gallery = page.locator('[data-artifact-scene="hedgehog-house-gallery"]');
-  const card = gallery.locator('[data-artifact-id="hedgehog-house-inside"]');
+  const card = artifactControl(page, 'hedgehog-house-gallery', 'hedgehog-house-inside');
   const before = await gallery.boundingBox();
   await card.click();
   await waitSettled(page);
@@ -68,7 +70,7 @@ test('thesis and Modal Lab artifacts open Object Focus without dismissing their 
   ]) {
     await boot(page, sample.route);
     const detail = page.locator('#site-detail-panel');
-    const card = page.locator(`[data-artifact-scene="${sample.scene}"] [data-artifact-id="${sample.artifact}"]`);
+    const card = artifactControl(page, sample.scene, sample.artifact);
     await expect(detail).toBeVisible();
     await card.click();
     await waitSettled(page);
@@ -83,7 +85,7 @@ test('thesis and Modal Lab artifacts open Object Focus without dismissing their 
 test('focused PDF uses whole-page fit with user zoom controls available', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await boot(page, 'work/project/bachelor-thesis');
-  await page.locator('[data-artifact-scene="bachelor-thesis-diagrams"] [data-artifact-id="bachelor-thesis-lattice-of-bands"]').click();
+  await artifactControl(page, 'bachelor-thesis-diagrams', 'bachelor-thesis-lattice-of-bands').click();
   await waitSettled(page);
   const frame = page.locator('.artifact-focus-media iframe.object-focus-primary');
   await expect(frame).toHaveAttribute('data-object-focus-fit', 'contain');

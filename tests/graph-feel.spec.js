@@ -12,6 +12,8 @@ const boot = async (page, route = 'knowledge') => {
   await page.waitForTimeout(180);
 };
 
+const haloOpacity = locator => locator.evaluate(element => Number(getComputedStyle(element).opacity));
+
 test.describe('Phase F graph feel', () => {
   test('pointer preview exposes one graph microstate and animates semantic relations', async ({ page }) => {
     await boot(page, 'knowledge');
@@ -27,7 +29,7 @@ test.describe('Phase F graph feel', () => {
     await expect(node).toHaveClass(/is-feel-origin/);
 
     const halo = node.locator(':scope > .site-graph-halo');
-    expect(Number(await halo.evaluate(element => getComputedStyle(element).opacity))).toBeGreaterThan(.2);
+    await expect.poll(() => haloOpacity(halo)).toBeGreaterThan(.2);
   });
 
   test('keyboard focus uses the same semantic feel with stronger focus indication', async ({ page }) => {
@@ -41,7 +43,7 @@ test.describe('Phase F graph feel', () => {
     expect(state.phase).toBe('preview');
     expect(state.activeNodeId).toBe('logic-math');
     await expect(page.locator('#site-graph')).toHaveAttribute('data-graph-input', 'keyboard');
-    expect(Number(await node.locator(':scope > .site-graph-halo').evaluate(element => getComputedStyle(element).opacity))).toBeGreaterThan(.6);
+    await expect.poll(() => haloOpacity(node.locator(':scope > .site-graph-halo'))).toBeGreaterThan(.6);
   });
 
   test('press feedback is transient and does not change route semantics', async ({ page }) => {
@@ -66,9 +68,8 @@ test.describe('Phase F graph feel', () => {
     const node = page.locator('#site-graph .site-graph-node[data-node-id="hedgehog-house"]');
     await expect(node).toHaveClass(/is-artifact-linked/);
     await page.evaluate(() => window.ProfileGraphFeel.refresh());
-    await page.waitForTimeout(80);
     const halo = node.locator(':scope > .site-graph-halo');
-    expect(Number(await halo.evaluate(element => getComputedStyle(element).opacity))).toBeGreaterThan(.3);
+    await expect.poll(() => haloOpacity(halo)).toBeGreaterThan(.3);
     await expect(page.locator('.artifact-tether-layer')).toHaveClass(/is-visible/);
   });
 

@@ -60,17 +60,7 @@
     if (attempt < 6) setTimeout(() => focusExpandedRoot(attempt + 1), 45);
   };
 
-  const activate = ({ focusGraph = true } = {}) => {
-    if (!active) return false;
-    rootActivated = true;
-    document.body.classList.add('is-root-unfolding');
-    setActive(false, { reason: 'root-activate' });
-
-    clearTimeout(unfoldingTimer);
-    unfoldingTimer = setTimeout(() => {
-      document.body.classList.remove('is-root-unfolding');
-    }, 820);
-
+  const announceExpanded = ({ focusGraph = true, reason = 'root-expanded' } = {}) => {
     requestAnimationFrame(() => requestAnimationFrame(() => {
       window.MobileProfileScene?.repair?.();
       if (status) status.textContent = 'Profile map expanded. Choose Work, Knowledge, Experience, Education or About.';
@@ -78,9 +68,31 @@
     }));
 
     window.dispatchEvent(new CustomEvent('profile:root-activated', {
-      detail: { rootId, route: routeNow() }
+      detail: { rootId, route: routeNow(), reason }
     }));
+  };
+
+  const commitExpanded = ({ focusGraph = true, reason = 'root-commit-expanded', animate = false } = {}) => {
+    rootActivated = true;
+    if (animate) {
+      document.body.classList.add('is-root-unfolding');
+      clearTimeout(unfoldingTimer);
+      unfoldingTimer = setTimeout(() => {
+        document.body.classList.remove('is-root-unfolding');
+      }, 820);
+    } else {
+      clearTimeout(unfoldingTimer);
+      document.body.classList.remove('is-root-unfolding');
+    }
+
+    setActive(false, { reason });
+    announceExpanded({ focusGraph, reason });
     return true;
+  };
+
+  const activate = ({ focusGraph = true } = {}) => {
+    if (!active) return false;
+    return commitExpanded({ focusGraph, reason: 'root-activate', animate: true });
   };
 
   const reset = () => {
@@ -130,6 +142,7 @@
 
   window.ProfileRootLanding = Object.freeze({
     activate,
+    commitExpanded,
     reset,
     isActive: () => active,
     hasActivated: () => rootActivated

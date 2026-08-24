@@ -55,6 +55,9 @@ test.describe('V3.1 Phase C soft node dynamics', () => {
 
     await expect.poll(() => page.evaluate(() => window.ProfileNodeDynamics.snapshot().activeNodeId)).toBe('logic-math');
     await expect.poll(() => page.evaluate(() => window.ProfileNodeDynamics.snapshot().maxDisplacement)).toBeGreaterThan(.75);
+    // Position and scale are independent springs. Wait for the semantic active
+    // scale response too instead of sampling whichever spring crosses first.
+    await expect.poll(() => page.evaluate(() => window.ProfileNodeDynamics.stateFor('logic-math')?.scale || 1)).toBeGreaterThan(1.02);
 
     const result = await page.evaluate(() => {
       const snapshot = window.ProfileNodeDynamics.snapshot();

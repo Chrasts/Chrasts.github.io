@@ -136,6 +136,7 @@
   };
 
   ensureScript('scene-composer.js', 'data-profile-scene-composer');
+  ensureScript('atlas-drag-activation-guard.js', 'data-profile-atlas-drag-activation-guard');
   ensureScript('camera-composition.js', 'data-profile-camera-composition');
   ensureScript('graph-feel.js', 'data-profile-graph-feel');
   ensureScript('phase7-pointer-hotfix.js', 'data-profile-atlas-pointer-hotfix');

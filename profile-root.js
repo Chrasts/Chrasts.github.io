@@ -26,7 +26,7 @@
   const introState = () => window.ProfileIntro?.snapshot?.().state || null;
   const introStable = () => {
     const marker = document.documentElement.dataset.profileIntro || '';
-    return marker === 'bypass' || ['ATLAS_READY', 'BYPASSED'].includes(introState());
+    return ['bypass', 'ready', 'complete'].includes(marker) || ['ATLAS_READY', 'BYPASSED'].includes(introState());
   };
   const overviewActive = () => mode() === 'overview' && rootLanding() === 'false';
   const quickAvailable = () => introStable() && Boolean(mode()) && (mode() !== 'overview' || rootLanding() === 'false');

@@ -90,7 +90,8 @@ jobs:
         run: |
           npx playwright test \
             tests/phase1-scene.spec.js \
-            tests/scene-system-contracts.spec.js
+            tests/scene-system-contracts.spec.js \
+            tests/scene-composition.spec.js
 
       - name: Run interaction smoke tests
         if: matrix.suite == 'interactions'
@@ -103,7 +104,10 @@ jobs:
             tests/pre-phase8-mobile.spec.js \
             tests/phase8-semantic-scenes.spec.js \
             tests/artifact-scenes.spec.js \
-            tests/phase-b-object-focus.spec.js
+            tests/object-focus.spec.js \
+            tests/object-focus-fit.spec.js \
+            tests/camera-composition.spec.js \
+            tests/camera-composition-local.spec.js
 
       - name: Upload Playwright diagnostics
         if: failure()

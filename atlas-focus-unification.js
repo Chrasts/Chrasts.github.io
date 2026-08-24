@@ -7,9 +7,10 @@
 
   const rootId = graph.rootId || 'stepan-chrast';
   const nodeMap = new Map(graph.nodes.map(node => [node.id, node]));
-  const realMatchMedia = window.__GRAPH_V6_REAL_MATCH_MEDIA__ || window.matchMedia.bind(window);
-  const reducedMotion = realMatchMedia('(prefers-reduced-motion: reduce)');
-  const desktop = realMatchMedia('(min-width: 901px)');
+  const mediaMatches = query => window.matchMedia(query).matches;
+  const prefersReducedMotion = () => mediaMatches('(prefers-reduced-motion: reduce)');
+  const isDesktop = () => mediaMatches('(min-width: 901px)');
+  const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
   const svgNS = 'http://www.w3.org/2000/svg';
   const MAX_BRIDGE_NODES = 14;
   const DURATION = 680;
@@ -238,7 +239,7 @@
     if (!reached || expectedGeneration !== generation) return false;
     await raf();
     await raf();
-    await wait(reducedMotion.matches ? 0 : 470);
+    await wait(prefersReducedMotion() ? 0 : 470);
     if (expectedGeneration !== generation) return false;
 
     await ensureCameraComposition();
@@ -253,7 +254,7 @@
       await raf();
       await raf();
     } else {
-      if (desktop.matches) scene.camera.use('desktop-local');
+      if (isDesktop()) scene.camera.use('desktop-local');
       window.ProfileGeometry?.stabilize?.(900);
       window.ProfileGeometry?.apply?.();
       window.ProfileAtlasLOD?.applyLocalLabelPolicy?.();
@@ -345,7 +346,7 @@
   };
 
   const animate = (current, source, target, expectedGeneration) => new Promise(resolve => {
-    if (reducedMotion.matches) return resolve(true);
+    if (prefersReducedMotion()) return resolve(true);
     const started = performance.now();
     const step = now => {
       if (expectedGeneration !== generation || active !== current) return resolve(false);
@@ -413,7 +414,7 @@
     if (!completed || operation !== generation || active?.token !== token) return false;
 
     active.overlay.classList.add('is-finishing');
-    await wait(reducedMotion.matches ? 0 : 70);
+    await wait(prefersReducedMotion() ? 0 : 70);
     if (operation !== generation || active?.token !== token) return false;
     active.overlay.remove();
     document.body?.classList.remove('is-atlas-focus-transitioning');
@@ -563,8 +564,8 @@
   addEventListener('profile:scene-state', scheduleCopySync);
   addEventListener('hashchange', scheduleCopySync);
 
-  reducedMotion.addEventListener?.('change', () => {
-    if (!active || !reducedMotion.matches) return;
+  reducedMotionQuery.addEventListener?.('change', () => {
+    if (!active || !prefersReducedMotion()) return;
     const token = active.token;
     ++generation;
     cleanup({ result: 'reduced-motion-change' });
@@ -581,7 +582,7 @@
       targetRoute: active?.targetRoute || null,
       bridgeNodeCount: active?.ids?.length || 0,
       transitionToken: active?.token || null,
-      reducedMotion: reducedMotion.matches,
+      reducedMotion: prefersReducedMotion(),
       lastResult
     };
   }

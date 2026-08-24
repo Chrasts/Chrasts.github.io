@@ -28,6 +28,16 @@
   document.documentElement.dataset.profileIntro = introEligible ? 'pending' : 'bypass';
   window.__PROFILE_INTRO_BOOTSTRAP__ = Object.freeze({ eligible: introEligible, initialRoute, initialHash: location.hash, reducedMotion, storageAvailable });
 
+  if (introEligible && !document.querySelector('style[data-profile-intro-readiness-guard]')) {
+    const guard = document.createElement('style');
+    guard.dataset.profileIntroReadinessGuard = 'true';
+    guard.textContent = [
+      'html[data-profile-intro="pending"] .hero,html[data-profile-intro="preparing"] .hero{opacity:0!important;pointer-events:none!important}',
+      'html[data-profile-intro="pending"] #site-explorer,html[data-profile-intro="preparing"] #site-explorer{opacity:0!important;pointer-events:none!important}'
+    ].join('');
+    document.head.appendChild(guard);
+  }
+
   const ensureStylesheet = (href, marker) => {
     if (document.querySelector(`link[href="${href}"]`)) return;
     const link = document.createElement('link');
@@ -82,12 +92,11 @@
   };
 
   ensureStylesheet('root-landing.css', 'data-profile-root-landing-style');
-  ensureStylesheet('intro-animation.css', 'data-profile-intro-style');
+  ensureStylesheet('intro-atlas-reveal.css', 'data-profile-intro-atlas-style');
   ensureStylesheet('motion-polish.css', 'data-profile-motion-polish-style');
   ensureStylesheet('graph-feel.css', 'data-profile-graph-feel-style');
   ensureStylesheet('node-dynamics.css', 'data-profile-node-dynamics-style');
   ensureStylesheet('camera-materiality.css', 'data-profile-camera-materiality-style');
-  ensureStylesheet('intro-unfold.css', 'data-profile-intro-unfold-style');
   ensureStylesheet('intro-fixes-v3.css', 'data-profile-intro-fixes-v3-style');
   prepareRootLandingDom();
 
@@ -126,7 +135,7 @@
     variants: { desktop: { placement: 'inspector-right', enter: 'inspector-in', exit: 'inspector-out' }, mobile: { placement: 'detail-sheet', enter: 'sheet-in', exit: 'sheet-out' } }
   });
 
-  scene.manager.scheduleRefresh('phase3-intro-definitions');
+  scene.manager.scheduleRefresh('v3-1-atlas-reveal-definitions');
 
   const ensureScript = (src, marker) => {
     if (document.querySelector(`script[${marker}]`)) return;
@@ -150,7 +159,5 @@
   ensureScript('root-landing.js', 'data-profile-root-landing');
   ensureScript('motion-polish.js', 'data-profile-motion-polish');
   ensureScript('intro-fixes-v3.js', 'data-profile-intro-fixes-v3');
-  ensureScript('intro-animation.js', 'data-profile-intro-animation');
-  ensureScript('intro-unfold.js', 'data-profile-intro-unfold');
-  ensureScript('intro-state-consistency.js', 'data-profile-intro-state-consistency');
+  ensureScript('intro-atlas-reveal.js', 'data-profile-intro-atlas-reveal');
 })();

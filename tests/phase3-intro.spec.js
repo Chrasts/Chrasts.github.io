@@ -145,7 +145,7 @@ test.describe('Phase H Intro Animation 2.0 — desktop', () => {
     expect(completed.cloneOverlayPresent).toBe(false);
     expect(await page.evaluate(() => sessionStorage.getItem('profileIntroSeen'))).toBe('true');
     await expect(page.locator('.root-node-trigger')).toBeVisible();
-    const portrait = page.locator('.hero-visual.profile-identity[data-root-activate]');
+    const portrait = page.locator('.hero-visual.profile-identity[data-root-portrait-activate]');
     await expect(portrait).toBeVisible();
     await expect(portrait).toHaveAttribute('role', 'button');
     await expect(portrait).toHaveAttribute('aria-label', 'Open the profile map');
@@ -160,7 +160,7 @@ test.describe('Phase H Intro Animation 2.0 — desktop', () => {
     await page.goto('/');
     await waitComplete(page);
 
-    await page.locator('.hero-visual.profile-identity[data-root-activate]').click();
+    await page.locator('.hero-visual.profile-identity[data-root-portrait-activate]').click();
     await page.waitForFunction(() => document.body.dataset.rootLanding === 'false', null, { timeout: 3_000 });
     await expect(page.locator('#site-explorer')).toBeVisible();
     expect(await page.evaluate(() => document.body.dataset.graphRoute)).toBe('overview');
@@ -284,7 +284,7 @@ test.describe('Phase H mobile composition', () => {
 
     await waitComplete(page);
     await expect(page.locator('.root-node-trigger')).toBeVisible();
-    await expect(page.locator('.hero-visual.profile-identity[data-root-activate]')).toBeVisible();
+    await expect(page.locator('.hero-visual.profile-identity[data-root-portrait-activate]')).toBeVisible();
     await expect(page.locator('.phase-h-latent-stub')).toHaveCount(5);
   });
 });

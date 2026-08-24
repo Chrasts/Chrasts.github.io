@@ -24,6 +24,38 @@ body[data-root-landing="true"] .hero h1{
   margin-bottom:16px;
 }
 
+body[data-root-landing="true"] .hero-visual.profile-identity[data-root-activate]{
+  cursor:pointer;
+  border-radius:50%;
+  outline:none;
+}
+
+body[data-root-landing="true"] .hero-visual.profile-identity[data-root-activate] .portrait,
+body[data-root-landing="true"] .hero-visual.profile-identity[data-root-activate] .identity-ring{
+  transition:transform .28s cubic-bezier(.18,.72,.2,1),box-shadow .28s ease,opacity .2s ease;
+}
+
+body[data-root-landing="true"] .hero-visual.profile-identity[data-root-activate]:hover .portrait,
+body[data-root-landing="true"] .hero-visual.profile-identity[data-root-activate]:focus-visible .portrait{
+  transform:scale(1.025);
+  box-shadow:0 18px 48px color-mix(in srgb,var(--ink) 14%,transparent);
+}
+
+body[data-root-landing="true"] .hero-visual.profile-identity[data-root-activate]:hover .identity-ring,
+body[data-root-landing="true"] .hero-visual.profile-identity[data-root-activate]:focus-visible .identity-ring{
+  transform:scale(1.055);
+  opacity:.9;
+}
+
+body[data-root-landing="true"] .hero-visual.profile-identity[data-root-activate]:focus-visible::after{
+  content:"";
+  position:absolute;
+  inset:-8px;
+  border:2px solid var(--teal);
+  border-radius:50%;
+  pointer-events:none;
+}
+
 .root-node-trigger{
   appearance:none;
   display:inline-flex;
@@ -231,7 +263,9 @@ body.is-root-unfolding #site-graph .site-graph-edges path{
 @media(prefers-reduced-motion:reduce){
   .root-node-dot,
   .root-node-trigger,
-  .root-atlas-affordance{
+  .root-atlas-affordance,
+  body[data-root-landing="true"] .hero-visual.profile-identity[data-root-activate] .portrait,
+  body[data-root-landing="true"] .hero-visual.profile-identity[data-root-activate] .identity-ring{
     transition:none!important;
   }
 

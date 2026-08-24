@@ -112,6 +112,7 @@
   ensureStylesheet('root-entry-portal.css', 'data-profile-root-entry-portal-style');
   ensureStylesheet('atlas-condensation.css', 'data-profile-atlas-condensation-style');
   ensureStylesheet('profile-root.css', 'data-profile-root-overview-style');
+  ensureStylesheet('atlas-focus-unification.css', 'data-profile-atlas-focus-style');
   prepareRootLandingDom();
 
   document.body.dataset.rootLanding = initialRootLanding ? 'true' : 'false';
@@ -162,6 +163,7 @@
 
   ensureScript('scene-composer.js', 'data-profile-scene-composer');
   ensureScript('atlas-drag-activation-guard.js', 'data-profile-atlas-drag-activation-guard');
+  ensureScript('atlas-focus-unification.js', 'data-profile-atlas-focus-unification');
   ensureScript('camera-composition.js', 'data-profile-camera-composition');
   ensureScript('camera-materiality.js', 'data-profile-camera-materiality');
   ensureScript('halo-renderer.js', 'data-profile-halo-renderer');

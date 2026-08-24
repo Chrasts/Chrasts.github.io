@@ -51,7 +51,7 @@ test('Simulation Credence is a document object and opens in Object Focus', async
   await expect(viewer).toHaveAttribute('data-media-stage', 'object-focus');
   await expect(viewer).toHaveAttribute('data-media-kind', 'pdf');
   await expect(viewer.locator('.artifact-focus-title')).toContainText('Simulation Credence and Its Consequences');
-  await expect(viewer.locator('.artifact-focus-media iframe')).toHaveAttribute('src', /simulation-credence-and-its-consequences\.pdf#toolbar=0&navpanes=0&scrollbar=0&view=FitH/);
+  await expect(viewer.locator('.artifact-focus-media iframe')).toHaveAttribute('src', /simulation-credence-and-its-consequences\.pdf#toolbar=1&navpanes=0&scrollbar=0&view=Fit/);
   await page.keyboard.press('Escape');
   await expect(viewer).toBeHidden();
 });

@@ -22,6 +22,19 @@
     return Boolean(snapshot && snapshot.phase && snapshot.phase !== 'idle');
   };
 
+  const cameraActive = () => {
+    const composition = window.ProfileCameraComposition?.snapshot?.();
+    if (composition?.localAnimating) return true;
+    if (composition?.adapter !== 'atlas') return false;
+    const atlas = window.ProfileAtlasLOD?.snapshot?.();
+    const current = atlas?.camera;
+    const target = atlas?.targetCamera;
+    if (!current || !target) return false;
+    return Math.abs(current.x - target.x) > .25 ||
+      Math.abs(current.y - target.y) > .25 ||
+      Math.abs(current.scale - target.scale) > .001;
+  };
+
   const routeForNode = id => {
     if (!id) return null;
     if (id === rootId) return 'overview';
@@ -97,7 +110,8 @@
     transitions.isLocked ||
     document.body?.classList.contains('is-v9-transitioning') ||
     document.body?.classList.contains('is-crosslink-travelling') ||
-    objectFocusActive()
+    objectFocusActive() ||
+    cameraActive()
   );
 
   const interrupt = (payload = {}) => {
@@ -151,6 +165,8 @@
     snapshot: () => ({
       sequence,
       locked: transitions.isLocked,
+      cameraActive: cameraActive(),
+      objectFocusActive: objectFocusActive(),
       transition: transitions.snapshot(),
       participants: transitions.diagnostics?.().participants || [],
       lastInterruption

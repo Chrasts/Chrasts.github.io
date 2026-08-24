@@ -169,10 +169,14 @@
     constructor() {
       this.current = null;
       this.sequence = 0;
+      this.participants = new Map();
+      this.lastInterruption = null;
       this.hooks = new Map([
         ['begin', new Set()],
         ['prepare', new Set()],
         ['commit', new Set()],
+        ['retarget', new Set()],
+        ['interrupt', new Set()],
         ['finish', new Set()],
         ['cancel', new Set()]
       ]);
@@ -182,11 +186,78 @@
       return Boolean(this.current);
     }
 
-    begin(payload = {}) {
-      if (this.current) return null;
+    registerParticipant(name, participant = {}) {
+      if (!name || typeof name !== 'string') throw new TypeError('Transition participant requires a name.');
+      if (!participant || typeof participant !== 'object') throw new TypeError('Transition participant must be an object.');
+      this.participants.set(name, participant);
+      return () => {
+        if (this.participants.get(name) === participant) this.participants.delete(name);
+      };
+    }
+
+    capture(reason = 'capture') {
+      const captured = {};
+      this.participants.forEach((participant, name) => {
+        if (typeof participant.capture !== 'function') return;
+        try {
+          const value = participant.capture({ reason, transition: this.snapshot() });
+          if (value !== undefined) captured[name] = value;
+        } catch (_) {}
+      });
+      return captured;
+    }
+
+    interrupt(payload = {}) {
+      const active = this.current ? { ...this.current } : null;
+      const captured = this.capture(payload.reason || 'interrupted');
+      const interruption = {
+        ...(active || {}),
+        ...payload,
+        phase: 'interrupt',
+        interruptedAt: performance.now(),
+        captured
+      };
+
+      this.participants.forEach((participant, name) => {
+        if (typeof participant.cancel !== 'function') return;
+        try {
+          participant.cancel({
+            ...interruption,
+            participant: name
+          });
+        } catch (_) {}
+      });
+
+      this.lastInterruption = interruption;
+      this.emit('interrupt', interruption);
+      if (active && this.current?.token === active.token) {
+        const cancelled = {
+          ...active,
+          ...payload,
+          phase: 'cancel',
+          interrupted: true,
+          captured,
+          finishedAt: performance.now()
+        };
+        this.emit('cancel', cancelled);
+        this.current = null;
+      }
+      return interruption;
+    }
+
+    begin(payload = {}, options = {}) {
       const token = `scene-transition-${++this.sequence}`;
+      if (this.current) {
+        if (options.supersede === false) return null;
+        this.interrupt({
+          reason: options.reason || 'superseded',
+          supersededBy: token,
+          next: payload
+        });
+      }
       this.current = {
         token,
+        generation: this.sequence,
         phase: 'begin',
         startedAt: performance.now(),
         ...payload
@@ -201,6 +272,10 @@
 
     commit(token, payload = {}) {
       return this.advance('commit', token, payload);
+    }
+
+    retarget(token, payload = {}) {
+      return this.advance('retarget', token, payload);
     }
 
     finish(token, payload = {}) {
@@ -218,10 +293,19 @@
 
     cancel(token, payload = {}) {
       if (!this.matches(token)) return false;
+      const active = { ...this.current };
+      const captured = this.capture(payload.reason || 'cancelled');
+      this.participants.forEach((participant, name) => {
+        if (typeof participant.cancel !== 'function') return;
+        try {
+          participant.cancel({ ...active, ...payload, participant: name, captured });
+        } catch (_) {}
+      });
       const cancelled = {
-        ...this.current,
+        ...active,
         ...payload,
         phase: 'cancel',
+        captured,
         finishedAt: performance.now()
       };
       this.emit('cancel', cancelled);
@@ -253,6 +337,15 @@
 
     snapshot() {
       return this.current ? { ...this.current } : null;
+    }
+
+    diagnostics() {
+      return {
+        current: this.snapshot(),
+        sequence: this.sequence,
+        participants: [...this.participants.keys()],
+        lastInterruption: this.lastInterruption ? { ...this.lastInterruption } : null
+      };
     }
   }
 
@@ -288,6 +381,8 @@
       this.transitions.hook('begin', payload => this.onTransition('begin', payload));
       this.transitions.hook('prepare', payload => this.onTransition('prepare', payload));
       this.transitions.hook('commit', payload => this.onTransition('commit', payload));
+      this.transitions.hook('retarget', payload => this.onTransition('retarget', payload));
+      this.transitions.hook('interrupt', payload => this.onTransition('interrupt', payload));
       this.transitions.hook('finish', payload => this.onTransition('finish', payload));
       this.transitions.hook('cancel', payload => this.onTransition('cancel', payload));
 
@@ -307,10 +402,6 @@
               this.scheduleRefresh('scene-root-dom');
             }
           });
-          // Scene-object roots are intentionally mounted as direct children of
-          // the scene canvas. Avoid observing the whole graph subtree: graph
-          // transitions create many short-lived nodes that are irrelevant to
-          // scene-object discovery and used to cause refresh feedback loops.
           sceneRootObserver.observe(canvas, { childList: true });
         }
       };

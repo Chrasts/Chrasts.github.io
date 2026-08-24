@@ -150,6 +150,13 @@
   let lastStableRoute = currentRoute();
   let commitFrame = 0;
 
+  transitions.hook('cancel', payload => {
+    if (!transitionToken || payload?.token !== transitionToken) return;
+    cancelAnimationFrame(commitFrame);
+    commitFrame = 0;
+    transitionToken = null;
+  });
+
   const scheduleCommit = () => {
     if (!transitionToken) return;
     cancelAnimationFrame(commitFrame);
@@ -164,6 +171,7 @@
   };
 
   const observer = new MutationObserver(mutations => {
+    if (transitionToken && !transitions.matches(transitionToken)) transitionToken = null;
     const classChanged = mutations.some(mutation =>
       mutation.type === 'attributes' && mutation.attributeName === 'class'
     );
@@ -175,6 +183,7 @@
 
     if (classChanged && transitioning && !transitionToken) {
       transitionToken = transitions.begin({
+        kind: 'graph-route',
         fromRoute: lastStableRoute,
         fromMode: manager.graphState.mode,
         fromScene: manager.snapshot(),

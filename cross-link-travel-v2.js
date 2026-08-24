@@ -42,6 +42,7 @@
 
   let overlay = null;
   let sequence = 0;
+  let activeTransitionToken = null;
 
   const normaliseRoute = value =>
     (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
@@ -350,6 +351,34 @@
     return { shell, svg, traveller, departure, portal };
   };
 
+  const interruptTravel = (reason = 'interrupted') => {
+    if (!state.travelling && !overlay) return false;
+    sequence += 1;
+    overlay?.shell?.remove();
+    overlay = null;
+    document.body.classList.remove('is-crosslink-travelling');
+    delete document.body.dataset.crossLinkTravel;
+    state.travelling = false;
+    state.result = 'interrupted';
+    const token = activeTransitionToken;
+    activeTransitionToken = null;
+    renderRail();
+    emit('interrupt', { reason, transitionToken: token });
+    return true;
+  };
+
+  scene?.transitions?.registerParticipant?.('cross-link-travel', {
+    capture: () => ({
+      travelling: state.travelling,
+      sourceId: state.sourceId,
+      targetId: state.targetId,
+      relationType: state.relationType,
+      phase: document.body.dataset.crossLinkTravel || null,
+      sequence
+    }),
+    cancel: payload => interruptTravel(payload?.reason || 'coordinator-interrupt')
+  });
+
   const finishTravel = (relation, transitionToken, result = 'completed') => {
     overlay?.shell?.remove();
     overlay = null;
@@ -357,6 +386,7 @@
     delete document.body.dataset.crossLinkTravel;
     state.travelling = false;
     state.result = result;
+    if (activeTransitionToken === transitionToken) activeTransitionToken = null;
     scene?.transitions?.finish?.(transitionToken, {
       kind: 'cross-link', sourceId: relation.sourceId, targetId: relation.targetId,
       relationType: relation.type, direction: relation.direction, vector: relation.vector, result
@@ -367,7 +397,10 @@
   };
 
   const navigate = async relationInput => {
-    if (state.travelling || document.body.classList.contains('is-v9-transitioning')) return false;
+    if (state.travelling) interruptTravel('retarget');
+    if (document.body.classList.contains('is-v9-transitioning')) {
+      window.ProfileTransitionCoordination?.interrupt?.({ reason: 'cross-link-retarget', input: 'cross-link' });
+    }
     const sourceId = relationInput?.sourceId || currentSourceId();
     const targetId = relationInput?.targetId;
     const relation = relationsFor(sourceId).find(item =>
@@ -379,6 +412,7 @@
       relationType: relation.type, direction: relation.direction, vector: relation.vector
     }) || null;
     if (scene?.transitions?.isLocked && !transitionToken) return false;
+    activeTransitionToken = transitionToken;
 
     state.travelling = true;
     state.sourceId = relation.sourceId;
@@ -411,6 +445,7 @@
       return false;
     }
 
+    if (!scene?.transitions?.matches?.(transitionToken) && activeTransitionToken !== transitionToken) return false;
     scene?.transitions?.commit?.(transitionToken, { phaseDetail: 'destination-rendered' });
     await wait(reducedMotion.matches ? 30 : 500);
     if (id !== sequence || !state.travelling) return false;
@@ -478,6 +513,7 @@
 
   window.ProfileCrossLinkTravel = Object.freeze({
     navigate: (targetId, type = null) => navigate({ sourceId: currentSourceId(), targetId, type }),
+    interrupt: reason => interruptTravel(reason || 'api-interrupt'),
     relationsFor: sourceId => relationsFor(sourceId).map(item => ({
       sourceId: item.sourceId, targetId: item.targetId, type: item.type, label: item.label,
       family: item.family, direction: item.direction, vector: { ...item.vector }, secondary: item.secondary
@@ -488,7 +524,9 @@
       currentSourceId: currentSourceId(),
       railVisible: !rail.hidden,
       relationCount: railList.children.length,
-      overlayPresent: Boolean(overlay?.shell)
+      overlayPresent: Boolean(overlay?.shell),
+      sequence,
+      transitionToken: activeTransitionToken
     })
   });
 

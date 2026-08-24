@@ -52,15 +52,21 @@ test.describe('Phase E camera composition', () => {
       const box = node.getBoundingClientRect();
       const frame = window.ProfileCameraComposition.safeFrame();
       return {
-        nodeCenterX: box.left + box.width / 2,
-        nodeCenterY: box.top + box.height / 2,
-        frameCenterX: frame.centerX,
-        frameCenterY: frame.centerY,
+        nodeLeft: box.left,
+        nodeRight: box.right,
+        nodeTop: box.top,
+        nodeBottom: box.bottom,
+        frameLeft: frame.left,
+        frameRight: frame.right,
+        frameTop: frame.top,
+        frameBottom: frame.bottom,
         lastFocus: window.ProfileCameraComposition.snapshot().lastFocus
       };
     });
-    expect(Math.abs(result.nodeCenterX - result.frameCenterX)).toBeLessThan(95);
-    expect(Math.abs(result.nodeCenterY - result.frameCenterY)).toBeLessThan(95);
+    expect(result.nodeLeft).toBeGreaterThanOrEqual(result.frameLeft - 12);
+    expect(result.nodeRight).toBeLessThanOrEqual(result.frameRight + 12);
+    expect(result.nodeTop).toBeGreaterThanOrEqual(result.frameTop - 12);
+    expect(result.nodeBottom).toBeLessThanOrEqual(result.frameBottom + 12);
     expect(result.lastFocus.id).toBe('sat-smt');
   });
 

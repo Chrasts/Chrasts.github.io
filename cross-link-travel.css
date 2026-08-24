@@ -100,7 +100,7 @@ body.is-crosslink-travelling{
   z-index:1150;
   inset:0;
   overflow:hidden;
-  pointer-events:all;
+  pointer-events:none;
   background:color-mix(in srgb,var(--paper) 94%,transparent);
   opacity:0;
   transition:opacity .16s ease,background-color .42s cubic-bezier(.2,.72,.2,1)

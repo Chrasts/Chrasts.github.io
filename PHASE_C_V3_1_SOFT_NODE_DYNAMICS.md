@@ -45,9 +45,11 @@ Per live node:
 
 For edges it owns only a temporary visual path derived from the existing canonical quadratic path. The exact canonical `d` value is restored when the field settles or structural motion takes ownership.
 
-### Transition system owns structural motion
+### Transition and intro systems own structural motion
 
 Node dynamics suspends and resets on `profile:transition-begin` and resumes only after transition finish/cancel. Pointer/keyboard activation also clears the field before click/keyboard route handling can capture structural geometry.
+
+The dynamics layer is also inert while the profile intro state is `pending` or `running`. During that ownership window it does not process graph child-list mutations, so the Intro Atlas reveal/condensation remains the sole owner of its temporary SVG wrappers and geometry.
 
 ## Field model
 
@@ -70,6 +72,8 @@ Offsets and scale use critically damped / near-critically-damped spring integrat
 
 Current offset is clamped to the mode's `maxDisplacement`, including any transient spring overshoot.
 
+When the field reaches rest with no active node, the implementation performs one explicit canonical cleanup pass. This prevents tolerance/write-threshold residue from surviving as a sub-pixel transform or adapted edge path.
+
 ## Mode tuning
 
 Desktop baseline:
@@ -79,7 +83,9 @@ Desktop baseline:
 | Overview | 260 | 22 | 1.055 |
 | Focus | 220 | 18 | 1.052 |
 | Work | 175 | 13 | 1.045 |
-| Atlas | 140 | 10 | 1.038 |
+| Atlas | 210 | 10 | 1.038 |
+
+Atlas intentionally combines a wider influence radius with the smallest displacement clamp. The production Atlas spacing puts the nearest top-level Knowledge neighbours at roughly 159 canonical SVG units, so the previous 140-unit experiment could scale the active node without moving any neighbour. The wider field reaches the local topology while preserving a small maximum movement.
 
 Coarse-pointer/mobile composition uses a substantially weaker field and slightly smaller radius.
 
@@ -160,6 +166,8 @@ snapshot()
 7. spring return restores exact canonical node transforms and edge paths;
 8. route transitions preempt ephemeral motion;
 9. reduced-motion interaction keeps semantics but disables displacement.
+
+The existing Intro regression suite additionally guards against Phase C taking structural ownership during the live Atlas intro.
 
 ## Explicit non-goals
 

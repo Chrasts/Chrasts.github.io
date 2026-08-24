@@ -22,6 +22,28 @@ const canonicalNodes = page => page.evaluate(() => Object.fromEntries(
     }])
 ));
 
+const retargetPointer = (page, id) => page.evaluate(nextId => {
+  const selector = '#site-graph .site-graph-node[data-node-id]';
+  const currentId = window.ProfileNodeInteraction?.snapshot?.().hoveredNodeId;
+  const current = currentId
+    ? document.querySelector(`${selector}[data-node-id="${CSS.escape(currentId)}"]`)
+    : null;
+  const next = document.querySelector(`${selector}[data-node-id="${CSS.escape(nextId)}"]`);
+  if (!next) throw new Error(`Missing graph node ${nextId}`);
+  if (current && current !== next) {
+    current.dispatchEvent(new PointerEvent('pointerout', {
+      bubbles: true,
+      pointerType: 'mouse',
+      relatedTarget: next
+    }));
+  }
+  next.dispatchEvent(new PointerEvent('pointerover', {
+    bubbles: true,
+    pointerType: 'mouse',
+    relatedTarget: current
+  }));
+}, id);
+
 const displacement = state => Math.hypot(state.offsetX, state.offsetY);
 
 test.describe('V3.1 Phase C soft node dynamics', () => {
@@ -92,10 +114,14 @@ test.describe('V3.1 Phase C soft node dynamics', () => {
     await boot(page, 'atlas');
     const before = await canonicalNodes(page);
     await page.evaluate(() => window.ProfileAtlasLOD?.setScale?.(1.8, { immediate: true }));
-    await page.locator('#site-graph .site-graph-node[data-node-id="knowledge"]').hover({ force: true });
+
+    // Exercise the interaction contract directly: after zoom, some semantic nodes are
+    // intentionally outside the physical viewport, but the state/dynamics pipeline must
+    // still handle rapid retargeting without retaining overlapping fields.
+    await retargetPointer(page, 'knowledge');
     await expect.poll(() => page.evaluate(() => window.ProfileNodeDynamics.snapshot().activeNodeId)).toBe('knowledge');
-    await page.locator('#site-graph .site-graph-node[data-node-id="experience"]').hover({ force: true });
-    await page.locator('#site-graph .site-graph-node[data-node-id="education"]').hover({ force: true });
+    await retargetPointer(page, 'experience');
+    await retargetPointer(page, 'education');
     await expect.poll(() => page.evaluate(() => window.ProfileNodeDynamics.snapshot().activeNodeId)).toBe('education');
     await page.waitForTimeout(120);
 

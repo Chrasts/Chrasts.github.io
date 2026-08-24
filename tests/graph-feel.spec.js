@@ -6,6 +6,7 @@ const boot = async (page, route = 'knowledge') => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto(`/#${route}`);
   await page.waitForFunction(() => Boolean(window.ProfileGraphFeel && window.ProfileScene));
+  await page.waitForFunction(() => Boolean(document.querySelector('link[href="graph-feel.css"]')?.sheet));
   await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
   await page.waitForFunction(() => window.ProfileGraphFeel.snapshot().haloCount > 0);
   await page.waitForTimeout(180);
@@ -32,6 +33,7 @@ test.describe('Phase F graph feel', () => {
   test('keyboard focus uses the same semantic feel with stronger focus indication', async ({ page }) => {
     await boot(page, 'knowledge');
     const node = page.locator('#site-graph .site-graph-node[data-node-id="logic-math"]');
+    await page.keyboard.press('Tab');
     await node.focus();
     await page.waitForFunction(() => window.ProfileGraphFeel.snapshot().input === 'keyboard');
 

@@ -1,0 +1,16 @@
+/* V3.1 Phase C — presentation hooks for the ephemeral node-dynamics layer. */
+
+#site-graph .site-graph-node > .site-graph-dot{
+  scale:var(--node-dynamics-scale,1)
+}
+
+#site-graph .site-graph-node[data-node-dynamics="active"] > .site-graph-label,
+#site-graph .site-graph-node[data-node-dynamics="active"] > .site-graph-meta{
+  text-rendering:geometricPrecision
+}
+
+@media(prefers-reduced-motion:reduce){
+  #site-graph .site-graph-node > .site-graph-dot{
+    scale:1!important
+  }
+}

@@ -1,0 +1,62 @@
+/* ========================================================================== 
+   V3.1 Phase D — camera materiality + semantic 2.5D depth channels
+   ========================================================================== */
+
+#site-graph[data-camera25d="ready"] .site-graph-edges,
+#site-graph[data-camera25d="ready"] .site-graph-decorations,
+#site-graph[data-camera25d="ready"] .site-graph-nodes{
+  transform-box:fill-box;
+  transform-origin:center;
+  will-change:transform
+}
+
+#site-graph.is-camera-25d-moving .site-graph-edges[data-depth-channel="DEPTH_BACKGROUND"]{
+  transform:translate(var(--camera-25d-bg-x,0),var(--camera-25d-bg-y,0)) scale(var(--camera-25d-bg-scale,1))
+}
+#site-graph.is-camera-25d-moving .site-graph-decorations[data-depth-channel="DEPTH_GRAPH_BASE"]{
+  transform:translate(var(--camera-25d-mid-x,0),var(--camera-25d-mid-y,0)) scale(var(--camera-25d-mid-scale,1))
+}
+#site-graph.is-camera-25d-moving .site-graph-nodes[data-depth-channel="DEPTH_GRAPH_BASE"]{
+  transform:translate(var(--camera-25d-fg-x,0),var(--camera-25d-fg-y,0)) scale(var(--camera-25d-fg-scale,1))
+}
+
+#site-graph[data-camera25d="ready"] .site-graph-node[data-depth-channel="DEPTH_GRAPH_ACTIVE"] .site-graph-dot{
+  filter:drop-shadow(0 2px 2px color-mix(in srgb,var(--ink) 12%,transparent))
+}
+#site-graph[data-camera25d="ready"] .site-graph-node[data-depth-channel="DEPTH_GRAPH_ACTIVE"] .site-graph-label{
+  paint-order:stroke fill;
+  stroke-width:4.5px
+}
+
+body[data-camera-motion="inspect"] #site-graph .site-graph-edges,
+body[data-camera-motion="push"] #site-graph .site-graph-edges{
+  opacity:.88
+}
+body[data-camera-motion="peek"] #site-graph .site-graph-edges{
+  opacity:.96
+}
+
+[data-depth-channel="DEPTH_SCENE_OBJECT"]{
+  --camera-depth-elevation:1
+}
+[data-depth-channel="DEPTH_SCENE_ACTIVE"]{
+  --camera-depth-elevation:2
+}
+[data-depth-channel="DEPTH_FOCUS"]{
+  --camera-depth-elevation:3
+}
+[data-depth-channel="DEPTH_HUD"]{
+  --camera-depth-elevation:4
+}
+
+@media(prefers-reduced-motion:reduce){
+  #site-graph[data-camera25d="ready"] .site-graph-edges,
+  #site-graph[data-camera25d="ready"] .site-graph-decorations,
+  #site-graph[data-camera25d="ready"] .site-graph-nodes{
+    transform:none!important;
+    will-change:auto
+  }
+  #site-graph[data-camera25d="ready"] .site-graph-node[data-depth-channel="DEPTH_GRAPH_ACTIVE"] .site-graph-dot{
+    filter:none
+  }
+}

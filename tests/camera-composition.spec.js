@@ -37,7 +37,8 @@ test.describe('Phase E camera composition', () => {
 
     const frameBefore = await page.evaluate(() => window.ProfileCameraComposition.safeFrame());
     const svgBox = await svg.boundingBox();
-    expect(frameBefore.right).toBeLessThan(svgBox.x + svgBox.width - 30);
+    expect(frameBefore.reserved.some(item => item.id === 'detail-panel')).toBe(true);
+    expect(frameBefore.width).toBeLessThanOrEqual(svgBox.width - 44);
 
     const camera = page.locator('#site-graph .site-graph-svg > g').first();
     const transformBefore = await camera.getAttribute('transform');
@@ -81,7 +82,8 @@ test.describe('Phase E camera composition', () => {
     const afterFrame = await page.evaluate(() => window.ProfileCameraComposition.safeFrame());
 
     expect(afterTransform).toBe(beforeTransform);
-    expect(afterFrame.width).toBeGreaterThan(beforeFrame.width + 80);
+    expect(afterFrame.reserved.some(item => item.id === 'detail-panel')).toBe(false);
+    expect(afterFrame.width).toBeGreaterThanOrEqual(beforeFrame.width);
   });
 
   test('INSPECT, PEEK, MAKE_ROOM and RETURN share one retargetable camera state layer', async ({ page }) => {

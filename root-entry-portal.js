@@ -127,14 +127,16 @@
     if (!rootNode?.isConnected || !action?.isConnected) return;
     const visible = open && available();
     rootNode.classList.toggle('is-root-entry-open', visible);
-    rootNode.dataset.rootEntryPortal = visible ? 'open' : 'latent';
+    rootNode.classList.toggle('is-root-entry-entering', entering && visible);
+    rootNode.dataset.rootEntryPortal = entering && visible ? 'entering' : visible ? 'open' : 'latent';
     rootNode.setAttribute('aria-expanded', visible ? 'true' : 'false');
-    action.setAttribute('tabindex', visible ? '0' : '-1');
+    action.setAttribute('tabindex', visible && !entering ? '0' : '-1');
     action.setAttribute('aria-hidden', visible ? 'false' : 'true');
+    action.setAttribute('aria-disabled', entering ? 'true' : 'false');
   };
 
   const openPortal = (reason = 'api', { manual = false } = {}) => {
-    if (!available() || !rootNode?.isConnected) return false;
+    if (!available() || !rootNode?.isConnected || entering) return false;
     clearTimeout(closeTimer);
     const changed = !open;
     open = true;
@@ -157,10 +159,26 @@
     return true;
   };
 
+  const releaseEntry = ({ keepOpen = false, reason = 'entry-release' } = {}) => {
+    const wasEntering = entering;
+    entering = false;
+    manualOpen = false;
+    lastReason = reason;
+    if (keepOpen && available()) {
+      open = true;
+      syncOpenPresentation();
+      emit('entry-released', { reason, keepOpen: true });
+      return true;
+    }
+    closePortal(reason, { force: true });
+    if (wasEntering) emit('entry-released', { reason, keepOpen: false });
+    return true;
+  };
+
   const scheduleClose = reason => {
     clearTimeout(closeTimer);
     closeTimer = setTimeout(() => {
-      if (manualOpen) return;
+      if (manualOpen || entering) return;
       const focused = document.activeElement;
       if (rootNode?.contains(focused)) return;
       closePortal(reason);
@@ -199,14 +217,16 @@
   const enterProfile = (source = 'api') => {
     if (!available() || entering) return false;
     entering = true;
+    lastReason = 'enter-request';
+    syncOpenPresentation();
     const request = new CustomEvent('profile:enter-profile-request', {
       cancelable: true,
       detail: { rootId, source, portal: snapshot() }
     });
     const acceptedFallback = dispatchEvent(request);
     if (!acceptedFallback) {
-      closePortal('enter-profile-delegated', { force: true });
-      entering = false;
+      lastReason = 'enter-profile-delegated';
+      syncOpenPresentation();
       emit('enter-delegated', { source });
       track('enter_profile');
       return true;
@@ -264,7 +284,7 @@
 
     node.addEventListener('keydown', event => {
       if (!available() || event.target.closest?.('[data-root-entry-action]')) return;
-      if (event.key === 'Escape' && open) {
+      if (event.key === 'Escape' && open && !entering) {
         event.preventDefault();
         event.stopImmediatePropagation();
         closePortal('keyboard-escape');
@@ -315,7 +335,7 @@
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(() => requestAnimationFrame(() => {
       ensurePortal();
-      if (!available()) closePortal('context-change', { force: true });
+      if (!available() && !entering) closePortal('context-change', { force: true });
       else syncOpenPresentation();
     }));
   };
@@ -323,7 +343,9 @@
   addEventListener('profile:atlas-ready', refresh);
   addEventListener('profile:intro-completed', refresh);
   addEventListener('profile:scene-state', refresh);
-  addEventListener('profile:transition-begin', () => closePortal('transition', { force: true }));
+  addEventListener('profile:transition-begin', () => {
+    if (!entering) closePortal('transition', { force: true });
+  });
   addEventListener('hashchange', refresh);
   reducedMotion.addEventListener?.('change', refresh);
   coarsePointer.addEventListener?.('change', refresh);
@@ -353,6 +375,7 @@
     open: reason => openPortal(reason || 'api'),
     close: reason => closePortal(reason || 'api'),
     enterProfile,
+    releaseEntry,
     refresh,
     snapshot
   });

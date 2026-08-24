@@ -2,246 +2,222 @@ const { test, expect } = require('@playwright/test');
 
 const freshSession = async page => {
   await page.addInitScript(() => {
-    if (sessionStorage.getItem('__phase3FreshPrepared') !== 'true') {
-      sessionStorage.removeItem('profileIntroSeen');
-      sessionStorage.setItem('__phase3FreshPrepared', 'true');
-    }
+    sessionStorage.removeItem('profileIntroSeen');
+    sessionStorage.removeItem('__phase3FreshPrepared');
   });
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
 };
 
 const waitIntro = async page => {
-  await page.waitForFunction(() => Boolean(window.ProfileIntro));
+  await page.waitForFunction(() => Boolean(window.ProfileIntro?.__phaseH), null, { timeout: 8_000 });
   return page.evaluate(() => window.ProfileIntro.snapshot());
 };
 
-const waitStage = async (page, stage, timeout = 8_000) => {
-  await page.waitForFunction(expected => window.ProfileIntro?.snapshot().stage === expected, stage, { timeout });
+const waitStage = async (page, expected, timeout = 8_000) => {
+  await page.waitForFunction(stage => window.ProfileIntro?.snapshot().stage === stage, expected, { timeout });
   return page.evaluate(() => window.ProfileIntro.snapshot());
 };
 
-const waitAtlasReady = async page => {
-  await waitStage(page, 'atlas');
-  await page.waitForFunction(() => window.ProfileIntroUnfold?.snapshot().completed === true, null, { timeout: 8_000 });
-  return page.evaluate(() => ({ intro: window.ProfileIntro.snapshot(), unfold: window.ProfileIntroUnfold.snapshot() }));
-};
-
-const waitComplete = async (page, result = 'completed') => {
-  await page.waitForFunction(expected => window.ProfileIntro?.snapshot().result === expected, result, { timeout: 10_000 });
+const waitComplete = async (page, timeout = 10_000) => {
+  await page.waitForFunction(() => window.ProfileIntro?.snapshot().stage === 'complete', null, { timeout });
   return page.evaluate(() => window.ProfileIntro.snapshot());
 };
 
-const firstLevelIds = ['work', 'knowledge', 'experience', 'education', 'about'];
-
-test.describe('Phase 3 interaction-gated intro — desktop', () => {
+test.describe('Phase H Intro Animation 2.0 — desktop', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('automatically unfolds the real Atlas, then waits for explicit Enter profile interaction', async ({ page }) => {
+  test('uses the live Atlas rather than a cloned intro graph', async ({ page }) => {
     await freshSession(page);
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.goto('/#overview');
-    await page.waitForSelector('.profile-intro-overlay[data-source="real-atlas"]');
-    const ready = await waitAtlasReady(page);
+    await page.goto('/');
+    await waitIntro(page);
+    await page.waitForFunction(() => ['atlas', 'wake', 'condensing', 'branches'].includes(window.ProfileIntro.snapshot().stage));
 
-    const source = await page.evaluate(() => ({
-      expected: window.SITE_DATA.graph.nodes.length,
-      cloned: document.querySelectorAll('.profile-intro-overlay .site-graph-node[data-node-id]').length,
-      source: document.querySelector('.profile-intro-overlay')?.dataset.source,
-      snapshot: window.ProfileIntro.snapshot()
+    const state = await page.evaluate(() => ({
+      snapshot: window.ProfileIntro.snapshot(),
+      cloneOverlayCount: document.querySelectorAll('.profile-intro-overlay').length,
+      motionWrapperCount: document.querySelectorAll('#site-graph .phase-h-node-motion').length,
+      expectedNodes: window.SITE_DATA.graph.nodes.length,
+      actualNodes: document.querySelectorAll('#site-graph .site-graph-node[data-node-id]').length
     }));
-    expect(source.source).toBe('real-atlas');
-    expect(source.cloned).toBe(source.expected);
-    expect(ready.unfold.completed).toBe(true);
-    expect(source.snapshot.running).toBe(false);
-    expect(source.snapshot.waiting).toBe(true);
-    await expect(page.locator('.profile-intro-enter')).toBeVisible();
-    await expect(page.locator('.profile-intro-enter')).toBeEnabled();
-    await expect(page.locator('.profile-intro-enter')).toContainText('Enter profile');
 
-    await page.waitForTimeout(700);
-    const stillWaiting = await page.evaluate(() => window.ProfileIntro.snapshot());
-    expect(stillWaiting.stage).toBe('atlas');
-    expect(stillWaiting.running).toBe(false);
+    expect(state.snapshot.realGraph).toBe(true);
+    expect(state.snapshot.persistentRoot).toBe(true);
+    expect(state.cloneOverlayCount).toBe(0);
+    expect(state.motionWrapperCount).toBeGreaterThan(5);
+    expect(state.actualNodes).toBe(state.expectedNodes);
     expect(errors).toEqual([]);
   });
 
-  test('condenses semantic layers physically toward branches and then into the root', async ({ page }) => {
+  test('keeps the same root DOM node through semantic condensation and exposes a readable five-branch phase', async ({ page }) => {
     await freshSession(page);
-    await page.goto('/#overview');
-    await waitAtlasReady(page);
+    await page.goto('/');
+    await waitStage(page, 'atlas');
 
-    const deepBefore = await page.evaluate(() => {
-      const node = document.querySelector('.profile-intro-overlay .site-graph-node[data-intro-tier="deep"]');
-      return node ? {
-        id: node.dataset.nodeId,
-        x: Number(node.dataset.x),
-        y: Number(node.dataset.y),
-        sectionX: Number(node.dataset.introSectionX),
-        sectionY: Number(node.dataset.introSectionY)
-      } : null;
+    await page.evaluate(() => {
+      const root = document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"]');
+      root.dataset.phaseHIdentityProbe = 'persistent-root';
     });
-    expect(deepBefore).toBeTruthy();
 
-    await page.locator('.profile-intro-enter').click();
-    await waitStage(page, 'territories');
+    await waitStage(page, 'condensing');
+    const moved = await page.evaluate(() => {
+      const deep = [...document.querySelectorAll('#site-graph .site-graph-node[data-phase-h-tier="deep"]')][0];
+      const wrapper = deep?.querySelector(':scope > .phase-h-node-motion');
+      return Boolean(wrapper && wrapper.getAttribute('transform') && wrapper.getAttribute('transform') !== 'translate(0.00 0.00) scale(1.0000)');
+    });
+    expect(moved).toBe(true);
 
-    // Observe the branch contract atomically. The cinematic continues shortly
-    // after publishing `branches`, so a second protocol round-trip can otherwise
-    // sample the following root-collapse frame rather than the branch frame.
-    await page.waitForFunction(expected => {
-      if (window.ProfileIntro?.snapshot().stage !== 'branches') return false;
-      const node = document.querySelector(`.profile-intro-overlay .site-graph-node[data-node-id="${expected.id}"]`);
-      if (!node) return false;
-      return Math.abs(Number(node.dataset.x) - expected.sectionX) < 1 &&
-        Math.abs(Number(node.dataset.y) - expected.sectionY) < 1;
-    }, { id: deepBefore.id, sectionX: deepBefore.sectionX, sectionY: deepBefore.sectionY }, { timeout: 8_000 });
+    await waitStage(page, 'branches');
+    const branches = await page.evaluate(() => ({
+      probe: document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"]')?.dataset.phaseHIdentityProbe,
+      rootOpacity: Number(getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"]')).opacity),
+      sections: ['work', 'knowledge', 'experience', 'education', 'about'].map(id => {
+        const node = document.querySelector(`#site-graph .site-graph-node[data-node-id="${id}"]`);
+        return { id, opacity: Number(getComputedStyle(node).opacity) };
+      }),
+      deepVisible: [...document.querySelectorAll('#site-graph .site-graph-node[data-phase-h-tier="deep"]')]
+        .filter(node => Number(getComputedStyle(node).opacity) > .08).length
+    }));
 
-    await waitStage(page, 'root');
-    await waitStage(page, 'identity');
-    const snapshot = await page.evaluate(() => window.ProfileIntro.snapshot());
-    expect(snapshot.stages).toEqual(expect.arrayContaining(['atlas', 'territories', 'branches', 'root', 'identity']));
-    expect(snapshot.running).toBe(false);
+    expect(branches.probe).toBe('persistent-root');
+    expect(branches.rootOpacity).toBeGreaterThan(.8);
+    expect(branches.sections.every(item => item.opacity > .55)).toBe(true);
+    expect(branches.deepVisible).toBeLessThanOrEqual(2);
   });
 
-  test('root becomes an interactive portrait identity node and then shrinks into the ordinary graph root', async ({ page }) => {
+  test('automatically folds into the stable root landing with no second gateway click', async ({ page }) => {
     await freshSession(page);
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
-    await page.goto('/#overview');
-    await waitAtlasReady(page);
-    await page.locator('.profile-intro-enter').click();
-    await waitStage(page, 'identity');
-
-    const identity = page.locator('.profile-intro-identity');
-    await expect(identity).toBeVisible();
-    await expect(identity).toHaveAttribute('aria-label', 'Open the profile map');
-    await expect(identity.locator('img')).toHaveAttribute('src', 'assets/stepan-chrast.jpg');
-    await expect(identity.locator('.profile-intro-identity-name')).toContainText('Štěpán Chrast');
-    await expect(identity.locator('.profile-intro-identity-tag')).toHaveCount(3);
-
-    // The identity appears where the previous Enter control lived, so the
-    // pointer can already be over it. Move away before testing hover motion.
-    await page.mouse.move(8, 8);
-    await page.waitForTimeout(80);
-    const transformBefore = await identity.evaluate(element => getComputedStyle(element).transform);
-    await identity.hover();
-    await page.waitForTimeout(140);
-    const transformAfter = await identity.evaluate(element => getComputedStyle(element).transform);
-    expect(transformAfter).not.toBe(transformBefore);
-
-    await identity.click();
+    await page.goto('/');
     const completed = await waitComplete(page);
+
     expect(completed.result).toBe('completed');
-    expect(await page.evaluate(() => window.ProfileRootLanding.isActive())).toBe(false);
-    expect(await page.evaluate(() => document.body.dataset.graphRoute)).toBe('overview');
-    await expect(page.locator('#site-explorer')).toBeVisible();
-    await expect(page.locator('.profile-intro-overlay')).toHaveCount(0);
-    for (const id of firstLevelIds) {
-      await expect(page.locator(`#site-graph .site-graph-node[data-node-id="${id}"]`)).toBeVisible();
-    }
+    expect(completed.route).toBe('overview');
+    expect(completed.rootLanding).toBe(true);
+    expect(completed.cloneOverlayPresent).toBe(false);
+    expect(await page.evaluate(() => sessionStorage.getItem('profileIntroSeen'))).toBe('true');
+    await expect(page.locator('.root-node-trigger')).toBeVisible();
+    await expect(page.locator('.hero-visual.profile-identity')).toBeVisible();
+    await expect(page.locator('.phase-h-latent-stub')).toHaveCount(5);
+    await expect(page.locator('#site-explorer')).toBeHidden();
     expect(errors).toEqual([]);
   });
 
-  test('Skip intro bypasses the cinematic flow and lands on the Phase 2 root landing', async ({ page }) => {
+  test('Escape and Tab immediately complete the intro to an accessible root landing', async ({ page }) => {
     await freshSession(page);
-    await page.goto('/#overview');
+    await page.goto('/');
     await waitStage(page, 'atlas');
-    await page.locator('.profile-intro-skip').click();
-    const snapshot = await waitComplete(page, 'skipped');
-    expect(snapshot.result).toBe('skipped');
-    expect(await page.evaluate(() => window.ProfileRootLanding.isActive())).toBe(true);
-    await expect(page.locator('.root-node-trigger')).toBeVisible();
-    await expect(page.locator('#site-explorer')).toBeHidden();
-  });
-
-  test('Escape skips but ordinary pointer interaction with the unfolding Atlas does not start condensation', async ({ page }) => {
-    await freshSession(page);
-    await page.goto('/#overview');
-    await waitStage(page, 'atlas');
-    await page.mouse.click(80, 80);
-    await page.waitForTimeout(250);
-    expect((await page.evaluate(() => window.ProfileIntro.snapshot())).stage).toBe('atlas');
     await page.keyboard.press('Escape');
-    await waitComplete(page, 'skipped');
-    expect(await page.evaluate(() => window.ProfileRootLanding.isActive())).toBe(true);
-  });
+    const skipped = await waitComplete(page);
+    expect(skipped.result).toBe('skipped');
+    expect(skipped.rootLanding).toBe(true);
 
-  test('the completed intro is session-only; refresh returns directly to the root landing', async ({ page }) => {
-    await freshSession(page);
-    await page.goto('/#overview');
-    await waitAtlasReady(page);
-    await page.locator('.profile-intro-enter').click();
-    await waitStage(page, 'identity');
-    await page.locator('.profile-intro-identity').click();
-    await waitComplete(page);
-    expect(await page.evaluate(() => sessionStorage.getItem('profileIntroSeen'))).toBe('true');
-
+    await page.evaluate(() => sessionStorage.removeItem('profileIntroSeen'));
     await page.reload();
-    const snapshot = await waitIntro(page);
-    expect(snapshot.eligible).toBe(false);
-    expect(snapshot.result).toBe('bypassed');
-    await expect(page.locator('.profile-intro-overlay')).toHaveCount(0);
-    await page.waitForFunction(() => Boolean(window.ProfileRootLanding));
-    expect(await page.evaluate(() => window.ProfileRootLanding.isActive())).toBe(true);
+    await waitStage(page, 'atlas');
+    await page.keyboard.press('Tab');
+    const keyboard = await waitComplete(page);
+    expect(keyboard.result).toBe('completed');
+    expect(keyboard.rootLanding).toBe(true);
   });
 
-  test('deep links bypass the intro and mark the session seen', async ({ page }) => {
+  test('clicking a visible Atlas node retargets out of the intro instead of waiting for the cinematic', async ({ page }) => {
     await freshSession(page);
-    await page.goto('/#knowledge');
-    const snapshot = await waitIntro(page);
-    expect(snapshot.eligible).toBe(false);
-    expect(snapshot.result).toBe('bypassed');
-    await expect(page.locator('.profile-intro-overlay')).toHaveCount(0);
-    await page.waitForFunction(() => document.body.dataset.graphRoute === 'knowledge');
+    await page.goto('/');
+    await waitStage(page, 'wake');
+    await page.locator('#site-graph .site-graph-node[data-node-id="knowledge"]').click({ force: true });
+    await page.waitForFunction(() => document.body.dataset.graphRoute === 'knowledge', null, { timeout: 6_000 });
+    const snapshot = await page.evaluate(() => window.ProfileIntro.snapshot());
+    expect(snapshot.result).toBe('interrupted');
+    expect(snapshot.targetRoute).toBe('knowledge');
     expect(await page.evaluate(() => document.body.dataset.graphMode)).toBe('focus');
     expect(await page.evaluate(() => sessionStorage.getItem('profileIntroSeen'))).toBe('true');
   });
-});
 
-test.describe('Phase 3 reduced motion', () => {
-  test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
-
-  test('uses a short root-to-Atlas reveal, then waits for Enter profile and hands directly to identity', async ({ page }) => {
-    await page.emulateMedia({ reducedMotion: 'reduce' });
+  test('refresh in the same session bypasses the cinematic and deep links never run it', async ({ page }) => {
     await freshSession(page);
-    await page.goto('/#overview');
-    await waitAtlasReady(page);
-    expect((await page.evaluate(() => window.ProfileIntro.snapshot())).stage).toBe('atlas');
-
-    await page.locator('.profile-intro-enter').click();
-    const identityState = await waitStage(page, 'identity');
-    expect(identityState.reducedMotion).toBe(true);
-    expect(identityState.stages).toEqual(['atlas', 'identity']);
-    await expect(page.locator('.profile-intro-identity')).toBeVisible();
-
-    await page.locator('.profile-intro-identity').click();
+    await page.goto('/');
     await waitComplete(page);
-    expect(await page.evaluate(() => window.ProfileRootLanding.isActive())).toBe(false);
+    await page.reload();
+    const refreshed = await waitIntro(page);
+    expect(refreshed.eligible).toBe(false);
+    expect(refreshed.result).toBe('bypassed');
+    expect(refreshed.rootLanding).toBe(true);
+
+    const deepPage = await page.context().newPage();
+    await deepPage.addInitScript(() => sessionStorage.clear());
+    await deepPage.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
+    await deepPage.goto('/#knowledge');
+    await deepPage.waitForFunction(() => Boolean(window.ProfileIntro?.__phaseH));
+    const deep = await deepPage.evaluate(() => window.ProfileIntro.snapshot());
+    expect(deep.eligible).toBe(false);
+    expect(deep.result).toBe('bypassed');
+    expect(await deepPage.evaluate(() => document.body.dataset.graphRoute)).toBe('knowledge');
+    await deepPage.close();
+  });
+
+  test('the first root action is a partial geometric reverse of the final absorption', async ({ page }) => {
+    await freshSession(page);
+    await page.goto('/');
+    await waitComplete(page);
+    await page.locator('.root-node-trigger').click();
+    await page.waitForFunction(() => document.body.classList.contains('is-phase-h-root-expanding'), null, { timeout: 2_000 });
+
+    const during = await page.evaluate(() => {
+      const section = document.querySelector('#site-graph .site-graph-node[data-node-id="knowledge"]');
+      const wrapper = section?.querySelector(':scope > .phase-h-node-motion');
+      return wrapper?.getAttribute('transform') || '';
+    });
+    expect(during).toContain('translate');
+
+    await page.waitForFunction(() => !document.body.classList.contains('is-phase-h-root-expanding'), null, { timeout: 3_000 });
+    for (const id of ['work', 'knowledge', 'experience', 'education', 'about']) {
+      const delta = await page.evaluate(sectionId => {
+        const node = document.querySelector(`#site-graph .site-graph-node[data-node-id="${sectionId}"]`);
+        const expected = window.ProfileGeometry.overviewPoint(sectionId);
+        return Math.hypot(Number(node.dataset.x) - expected.x, Number(node.dataset.y) - expected.y);
+      }, id);
+      expect(delta).toBeLessThan(3);
+    }
   });
 });
 
-test.describe('Phase 3 interaction-gated intro — mobile portrait', () => {
+test.describe('Phase H reduced motion', () => {
+  test.use({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+
+  test('uses a short semantic Atlas to root transition', async ({ page }) => {
+    await freshSession(page);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    const completed = await waitComplete(page, 6_000);
+    expect(completed.reducedMotion).toBe(true);
+    expect(completed.rootLanding).toBe(true);
+    expect(completed.elapsed).toBeLessThan(2_500);
+  });
+});
+
+test.describe('Phase H mobile composition', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
-  test('auto-unfolds the real Atlas, forms the portrait identity node, then reveals the five-branch mobile graph', async ({ page }) => {
+  test('keeps mobile intro label density intentionally low and lands on the mobile root composition', async ({ page }) => {
     await freshSession(page);
-    const errors = [];
-    page.on('pageerror', error => errors.push(error.message));
-    await page.goto('/#overview');
-    await waitAtlasReady(page);
-    await expect(page.locator('.profile-intro-enter')).toBeVisible();
-    await page.locator('.profile-intro-enter').click();
-    await waitStage(page, 'identity');
-    await expect(page.locator('.profile-intro-identity img')).toBeVisible();
-    await page.locator('.profile-intro-identity').click();
+    await page.goto('/');
+    await waitStage(page, 'atlas');
+    const mobile = await page.evaluate(() => ({
+      snapshot: window.ProfileIntro.snapshot(),
+      deepLabelsVisible: [...document.querySelectorAll('#site-graph .site-graph-node[data-phase-h-tier="deep"] .site-graph-label')]
+        .filter(label => Number(getComputedStyle(label).opacity) > .05).length,
+      clusterLabelsVisible: [...document.querySelectorAll('#site-graph .site-graph-node[data-phase-h-tier="cluster"] .site-graph-label')]
+        .filter(label => Number(getComputedStyle(label).opacity) > .05).length
+    }));
+    expect(mobile.snapshot.mobile).toBe(true);
+    expect(mobile.deepLabelsVisible).toBe(0);
+    expect(mobile.clusterLabelsVisible).toBe(0);
+
     await waitComplete(page);
-    await page.waitForFunction(() => Boolean(window.MobileProfileScene));
-    expect(await page.evaluate(() => window.ProfileRootLanding.isActive())).toBe(false);
-    await expect(page.locator('#site-explorer')).toBeVisible();
-    for (const id of firstLevelIds) {
-      await expect(page.locator(`#site-graph .site-graph-node[data-node-id="${id}"]`)).toBeVisible();
-    }
-    expect(errors).toEqual([]);
+    await expect(page.locator('.root-node-trigger')).toBeVisible();
+    await expect(page.locator('.phase-h-latent-stub')).toHaveCount(5);
   });
 });

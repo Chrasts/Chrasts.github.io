@@ -1,4 +1,22 @@
 (() => {
+  const ensurePhaseI = () => {
+    if (!document.querySelector('link[data-profile-phase-i-atlas]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = 'phase-i-atlas-polish.css';
+      link.dataset.profilePhaseIAtlas = 'true';
+      document.head.appendChild(link);
+    }
+    if (!document.querySelector('script[data-profile-phase-i-atlas]')) {
+      const script = document.createElement('script');
+      script.src = 'phase-i-atlas-polish.js';
+      script.async = false;
+      script.dataset.profilePhaseIAtlas = 'true';
+      document.head.appendChild(script);
+    }
+  };
+  ensurePhaseI();
+
   if (!document.querySelector('style[data-phase-h-pointer-guard]')) {
     const style = document.createElement('style');
     style.dataset.phaseHPointerGuard = 'true';

@@ -83,7 +83,9 @@
   const copy = value => typeof structuredClone === 'function'
     ? structuredClone(value)
     : JSON.parse(JSON.stringify(value));
-  const introOwnsMotion = () => ['pending', 'running'].includes(document.documentElement.dataset.profileIntro || '');
+  const introOwnsMotion = () =>
+    ['pending', 'preparing', 'running'].includes(document.documentElement.dataset.profileIntro || '') ||
+    document.body?.classList.contains('is-atlas-reveal');
   const structuralOwnsMotion = () => Boolean(
     document.body?.classList.contains('is-v9-transitioning') ||
     document.body?.classList.contains('is-crosslink-travelling') ||
@@ -110,7 +112,7 @@
         node.classList.contains('is-feel-origin') ||
         node.matches(':focus-visible');
       node.dataset.depthChannel = active ? DEPTH.GRAPH_ACTIVE : DEPTH.GRAPH_BASE;
-      node.querySelectorAll('.site-graph-halo-ring').forEach(ring => {
+      node.querySelectorAll('.site-graph-halo').forEach(ring => {
         ring.dataset.depthChannel = active ? DEPTH.GRAPH_ACTIVE : DEPTH.GRAPH_BASE;
       });
     });

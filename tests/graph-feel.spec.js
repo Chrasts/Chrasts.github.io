@@ -75,10 +75,11 @@ test.describe('Phase F graph feel', () => {
 
     const node = page.locator('#site-graph .site-graph-node[data-node-id="hedgehog-house"]');
     await expect(node).toHaveClass(/is-artifact-linked/);
+    await expect(page.locator('.artifact-tether-layer')).toHaveClass(/is-visible/);
+
     await page.evaluate(() => window.ProfileGraphFeel.refresh());
     const halo = node.locator(':scope > .site-graph-halo');
     await expect.poll(() => haloOpacity(halo)).toBeGreaterThan(.3);
-    await expect(page.locator('.artifact-tether-layer')).toHaveClass(/is-visible/);
   });
 
   test('reduced motion keeps graph feel semantics but removes repeating animation', async ({ page }) => {

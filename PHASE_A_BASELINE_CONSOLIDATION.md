@@ -1,376 +1,227 @@
-# Phase A — Current Baseline Consolidation
+# Phase A — V3.1 Rebaseline and Execution Boundaries
 
-Date: 2026-08-23  
-Baseline audited: `main` at `bd1c80bd331f6388d48a7668583c07101a46d132` (`Keep artifact focus controls inside viewport`)
+Date: 2026-08-24  
+Roadmap authority: `Interactive Graph Portfolio - Agent-Executable Master Roadmap V3.1.md`  
+Supplement: `Interactive Graph Portfolio - V3.1 Supplement - Additional Material from V3.md`  
+Baseline audited: `main` at `ec0a1b831889aea2f4ba0270ff5e6d22b42623b6`
 
-This document freezes the current runtime architecture before the Object Focus, Composition, Camera and Motion phases begin. It is intentionally an audit, not a cleanup pass.
+This document rebaselines the current runtime against V3.1. It supersedes the previous Phase A execution order in this file. Historical phase documents remain useful implementation evidence, but they are not the forward product specification where they conflict with V3.1.
 
-## 1. Phase A scope
+## 1. Phase A conclusion
 
-The current roadmap defines Phase A as:
+The current site already contains substantial infrastructure that V3.1 explicitly says to preserve when it represents sound canonical ownership. The next implementation cycle should therefore **not** restart the graph, routing, scene registry, FCA lattice, artifact metadata, mobile runtime or transition coordination from scratch.
 
-- verify current CI;
-- audit scene/graph ownership;
-- document known legacy layers;
-- identify fixed-position artifact patches that should later move into the composer;
-- confirm mobile Focus/Atlas interaction;
-- confirm Work direct project targets;
-- verify current rich artifact scenes;
-- remove obsolete assumptions from future planning.
+The main architectural problem is different: several interaction/presentation systems were accumulated in earlier phases as bounded compatibility or polish layers. V3.1 now requires those layers to become a stronger canonical interaction architecture rather than receiving more local patches.
 
-Phase A explicitly does **not** include a broad rewrite, mass CSS merge or animation-library migration.
+The immediate execution order after this rebaseline is:
+
+1. explicit node interaction state system;
+2. reusable `HaloRenderer`;
+3. semantic hover integration through existing graph semantics;
+4. soft local node dynamics;
+5. 2.5D camera foundation;
+6. Intro 3.0 Atlas reveal;
+7. root entry portal;
+8. semantic Atlas condensation;
+9. polished root + five-branch profile landing;
+10. Quick Overview;
+11. Atlas / Focus spatial unification;
+12. early mobile/accessibility/performance checkpoint.
+
+This replaces the older post-Phase-A assumption that Object Focus pilots should be the next primary implementation target.
 
 ---
 
-## 2. Canonical ownership map
+## 2. Protected canonical ownership
 
-### Semantic/profile data
+These systems are treated as high-value substrate unless a later phase demonstrates a concrete architectural conflict.
+
+### Semantic profile / ontology
 
 **Owner:** `site-data.js`
 
-Owns:
-- graph nodes and hierarchy;
-- typed relations/cross-links;
-- Work project/context/theme data;
-- canonical route/node identity used by the graph layer.
+Preserve:
+- node identity and hierarchy;
+- typed semantic relations;
+- route/node mapping;
+- Work project/context/theme semantics.
 
-Do not duplicate semantic node/project definitions in scene code.
+Do not duplicate semantic graph knowledge inside interaction, halo, physics or scene code.
 
 ### Artifact metadata
 
 **Owner:** `artifact-data.js` / `ProfileArtifacts`
 
-Owns:
-- artifact identity;
-- source/file locations;
-- semantic artifact type;
-- publication/availability metadata;
-- graph anchors.
+Preserve artifact identity, source/file locations, semantic artifact types and graph anchors.
 
-`artifact-scene-bindings.js` references artifact IDs rather than owning file paths.
-
-### Settled graph DOM and local graph state
+### Settled graph rendering
 
 **Owner:** `site-graph.js`
 
-Owns:
-- live graph DOM;
-- route-local graph rendering;
-- integrated Work lattice presentation;
-- settled node/edge representation.
+Preserve its role as the settled graph/route renderer and owner of existing semantic relationship classes. New interaction layers may consume those classes but should not create a second graph model.
 
-Transition overlays must not become settled geometry owners.
-
-### Canonical Overview / Atlas geometry
+### Deterministic global target geometry
 
 **Owner:** `radial-geometry.js` / `ProfileGeometry`
 
-Owns deterministic global target coordinates.
+Canonical topology remains deterministic. V3.1 node dynamics must add only temporary interaction offsets; they must not rewrite these settled target coordinates.
 
-`global-geometry-ownership.js`, Phase 0/7 label policies and repeated repair/reapply logic are currently stabilisation layers around this owner, not alternate canonical geometry systems.
-
-### Transitional graph geometry
-
-**Owner:** `graph-transitions-v6.js`
-
-Owns temporary transition overlay/interpolation state. It must hand off to the settled renderer rather than retain geometry ownership after a transition.
-
-`graph-transition-prelude.js` is a compatibility/stability layer and should not be extended as a second transition architecture.
-
-### Atlas-specific interaction and LOD
+### Atlas-specific structural behaviour
 
 **Owner:** `phase7-atlas.js`
 
-Owns:
-- Atlas-only pan/zoom behaviour;
-- Atlas LOD/presentation policy;
-- Atlas controls and interaction state.
+Preserve Atlas pan/zoom/LOD and structural visibility ownership until Atlas/Focus unification deliberately migrates that responsibility.
 
-It consumes canonical profile/geometry data rather than defining a second graph model.
+### Transition coordination
+
+**Owner:** `transition-coordination.js` for supersedable transition state/tokens, with `graph-transitions-v6.js` owning current structural transition geometry.
+
+Preserve the interruptible-transition contract. New motion primitives should integrate with this ownership rather than add independent timer/callback state machines.
 
 ### Scene lifecycle
 
 **Owner:** `scene-system.js` / `ProfileScene`
 
-Owns:
-- scene-object registration;
-- object lifecycle;
-- responsive scene variants;
-- graph-state synchronisation contract;
-- camera adapter registry;
-- transition coordination hooks.
+Preserve registration, lifecycle, responsive variants and graph-state synchronisation contracts.
 
-New rich scene work should register through `ProfileScene`; it should not add route-global DOM observers as an alternative lifecycle system.
+### Work FCA mathematics
 
-### Legacy scene bridge
-
-**Bridge:** `scene-legacy-bridge.js`
-
-Current responsibilities:
-- synchronise existing graph/body route state into `ProfileScene`;
-- expose desktop/Atlas/mobile camera adapters over existing renderers;
-- translate legacy transition state into the scene transition coordinator;
-- boot Phase 8 and artifact-scene bundles.
-
-This file is deliberately a bridge. Future architecture should reduce its responsibilities rather than make it a new canonical owner.
-
-### Rich artifact scene presentation
-
-**Owners:**
-- `artifact-scene-bindings.js` — route/node placement bindings;
-- `artifact-scene-recipes.js` — reusable scene visual grammar;
-- `artifact-scene-runtime.js` — scene lifecycle, focus viewer, tethering and responsive behaviour;
-- `artifact-scenes.css` / `artifact-scenes-layout.css` — current artifact presentation geometry.
-
-### Current artifact placement heuristic
-
-**Owner:** `artifact-scene-layout-contract.js`
-
-Current contract:
-- route target declares preferred left/right side;
-- open inspector lane can flip the artifact to the opposite side;
-- mobile delegates to the shared mobile tray.
-
-This is an intentional interim heuristic, **not** the final Scene Composition system from Phase D.
-
-### Phase 8 semantic scenes
-
-**Owners:** `phase8-scene-data.js`, `phase8-semantic-scenes.js`, `phase8-semantic-scenes.css`
-
-Own the current Experience/Education semantic scene objects. They should later migrate to the shared composition/focus primitives rather than spawn parallel systems.
-
-### Work metadata/detail surface
-
-**Owner:** current integrated graph/detail interaction in `site-graph.js` plus existing inspector/detail code.
-
-The hidden legacy Work section in `index.html` / `script.js` is still used as a control/data compatibility reservoir and is not the desired long-term owner.
+Preserve the existing FCA lattice semantics and project relationships. V3.1 explicitly treats this mathematics as canonical substrate; later scene polish must not simplify it into a decorative project grid.
 
 ---
 
-## 3. Known legacy and stabilisation layers
+## 3. Existing substrate that partially satisfies new V3.1 phases
 
-These are recorded now so later phases do not accidentally build new abstractions on top of them.
+V3.1 phase names do not imply that every subsystem starts from zero.
 
-### P1 — duplicated Work implementation
+### Node interaction / semantic hover
 
-`script.js` still contains the original Work lattice/filter implementation while `site-graph.js` contains the integrated graph version. The legacy Work DOM remains present and is still used as a control source.
+`graph-feel.js` already provides a bounded presentation microstate with pointer/keyboard parity and consumes semantic classes produced by the graph renderer. It currently tracks states such as `idle`, `preview`, `pressed`, `dragging` and `transition` and injects one SVG halo per node.
 
-Target cleanup belongs to the final legacy consolidation phase, unless a prerequisite is forced earlier by the new composition architecture.
+This is useful substrate, but it is **not yet the V3.1 Phase B target** because:
+- state is primarily graph-global rather than an explicit reusable per-node state model;
+- halo creation is coupled directly to `ProfileGraphFeel`;
+- the halo is one fixed circle rather than a reusable semantic renderer/preset system;
+- root-entry, related, selected and future depth states are not owned by a dedicated halo primitive;
+- there is no canonical interaction-offset contract for Phase C node dynamics.
 
-### P1 — global prototype patches
+Phase B should therefore refactor/evolve this layer rather than stack another hover system on top of it.
 
-Existing stability layers patch browser prototypes, including:
+### Semantic relationship response
 
-- `phase0-stability.js`;
-- `graph-transition-prelude.js`;
-- `phase7-pointer-hotfix.js`.
+The settled graph renderer already exposes upstream/downstream/lateral and Work relationship classes. Preserve that semantic source of truth. Phase B should improve presentation and coordination, not re-derive graph relationships independently.
 
-These solved real races but make ownership implicit. Do not add new global prototype patches for Object Focus, Composition or Camera work.
+### Camera
 
-### P1 — multiple geometry repair layers
+A camera abstraction and composition work already exist (`camera-composition.js` plus adapters registered through the scene bridge). V3.1 Phase D should extend this into a semantic 2.5D composition system, not invent a parallel camera API.
 
-Current geometry is protected by:
+### Scene/object infrastructure
 
-- `radial-geometry.js`;
-- `global-geometry-ownership.js`;
-- Phase 0/7 label policies;
-- repeated geometry reapplication after mutations.
-
-The target is still one deterministic settled geometry owner. New motion should consume canonical target geometry instead of adding another repair loop.
-
-### P2 — distributed bootstrap
-
-Core files are loaded from `index.html`, while semantic/artifact bundles are additionally booted through `scene-legacy-bridge.js` and related runtime loaders.
-
-Do not introduce another independent loader in Phase B/C/D.
-
-### P2 — legacy page sections
-
-`index.html` still contains legacy Work, Methods, Contact and other conventional-page material. Some of it is hidden after the graph app starts; Work still has runtime compatibility value.
-
-Do not remove these sections piecemeal during motion work.
-
-### Historical CSS/runtime layering
-
-Several generations remain active or loadable, including graph, intro and mobile layers. This is technical debt but currently part of the tested baseline.
-
-Phase A rule: document it now; merge/remove it only after the interaction architecture matures.
+`scene-system.js`, `scene-composer.js`, artifact bindings/recipes/runtime and Object Focus infrastructure are real reusable substrate. They move later in the V3.1 execution order because the graph-native spatial interaction character now has priority.
 
 ---
 
-## 4. Fixed-position / ad hoc composition debt
+## 4. Explicitly replaceable / migration-target subsystems
 
-These are concrete migration targets for Phase D — Scene Composition System.
+These are not protected merely because they currently work.
 
-### Artifact side docking
+### Intro stack
 
-`artifact-scenes.css` currently places desktop artifact objects using fixed scene offsets such as:
+Current active/historical intro layers include:
+- `intro-animation.js` / `.css`;
+- `intro-fixes-v3.js` / `.css`;
+- `intro-unfold.js` / `.css`;
+- Phase H intro behaviour layered onto the live graph.
 
-- left/right `16px`;
-- top `70px`.
+V3.1 requires Intro 3.0 to be a live Atlas state (`PREPARING → ATLAS_REVEAL → ATLAS_READY`) with persistent Atlas exploration, root portal and later semantic condensation. Existing intro code may be substantially replaced when Phase E/F/G are implemented.
 
-`artifact-scene-layout-contract.js` only chooses left vs right and avoids the inspector lane.
+### Graph presentation layers
 
-### Media-deck card geometry
+Multiple historical CSS generations remain in the repository (`graph-v4.css`, `graph-v5.css`, `graph-v8.css`, `graph-v9.css`, `graph-feel.css`, motion polish and Atlas layers). Do not perform an unrelated mass merge now, but do not treat this layering as a design constraint for the new renderer primitives.
 
-`artifact-scenes.css` and `artifact-scenes-layout.css` currently use fixed pixel widths, translations, rotations and `nth-child` rules for:
+### Legacy bridge / compatibility patches
 
-- `diagram` decks;
-- `screens` decks;
-- `fan` galleries.
+`scene-legacy-bridge.js`, `graph-transition-prelude.js`, `phase0-stability.js`, `phase7-pointer-hotfix.js`, `global-geometry-ownership.js` and similar repair layers are migration/stability mechanisms, not preferred homes for new V3.1 behaviour.
 
-These are valid current recipes but should eventually declare semantic placement preferences to the composer instead of owning global scene coordinates.
+Rule for new work: if a new feature would require another global prototype patch, repeated geometry repair loop, route-specific coordinate override or independent transition timer, stop and fix the abstraction instead.
 
-### Hedgehog House low-left dock
+### Root landing / profile entry composition
 
-The current test intentionally verifies low-left docking. Treat this as a baseline behaviour to migrate, not a permanent composition API.
-
-### Mobile artifact tray
-
-The mobile tray is currently a strong explicit layout rule (`bottom: 64px`, viewport-relative sizing). Phase P may refine this, but Phase D should expose it as a semantic mobile placement policy rather than route-specific CSS.
-
-### Focus viewer composition
-
-The current focus viewer is bounded and working, but it is still an overlay-style scene surface. Phase B/C will replace the visual discontinuity with shared-element object focus while preserving its accessibility/fallback behaviour.
+The current landing and Phase H portrait handoff are historical implementation evidence. V3.1 explicitly allows major DOM/composition changes here. The final profile root must show the five primary branches immediately and remain spatially continuous with Atlas condensation.
 
 ---
 
-## 5. Mobile Focus / Atlas baseline
+## 5. Current active bootstrap boundary
 
-Current automated contracts already verify:
+`index.html` directly loads the core runtime in this order:
 
-- mobile runtime boots only at mobile breakpoint;
-- `ProfileScene.manager.variant === 'mobile'`;
-- local mobile camera adapter is `mobile-local`;
-- deep Focus routes return cleanly to Overview;
-- removed mobile cross-link rail stays hidden;
-- Work exposes mobile filter controls;
-- Atlas exposes mobile Layers controls;
-- Atlas has a compact Profile return action;
-- Work remains lattice-shaped in Atlas with multiple project ranks;
-- project metadata labels remain suppressed in the Atlas Work territory;
-- rich artifact scenes collapse into a non-scrolling mobile tray.
+1. `site-data.js`
+2. `scene-system.js`
+3. `transition-coordination.js`
+4. `scene-definitions.js`
+5. `phase0-stability.js`
+6. `graph-transition-prelude.js`
+7. `site-graph.js`
+8. `radial-geometry.js`
+9. `graph-transitions-v6.js`
+10. `cross-link-travel-v2.js`
+11. `scene-legacy-bridge.js`
+12. `script.js`
 
-Phase A conclusion: mobile Focus/Atlas semantics are present and contract-tested. Future phases must preserve semantic parity while changing composition/motion.
+The legacy bridge then boots artifact/semantic scene bundles dynamically.
 
----
-
-## 6. Work direct project target baseline
-
-Current interaction contracts verify:
-
-- direct project anchors receive enhanced primary hit targets;
-- hitboxes are at least `104 × 24` SVG units;
-- direct activation opens `#work/project/...`;
-- project inspection does not re-layout the Work lattice;
-- concept inspector presents linked projects as a primary `Open a project` action;
-- opening a project from the concept inspector also preserves lattice geometry.
-
-Phase A conclusion: direct project selection is already the primary interaction contract and must not regress when scene objects become richer.
+V3.1 implementation should avoid adding a third independent bootstrap mechanism. New canonical node interaction and halo modules should have one explicit load/ownership path.
 
 ---
 
-## 7. Rich artifact scene baseline
+## 6. CI and regression baseline
 
-Current artifact architecture exposes two reusable recipes:
+Workflow: `.github/workflows/phase0-smoke.yml`.
 
-- `document-folio`;
-- `media-deck`.
-
-Current verified scene bindings include:
-
-1. Simulation Credence PDF folio;
-2. CLP paper folio;
-3. BSc thesis diagram deck;
-4. Modal Logic Lab screenshot deck;
-5. Hedgehog House photo gallery.
-
-Additional semantic scene implementations already include the certification stack, ESSLLI timetable, Experience timeline and prg.ai route/status scene.
-
-Current automated artifact contracts verify:
-
-- artifact manifest/scene boot without registry issues;
-- PDF folio preview and focus viewer;
-- directly selectable thesis specimens;
-- Modal Logic Lab live-app affordance;
-- Hedgehog House graph tethering and original-resolution image focus;
-- mobile non-scrolling artifact tray.
-
-These scenes are pilots/evidence for the next architecture. Do not rebuild them from scratch.
-
----
-
-## 8. CI baseline
-
-Workflow: `.github/workflows/phase0-smoke.yml`
-
-The workflow currently performs:
-
-### Static validation
-- JavaScript syntax checks;
+Current CI already provides:
+- JavaScript syntax validation;
 - portfolio model validation;
 - artifact manifest validation;
-- artifact scene validation.
+- artifact scene validation;
+- push smoke matrices for core / architecture / interactions;
+- full Playwright regression on pull requests/manual runs.
 
-### Push browser smoke matrix
-- core;
-- architecture;
-- interactions.
+New architecture primitives should add focused contract tests rather than rely only on screenshots/manual inspection.
 
-### Pull-request/manual regression
-- full Playwright suite.
-
-Phase A should only be marked fully complete after the branch/PR containing this audit passes the current workflow. The workflow configuration itself is present and covers the ownership/interaction areas relevant to this baseline.
+For major visual phases, functional CI is necessary but not sufficient: V3.1 also requires experiential acceptance.
 
 ---
 
-## 9. Obsolete roadmap assumptions removed from future planning
+## 7. Dev experiment surfaces
 
-Future work should **not** assume that the site still needs to invent from scratch:
+Phase A introduces an isolated `/dev/` experiment shell with hash-addressable surfaces:
 
-- SceneManager / scene registry;
-- camera abstraction;
-- route synchronisation;
-- Atlas mode;
-- Focus mode;
-- Work FCA lattice;
-- typed cross-link travel;
-- root landing;
-- intro foundation;
-- artifact metadata registry;
-- artifact bindings/recipes/runtime;
-- mobile graph runtime;
-- Experience timeline;
-- ESSLLI timetable;
-- certification stack;
-- current artifact pilots.
+- `/dev/#halos`
+- `/dev/#node-dynamics`
+- `/dev/#camera`
+- `/dev/#intro`
+- `/dev/#scene-gallery`
+- `/dev/#transitions`
 
-The new roadmap starts from these as existing substrate and focuses next on object continuity, scene composition, camera composition and interruptible motion.
+The shell intentionally does not boot the full production application by default. Each later phase can opt into only the production modules it is testing, which prevents experiments from becoming accidental runtime patches.
 
 ---
 
-## 10. Phase A acceptance checklist
+## 8. Open old-roadmap work
 
-- [x] Current scene/graph ownership audited.
-- [x] Known legacy/stabilisation layers documented.
-- [x] Fixed-position artifact composition debt identified.
-- [x] Mobile Focus/Atlas interaction confirmed by existing automated contracts.
-- [x] Work direct project targets confirmed by existing automated contracts.
-- [x] Current rich artifact scenes verified against implementation/tests.
-- [x] Obsolete pre-baseline roadmap assumptions removed from future planning.
-- [ ] Current branch/PR CI confirmed green.
-- [ ] No known broken core navigation after the Phase A commit.
-
-The last two items are release gates rather than reasons to rewrite runtime code inside Phase A.
+Open branches/PRs created under older phase numbering are **not automatically part of the V3.1 execution path**. They may contain reusable code, but should be evaluated against V3.1 before merge. In particular, implementation order is now determined by the V3.1 master roadmap, not by historical Phase letters.
 
 ---
 
-## 11. Next step after Phase A
+## 9. Phase A acceptance
 
-When this baseline is green, proceed to **Phase B — Object Focus Pilot** in this order:
+- [x] Current `main` rebaselined against V3.1.
+- [x] Protected canonical ownership documented.
+- [x] Replaceable/migration-target subsystems identified.
+- [x] Existing Node/Camera/Scene substrate mapped onto new phases.
+- [x] Historical post-Phase-A execution order removed.
+- [x] CI baseline verified from workflow configuration.
+- [x] Isolated dev experiment surfaces added.
+- [x] No production visual behaviour intentionally changed by Phase A.
 
-1. Hedgehog House image;
-2. certificate;
-3. BSc thesis diagram.
-
-The pilot should preserve current routes, graph state, accessible fallback links and mobile behaviour while replacing the current overlay-like focus transition with shared-element spatial focus.
+Phase A is architectural preparation. The first phase expected to produce a visible interaction change is **V3.1 Phase B — Node Interaction Foundation**.

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Portfolio Interaction Lab</title>
+  <style>
+    :root{color-scheme:dark;background:#101412;color:#e8eee9;font-family:Inter,system-ui,sans-serif}
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% 10%,#1d2822 0,#101412 42%,#0a0d0b 100%)}
+    main{width:min(1100px,calc(100% - 32px));margin:0 auto;padding:48px 0 72px}
+    header{display:flex;justify-content:space-between;gap:24px;align-items:flex-start;margin-bottom:36px}
+    h1{font-size:clamp(2rem,5vw,4.5rem);line-height:.92;margin:0;letter-spacing:-.04em}
+    p{color:#b8c4bc;line-height:1.55;max-width:70ch}
+    a{color:inherit}
+    .back{font-size:.9rem;color:#b8c4bc}
+    .lab{display:grid;grid-template-columns:240px 1fr;gap:28px;align-items:start}
+    nav{display:grid;gap:8px;position:sticky;top:24px}
+    nav a{padding:10px 12px;border:1px solid #2d3932;border-radius:999px;text-decoration:none;color:#b8c4bc}
+    nav a[aria-current="page"]{background:#e8eee9;color:#101412;border-color:#e8eee9}
+    section{min-height:430px;border:1px solid #2d3932;border-radius:24px;padding:28px;background:rgba(16,20,18,.76);box-shadow:0 30px 90px rgba(0,0,0,.2)}
+    .kicker{font:600 .72rem/1.2 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.12em;text-transform:uppercase;color:#7fa18d}
+    h2{margin:8px 0 12px;font-size:clamp(1.5rem,3vw,2.6rem);letter-spacing:-.03em}
+    code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;color:#d9e6dd}
+    .status{margin-top:30px;padding-top:18px;border-top:1px solid #2d3932;color:#8e9c93;font-size:.9rem}
+    @media(max-width:760px){header{display:block}.back{display:inline-block;margin-top:18px}.lab{grid-template-columns:1fr}nav{position:static;grid-template-columns:repeat(2,minmax(0,1fr))}section{min-height:360px}}
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <div class="kicker">V3.1 development surface</div>
+        <h1>Interaction Lab</h1>
+        <p>Isolated surfaces for aggressive graph, camera, intro and scene experiments. These routes are intentionally separate from the production application so prototypes can fail without becoming compatibility patches.</p>
+      </div>
+      <a class="back" href="/">Return to portfolio ↗</a>
+    </header>
+    <div class="lab">
+      <nav aria-label="Experiment surfaces">
+        <a href="#halos" data-surface="halos">Halos</a>
+        <a href="#node-dynamics" data-surface="node-dynamics">Node dynamics</a>
+        <a href="#camera" data-surface="camera">Camera</a>
+        <a href="#intro" data-surface="intro">Intro</a>
+        <a href="#scene-gallery" data-surface="scene-gallery">Scene gallery</a>
+        <a href="#transitions" data-surface="transitions">Transitions</a>
+      </nav>
+      <section id="surface" tabindex="-1" aria-live="polite"></section>
+    </div>
+  </main>
+  <script>
+    (() => {
+      const copy = {
+        halos: ['Phase B prototype', 'Halo renderer', 'Build semantic halo presets here before integrating them into the production graph. Target states include idle, hover, focus, active, related and root-entry.'],
+        'node-dynamics': ['Phase C prototype', 'Soft node dynamics', 'Prototype temporary interaction offsets, local repulsion, falloff, clamps and spring return without mutating canonical graph target positions.'],
+        camera: ['Phase D prototype', 'Camera + 2.5D', 'Prototype semantic depth channels, push/pull, make-room, inspect framing and interruption while preserving deterministic composition.'],
+        intro: ['Phase E prototype', 'Intro 3.0', 'Prototype the live Atlas reveal state machine: PREPARING → ATLAS_REVEAL → ATLAS_READY. The experiment should use real graph semantics when production modules are deliberately connected.'],
+        'scene-gallery': ['Phase L/M prototype', 'Scene gallery', 'Later surface for image, document, diagram and media object recipes. Keep content identity persistent through focus and return.'],
+        transitions: ['Motion prototype', 'Interruptible transitions', 'Stress-test retargeting from current interpolated state. Avoid timer-only choreography and independent motion ownership.']
+      };
+      const nav = [...document.querySelectorAll('[data-surface]')];
+      const surface = document.querySelector('#surface');
+      const normalise = () => location.hash.replace(/^#/, '') || 'halos';
+      const render = () => {
+        const key = copy[normalise()] ? normalise() : 'halos';
+        const [kicker, title, description] = copy[key];
+        nav.forEach(link => link.setAttribute('aria-current', link.dataset.surface === key ? 'page' : 'false'));
+        surface.innerHTML = `<div class="kicker">${kicker}</div><h2>${title}</h2><p>${description}</p><p class="status">Surface: <code>/dev/#${key}</code> · Production modules are not auto-loaded.</p>`;
+      };
+      addEventListener('hashchange', render);
+      render();
+    })();
+  </script>
+</body>
+</html>

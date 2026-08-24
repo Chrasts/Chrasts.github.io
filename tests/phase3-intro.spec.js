@@ -190,16 +190,17 @@ test.describe('V3.1 Phase E live Atlas reveal — desktop', () => {
       return {
         waves: window.ProfileIntro.snapshot().revealedWaves,
         territoryLabels: layer?.querySelectorAll('.atlas-territory-label').length || 0,
-        territoryLayerOpacity: layer ? Number(getComputedStyle(layer).opacity) : 0,
-        crossRevealed: document.querySelectorAll('#site-graph .site-graph-edges path[data-intro-edge-wave="cross"].is-intro-revealed').length
+        territoryLayerOpacity: layer ? Number(getComputedStyle(layer).opacity) : 0
       };
     });
     expect(labels.waves).toContain('labels');
     expect(labels.territoryLabels).toBeGreaterThanOrEqual(5);
     expect(labels.territoryLayerOpacity).toBeGreaterThan(.5);
-    expect(labels.crossRevealed).toBe(0);
 
     await page.waitForFunction(() => window.ProfileIntro.snapshot().revealedWaves.includes('cross'));
+    const order = await page.evaluate(() => window.ProfileIntro.snapshot().revealedWaves);
+    expect(order.indexOf('labels')).toBeGreaterThanOrEqual(0);
+    expect(order.indexOf('cross')).toBeGreaterThan(order.indexOf('labels'));
     expect(await page.locator('#site-graph .site-graph-edges path[data-intro-edge-wave="cross"].is-intro-revealed').count()).toBeGreaterThan(0);
   });
 

@@ -246,6 +246,17 @@
       presentation: { preferredObject: 'external', provider: 'Moxfield', openMode: 'new-tab' }
     },
     {
+      id: 'axiom-wilds-gameplay',
+      type: 'video',
+      title: 'Axiom Wilds — gameplay preview',
+      description: 'Gameplay capture from the in-development Axiom Wilds project.',
+      anchorNodeIds: ['project-axiom-wilds'],
+      source: { kind: 'local', path: 'assets/video/work/axiom-wilds/demo-gameplay.mp4' },
+      mediaType: 'video/mp4',
+      availability: 'public',
+      presentation: { preferredObject: 'video', role: 'project-preview' }
+    },
+    {
       id: 'esslli-2026-course-timetable',
       type: 'document',
       title: 'ESSLLI 2026 Course Timetable',

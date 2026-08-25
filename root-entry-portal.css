@@ -170,9 +170,11 @@ body[data-entry-state="ready"][data-graph-mode="atlas"]:not(.is-root-entry-commi
 body[data-entry-state="ready"][data-graph-mode="atlas"]:not(.is-root-entry-committing) #site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(.is-root-entry-open,:hover,:focus-visible) > .site-graph-halo--secondary{
   opacity:.92!important;
   stroke-width:4.1!important;
+  stroke-dasharray:none!important;
+  stroke-dashoffset:0!important;
   transform:scale(.94)!important;
   filter:drop-shadow(0 0 32px color-mix(in srgb,var(--brown) 64%,transparent));
-  animation-duration:3.25s!important
+  animation:none!important
 }
 @keyframes entry-root-halo-primary{to{stroke-dashoffset:-120}}
 @keyframes entry-root-halo-brown{to{stroke-dashoffset:220}}

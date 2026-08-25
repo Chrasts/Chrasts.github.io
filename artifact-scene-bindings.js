@@ -51,6 +51,16 @@
       ]
     },
     {
+      id: 'axiom-wilds-gameplay',
+      recipe: 'media-deck',
+      variant: 'video',
+      eyebrow: 'Game development',
+      title: 'Axiom Wilds gameplay',
+      description: 'An in-development gameplay capture anchored directly to the Axiom Wilds project scene.',
+      artifactIds: ['axiom-wilds-gameplay'],
+      targets: [{ route: 'work/project/axiom-wilds', anchorNodeId: 'project-axiom-wilds', side: 'left' }]
+    },
+    {
       id: 'hedgehog-house-gallery',
       recipe: 'media-deck',
       variant: 'fan',

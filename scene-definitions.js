@@ -108,6 +108,7 @@
   ensureStylesheet('graph-feel.css', 'data-profile-graph-feel-style');
   ensureStylesheet('node-dynamics.css', 'data-profile-node-dynamics-style');
   ensureStylesheet('camera-materiality.css', 'data-profile-camera-materiality-style');
+  ensureStylesheet('object-focus.css', 'data-profile-object-focus-style');
   ensureStylesheet('intro-fixes-v3.css', 'data-profile-intro-fixes-v3-style');
   ensureStylesheet('root-entry-portal.css', 'data-profile-root-entry-portal-style');
   ensureStylesheet('atlas-condensation.css', 'data-profile-atlas-condensation-style');
@@ -154,7 +155,7 @@
   scene.manager.scheduleRefresh('v3-1-profile-root-definitions');
 
   const ensureScript = (src, marker) => {
-    if (document.querySelector(`script[${marker}]`)) return;
+    if (document.querySelector(`script[${marker}]`) || document.querySelector(`script[src="${src}"]`)) return;
     const script = document.createElement('script');
     script.src = src;
     script.async = false;
@@ -163,6 +164,10 @@
   };
 
   ensureScript('scene-composer.js', 'data-profile-scene-composer');
+  ensureScript('object-focus-controller.js', 'data-profile-object-focus-controller');
+  ensureScript('object-focus-fit.js', 'data-profile-object-focus-fit');
+  ensureScript('object-focus-certificate-adapter.js', 'data-profile-object-focus-certificate-adapter');
+  ensureScript('scene-object-runtime.js', 'data-profile-scene-object-runtime');
   ensureScript('atlas-drag-activation-guard.js', 'data-profile-atlas-drag-activation-guard');
   ensureScript('atlas-focus-unification.js', 'data-profile-atlas-focus-unification');
   ensureScript('camera-composition.js', 'data-profile-camera-composition');

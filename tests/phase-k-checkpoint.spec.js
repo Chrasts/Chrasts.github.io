@@ -61,7 +61,7 @@ test.describe('V3.1 Phase K accessibility checkpoint', () => {
     await expect(page.locator('#main-nav [data-route="knowledge"]')).toHaveAttribute('aria-current', 'page');
   });
 
-  test('generated Work controls have explicit semantics and filtered projects leave the accessibility tab order', async ({ page }) => {
+  test('generated Work controls project canonical filter semantics and filtered projects leave the accessibility tab order', async ({ page }) => {
     await bypassIntro(page);
     await page.goto('/#work');
     await waitReady(page);
@@ -96,7 +96,15 @@ test.describe('V3.1 Phase K accessibility checkpoint', () => {
       await expect(projects.nth(i)).toHaveAttribute('aria-label', /Open project/i);
     }
 
-    await page.locator(`.work-theme-label-v5[data-theme-id="${themeId}"]`).click();
+    // Drive the canonical Work filter control. The generated SVG theme label is
+    // a projection of this state; Phase K is testing that projection contract,
+    // while graph hit-testing is covered by the Work interaction suites.
+    await page.evaluate(id => {
+      const input = document.querySelector(`#work-theme-filters input[data-theme-id="${CSS.escape(id)}"]`);
+      input?.click();
+    }, themeId);
+    await page.waitForFunction(id => document.querySelector(`#work-theme-filters input[data-theme-id="${CSS.escape(id)}"]`)?.checked, themeId);
+    await expect(page.locator(`.work-theme-label-v5[data-theme-id="${themeId}"]`)).toHaveAttribute('aria-pressed', 'true');
     await page.waitForFunction(() => document.querySelectorAll('.work-project-anchor-v5.is-filtered-out').length > 0);
     await page.waitForFunction(() => window.ProfileAccessibility.snapshot().hiddenFocusableProjectCount === 0);
 
@@ -112,7 +120,7 @@ test.describe('V3.1 Phase K accessibility checkpoint', () => {
 test.describe('V3.1 Phase K mobile and motion checkpoint', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
 
-  test('touch Atlas preserves inspect-then-enter semantics with mobile-weakened node dynamics', async ({ page }) => {
+  test('touch Atlas preserves inspect-then-enter semantics with an explicit local action and mobile-weakened node dynamics', async ({ page }) => {
     await bypassIntro(page);
     await page.goto('/#atlas');
     await waitReady(page);
@@ -126,7 +134,12 @@ test.describe('V3.1 Phase K mobile and motion checkpoint', () => {
     await knowledge.tap();
     await expect(knowledge).toHaveAttribute('aria-expanded', 'true');
     await expect(page.locator('#site-detail-panel')).toBeVisible();
-    await knowledge.tap();
+
+    // Coarse-pointer UX has a stable explicit inspector action, so entering a
+    // local graph does not depend on precisely re-tapping the same SVG point.
+    const openLocal = page.locator('#site-detail-panel .atlas-open-local');
+    await expect(openLocal).toBeVisible();
+    await openLocal.tap();
     await page.waitForFunction(() => document.body.dataset.graphMode === 'focus' && document.body.dataset.graphRoute === 'knowledge', null, { timeout: 8000 });
 
     const viewport = await page.evaluate(() => ({

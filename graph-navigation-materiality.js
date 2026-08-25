@@ -9,6 +9,8 @@
   const nodeMap = new Map(graph.nodes.map(node => [node.id, node]));
   const routeMap = new Map(graph.nodes.filter(node => node.route).map(node => [normaliseRoute(node.route), node]));
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const CANONICAL_STABLE_FRAMES = 6;
+  const CANONICAL_MAX_FRAMES = 90;
 
   let sequence = 0;
   let phase = 'idle';
@@ -92,6 +94,12 @@
       cameraAction: cameraActionFor(direction)
     };
   };
+
+  const canonicalSignature = () => [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')]
+    .filter(node => !node.closest('.v9-transition-overlay'))
+    .map(node => `${node.dataset.nodeId}:${node.dataset.x || ''}:${node.dataset.y || ''}`)
+    .sort()
+    .join('|');
 
   const cancelArrivalFrame = () => {
     arrivalGeneration += 1;
@@ -242,6 +250,38 @@
     settleTimer = setTimeout(() => completeSettle('timeout'), 1250);
   };
 
+  const waitForCanonicalQuiescence = full => {
+    const operation = ++arrivalGeneration;
+    let previousSignature = '';
+    let stableFrames = 0;
+    let sampledFrames = 0;
+
+    const sample = () => {
+      arrivalFrame = 0;
+      if (operation !== arrivalGeneration || phase !== 'handoff' || context?.targetId !== full.targetId) return;
+
+      const signature = canonicalSignature();
+      const structuralFree = !document.body.classList.contains('is-v9-transitioning') && !scene.transitions.isLocked;
+      if (structuralFree && signature && signature === previousSignature) stableFrames += 1;
+      else stableFrames = 0;
+      previousSignature = signature;
+      sampledFrames += 1;
+
+      if (structuralFree && stableFrames >= CANONICAL_STABLE_FRAMES) {
+        beginArrival({ ...full, canonicalStableFrames: stableFrames, canonicalWaitFrames: sampledFrames });
+        return;
+      }
+
+      if (sampledFrames >= CANONICAL_MAX_FRAMES) {
+        beginArrival({ ...full, canonicalStableFrames: stableFrames, canonicalWaitFrames: sampledFrames, canonicalWaitTimeout: true });
+        return;
+      }
+      arrivalFrame = requestAnimationFrame(sample);
+    };
+
+    arrivalFrame = requestAnimationFrame(sample);
+  };
+
   const finishTransition = payload => {
     if (payload?.kind !== 'graph-route') return;
     const resolved = structuralContext(payload) || (context?.targetId ? context : null);
@@ -252,14 +292,7 @@
 
     const full = { ...context, ...resolved, finishedTransitionAt: performance.now() };
     writeState('handoff', full);
-    const operation = ++arrivalGeneration;
-    arrivalFrame = requestAnimationFrame(() => {
-      arrivalFrame = requestAnimationFrame(() => {
-        arrivalFrame = 0;
-        if (operation !== arrivalGeneration || phase !== 'handoff' || context?.targetId !== full.targetId) return;
-        beginArrival(full);
-      });
-    });
+    waitForCanonicalQuiescence(full);
   };
 
   const cancelTransition = payload => {
@@ -301,6 +334,9 @@
       direction: context?.direction || null,
       vector: context?.vector ? { ...context.vector } : null,
       cameraAction: context?.cameraAction || null,
+      canonicalStableFrames: context?.canonicalStableFrames || 0,
+      canonicalWaitFrames: context?.canonicalWaitFrames || 0,
+      canonicalWaitTimeout: Boolean(context?.canonicalWaitTimeout),
       reducedMotion: reducedMotion.matches,
       interruptionCount,
       lastResult: lastResult ? { ...lastResult } : null

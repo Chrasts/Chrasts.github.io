@@ -126,13 +126,19 @@
   };
 
   const openObjectFocus = (root, source, binding, artifact, env) => {
+    const ownerValid = () => root.isConnected && bindingOwnsCurrentRoute(binding);
+    const sceneId = root.dataset.sceneObject;
+    const runtime = window.ProfileSceneObjects;
+    if (sceneId && runtime?.inspect) {
+      return runtime.inspect(sceneId, { source, artifact, ownerValid });
+    }
     const controller = window.ProfileObjectFocus;
     if (controller?.open) {
       return controller.open({
         source,
         artifact,
         owner: 'artifact',
-        ownerValid: () => root.isConnected && bindingOwnsCurrentRoute(binding)
+        ownerValid
       });
     }
     return env.openFocus(binding, artifact.id);

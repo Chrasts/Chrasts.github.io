@@ -105,6 +105,7 @@ jobs:
             tests/atlas-focus-unification.spec.js \
             tests/graph-navigation-materiality.spec.js \
             tests/phase-k-checkpoint.spec.js \
+            tests/scene-object-runtime.spec.js \
             tests/motion-polish.spec.js \
             tests/intro-unfold.spec.js \
             tests/phase6-cross-link.spec.js \

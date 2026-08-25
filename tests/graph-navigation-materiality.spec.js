@@ -40,11 +40,14 @@ test.describe('V3.1 Phase J ordinary graph navigation materiality', () => {
     await page.goto('/#overview');
     await waitReady(page);
     await page.waitForFunction(() => document.body.dataset.graphMode === 'overview' && document.body.dataset.rootLanding === 'false');
-    const before = await canonical(page);
 
     await page.locator('#site-graph .site-graph-node[data-node-id="knowledge"]').click();
     await waitRoute(page, 'knowledge');
     await waitSettle(page, 'knowledge');
+    // V9 owns the route-dependent destination layout. Phase J begins only after
+    // that handoff, so its invariant is that the destination canonical data-x/y
+    // remain unchanged throughout the ephemeral arrival settle.
+    const destinationCanonical = await canonical(page);
 
     let state = await page.evaluate(() => ({
       nav: window.ProfileGraphNavigation.snapshot(),
@@ -80,7 +83,7 @@ test.describe('V3.1 Phase J ordinary graph navigation materiality', () => {
     expect(state.feel.navigationEdgeCount).toBe(0);
 
     const after = await canonical(page);
-    Object.keys(before).filter(id => after[id]).forEach(id => expect(after[id]).toEqual(before[id]));
+    Object.keys(destinationCanonical).filter(id => after[id]).forEach(id => expect(after[id]).toEqual(destinationCanonical[id]));
   });
 
   test('moving to an ancestor resolves to PULL', async ({ page }) => {

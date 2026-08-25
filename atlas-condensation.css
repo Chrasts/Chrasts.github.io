@@ -89,8 +89,8 @@ body.is-atlas-condensing.is-atlas-condensation-handoff.is-atlas-condensation-com
 
 #site-graph .profile-root-emergence-motion{
   pointer-events:none;
-  transform-box:view-box;
-  transform-origin:0 0;
+  transform-box:fill-box;
+  transform-origin:center;
   will-change:transform,opacity
 }
 
@@ -100,6 +100,28 @@ body.is-profile-root-emerging #site-graph .site-graph-svg{
 
 body.is-profile-root-emerging #site-graph .site-graph-edges path{
   transition:none!important
+}
+
+/* The Profile Root branches do not fly from the sides/root after Atlas
+   condensation. Their canonical positions are already final; they materialize
+   in place while the root-to-branch edges are drawn by atlas-condensation.js. */
+body.is-profile-root-emerging #site-graph .site-graph-node[data-node-id="work"] > .profile-root-emergence-motion,
+body.is-profile-root-emerging #site-graph .site-graph-node[data-node-id="knowledge"] > .profile-root-emergence-motion,
+body.is-profile-root-emerging #site-graph .site-graph-node[data-node-id="experience"] > .profile-root-emergence-motion,
+body.is-profile-root-emerging #site-graph .site-graph-node[data-node-id="education"] > .profile-root-emergence-motion,
+body.is-profile-root-emerging #site-graph .site-graph-node[data-node-id="about"] > .profile-root-emergence-motion{
+  animation:profile-root-branch-emerge 760ms cubic-bezier(.16,1,.3,1) both
+}
+
+body.is-profile-root-emerging #site-graph .site-graph-node[data-node-id="knowledge"] > .profile-root-emergence-motion{animation-delay:68ms}
+body.is-profile-root-emerging #site-graph .site-graph-node[data-node-id="experience"] > .profile-root-emergence-motion{animation-delay:136ms}
+body.is-profile-root-emerging #site-graph .site-graph-node[data-node-id="education"] > .profile-root-emergence-motion{animation-delay:204ms}
+body.is-profile-root-emerging #site-graph .site-graph-node[data-node-id="about"] > .profile-root-emergence-motion{animation-delay:272ms}
+
+@keyframes profile-root-branch-emerge{
+  0%{transform:scale(.18)}
+  72%{transform:scale(1.055)}
+  100%{transform:scale(1)}
 }
 
 body.is-atlas-root-micro-commit #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-dot,

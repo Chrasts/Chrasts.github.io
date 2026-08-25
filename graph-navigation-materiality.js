@@ -135,7 +135,8 @@
     }
     phase = 'idle';
     context = null;
-    window.ProfileGraphFeel?.refresh?.();
+    if (window.ProfileGraphFeel?.sync) window.ProfileGraphFeel.sync();
+    else window.ProfileGraphFeel?.refresh?.();
   };
 
   const completeSettle = reason => {

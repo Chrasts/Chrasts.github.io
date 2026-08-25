@@ -181,4 +181,5 @@
   ensureScript('root-entry-portal.js', 'data-profile-root-entry-portal');
   ensureScript('atlas-condensation.js', 'data-profile-atlas-condensation');
   ensureScript('profile-root.js', 'data-profile-root-overview');
+  ensureScript('accessibility-runtime.js', 'data-profile-accessibility-runtime');
 })();

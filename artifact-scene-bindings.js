@@ -64,7 +64,7 @@
   window.ARTIFACT_SCENE_BINDINGS = bindings;
 
   const ensureStyle = (href, marker) => {
-    if (document.querySelector(`link[${marker}]`)) return;
+    if (document.querySelector(`link[${marker}]`) || document.querySelector(`link[href="${href}"]`)) return;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
     link.href = href;
@@ -73,7 +73,7 @@
   };
 
   const ensureScript = (src, marker) => {
-    if (document.querySelector(`script[${marker}]`)) return;
+    if (document.querySelector(`script[${marker}]`) || document.querySelector(`script[src="${src}"]`)) return;
     const script = document.createElement('script');
     script.src = src;
     script.async = false;

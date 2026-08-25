@@ -131,9 +131,15 @@
       });
 
       const limit = rayLimit(ATLAS.center, vector, ATLAS.width, ATLAS.height, 150);
-      const usable = Math.max(ATLAS.sectionRadius + 120, limit - 56);
+      // Work points straight toward the lower Atlas boundary and needs four
+      // genuine radial tiers. The previous extra 56px reserve plus a hard
+      // 76px minimum gap forced the last two tiers into the same clamped
+      // radius. Give Work the available sector depth instead of collapsing it.
+      const usableReserve = sectionId === 'work' ? 16 : 56;
+      const usable = Math.max(ATLAS.sectionRadius + 120, limit - usableReserve);
+      const minimumLevelGap = sectionId === 'work' ? 56 : 76;
       const levelGap = maxDepth > 0
-        ? Math.max(76, Math.min(sectionId === 'knowledge' ? 150 : 142, (usable - ATLAS.sectionRadius) / maxDepth))
+        ? Math.max(minimumLevelGap, Math.min(sectionId === 'knowledge' ? 150 : 142, (usable - ATLAS.sectionRadius) / maxDepth))
         : 124;
       const sectionPoint = {
         x: ATLAS.center.x + vector.x * ATLAS.sectionRadius,
@@ -161,7 +167,7 @@
         const desiredGap = sectionId === 'knowledge'
           ? 108
           : sectionId === 'work'
-            ? (depth === 2 ? 132 : 118)
+            ? 150
             : sectionId === 'education' ? 110 : 120;
         const span = Math.min(tangentialCapacity * 2, desiredGap * Math.max(0, level.length - 1));
 

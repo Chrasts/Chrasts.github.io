@@ -42,7 +42,7 @@ test('Object Focus is the single deep-inspection owner and returns the scene obj
   await waitRuntime(page);
 
   const root = page.locator('[data-artifact-scene="hedgehog-house-gallery"]');
-  const source = root.locator('[data-artifact-id="hedgehog-house-outside"]');
+  const source = root.locator('.artifact-deck-card[data-artifact-id="hedgehog-house-outside"]');
   await expect(root).toBeVisible();
   await source.click();
 
@@ -68,7 +68,7 @@ test('runtime interruption cancels inspection without leaving focus flights or i
   await page.goto('/#about/woodworking/hedgehog-house');
   await waitRuntime(page);
 
-  await page.locator('[data-artifact-scene="hedgehog-house-gallery"] [data-artifact-id="hedgehog-house-inside"]').click();
+  await page.locator('[data-artifact-scene="hedgehog-house-gallery"] .artifact-deck-card[data-artifact-id="hedgehog-house-inside"]').click();
   await page.waitForFunction(() => window.ProfileObjectFocus.snapshot().phase === 'settled');
   await page.evaluate(() => window.ProfileSceneObjects.interrupt('phase-l-test'));
 

@@ -18,10 +18,16 @@
 
   const liveNode = element => element?.closest?.('#site-graph .site-graph-node[data-node-id]') || null;
   const liveSvg = element => element?.closest?.('#site-graph .site-graph-svg') || null;
+  const navigationState = () => ({
+    phase: document.body?.dataset.graphNavigationPhase || 'idle',
+    targetId: document.body?.dataset.graphNavigationTarget || null,
+    direction: document.body?.dataset.graphNavigationDirection || null
+  });
 
-  const haloStateFor = (node, record) => {
+  const haloStateFor = (node, record, navigation) => {
     if (!record) return 'idle';
     if (record.state === interaction.STATES.TRANSITIONING) return 'transitioning';
+    if (navigation.phase === 'settle' && navigation.targetId === node.dataset.nodeId) return 'active';
     if (node.classList.contains('is-feel-activating') || record.state === interaction.STATES.ACTIVE) return 'active';
     if (record.state === interaction.STATES.FOCUSED) return 'focus';
     if (record.state === interaction.STATES.HOVERED) return 'hover';
@@ -31,8 +37,9 @@
     return 'idle';
   };
 
-  const updatePhase = state => {
+  const updatePhase = (state, navigation) => {
     if (state.transitioning) phase = 'transition';
+    else if (navigation.phase === 'settle') phase = 'settle';
     else if (dragging) phase = 'dragging';
     else if (state.pressedNodeId) phase = 'pressed';
     else if (state.primaryNodeId) phase = 'preview';
@@ -44,7 +51,8 @@
     if (!root) return;
     halos.attach(root);
     const state = interaction.snapshot();
-    updatePhase(state);
+    const navigation = navigationState();
+    updatePhase(state, navigation);
 
     root.dataset.graphFeel = phase;
     root.dataset.graphInput = state.input;
@@ -57,10 +65,12 @@
       const id = node.dataset.nodeId;
       const record = interaction.stateFor(id);
       const direct = state.primaryNodeId === id;
+      const arrival = navigation.phase === 'settle' && navigation.targetId === id;
       node.classList.toggle('is-feel-origin', direct);
       node.classList.toggle('is-feel-pressed', state.pressedNodeId === id);
       node.classList.toggle('is-feel-activating', activatingNodeId === id);
-      halos.setState(node, haloStateFor(node, record), { relation: record?.relation || 'none' });
+      node.classList.toggle('is-navigation-arrival', arrival);
+      halos.setState(node, haloStateFor(node, record, navigation), { relation: record?.relation || 'none' });
     });
 
     root.querySelectorAll('.site-graph-edges path').forEach(edge => {
@@ -70,6 +80,9 @@
         edge.classList.contains('is-work-strong') ||
         edge.classList.contains('is-work-soft');
       edge.classList.toggle('is-graph-flowing', Boolean(state.primaryNodeId && related));
+      edge.classList.toggle('is-navigation-settling-edge', navigation.phase === 'settle' && Boolean(
+        navigation.targetId && (edge.dataset.source === navigation.targetId || edge.dataset.target === navigation.targetId)
+      ));
     });
 
     renderedState = state;
@@ -80,6 +93,12 @@
   const schedule = () => {
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(() => requestAnimationFrame(syncVisualState));
+  };
+
+  const syncNow = () => {
+    cancelAnimationFrame(frame);
+    frame = 0;
+    syncVisualState();
   };
 
   const activate = node => {
@@ -133,6 +152,7 @@
     window.addEventListener('profile:transition-begin', schedule);
     window.addEventListener('profile:transition-finish', schedule);
     window.addEventListener('profile:transition-cancel', schedule);
+    window.addEventListener('profile:graph-navigation', schedule);
 
     schedule();
     return true;
@@ -149,6 +169,7 @@
 
   function snapshot() {
     const state = renderedState || interaction.snapshot();
+    const navigation = navigationState();
     return {
       sequence,
       phase,
@@ -156,15 +177,20 @@
       activeNodeId: state.primaryNodeId,
       pressedNodeId: state.pressedNodeId,
       activatingNodeId,
+      navigationPhase: navigation.phase,
+      navigationTargetId: navigation.targetId,
+      navigationDirection: navigation.direction,
       reducedMotion: reduced.matches,
       haloCount: halos.snapshot().ringCount,
       flowingEdgeCount: root?.querySelectorAll('.site-graph-edges path.is-graph-flowing').length || 0,
+      navigationEdgeCount: root?.querySelectorAll('.site-graph-edges path.is-navigation-settling-edge').length || 0,
       nodeInteractionSequence: state.sequence
     };
   }
 
   window.ProfileGraphFeel = Object.freeze({
     refresh: schedule,
+    sync: syncNow,
     snapshot
   });
   boot();

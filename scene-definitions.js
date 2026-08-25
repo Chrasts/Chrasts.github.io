@@ -113,6 +113,7 @@
   ensureStylesheet('atlas-condensation.css', 'data-profile-atlas-condensation-style');
   ensureStylesheet('profile-root.css', 'data-profile-root-overview-style');
   ensureStylesheet('atlas-focus-unification.css', 'data-profile-atlas-focus-style');
+  ensureStylesheet('graph-navigation-materiality.css', 'data-profile-graph-navigation-style');
   prepareRootLandingDom();
 
   document.body.dataset.rootLanding = initialRootLanding ? 'true' : 'false';
@@ -170,6 +171,7 @@
   ensureScript('node-interaction-state.js', 'data-profile-node-interaction');
   ensureScript('graph-feel.js', 'data-profile-graph-feel');
   ensureScript('node-dynamics.js', 'data-profile-node-dynamics');
+  ensureScript('graph-navigation-materiality.js', 'data-profile-graph-navigation-materiality');
   ensureScript('phase7-pointer-hotfix.js', 'data-profile-atlas-pointer-hotfix');
   ensureScript('global-geometry-ownership.js', 'data-profile-global-geometry-ownership');
   ensureScript('root-landing.js', 'data-profile-root-landing');

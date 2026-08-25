@@ -26,6 +26,8 @@
   let activationHoldUntil = 0;
   let adaptedEdgeCount = 0;
   let lastActiveNodeId = null;
+  let transitionSettling = false;
+  let lastTransitionSettle = null;
   let mutationObserver = null;
   let environmentObserver = null;
   const records = new Map();
@@ -70,6 +72,14 @@
     let hash = 2166136261;
     for (const character of String(value)) hash = Math.imul(hash ^ character.charCodeAt(0), 16777619);
     return ((hash >>> 0) % 360) * Math.PI / 180;
+  };
+
+  const unitVector = vector => {
+    const x = Number(vector?.x || 0);
+    const y = Number(vector?.y || 0);
+    const length = magnitude(x, y);
+    if (length > .001) return { x: x / length, y: y / length };
+    return { x: 1, y: 0 };
   };
 
   const ensureRecord = node => {
@@ -150,6 +160,7 @@
     });
     if (restore) restoreEdges();
     lastActiveNodeId = null;
+    transitionSettling = false;
   };
 
   const suspend = reason => {
@@ -266,11 +277,13 @@
     record.lastAppliedScale = scale;
   };
 
-  const parseQuadratic = path => {
+  const parseEdgePath = path => {
     if (!path) return null;
-    const match = path.match(/^\s*M\s*(-?\d*\.?\d+)\s+(-?\d*\.?\d+)\s+Q\s*(-?\d*\.?\d+)\s+(-?\d*\.?\d+)\s+(-?\d*\.?\d+)\s+(-?\d*\.?\d+)\s*$/i);
-    if (!match) return null;
-    return match.slice(1).map(Number);
+    const quadratic = path.match(/^\s*M\s*(-?\d*\.?\d+)\s+(-?\d*\.?\d+)\s+Q\s*(-?\d*\.?\d+)\s+(-?\d*\.?\d+)\s+(-?\d*\.?\d+)\s+(-?\d*\.?\d+)\s*$/i);
+    if (quadratic) return { kind: 'Q', values: quadratic.slice(1).map(Number) };
+    const line = path.match(/^\s*M\s*(-?\d*\.?\d+)\s+(-?\d*\.?\d+)\s+L\s*(-?\d*\.?\d+)\s+(-?\d*\.?\d+)\s*$/i);
+    if (line) return { kind: 'L', values: line.slice(1).map(Number) };
+    return null;
   };
 
   const adaptEdges = () => {
@@ -296,10 +309,15 @@
         return;
       }
 
-      const values = parseQuadratic(canonical);
-      if (!values) return;
-      const [x1, y1, cx, cy, x2, y2] = values;
-      edge.setAttribute('d', `M ${(x1 + sx).toFixed(1)} ${(y1 + sy).toFixed(1)} Q ${(cx + (sx + tx) / 2).toFixed(1)} ${(cy + (sy + ty) / 2).toFixed(1)} ${(x2 + tx).toFixed(1)} ${(y2 + ty).toFixed(1)}`);
+      const parsed = parseEdgePath(canonical);
+      if (!parsed) return;
+      if (parsed.kind === 'Q') {
+        const [x1, y1, cx, cy, x2, y2] = parsed.values;
+        edge.setAttribute('d', `M ${(x1 + sx).toFixed(1)} ${(y1 + sy).toFixed(1)} Q ${(cx + (sx + tx) / 2).toFixed(1)} ${(cy + (sy + ty) / 2).toFixed(1)} ${(x2 + tx).toFixed(1)} ${(y2 + ty).toFixed(1)}`);
+      } else {
+        const [x1, y1, x2, y2] = parsed.values;
+        edge.setAttribute('d', `M ${(x1 + sx).toFixed(1)} ${(y1 + sy).toFixed(1)} L ${(x2 + tx).toFixed(1)} ${(y2 + ty).toFixed(1)}`);
+      }
       edge.dataset.nodeDynamicsAdapted = 'true';
       count += 1;
     });
@@ -352,6 +370,11 @@
       records.forEach(restoreNode);
       restoreEdges();
     }
+    if (transitionSettling) {
+      transitionSettling = false;
+      if (lastTransitionSettle) lastTransitionSettle.completedAt = performance.now();
+      dispatchEvent(new CustomEvent('profile:node-dynamics-settled', { detail: snapshot() }));
+    }
     lastTime = 0;
   };
 
@@ -359,6 +382,71 @@
     if (!root?.isConnected || blocked() || frame) return;
     frame = requestAnimationFrame(tick);
   }
+
+  const settleFromTransition = (anchorId, options = {}) => {
+    if (!root?.isConnected) bind();
+    syncRecords();
+    const anchor = records.get(anchorId);
+    const direction = options.direction || 'lateral';
+    const requestedStrength = clamp(Number(options.strength) || 1, .4, 1.45);
+    const factor = mobileFactor();
+    const vector = unitVector(options.vector || { x: direction === 'up' ? -1 : 1, y: 0 });
+    const appliedAt = performance.now();
+
+    lastTransitionSettle = {
+      anchorId,
+      direction,
+      vector: { ...vector },
+      strength: requestedStrength,
+      mobileFactor: factor,
+      applied: false,
+      appliedAt,
+      completedAt: null
+    };
+
+    if (!anchor || reducedMotion.matches || introOwned() || document.body?.classList.contains('is-v9-transitioning')) {
+      return false;
+    }
+
+    hardReset();
+    suspended = false;
+    suspensionReason = null;
+    syncRecords();
+    const active = records.get(anchorId);
+    if (!active) return false;
+
+    const config = currentConfig();
+    const impulse = Math.min(config.maxDisplacement * .62, 7.2 * factor) * requestedStrength;
+    const activePoint = canonicalPoint(active.node);
+    active.x = vector.x * impulse;
+    active.y = vector.y * impulse;
+    active.scale = 1 + .014 * factor * requestedStrength;
+    active.targetX = 0;
+    active.targetY = 0;
+    active.targetScale = 1;
+
+    records.forEach(record => {
+      if (record === active) return;
+      const point = canonicalPoint(record.node);
+      const distance = magnitude(point.x - activePoint.x, point.y - activePoint.y);
+      if (distance > config.influenceRadius * .72) return;
+      const proximity = clamp(1 - distance / (config.influenceRadius * .72), 0, 1);
+      const related = interaction.stateFor(record.id)?.relation !== 'none';
+      const localImpulse = impulse * (.22 + .20 * proximity) * (related ? 1.12 : 1);
+      record.x = vector.x * localImpulse;
+      record.y = vector.y * localImpulse;
+      record.targetX = 0;
+      record.targetY = 0;
+    });
+
+    activationHoldUntil = appliedAt + 430;
+    transitionSettling = true;
+    lastTransitionSettle.applied = true;
+    records.forEach(applyRecord);
+    adaptEdges();
+    wake();
+    return true;
+  };
 
   const bind = () => {
     const next = document.querySelector('#site-graph');
@@ -455,6 +543,8 @@
       movingNodeCount,
       maxDisplacement,
       adaptedEdgeCount,
+      transitionSettling,
+      lastTransitionSettle: lastTransitionSettle ? { ...lastTransitionSettle, vector: { ...lastTransitionSettle.vector } } : null,
       config
     };
   };
@@ -464,6 +554,7 @@
     reset: hardReset,
     suspend,
     resume,
+    settleFromTransition,
     stateFor,
     snapshot
   });

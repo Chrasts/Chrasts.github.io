@@ -1,5 +1,5 @@
 /* ========================================================================== 
-   V3.1 Phase I — Atlas / Focus semantic-scale bridge
+   V3.1 Phase I — Atlas / Focus semantic-scale bridge + Profile/Atlas fold
    ========================================================================== */
 
 .atlas-focus-bridge{
@@ -17,16 +17,21 @@
 
 .atlas-focus-bridge.is-finishing{opacity:0}
 
-/* The canonical renderer remains mounted and measurable while the bridge owns
-   visible graph material. This lets target geometry and camera settle without
-   flashing a second graph through the shared-node transition. */
+/* The canonical renderer remains mounted and measurable while a semantic
+   bridge owns the visible graph. Target geometry may therefore render and fit
+   without flashing a second graph underneath the transition. */
 body.is-atlas-focus-transitioning #site-graph .site-graph-svg{
-  visibility:hidden!important;
+  visibility:hidden!important
 }
 
 body.is-atlas-focus-transitioning #site-detail-panel{
   opacity:0!important;
-  pointer-events:none!important;
+  pointer-events:none!important
+}
+
+body.is-profile-atlas-transitioning .atlas-controls,
+body.is-profile-atlas-transitioning .graph-routebar{
+  pointer-events:none!important
 }
 
 .atlas-focus-bridge-nodes > .site-graph-node{pointer-events:none!important}
@@ -37,23 +42,91 @@ body.is-atlas-focus-transitioning #site-detail-panel{
   stroke-width:1.15;
   vector-effect:non-scaling-stroke;
   stroke-linecap:round;
-  opacity:.62;
+  opacity:.62
 }
 
 .atlas-focus-bridge-edge[data-type="evidence"],
 .atlas-focus-bridge-edge[data-type="related"],
 .atlas-focus-bridge-edge[data-type="cross-link"]{
   stroke-dasharray:4 5;
-  opacity:.48;
+  opacity:.48
+}
+
+.profile-atlas-unfold-bridge .atlas-focus-bridge-edge{
+  stroke-width:1.22;
+  stroke-linecap:round
 }
 
 .atlas-focus-bridge [data-bridge-node-id]{will-change:transform,opacity}
 .atlas-focus-bridge [data-bridge-node-id] .site-graph-hit{opacity:0!important}
 
+/* --------------------------------------------------------------------------
+   Profile Root material
+   -------------------------------------------------------------------------- */
+
+/* atlas-condensation.js already moves each of the five branches from the root
+   to its final position and draws the edge alongside it. The temporary
+   in-place keyframe from the previous pass overrode that SVG transform; cancel
+   it so the semantic root-outward motion owns the transition again. */
+body.is-profile-root-emerging #site-graph .site-graph-node[data-profile-root-branch="true"] > .profile-root-emergence-motion{
+  animation:none!important;
+  transform-box:view-box!important;
+  transform-origin:0 0!important
+}
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-profile-root-branch="true"] > .site-graph-hit{
+  transform:scale(1.42);
+  transform-box:fill-box;
+  transform-origin:center
+}
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-profile-root-branch="true"] > .site-graph-dot{
+  transform:scale(1.78)!important;
+  transform-box:fill-box;
+  transform-origin:center;
+  stroke-width:2.35!important;
+  filter:drop-shadow(0 0 7px color-mix(in srgb,var(--teal) 24%,transparent))
+}
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-profile-root-branch="true"] > .site-graph-label{
+  font-size:13.5px!important;
+  font-weight:820!important;
+  letter-spacing:.005em
+}
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-profile-root-branch="true"] > .site-graph-halo--primary{
+  opacity:.54!important;
+  transform:scale(1.90)!important;
+  transform-box:fill-box;
+  transform-origin:center;
+  stroke-width:1.75!important;
+  stroke-dasharray:8 5 2 5;
+  stroke-linecap:round;
+  filter:drop-shadow(0 0 9px color-mix(in srgb,var(--teal) 28%,transparent));
+  animation:profile-main-branch-halo 11s linear infinite
+}
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-node-id="work"] > .site-graph-halo--primary{animation-duration:10s}
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-node-id="knowledge"] > .site-graph-halo--primary{animation-duration:13s;animation-direction:reverse}
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-node-id="experience"] > .site-graph-halo--primary{animation-duration:11.5s}
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-node-id="education"] > .site-graph-halo--primary{animation-duration:14s;animation-direction:reverse}
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-node-id="about"] > .site-graph-halo--primary{animation-duration:12s}
+
+@keyframes profile-main-branch-halo{to{stroke-dashoffset:-96}}
+
 @media(max-width:900px){
   .atlas-focus-bridge-edge{stroke-width:1}
+  body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-profile-root-branch="true"] > .site-graph-dot{
+    transform:scale(1.58)!important
+  }
+  body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-profile-root-branch="true"] > .site-graph-halo--primary{
+    transform:scale(1.72)!important
+  }
 }
 
 @media(prefers-reduced-motion:reduce){
   .atlas-focus-bridge{transition:none!important}
+  body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-profile-root-branch="true"] > .site-graph-halo--primary{
+    animation:none!important
+  }
 }

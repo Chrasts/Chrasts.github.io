@@ -95,6 +95,12 @@
     frame = requestAnimationFrame(() => requestAnimationFrame(syncVisualState));
   };
 
+  const syncNow = () => {
+    cancelAnimationFrame(frame);
+    frame = 0;
+    syncVisualState();
+  };
+
   const activate = node => {
     if (!node) return;
     clearTimeout(activationTimer);
@@ -184,6 +190,7 @@
 
   window.ProfileGraphFeel = Object.freeze({
     refresh: schedule,
+    sync: syncNow,
     snapshot
   });
   boot();

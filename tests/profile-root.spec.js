@@ -45,7 +45,7 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
 
     const portraitOpacity = await page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .root-entry-portrait')
       .evaluate(node => Number(getComputedStyle(node).opacity));
-    expect(portraitOpacity).toBeGreaterThan(.7);
+    expect(portraitOpacity).toBeLessThan(.05);
   });
 
   test('Quick overview preserves route and camera and restores focus after Escape', async ({ page }) => {

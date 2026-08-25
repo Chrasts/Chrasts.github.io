@@ -19,10 +19,8 @@ const bootAtlas = async (page, { reducedMotion = false, viewport = { width: 1440
 };
 
 const openAndEnter = async page => {
-  await page.evaluate(() => window.ProfileRootEntryPortal.open('phase-g-test'));
-  await expect.poll(() => page.evaluate(() => window.ProfileRootEntryPortal.snapshot().open)).toBe(true);
-  const action = page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"] > [data-root-entry-action]');
-  await action.click();
+  const rootHit = page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-hit');
+  await rootHit.click();
   // Reduced-motion condensation is intentionally very short, so the browser
   // may advance from CONDENSING to COMMITTING/COMPLETE between polling frames.
   await page.waitForFunction(() => ['CONDENSING', 'COMMITTING', 'COMPLETE'].includes(
@@ -137,6 +135,9 @@ test.describe('V3.1 Phase G semantic Atlas condensation', () => {
         activated: window.ProfileRootLanding.hasActivated(),
         sections: sections.filter(id => document.querySelector(`#site-graph .site-graph-node[data-node-id="${id}"]`)),
         wrappers: document.querySelectorAll('#site-graph .atlas-condense-motion').length,
+        emergenceWrappers: document.querySelectorAll('#site-graph .profile-root-emergence-motion').length,
+        handoffClass: document.body.classList.contains('is-atlas-condensation-handoff'),
+        emergingClass: document.body.classList.contains('is-profile-root-emerging'),
         condensingClass: document.body.classList.contains('is-atlas-condensing')
       };
     });
@@ -148,6 +149,9 @@ test.describe('V3.1 Phase G semantic Atlas condensation', () => {
     expect(result.activated).toBe(true);
     expect(result.sections).toHaveLength(5);
     expect(result.wrappers).toBe(0);
+    expect(result.emergenceWrappers).toBe(0);
+    expect(result.handoffClass).toBe(false);
+    expect(result.emergingClass).toBe(false);
     expect(result.condensingClass).toBe(false);
     expect(result.snapshot.waves).toEqual(expect.arrayContaining(['deep', 'intermediate', 'territories', 'branches', 'root']));
   });

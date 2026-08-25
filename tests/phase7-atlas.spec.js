@@ -121,8 +121,10 @@ test.describe('Phase 7 Atlas semantic zoom', () => {
 
     await page.evaluate(() => window.ProfileAtlasLOD.fit({ immediate: true }));
     snap = await page.evaluate(() => window.ProfileAtlasLOD.snapshot());
-    expect(snap.scale).toBeCloseTo(0.78, 2);
-    expect(snap.lod).toBe('medium');
+    expect(snap.scale).toBeGreaterThan(.9);
+    expect(snap.scale).toBeLessThanOrEqual(1.16);
+    expect(snap.lod).toBe('near');
+    expect(snap.topologyBounds.width).toBeGreaterThan(1000);
   });
 
   test('layer toggles keep the camera fixed and change actual rendered relations', async ({ page }) => {

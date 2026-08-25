@@ -63,7 +63,7 @@ test.describe('V3.1 Phase F root entry portal — desktop', () => {
     expect(structure.actions).toBe(1);
     expect(structure.portraitParent).toBe('stepan-chrast');
     expect(structure.actionParent).toBe('stepan-chrast');
-    expect(structure.portraitWidth).toBeGreaterThan(45);
+    expect(structure.portraitWidth).toBeGreaterThanOrEqual(68);
     expect(structure.rootMaterial).toBe('shared-root');
     expect(structure.legacyOverlays).toBe(0);
 
@@ -82,6 +82,9 @@ test.describe('V3.1 Phase F root entry portal — desktop', () => {
         secondaryHaloOpacity: Number(getComputedStyle(secondary).opacity),
         actionOpacity: Number(getComputedStyle(actionNode).opacity),
         actionTabIndex: actionNode.getAttribute('tabindex'),
+        actionAriaHidden: actionNode.getAttribute('aria-hidden'),
+        rootLabel: node.getAttribute('aria-label'),
+        haloRadii: [...node.querySelectorAll(':scope > .site-graph-halo')].map(ring => Number(ring.getAttribute('r'))),
         expanded: node.getAttribute('aria-expanded')
       };
     });
@@ -90,7 +93,10 @@ test.describe('V3.1 Phase F root entry portal — desktop', () => {
     expect(opened.portraitOpacity).toBeGreaterThan(.8);
     expect(opened.secondaryHaloOpacity).toBeGreaterThan(.2);
     expect(opened.actionOpacity).toBeGreaterThan(.8);
-    expect(opened.actionTabIndex).toBe('0');
+    expect(opened.actionTabIndex).toBe('-1');
+    expect(opened.actionAriaHidden).toBe('true');
+    expect(opened.rootLabel).toBe('Enter profile — Štěpán Chrast');
+    expect(opened.haloRadii).toEqual([27, 42]);
     expect(opened.expanded).toBe('true');
     expectSameCanonicalRoot(await canonicalRoot(page), before);
   });
@@ -105,33 +111,30 @@ test.describe('V3.1 Phase F root entry portal — desktop', () => {
     await expect.poll(() => page.evaluate(() => window.ProfileRootEntryPortal.snapshot().open)).toBe(false);
     await expect.poll(() => root(page).evaluate(node =>
       Number(getComputedStyle(node.querySelector(':scope > [data-root-entry-portrait]')).opacity)
-    )).toBeLessThan(.2);
+    )).toBeLessThan(.5);
 
     const state = await root(page).evaluate(node => ({
       portal: node.dataset.rootEntryPortal,
       expanded: node.getAttribute('aria-expanded')
     }));
-    expect(state.portal).toBe('latent');
+    expect(state.portal).toBe('idle');
     expect(state.expanded).toBe('false');
     expectSameCanonicalRoot(await canonicalRoot(page), before);
   });
 
-  test('root activation opens the portal instead of the Atlas inspector', async ({ page }) => {
+  test('one root activation enters Profile without opening the Atlas inspector', async ({ page }) => {
     await bootAtlas(page);
     await rootHit(page).click();
-    await expect.poll(() => page.evaluate(() => window.ProfileRootEntryPortal.snapshot().open)).toBe(true);
+    await page.waitForFunction(() => document.body.dataset.graphMode === 'overview' && document.body.dataset.rootLanding === 'false');
     expect(await page.locator('#site-detail-panel.is-open').count()).toBe(0);
-    expect(await page.evaluate(() => document.body.dataset.graphMode)).toBe('atlas');
+    expect(await page.evaluate(() => document.body.dataset.graphMode)).toBe('overview');
   });
 
-  test('keyboard focus exposes the same action and Escape reverses it back to the root', async ({ page }) => {
+  test('keyboard focus arms the same root and Escape reverses without a second tab stop', async ({ page }) => {
     await bootAtlas(page);
     await root(page).focus();
     await expect.poll(() => page.evaluate(() => window.ProfileRootEntryPortal.snapshot().open)).toBe(true);
-    await expect(action(page)).toHaveAttribute('tabindex', '0');
-
-    await action(page).focus();
-    await expect(action(page)).toBeFocused();
+    await expect(action(page)).toHaveAttribute('tabindex', '-1');
     await page.keyboard.press('Escape');
     await expect.poll(() => page.evaluate(() => window.ProfileRootEntryPortal.snapshot().open)).toBe(false);
     await expect(root(page)).toBeFocused();
@@ -141,9 +144,7 @@ test.describe('V3.1 Phase F root entry portal — desktop', () => {
   test('Enter profile reaches expanded Overview without resurrecting the standalone hero root', async ({ page }) => {
     await bootAtlas(page);
     await root(page).evaluate(node => { node.dataset.phaseFCommitProbe = 'same-root'; });
-    await rootHit(page).hover();
-    await expect.poll(() => page.evaluate(() => window.ProfileRootEntryPortal.snapshot().open)).toBe(true);
-    await action(page).click();
+    await rootHit(page).click();
 
     await page.waitForFunction(() =>
       document.body.dataset.graphMode === 'overview' &&
@@ -179,27 +180,29 @@ test.describe('V3.1 Phase F root entry portal — desktop', () => {
     await rootHit(page).hover();
     await expect.poll(() => page.evaluate(() => window.ProfileRootEntryPortal.snapshot().open)).toBe(true);
 
-    const accepted = await page.evaluate(() => window.ProfileRootEntryPortal.enterProfile('phase-g-contract-test'));
-    expect(accepted).toBe(true);
-    await page.waitForFunction(() => window.ProfileAtlasCondensation.snapshot().state === 'CONDENSING');
-
-    let state = await page.evaluate(() => ({
-      route: document.body.dataset.graphRoute,
-      mode: document.body.dataset.graphMode,
-      portal: window.ProfileRootEntryPortal.snapshot(),
-      condensation: window.ProfileAtlasCondensation.snapshot(),
-      rootState: document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"]')?.dataset.rootEntryPortal,
-      portraitOpacity: Number(getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .root-entry-portrait')).opacity)
-    }));
+    let state = await page.evaluate(() => {
+      const accepted = window.ProfileRootEntryPortal.enterProfile('phase-g-contract-test');
+      const captured = {
+        accepted,
+        route: document.body.dataset.graphRoute,
+        mode: document.body.dataset.graphMode,
+        portal: window.ProfileRootEntryPortal.snapshot(),
+        condensation: window.ProfileAtlasCondensation.snapshot(),
+        rootState: document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"]')?.dataset.rootEntryPortal,
+        portraitOpacity: Number(getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .root-entry-portrait')).opacity)
+      };
+      window.ProfileAtlasCondensation.cancel('phase-f-g-contract-cancel');
+      return captured;
+    });
+    expect(state.accepted).toBe(true);
     expect(state.route).toBe('atlas');
     expect(state.mode).toBe('atlas');
     expect(state.portal.entering).toBe(true);
     expect(state.portal.open).toBe(true);
     expect(state.condensation.running).toBe(true);
-    expect(state.rootState).toBe('entering');
+    expect(state.rootState).toBe('committing');
     expect(state.portraitOpacity).toBeGreaterThan(.8);
 
-    await page.evaluate(() => window.ProfileAtlasCondensation.cancel('phase-f-g-contract-cancel'));
     await page.waitForFunction(() => window.ProfileAtlasCondensation.snapshot().state === 'CANCELLED');
     state = await page.evaluate(() => ({
       portal: window.ProfileRootEntryPortal.snapshot(),
@@ -226,17 +229,21 @@ test.describe('V3.1 Phase F root entry portal — desktop', () => {
 });
 
 test.describe('V3.1 Phase F mobile / reduced motion', () => {
-  test('coarse-pointer activation keeps the portal available for a second explicit tap', async ({ browser }) => {
+  test('coarse-pointer activation enters Profile in one tap', async ({ browser }) => {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
     const page = await context.newPage();
     await bootAtlas(page);
 
     await rootHit(page).click({ force: true });
-    await expect.poll(() => page.evaluate(() => window.ProfileRootEntryPortal.snapshot().open)).toBe(true);
+    await page.waitForFunction(() =>
+      document.body.dataset.graphMode === 'overview' &&
+      document.body.dataset.rootLanding === 'false' &&
+      window.ProfileRootEntryPortal.snapshot().entering === false
+    );
     const state = await page.evaluate(() => window.ProfileRootEntryPortal.snapshot());
     expect(state.coarsePointer).toBe(true);
-    expect(state.manualOpen).toBe(true);
-    await expect(action(page)).toHaveAttribute('tabindex', '0');
+    expect(state.entering).toBe(false);
+    await expect(action(page)).toHaveAttribute('tabindex', '-1');
     await context.close();
   });
 

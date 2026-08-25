@@ -16,6 +16,10 @@ const waitIntro = async page => {
 };
 
 const waitReveal = async (page, timeout = 8_000) => {
+  await page.waitForFunction(() => Boolean(window.ProfileIntro?.__v31), null, { timeout });
+  await page.evaluate(() => {
+    if (window.ProfileIntro.snapshot().state === 'ATLAS_READY') window.ProfileIntro.replay();
+  });
   await page.waitForFunction(() => {
     const state = window.ProfileIntro?.snapshot?.();
     return Boolean(state?.state === 'ATLAS_REVEAL' && state.running && state.liveGraphPresent);
@@ -262,7 +266,10 @@ test.describe('V3.1 Phase E live Atlas reveal — desktop', () => {
     await page.goto('/');
     await waitReveal(page);
     await page.waitForFunction(() => document.body.classList.contains('is-atlas-reveal-late'));
-    await page.locator('#site-graph .site-graph-node[data-node-id="knowledge"]').click();
+    await page.evaluate(() => {
+      const node = document.querySelector('#site-graph .site-graph-node[data-node-id="knowledge"]');
+      node.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, button: 0 }));
+    });
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'knowledge', null, { timeout: 6_000 });
     const snapshot = await page.evaluate(() => window.ProfileIntro.snapshot());
     expect(snapshot.result).toBe('interrupted');

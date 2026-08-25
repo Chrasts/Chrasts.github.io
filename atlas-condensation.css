@@ -61,6 +61,58 @@ body.is-atlas-condensation-committing #site-graph .atlas-condense-motion{
   pointer-events:none
 }
 
+body.is-atlas-condensation-handoff #site-graph .site-graph-node:not([data-node-id="stepan-chrast"]),
+body.is-atlas-condensation-handoff #site-graph .site-graph-edges path{
+  opacity:0!important;
+  visibility:hidden!important;
+  transition:none!important
+}
+
+body.is-atlas-condensing.is-atlas-condensation-handoff.is-atlas-condensation-committing #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .root-entry-portrait{
+  opacity:0!important;
+  transform:scale(.34)!important;
+  filter:saturate(.8) brightness(.7)!important;
+  transition:opacity .3s ease,transform .42s cubic-bezier(.4,0,.2,1),filter .3s ease!important
+}
+
+body.is-atlas-condensing.is-atlas-condensation-handoff.is-atlas-condensation-committing #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-dot{
+  opacity:1!important;
+  transform:scale(1)!important;
+  transition:opacity .28s ease,transform .42s cubic-bezier(.16,1,.3,1)!important
+}
+
+body.is-atlas-condensing.is-atlas-condensation-handoff.is-atlas-condensation-committing #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-halo{
+  opacity:.38!important;
+  transform:scale(.82)!important;
+  transition:opacity .34s ease,transform .46s cubic-bezier(.16,1,.3,1)!important
+}
+
+#site-graph .profile-root-emergence-motion{
+  pointer-events:none;
+  transform-box:view-box;
+  transform-origin:0 0;
+  will-change:transform,opacity
+}
+
+body.is-profile-root-emerging #site-graph .site-graph-svg{
+  pointer-events:none
+}
+
+body.is-profile-root-emerging #site-graph .site-graph-edges path{
+  transition:none!important
+}
+
+body.is-atlas-root-micro-commit #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-dot,
+body.is-atlas-root-micro-commit #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .root-entry-portrait{
+  transform:scale(.94)!important;
+  transition:transform .11s cubic-bezier(.3,0,.3,1)!important
+}
+
+body.is-atlas-root-micro-commit #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-halo{
+  opacity:.24!important;
+  transition:opacity .11s linear!important
+}
+
 body.is-atlas-condensing #site-graph .site-graph-node[data-node-id="stepan-chrast"].is-root-entry-entering > .root-entry-portrait{
   opacity:1!important;
   transform:scale(1)!important;
@@ -89,6 +141,7 @@ body.is-atlas-condensing #site-graph .site-graph-node[data-node-id="stepan-chras
   body.is-atlas-condensing #site-graph .site-graph-node,
   body.is-atlas-condensing #site-graph .site-graph-halo,
   body.is-atlas-condensing #site-graph .site-graph-dot,
+  body.is-profile-root-emerging #site-graph .profile-root-emergence-motion,
   body.is-atlas-condensing #site-graph .atlas-territory-label-layer{
     transition:none!important;
     animation:none!important

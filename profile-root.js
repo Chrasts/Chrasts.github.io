@@ -356,8 +356,17 @@
     if (brief) brief.hidden = !profileVisible;
     if (globalQuickTrigger) globalQuickTrigger.hidden = !quickAvailable() || profileVisible;
     document.body.classList.toggle('is-profile-root-ready', profileVisible);
+    if (profileVisible) {
+      document.body.dataset.entryState = 'profile';
+      document.body.dataset.rootEntry = 'profile';
+    }
     if (!quickAvailable() && quickDialog?.open) closeQuickOverview('context-change');
     scene.manager.scheduleRefresh(`profile-root:${reason}`);
+    if (profileVisible) {
+      dispatchEvent(new CustomEvent('profile:profile-root-settled', {
+        detail: { reason, route: route(), branchCount: sections.filter(id => Boolean(document.querySelector(`#site-graph .site-graph-node[data-node-id="${CSS.escape(id)}"]`))).length }
+      }));
+    }
   };
 
   const boot = () => {

@@ -708,6 +708,10 @@
         if (state.mode === 'work') {
           workPreviewNode(node.id);
         } else if (state.mode === 'atlas') {
+          if (node.id === profileRoot.id && document.body?.dataset.entryState === 'ready') {
+            clearAtlasHighlight();
+            return;
+          }
           atlasHighlight(node.id, false);
         } else {
           localPreview(node.id);
@@ -715,7 +719,10 @@
       };
       const clear = () => {
         if (state.mode === 'work') clearWorkPreview();
-        else if (state.mode === 'atlas') restoreAtlasHighlight();
+        else if (state.mode === 'atlas') {
+          if (node.id === profileRoot.id && document.body?.dataset.entryState === 'ready') clearAtlasHighlight();
+          else restoreAtlasHighlight();
+        }
         else clearLocalPreview();
       };
       const activate = () => {
@@ -797,10 +804,17 @@
         const dx = (event.clientX - renderer.drag.x) * active.width / Math.max(1, bounds.width);
         const dy = (event.clientY - renderer.drag.y) * active.height / Math.max(1, bounds.height);
         if (Math.abs(dx) + Math.abs(dy) > 2) renderer.drag.moved = true;
-        atlasCamera.x += dx; atlasCamera.y += dy;
-        atlasCamera.targetX = atlasCamera.x; atlasCamera.targetY = atlasCamera.y;
+        const atlasOwner = window.ProfileAtlasLOD;
+        if (atlasOwner?.panTo && atlasOwner?.snapshot) {
+          const ownerState = atlasOwner.snapshot();
+          const current = ownerState.targetCamera || ownerState.camera || { x: 0, y: 0 };
+          atlasOwner.panTo(current.x + dx, current.y + dy, { immediate: true });
+        } else {
+          atlasCamera.x += dx; atlasCamera.y += dy;
+          atlasCamera.targetX = atlasCamera.x; atlasCamera.targetY = atlasCamera.y;
+          paintAtlas();
+        }
         renderer.drag.x = event.clientX; renderer.drag.y = event.clientY;
-        paintAtlas();
       });
       const endDrag = event => {
         if (!renderer.drag) return;
@@ -1016,7 +1030,7 @@
 
       const leavingEdges = [...renderer.edgeElements].filter(([key]) => !edgeIds.has(key));
       cancelAnimationFrame(renderer.frame);
-      const duration = reducedMotion.matches ? 0 : 450;
+      const duration = reducedMotion.matches || window.__GRAPH_V6_FORCE_SNAP__ ? 0 : 450;
       const started = performance.now();
       const ease = t => 1 - Math.pow(1 - t, 3);
 
@@ -1086,6 +1100,15 @@
           renderer.camera.setAttribute('transform', '');
         }
         syncWorkDecorations(layout);
+        window.dispatchEvent(new CustomEvent('profile:graph-render-settled', {
+          detail: {
+            route: state.route,
+            mode: state.mode,
+            nodeCount: renderer.nodeElements.size,
+            edgeCount: renderer.edgeElements.size,
+            duration
+          }
+        }));
       };
 
       renderer.frame = requestAnimationFrame(frame);

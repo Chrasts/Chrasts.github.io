@@ -8,8 +8,13 @@
   const sections = ['work', 'knowledge', 'experience', 'education', 'about'];
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const desktop = matchMedia('(min-width: 901px)');
+  const mobileQuery = matchMedia('(max-width: 900px)');
   const svgNS = 'http://www.w3.org/2000/svg';
   const thresholds = Object.freeze({ far: 0.62, medium: 0.90, detail: 1.35 });
+  const TOPOLOGY_MODES = Object.freeze({
+    ENTRY_FULL: 'entry-full',
+    EXPLORATION_LOD: 'exploration-lod'
+  });
   const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
   const normaliseRoute = value =>
     (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
@@ -115,9 +120,12 @@
 
   let currentLOD = null;
   let currentScale = 1;
+  let topologyMode = TOPOLOGY_MODES.EXPLORATION_LOD;
+  let entryFit = null;
   let visibleNodeCount = 0;
   let hiddenNodeCount = 0;
   const visibleAtLOD = (id, lod, preserved) => {
+    if (topologyMode === TOPOLOGY_MODES.ENTRY_FULL) return true;
     if (preserved.has(id)) return true;
     const d = depth.get(id) ?? 99;
     if (lod === 'far') return d <= 1;
@@ -206,6 +214,7 @@
     const previous = currentLOD;
     currentLOD = lod;
     document.body.dataset.atlasLod = lod;
+    document.body.dataset.atlasTopology = topologyMode;
     syncTerritoryLabels(currentScale);
     scheduleLabelCollisionPass();
 
@@ -215,6 +224,22 @@
       }));
     }
     return true;
+  };
+
+  const setTopologyMode = (mode, { reason = 'api', apply = true } = {}) => {
+    const next = Object.values(TOPOLOGY_MODES).includes(mode)
+      ? mode
+      : TOPOLOGY_MODES.EXPLORATION_LOD;
+    const previous = topologyMode;
+    topologyMode = next;
+    if (document.body) document.body.dataset.atlasTopology = next;
+    if (apply && document.body?.dataset.graphMode === 'atlas') applyLOD(currentScale);
+    if (previous !== next) {
+      dispatchEvent(new CustomEvent('profile:atlas-topology-mode', {
+        detail: { mode: next, previous, reason, scale: currentScale }
+      }));
+    }
+    return next;
   };
 
   /* --------------------------------------------------------------------
@@ -283,6 +308,9 @@
         camera.scale = camera.targetScale;
         camera.frame = 0;
         writeCamera();
+        dispatchEvent(new CustomEvent('profile:atlas-camera-settled', {
+          detail: { x: camera.x, y: camera.y, scale: camera.scale }
+        }));
         return;
       }
       camera.frame = requestAnimationFrame(frame);
@@ -301,15 +329,82 @@
       camera.y = next.y;
       camera.scale = next.scale;
       writeCamera();
+      dispatchEvent(new CustomEvent('profile:atlas-camera-settled', {
+        detail: { x: camera.x, y: camera.y, scale: camera.scale, immediate: true }
+      }));
     } else animateCamera();
     return { ...next };
   };
-  const fit = ({ immediate = false } = {}) => {
-    const scale = 0.78;
-    const bounds = cameraBounds(scale);
-    return setCamera({ x: bounds.minX, y: bounds.minY, scale }, { immediate });
+  const topologyBounds = (purpose = 'exploration') => {
+    const nodes = liveNodes();
+    if (!nodes.length) return null;
+    const rootPreset = purpose === 'entry' ? 'entry-hero' : 'root-entry';
+    const rootRadii = window.ProfileHaloRenderer?.radiiFor?.(rootPreset) || (purpose === 'entry' ? [132, 228] : [27, 42]);
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    nodes.forEach(node => {
+      const x = Number(node.dataset.x);
+      const y = Number(node.dataset.y);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+      const isRoot = node.dataset.nodeId === rootId;
+      const radius = isRoot ? Math.max(...rootRadii, 62) : 24;
+      minX = Math.min(minX, x - radius);
+      minY = Math.min(minY, y - radius);
+      maxX = Math.max(maxX, x + radius);
+      maxY = Math.max(maxY, y + radius);
+    });
+    return Number.isFinite(minX) ? {
+      minX, minY, maxX, maxY,
+      width: Math.max(1, maxX - minX),
+      height: Math.max(1, maxY - minY),
+      centerX: (minX + maxX) / 2,
+      centerY: (minY + maxY) / 2
+    } : null;
+  };
+  const calculateFit = (purpose = 'exploration') => {
+    const svg = graphSvg();
+    const rect = svg?.getBoundingClientRect();
+    const viewBox = svg?.viewBox?.baseVal;
+    const bounds = topologyBounds(purpose);
+    if (!rect?.width || !rect?.height || !viewBox?.width || !viewBox?.height || !bounds) return null;
+    const safe = window.ProfileCameraComposition?.safeFrame?.();
+    const availableWidth = (safe?.width || rect.width) * viewBox.width / rect.width;
+    const availableHeight = (safe?.height || rect.height) * viewBox.height / rect.height;
+    const occupancy = purpose === 'entry'
+      ? (mobileQuery.matches ? .94 : 1.04)
+      : (mobileQuery.matches ? .80 : .89);
+    const scale = clamp(Math.min(
+      availableWidth * occupancy / bounds.width,
+      availableHeight * occupancy / bounds.height
+    ), .48, purpose === 'entry' ? 1.6 : 1.16);
+    const safeCenterX = safe
+      ? viewBox.x + (safe.centerX - rect.left) * viewBox.width / rect.width
+      : viewBox.x + viewBox.width / 2;
+    const safeCenterY = safe
+      ? viewBox.y + (safe.centerY - rect.top) * viewBox.height / rect.height
+      : viewBox.y + viewBox.height / 2;
+    const entryRoot = purpose === 'entry' ? geometry.atlasPoint(rootId) : null;
+    const anchorX = Number.isFinite(entryRoot?.x) ? entryRoot.x : bounds.centerX;
+    const anchorY = Number.isFinite(entryRoot?.y) ? entryRoot.y : bounds.centerY;
+    const next = clampCamera({
+      x: safeCenterX - anchorX * scale,
+      y: safeCenterY - anchorY * scale,
+      scale
+    });
+    return { ...next, topologyBounds: bounds, occupancy, anchorId: purpose === 'entry' ? rootId : null };
+  };
+  const fit = ({ immediate = false, purpose = 'exploration', recompute = false } = {}) => {
+    if (purpose !== 'entry') setTopologyMode(TOPOLOGY_MODES.EXPLORATION_LOD, { reason: 'fit', apply: false });
+    if (purpose === 'entry' && entryFit && !recompute) {
+      return setCamera(entryFit, { immediate });
+    }
+    const calculated = calculateFit(purpose);
+    if (!calculated) return false;
+    if (purpose === 'entry') entryFit = { x: calculated.x, y: calculated.y, scale: calculated.scale };
+    setCamera(calculated, { immediate });
+    return calculated;
   };
   const zoomAt = (clientX, clientY, factor, immediate = false) => {
+    setTopologyMode(TOPOLOGY_MODES.EXPLORATION_LOD, { reason: 'zoom', apply: false });
     const svg = graphSvg();
     if (!svg) return;
     const rect = svg.getBoundingClientRect();
@@ -328,6 +423,7 @@
     zoomAt(rect.left + rect.width / 2, rect.top + rect.height / 2, factor, false);
   };
   const focusNode = (id, { immediate = false } = {}) => {
+    setTopologyMode(TOPOLOGY_MODES.EXPLORATION_LOD, { reason: 'focus', apply: false });
     const point = geometry.atlasPoint(id);
     if (!point) return false;
     const scale = clamp(Math.max(1.35, camera.targetScale * 1.28), 1.35, 2.25);
@@ -590,6 +686,19 @@
       )) applyLocalLabelPolicy();
 
       if (document.body?.dataset.graphMode === 'atlas') {
+        const topologyChanged = mutations.some(mutation => mutation.type === 'childList');
+        const selectionChanged = mutations.some(mutation =>
+          mutation.type === 'attributes' &&
+          mutation.attributeName === 'class' &&
+          (mutation.target.classList?.contains('is-previewed') || String(mutation.oldValue || '').includes('is-previewed'))
+        );
+        const labelGeometryChanged = mutations.some(mutation =>
+          mutation.type === 'attributes' && ['x', 'y', 'text-anchor'].includes(mutation.attributeName)
+        );
+        if (!topologyChanged && !selectionChanged) {
+          if (labelGeometryChanged) scheduleLabelCollisionPass();
+          return;
+        }
         requestAnimationFrame(() => {
           observeCamera();
           applyLOD(camera.scale);
@@ -602,14 +711,20 @@
       subtree: true,
       childList: true,
       attributes: true,
+      attributeOldValue: true,
       attributeFilter: ['x', 'y', 'text-anchor', 'class']
     });
   }
 
   if (document.body) {
+    let previousGraphMode = document.body.dataset.graphMode || null;
     new MutationObserver(() => {
       applyLocalLabelPolicy();
       if (document.body.dataset.graphMode === 'atlas') {
+        const introMarker = document.documentElement.dataset.profileIntro || '';
+        if (previousGraphMode !== 'atlas' && !['pending', 'preparing', 'running'].includes(introMarker)) {
+          setTopologyMode(TOPOLOGY_MODES.EXPLORATION_LOD, { reason: 'atlas-route-entry', apply: false });
+        }
         updateAtlasHelp();
         decorateAtlasControls();
         requestAnimationFrame(() => {
@@ -621,8 +736,10 @@
         });
       } else {
         delete document.body.dataset.atlasLod;
+        delete document.body.dataset.atlasTopology;
         clearAtlasLabelOffsets();
       }
+      previousGraphMode = document.body.dataset.graphMode;
     }).observe(document.body, { attributes: true, attributeFilter: ['data-graph-mode', 'data-graph-route', 'class'] });
   }
 
@@ -630,7 +747,7 @@
   if (detail) new MutationObserver(decorateInspector).observe(detail, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'class'] });
 
   const cameraObserver = new MutationObserver(() => {
-    if (cameraWriting || !desktop.matches || document.body?.dataset.graphMode !== 'atlas') return;
+    if (cameraWriting || document.body?.dataset.graphMode !== 'atlas') return;
     const current = cameraElement()?.getAttribute('transform') || '';
     if (current === lastWrittenTransform) return;
     if (performance.now() < preserveCameraUntil && preservedCamera) {
@@ -647,7 +764,10 @@
     observedCamera = element;
     cameraObserver.observe(element, { attributes: true, attributeFilter: ['transform'] });
   }
-  requestAnimationFrame(observeCamera);
+  requestAnimationFrame(() => {
+    observeCamera();
+    syncCameraFromDOM();
+  });
 
   addEventListener('profile:geometry-applied', scheduleLabelCollisionPass);
   addEventListener('profile:atlas-lod-change', scheduleLabelCollisionPass);
@@ -689,6 +809,9 @@
     }
 
     const node = event.target.closest?.('#site-graph .site-graph-node[data-node-id]');
+    if (node && node.dataset.nodeId !== rootId) {
+      setTopologyMode(TOPOLOGY_MODES.EXPLORATION_LOD, { reason: 'node-interaction', apply: true });
+    }
     if (node && node.classList.contains('is-previewed')) {
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -744,6 +867,7 @@
     const pixelDx = event.clientX - gesture.x;
     const pixelDy = event.clientY - gesture.y;
     if (Math.abs(pixelDx) + Math.abs(pixelDy) > 3) gesture.moved = true;
+    if (gesture.moved) setTopologyMode(TOPOLOGY_MODES.EXPLORATION_LOD, { reason: 'pan', apply: false });
     const dx = pixelDx * atlasSize.width / Math.max(1, rect.width);
     const dy = pixelDy * atlasSize.height / Math.max(1, rect.height);
     gesture.x = event.clientX;
@@ -768,24 +892,33 @@
 
   window.ProfileAtlasLOD = Object.freeze({
     thresholds,
+    TOPOLOGY_MODES,
     applyLOD,
+    setTopologyMode,
     fit,
     focusNode,
     zoomIn: () => zoomCentre(1.28),
     zoomOut: () => zoomCentre(1 / 1.28),
-    setScale: (scale, { immediate = true } = {}) => {
+    setScale: (scale, { immediate = true, preserveTopology = false } = {}) => {
+      if (!preserveTopology) setTopologyMode(TOPOLOGY_MODES.EXPLORATION_LOD, { reason: 'set-scale', apply: false });
       const bounds = cameraBounds(scale);
       return setCamera({ x: bounds.minX, y: bounds.minY, scale }, { immediate });
     },
-    panTo: (x, y, { immediate = true } = {}) => setCamera({ x, y, scale: camera.targetScale }, { immediate }),
+    panTo: (x, y, { immediate = true, preserveTopology = false } = {}) => {
+      if (!preserveTopology) setTopologyMode(TOPOLOGY_MODES.EXPLORATION_LOD, { reason: 'pan-to', apply: false });
+      return setCamera({ x, y, scale: camera.targetScale }, { immediate });
+    },
     applyLocalLabelPolicy,
     resolveLabelCollisions: resolveAtlasLabelCollisions,
     snapshot: () => ({
       lod: currentLOD,
+      topologyMode,
+      entryFit: entryFit ? { ...entryFit } : null,
       scale: camera.scale,
       camera: { x: camera.x, y: camera.y, scale: camera.scale },
       targetCamera: { x: camera.targetX, y: camera.targetY, scale: camera.targetScale },
       bounds: cameraBounds(camera.scale),
+      topologyBounds: topologyBounds(),
       visibleNodeCount,
       hiddenNodeCount,
       correctedLabelWrites,

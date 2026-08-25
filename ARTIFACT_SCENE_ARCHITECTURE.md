@@ -7,8 +7,9 @@ This layer turns published portfolio artifacts into scene objects that live besi
 - `artifact-data.js` remains the canonical artifact manifest: identity, semantic type, source location, availability and graph anchors.
 - `artifact-scene-bindings.js` describes where an artifact experience appears: route targets, anchor nodes, scene recipe and placement side.
 - `artifact-scene-recipes.js` owns reusable visual grammars and Ambient/Active selection state. A recipe must be generic enough to serve multiple real artifacts.
-- `artifact-scene-runtime.js` owns artifact-scene lifecycle, route visibility, graph tethering, hover/focus coupling and responsive scene registration. It also provides the existing viewer DOM surface used by Object Focus.
-- `object-focus-controller.js` owns deep Inspect lifecycle, media behavior, shared-element flight, interruption, focus restoration and owner invalidation.
+- `artifact-scene-runtime.js` owns artifact-scene route visibility, graph tethering, hover/focus coupling and responsive scene registration. It also provides the viewer DOM surface used by Object Focus.
+- `scene-system.js` / `ProfileScene.objects` owns the common rich-object lifecycle, deterministic layout state, depth, return geometry, media state, interruption and serialization.
+- `object-focus-controller.js` owns the deep Inspect presentation, media controls, shared-element flight, focus restoration and owner invalidation while reporting lifecycle/media changes to `ProfileScene.objects`.
 - `object-focus.css` owns the reusable deep-inspection presentation.
 - `artifact-scenes.css` and the object-emergence styles own ambient artifact presentation and motion.
 
@@ -73,6 +74,7 @@ Every inspectable artifact can use the reusable `ProfileObjectFocus` controller.
 - uses media-specific interaction for images, PDFs, video, audio and external artifacts
 - cancels pending motion with an operation token
 - accepts an `ownerValid` callback so route ownership remains outside the controller
+- receives a runtime object ID so Inspect and Return update the same registered scene object
 
 The Phase 8 certificate stack uses a thin adapter: certificate selection remains owned by the certificate scene, while deep inspection is delegated to the same Object Focus controller.
 

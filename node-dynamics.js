@@ -3,6 +3,7 @@
 
   const interaction = window.ProfileNodeInteraction;
   if (!interaction) return;
+  const rootId = window.SITE_DATA?.graph?.rootId || 'stepan-chrast';
 
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const coarsePointer = matchMedia('(pointer: coarse)');
@@ -65,6 +66,7 @@
     reducedMotion.matches ||
     suspended ||
     document.body?.classList.contains('is-v9-transitioning') ||
+    document.body?.classList.contains('is-profile-root-emerging') ||
     introOwned()
   );
 
@@ -347,7 +349,9 @@
     const dt = lastTime ? clamp((now - lastTime) / 1000, 1 / 120, .033) : 1 / 60;
     lastTime = now;
     const interactionState = interaction.snapshot();
-    const activeId = now >= activationHoldUntil ? interactionState.primaryNodeId : null;
+    const requestedActiveId = now >= activationHoldUntil ? interactionState.primaryNodeId : null;
+    const entryRootHover = requestedActiveId === rootId && document.body?.dataset.entryState === 'ready';
+    const activeId = entryRootHover ? null : requestedActiveId;
     lastActiveNodeId = activeId || null;
     const config = computeTargets(activeId);
 

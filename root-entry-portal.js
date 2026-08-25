@@ -58,7 +58,7 @@
       const circle = document.createElementNS(SVG_NS, 'circle');
       circle.setAttribute('cx', '0');
       circle.setAttribute('cy', '0');
-      circle.setAttribute('r', '26.5');
+      circle.setAttribute('r', '47');
       clip.appendChild(circle);
       defs.appendChild(clip);
     }
@@ -69,10 +69,10 @@
     const image = document.createElementNS(SVG_NS, 'image');
     image.classList.add('root-entry-portrait');
     image.dataset.rootEntryPortrait = 'true';
-    image.setAttribute('x', '-27');
-    image.setAttribute('y', '-27');
-    image.setAttribute('width', '54');
-    image.setAttribute('height', '54');
+    image.setAttribute('x', '-48');
+    image.setAttribute('y', '-48');
+    image.setAttribute('width', '96');
+    image.setAttribute('height', '96');
     image.setAttribute('href', 'assets/stepan-chrast.jpg');
     image.setAttributeNS(XLINK_NS, 'href', 'assets/stepan-chrast.jpg');
     image.setAttribute('preserveAspectRatio', 'xMidYMid slice');
@@ -88,24 +88,23 @@
     const group = document.createElementNS(SVG_NS, 'g');
     group.classList.add('root-entry-action');
     group.dataset.rootEntryAction = 'true';
-    group.setAttribute('role', 'button');
+    group.setAttribute('role', 'presentation');
     group.setAttribute('tabindex', '-1');
-    group.setAttribute('aria-label', 'Enter profile');
     group.setAttribute('aria-hidden', 'true');
 
     const hit = document.createElementNS(SVG_NS, 'rect');
     hit.classList.add('root-entry-action-hit');
-    hit.setAttribute('x', '-54');
-    hit.setAttribute('y', '31');
-    hit.setAttribute('width', '108');
-    hit.setAttribute('height', '30');
-    hit.setAttribute('rx', '15');
+    hit.setAttribute('x', '-80');
+    hit.setAttribute('y', '27');
+    hit.setAttribute('width', '160');
+    hit.setAttribute('height', '42');
+    hit.setAttribute('rx', '21');
     hit.setAttribute('fill', 'transparent');
 
     const rule = document.createElementNS(SVG_NS, 'line');
     rule.classList.add('root-entry-action-rule');
-    rule.setAttribute('x1', '-17');
-    rule.setAttribute('x2', '17');
+    rule.setAttribute('x1', '-32');
+    rule.setAttribute('x2', '32');
     rule.setAttribute('y1', '35');
     rule.setAttribute('y2', '35');
     rule.setAttribute('aria-hidden', 'true');
@@ -113,7 +112,7 @@
     const text = document.createElementNS(SVG_NS, 'text');
     text.classList.add('root-entry-action-label');
     text.setAttribute('x', '0');
-    text.setAttribute('y', '52');
+    text.setAttribute('y', '58');
     text.setAttribute('text-anchor', 'middle');
     text.textContent = 'Enter profile';
     text.setAttribute('aria-hidden', 'true');
@@ -128,11 +127,17 @@
     const visible = open && available();
     rootNode.classList.toggle('is-root-entry-open', visible);
     rootNode.classList.toggle('is-root-entry-entering', entering && visible);
-    rootNode.dataset.rootEntryPortal = entering && visible ? 'entering' : visible ? 'open' : 'latent';
+    const entryState = entering ? 'committing' : visible ? 'armed' : available() ? 'idle' : 'latent';
+    const entryHero = ['preparing', 'ignition', 'reveal', 'ready']
+      .includes(document.body?.dataset?.entryState || '');
+    rootNode.dataset.rootEntryPortal = entryState;
+    if (document.body) document.body.dataset.rootEntry = entryState;
     rootNode.setAttribute('aria-expanded', visible ? 'true' : 'false');
-    action.setAttribute('tabindex', visible && !entering ? '0' : '-1');
-    action.setAttribute('aria-hidden', visible ? 'false' : 'true');
+    action.setAttribute('tabindex', '-1');
+    action.setAttribute('aria-hidden', 'true');
     action.setAttribute('aria-disabled', entering ? 'true' : 'false');
+    const hit = rootNode.querySelector(':scope > .site-graph-hit');
+    if (hit) hit.setAttribute('r', entryHero ? '254' : '48');
   };
 
   const openPortal = (reason = 'api', { manual = false } = {}) => {
@@ -263,13 +268,18 @@
     if (boundRoots.has(node)) return;
     boundRoots.add(node);
     node.setAttribute('aria-haspopup', 'false');
+    node.setAttribute('role', 'button');
+    node.setAttribute('aria-label', 'Enter profile — Štěpán Chrast');
+    node.style.cursor = 'pointer';
+    const hit = node.querySelector(':scope > .site-graph-hit');
+    if (hit) hit.setAttribute('r', '48');
 
     node.addEventListener('pointerenter', event => {
-      if (event.pointerType === 'touch' || coarsePointer.matches) return;
+      if (event.pointerType === 'touch') return;
       openPortal('pointer-hover');
     });
     node.addEventListener('pointerleave', event => {
-      if (event.pointerType === 'touch' || coarsePointer.matches) return;
+      if (event.pointerType === 'touch') return;
       scheduleClose('pointer-leave');
     });
     node.addEventListener('focusin', () => openPortal('keyboard-focus'));
@@ -282,7 +292,7 @@
       if (!available() || event.target.closest?.('[data-root-entry-action]')) return;
       event.preventDefault();
       event.stopImmediatePropagation();
-      openPortal('root-activate', { manual: event.pointerType === 'touch' || coarsePointer.matches });
+      enterProfile(event.pointerType === 'touch' || coarsePointer.matches ? 'touch-root' : 'pointer-root');
     }, true);
 
     node.addEventListener('keydown', event => {
@@ -296,8 +306,8 @@
       if (!['Enter', ' '].includes(event.key)) return;
       event.preventDefault();
       event.stopImmediatePropagation();
-      if (!open) openPortal('keyboard-activate');
-      else enterProfile('keyboard-root');
+      openPortal('keyboard-activate');
+      enterProfile('keyboard-root');
     }, true);
   };
 
@@ -314,10 +324,7 @@
     portrait = rootNode.querySelector(':scope > [data-root-entry-portrait]') || createPortrait(rootNode);
     action = rootNode.querySelector(':scope > [data-root-entry-action]') || createAction(rootNode);
     bindRoot(rootNode);
-    if (action.dataset.rootEntryBound !== 'true') {
-      action.dataset.rootEntryBound = 'true';
-      bindAction(action);
-    }
+    action.dataset.rootEntryBound = 'visual-only';
     rootNode.dataset.rootEntryMaterial = 'shared-root';
     syncOpenPresentation();
 

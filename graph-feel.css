@@ -26,6 +26,13 @@
   transform:scale(.82)
 }
 
+#site-graph .site-graph-halo--tertiary{
+  stroke-dasharray:3 9;
+  stroke-width:.9;
+  opacity:0;
+  transform:scale(.86)
+}
+
 #site-graph .site-graph-node[data-halo-state="hover"] > .site-graph-halo--primary{
   opacity:.52;
   transform:scale(1)

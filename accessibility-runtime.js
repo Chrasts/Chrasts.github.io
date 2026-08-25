@@ -85,7 +85,9 @@
     const type = humanType(nodeType(id));
     element.setAttribute('role', 'button');
     element.setAttribute('tabindex', '0');
-    element.setAttribute('aria-label', `${label}. ${type}. ${nodeAction(id, element)}.`);
+    element.setAttribute('aria-label', currentMode() === 'atlas' && id === rootId
+      ? 'Enter profile — Štěpán Chrast'
+      : `${label}. ${type}. ${nodeAction(id, element)}.`);
 
     const model = nodeMap.get(id);
     const route = model?.route ? normaliseRoute(model.route) : (id === rootId ? 'overview' : null);

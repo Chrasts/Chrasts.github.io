@@ -149,6 +149,12 @@
 
   const completeSettle = reason => {
     if (phase !== 'settle' || !context) return false;
+    // The timer is a safety bound, not permission to leave a second owner in a
+    // transient state. If a heavily loaded frame misses the spring event,
+    // restore exact canonical geometry before publishing IDLE.
+    if (reason === 'timeout' && window.ProfileNodeDynamics?.snapshot?.().transitionSettling) {
+      window.ProfileNodeDynamics.reset?.();
+    }
     const finished = context;
     lastResult = {
       ...(lastResult || {}),

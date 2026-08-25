@@ -68,11 +68,52 @@
         const route = (location.hash || '#overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
         const seen = sessionStorage.getItem('profileIntroSeen') === 'true';
         document.documentElement.dataset.profileIntro = route === 'overview' && !seen ? 'pending' : 'bypass';
+        if (document.documentElement.dataset.profileIntro === 'pending') {
+          window.__PROFILE_ENTRY_FAILOPEN__ = setTimeout(() => {
+            if (!['pending', 'preparing', 'running'].includes(document.documentElement.dataset.profileIntro || '')) return;
+            document.documentElement.dataset.profileIntro = 'bypass';
+            if (document.body) {
+              document.body.dataset.entryState = 'profile';
+              document.body.classList.add('is-entry-loader-complete');
+              document.body.classList.remove('is-entry-loader-releasing', 'is-entry-mask-finishing', 'is-atlas-reveal');
+            }
+          }, 45000);
+        }
       } catch (_) {
         document.documentElement.dataset.profileIntro = 'bypass';
       }
     })();
   </script>
+  <style data-entry-first-paint-guard>
+    /* This is deliberately inline: it owns the very first paint, before any
+       deferred graph module or external stylesheet can expose partial UI. */
+    html[data-profile-intro="pending"],
+    html[data-profile-intro="preparing"],
+    html[data-profile-intro="running"]{background:#000}
+    html[data-profile-intro="pending"]::before,
+    html[data-profile-intro="preparing"]::before{
+      content:"";
+      position:fixed;
+      z-index:2147483646;
+      inset:0;
+      background:#000
+    }
+    html[data-profile-intro="pending"] body > :not(.entry-loading-shell),
+    html[data-profile-intro="preparing"] body > :not(.entry-loading-shell){visibility:hidden!important}
+    .entry-loading-shell{display:none}
+    html[data-profile-intro="pending"] .entry-loading-shell,
+    html[data-profile-intro="preparing"] .entry-loading-shell,
+    html[data-profile-intro="running"] .entry-loading-shell{
+      display:grid;
+      position:fixed;
+      z-index:2147483647;
+      inset:0;
+      place-items:center;
+      overflow:hidden;
+      background:#000;
+      color:#fff
+    }
+  </style>
   <script defer src="https://cloud.umami.is/script.js" data-website-id="8dd5c849-df0f-40a5-b4e1-3fbcb38f425b"></script>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="root-landing.css">
@@ -81,6 +122,31 @@
   <link rel="stylesheet" href="radial-geometry.css">
 </head>
 <body id="top">
+  <div class="entry-loading-shell" aria-live="polite" aria-label="Loading interactive profile" role="status">
+    <svg class="entry-visibility-mask" aria-hidden="true" focusable="false" preserveAspectRatio="none">
+      <defs>
+        <radialGradient id="entry-visibility-gradient">
+          <stop offset="0" stop-color="#000"></stop>
+          <stop offset=".52" stop-color="#000"></stop>
+          <stop offset=".67" stop-color="#181818"></stop>
+          <stop offset=".80" stop-color="#666"></stop>
+          <stop offset=".91" stop-color="#bbb"></stop>
+          <stop offset="1" stop-color="#fff"></stop>
+        </radialGradient>
+        <mask id="entry-visibility-cutout" maskUnits="userSpaceOnUse">
+          <rect class="entry-visibility-base" fill="#fff"></rect>
+          <circle class="entry-visibility-aperture" r="0" fill="url(#entry-visibility-gradient)"></circle>
+        </mask>
+      </defs>
+      <rect class="entry-visibility-veil" fill="#000" mask="url(#entry-visibility-cutout)"></rect>
+    </svg>
+    <div class="entry-loading-object" aria-hidden="true">
+      <span class="entry-loading-orbit is-outer"></span>
+      <span class="entry-loading-orbit is-mid"></span>
+      <span class="entry-loading-orbit is-inner"></span>
+      <span class="entry-loading-core"></span>
+    </div>
+  </div>
   <a class="skip-link" href="#main-content">Skip to content</a>
   <header class="site-header app-header wrap">
     <a class="brand" href="#overview" data-route="overview" aria-label="Overview">ŠC</a>

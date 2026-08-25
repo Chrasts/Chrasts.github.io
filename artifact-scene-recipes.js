@@ -20,6 +20,43 @@
     });
   };
 
+  const runtimeIdFor = (binding, artifact) => `artifact-object:${binding.id}:${artifact.id}`;
+  const runtimeKindFor = artifact => {
+    if (artifact?.type === 'diagram') return 'diagram';
+    if (artifact?.type === 'video' || /^video\//i.test(artifact?.mediaType || '')) return 'video';
+    if (artifact?.type === 'document' || artifact?.type === 'certificate' || artifact?.mediaType === 'application/pdf') return 'document';
+    if (artifact?.type === 'data-visualisation' || artifact?.type === 'data-visualization') return 'data-visualisation';
+    return 'image';
+  };
+  const layoutStrategyFor = binding => {
+    if (binding.recipe === 'document-folio') return 'stack';
+    if (binding.variant === 'fan') return 'fan';
+    if (binding.variant === 'screens') return 'strip';
+    return 'scatter';
+  };
+  const registerRuntimeObject = (element, binding, artifact, index, count) => {
+    const runtime = window.ProfileScene?.objects;
+    if (!runtime || !artifact || !element) return null;
+    const id = runtimeIdFor(binding, artifact);
+    if (!runtime.records?.has(id)) {
+      runtime.register({
+        id,
+        sceneId: `artifact-scene:${binding.id}`,
+        kind: runtimeKindFor(artifact),
+        element,
+        layout: {
+          strategy: layoutStrategyFor(binding),
+          seed: binding.id,
+          index,
+          count
+        },
+        depth: { level: Math.max(1, count - index) },
+        media: { status: 'ready', muted: true }
+      });
+    }
+    return id;
+  };
+
   const sceneRoot = binding => {
     const root = element('section', `artifact-object artifact-recipe-${binding.recipe}`);
     root.dataset.artifactScene = binding.id;
@@ -127,10 +164,12 @@
 
   const openObjectFocus = (root, source, binding, artifact, env) => {
     const controller = window.ProfileObjectFocus;
+    const runtimeId = runtimeIdFor(binding, artifact);
     if (controller?.open) {
       return controller.open({
         source,
         artifact,
+        runtimeId,
         owner: 'artifact',
         ownerValid: () => root.isConnected && bindingOwnsCurrentRoute(binding)
       });
@@ -192,6 +231,8 @@
     caption.appendChild(element('strong', 'artifact-folio-title', artifact.title));
     if (artifact.description) caption.appendChild(element('span', 'artifact-folio-summary', artifact.description));
     page.appendChild(caption);
+    registerRuntimeObject(page, binding, artifact, 0, 1);
+    window.ProfileScene?.objects?.activate(runtimeIdFor(binding, artifact));
 
     page.addEventListener('click', event => {
       event.stopPropagation();
@@ -225,6 +266,7 @@
           card.dataset.objectFocusState = active ? 'active' : 'ambient';
         }
       });
+      window.ProfileScene?.objects?.activate(runtimeIdFor(binding, env.artifactFor(id)));
     };
 
     artifacts.forEach((artifact, index) => {
@@ -242,6 +284,7 @@
         mediaPreview(artifact, href, { className: 'artifact-deck-preview', eager: index === 0 }),
         objectTag(artifact)
       );
+      registerRuntimeObject(card, binding, artifact, index, artifacts.length);
 
       card.addEventListener('pointerenter', () => activate(artifact.id));
       card.addEventListener('focus', () => activate(artifact.id));

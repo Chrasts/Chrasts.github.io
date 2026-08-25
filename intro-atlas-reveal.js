@@ -26,14 +26,14 @@
     settle: 480,
     ready: 560
   } : {
-    primary: 360,
-    territories: 760,
-    structure: 1210,
-    deep: 1590,
-    labels: 1940,
-    cross: 2200,
-    settle: 2490,
-    ready: 3000
+    primary: 900,
+    territories: 1800,
+    structure: 2800,
+    deep: 3300,
+    labels: 3600,
+    cross: 3900,
+    settle: 4150,
+    ready: 4300
   });
 
   const state = {
@@ -54,7 +54,9 @@
     criticalReady: false,
     readiness: {},
     revealedWaves: [],
-    keyboardCompletion: false
+    keyboardCompletion: false,
+    entryCamera: null,
+    loaderReleased: false
   };
 
   let generation = 0;
@@ -66,6 +68,13 @@
   let nodeElements = [];
   let edgeElements = [];
   let originalEdgeStyles = new WeakMap();
+  let latentTimer = 0;
+  let visibilityFieldPromise = Promise.resolve(true);
+  let visibilityFrame = 0;
+  let visibilityResolve = null;
+  let visibilityInteractiveResolve = null;
+  let visibilityInteractivePromise = Promise.resolve(true);
+  let visibilityLayout = null;
 
   const normaliseRoute = value =>
     (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
@@ -81,6 +90,10 @@
   }));
   const track = name => { try { window.umami?.track?.(name); } catch (_) {} };
   const markSeen = () => { try { sessionStorage.setItem('profileIntroSeen', 'true'); } catch (_) {} };
+  const clearFailOpen = () => {
+    clearTimeout(window.__PROFILE_ENTRY_FAILOPEN__);
+    window.__PROFILE_ENTRY_FAILOPEN__ = 0;
+  };
   const waitFor = (predicate, timeout = 5000) => new Promise(resolve => {
     const started = performance.now();
     const poll = () => {
@@ -95,6 +108,212 @@
     Promise.resolve(promise).then(() => true).catch(() => false),
     wait(ms).then(() => false)
   ]);
+
+  const visibilityMask = () => ({
+    svg: document.querySelector('.entry-visibility-mask'),
+    base: document.querySelector('.entry-visibility-base'),
+    aperture: document.querySelector('.entry-visibility-aperture'),
+    veil: document.querySelector('.entry-visibility-veil')
+  });
+
+  const measureVisibilityLayout = () => {
+    const width = Math.max(1, innerWidth);
+    const height = Math.max(1, innerHeight);
+    const rootDot = rootElement?.querySelector(':scope > .site-graph-dot');
+    const rootBounds = rootDot?.getBoundingClientRect?.();
+    const cx = rootBounds?.width ? rootBounds.left + rootBounds.width / 2 : width / 2;
+    const cy = rootBounds?.height ? rootBounds.top + rootBounds.height / 2 : height / 2;
+    let graphDistance = 0;
+    const content = [
+      ...document.querySelectorAll(
+        '#site-graph .site-graph-node[data-node-id] > :is(.site-graph-dot,.site-graph-halo,.site-graph-label,.site-graph-meta,[data-root-entry-portrait],[data-root-entry-action]),' +
+        '#site-graph .atlas-territory-label-layer text'
+      )
+    ];
+    content.forEach(element => {
+      const bounds = element.getBoundingClientRect?.();
+      if (!bounds || (!bounds.width && !bounds.height)) return;
+      graphDistance = Math.max(
+        graphDistance,
+        Math.hypot(bounds.left - cx, bounds.top - cy),
+        Math.hypot(bounds.right - cx, bounds.top - cy),
+        Math.hypot(bounds.left - cx, bounds.bottom - cy),
+        Math.hypot(bounds.right - cx, bounds.bottom - cy)
+      );
+    });
+    if (!graphDistance) {
+      graphDistance = Math.max(
+        Math.hypot(cx, cy),
+        Math.hypot(width - cx, cy),
+        Math.hypot(cx, height - cy),
+        Math.hypot(width - cx, height - cy)
+      );
+    }
+    /* The clear core of the gradient ends at 52%. Finishing against the real
+       content bounds (plus breathing room) makes visual completion and input
+       activation the same frame instead of animating an invisible remainder
+       toward empty viewport corners. */
+    return { width, height, cx, cy, targetRadius: (graphDistance + 8) / .515 };
+  };
+
+  const visibilityMetrics = progress => {
+    const { svg, base, aperture, veil } = visibilityMask();
+    if (!svg || !base || !aperture || !veil) return null;
+    if (!visibilityLayout || visibilityLayout.width !== innerWidth || visibilityLayout.height !== innerHeight) {
+      visibilityLayout = measureVisibilityLayout();
+    }
+    const { width, height, cx, cy, targetRadius } = visibilityLayout;
+    const radius = targetRadius * Math.max(0, Math.min(1, progress));
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    base.setAttribute('x', '0');
+    base.setAttribute('y', '0');
+    base.setAttribute('width', width);
+    base.setAttribute('height', height);
+    veil.setAttribute('x', '0');
+    veil.setAttribute('y', '0');
+    veil.setAttribute('width', width);
+    veil.setAttribute('height', height);
+    aperture.setAttribute('cx', cx.toFixed(2));
+    aperture.setAttribute('cy', cy.toFixed(2));
+    aperture.setAttribute('r', radius.toFixed(2));
+    return { width, height, cx, cy, radius };
+  };
+
+  const cancelVisibilityField = (result = false) => {
+    cancelAnimationFrame(visibilityFrame);
+    visibilityFrame = 0;
+    const resolve = visibilityResolve;
+    const resolveInteractive = visibilityInteractiveResolve;
+    visibilityResolve = null;
+    visibilityInteractiveResolve = null;
+    resolveInteractive?.(result);
+    resolve?.(result);
+  };
+
+  /* One SVG radius write per frame is substantially cheaper and smoother than
+     repainting a multi-stop CSS gradient with several animated custom lengths. */
+  const startVisibilityField = () => new Promise(resolve => {
+    cancelVisibilityField(false);
+    visibilityResolve = resolve;
+    visibilityInteractivePromise = new Promise(interactiveResolve => {
+      visibilityInteractiveResolve = interactiveResolve;
+    });
+    visibilityLayout = null;
+    visibilityMetrics(0);
+    if (reducedMotion) {
+      visibilityMetrics(1);
+      visibilityInteractiveResolve?.(true);
+      visibilityInteractiveResolve = null;
+      visibilityResolve = null;
+      resolve(true);
+      return;
+    }
+    const delay = 160;
+    const duration = 6350;
+    const started = performance.now();
+    const tick = now => {
+      const elapsed = now - started - delay;
+      const progress = Math.max(0, Math.min(1, elapsed / duration));
+      visibilityMetrics(progress);
+      if (progress >= .76 && visibilityInteractiveResolve) {
+        const resolveInteractive = visibilityInteractiveResolve;
+        visibilityInteractiveResolve = null;
+        resolveInteractive(true);
+      }
+      if (progress >= 1) {
+        visibilityFrame = 0;
+        visibilityInteractiveResolve?.(true);
+        visibilityInteractiveResolve = null;
+        visibilityResolve = null;
+        resolve(true);
+        return;
+      }
+      visibilityFrame = requestAnimationFrame(tick);
+    };
+    visibilityFrame = requestAnimationFrame(tick);
+  });
+
+  const labelGeometry = nodes => {
+    const signature = [];
+    try {
+      for (const node of nodes) {
+        const label = node.querySelector(':scope > .site-graph-label');
+        const hit = node.querySelector(':scope > .site-graph-hit');
+        if (!label || !hit || !label.textContent?.trim()) return { ready: false, signature: '' };
+        const bounds = label.getBBox();
+        if (![bounds.x, bounds.y, bounds.width, bounds.height].every(Number.isFinite) || bounds.width <= 0 || bounds.height <= 0) {
+          return { ready: false, signature: '' };
+        }
+        signature.push([
+          node.dataset.nodeId,
+          node.dataset.x,
+          node.dataset.y,
+          label.getAttribute('x'),
+          label.getAttribute('y'),
+          label.getAttribute('text-anchor'),
+          bounds.x.toFixed(2),
+          bounds.y.toFixed(2),
+          bounds.width.toFixed(2),
+          bounds.height.toFixed(2)
+        ].join(':'));
+      }
+    } catch (_) {
+      return { ready: false, signature: '' };
+    }
+    return { ready: signature.length === graph.nodes.length, signature: signature.join('|') };
+  };
+
+  const atlasFullyReady = (preparedNodes = null, preparedLabels = null) => {
+    const atlas = window.ProfileAtlasLOD?.snapshot?.();
+    const nodes = preparedNodes || [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')]
+      .filter(node => !node.closest('.v9-transition-overlay'));
+    const edges = [...document.querySelectorAll('#site-graph .site-graph-edges path[data-source][data-target]')]
+      .filter(edge => !edge.closest('.v9-transition-overlay'));
+    const camera = atlas?.camera;
+    const target = atlas?.targetCamera;
+    const structureReady = Boolean(
+      document.body?.dataset.graphMode === 'atlas' &&
+      atlas?.topologyMode === 'entry-full' &&
+      atlas?.visibleNodeCount === graph.nodes.length &&
+      atlas?.hiddenNodeCount === 0 &&
+      nodes.length === graph.nodes.length &&
+      edges.length > 0 &&
+      !nodes.some(node => node.classList.contains('is-atlas-lod-hidden')) &&
+      nodes.every(node => Number.isFinite(Number(node.dataset.x)) && Number.isFinite(Number(node.dataset.y))) &&
+      Number.isFinite(camera?.x) && Number.isFinite(camera?.y) && Number.isFinite(camera?.scale) &&
+      Number.isFinite(target?.x) && Number.isFinite(target?.y) && Number.isFinite(target?.scale) &&
+      Math.abs(camera.x - target.x) < .02 &&
+      Math.abs(camera.y - target.y) < .02 &&
+      Math.abs(camera.scale - target.scale) < .0005
+    );
+    if (!structureReady) return false;
+    return (preparedLabels || labelGeometry(nodes)).ready;
+  };
+
+  const stabiliseAtlas = async (currentGeneration, timeout = 10000) => {
+    const started = performance.now();
+    let stableFrames = 0;
+    let previousSignature = '';
+    window.ProfileAtlasLOD?.setTopologyMode?.('entry-full', { reason: 'intro-stabilise' });
+    const scale = window.ProfileAtlasLOD?.snapshot?.().camera?.scale;
+    if (Number.isFinite(scale)) window.ProfileAtlasLOD?.applyLOD?.(scale);
+    window.ProfileHaloRenderer?.refresh?.();
+    while (currentGeneration === generation && performance.now() - started < timeout) {
+      await raf();
+      const liveNodes = [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')]
+        .filter(node => !node.closest('.v9-transition-overlay'));
+      const structureReady = atlasFullyReady(liveNodes, { ready: true });
+      const labels = structureReady ? labelGeometry(liveNodes) : { ready: false, signature: '' };
+      if (structureReady && labels.ready && labels.signature && labels.signature === previousSignature) stableFrames += 1;
+      else {
+        stableFrames = 0;
+        window.ProfileAtlasLOD?.setTopologyMode?.('entry-full', { reason: 'intro-stabilise-retry' });
+      }
+      previousSignature = labels.signature;
+      if (stableFrames >= 3) return true;
+    }
+    return false;
+  };
 
   const dispatchHashChange = (oldURL, newURL) => {
     try { dispatchEvent(new HashChangeEvent('hashchange', { oldURL, newURL })); }
@@ -138,6 +357,11 @@
     depth === 1 ? 'primary' :
     depth === 2 ? 'territory' :
     depth === 3 ? 'intermediate' : 'deep';
+  const stableNumber = value => {
+    let number = 2166136261;
+    for (const character of String(value)) number = Math.imul(number ^ character.charCodeAt(0), 16777619);
+    return number >>> 0;
+  };
 
   const classifyLiveAtlas = () => {
     const root = document.querySelector('#site-graph');
@@ -150,10 +374,26 @@
     if (nodeElements.length < graph.nodes.length) return false;
 
     rootElement = nodeElements.find(node => node.dataset.nodeId === rootId) || null;
-    nodeElements.forEach(node => {
-      const depth = depthOf(node.dataset.nodeId);
+    const rootPoint = window.ProfileGeometry?.atlasPoint?.(rootId) || { x: 0, y: 0 };
+    const planned = nodeElements.map(node => {
+      const id = node.dataset.nodeId;
+      const point = window.ProfileGeometry?.atlasPoint?.(id) || { x: Number(node.dataset.x), y: Number(node.dataset.y) };
+      return {
+        node,
+        id,
+        depth: depthOf(id),
+        distance: Math.hypot((point.x || 0) - rootPoint.x, (point.y || 0) - rootPoint.y)
+      };
+    });
+    const maxDepth = Math.max(1, ...planned.filter(item => item.depth < 99).map(item => item.depth));
+    const maxDistance = Math.max(1, ...planned.map(item => item.distance));
+    planned.forEach(({ node, id, depth, distance }) => {
+      const jitter = (stableNumber(id) % 1000) / 1000 * .018;
+      const score = id === rootId ? 0 : Math.min(1, .7 * depth / maxDepth + .3 * distance / maxDistance + jitter);
       node.dataset.introDepth = String(depth);
       node.dataset.introWave = waveForDepth(depth);
+      node.dataset.introScore = score.toFixed(4);
+      node.style.setProperty('--intro-delay', `${Math.round(score * 86)}ms`);
       node.classList.remove('is-intro-revealed', 'is-intro-label-revealed');
     });
 
@@ -163,6 +403,7 @@
       const targetDepth = depthOf(edge.dataset.target);
       const cross = !['hierarchy', 'hierarchy-alt', 'work-lattice'].includes(edge.dataset.type || 'hierarchy');
       const depth = Math.max(sourceDepth, targetDepth);
+      const crossDelay = cross ? 88 : stableNumber(`${edge.dataset.source}:${edge.dataset.target}`) % 54;
       edge.dataset.introEdgeWave = cross
         ? 'cross'
         : depth <= 1 ? 'primary'
@@ -174,6 +415,7 @@
         introLength: edge.style.getPropertyValue('--intro-edge-length')
       });
       edge.style.setProperty('--intro-edge-length', length.toFixed(2));
+      edge.style.setProperty('--intro-delay', `${crossDelay}ms`);
       edge.classList.remove('is-intro-revealed');
     });
     return Boolean(rootElement);
@@ -197,11 +439,10 @@
   };
   const syncLabelDensity = () => {
     if (!state.revealedWaves.includes('labels')) return;
-    nodeElements.forEach(node => {
-      const wave = node.dataset.introWave;
-      const visible = wave === 'root' || wave === 'primary' || wave === 'territory' || (!mobileQuery.matches && wave === 'intermediate');
-      node.classList.toggle('is-intro-label-revealed', visible);
-    });
+    /* The live entry Atlas is fully prepared behind the veil. Every label,
+       including the two deepest Knowledge generations, belongs to that single
+       prepared image; the mask alone decides when it becomes visible. */
+    nodeElements.forEach(node => node.classList.add('is-intro-label-revealed'));
   };
 
   const revealWave = wave => {
@@ -244,13 +485,16 @@
     ['root', 'primary', 'territories', 'structure', 'deep', 'labels', 'cross'].forEach(revealWave);
   };
 
-  const cleanupRevealPresentation = () => {
+  const cleanupRevealPresentation = ({ keepVisibility = false } = {}) => {
     cancelAnimationFrame(frame);
     frame = 0;
+    if (!keepVisibility) cancelVisibilityField(false);
     nodeElements.forEach(node => {
       node.classList.remove('is-intro-revealed', 'is-intro-label-revealed');
       delete node.dataset.introDepth;
       delete node.dataset.introWave;
+      delete node.dataset.introScore;
+      node.style.removeProperty('--intro-delay');
     });
     edgeElements.forEach(edge => {
       edge.classList.remove('is-intro-revealed');
@@ -258,8 +502,12 @@
       const previous = originalEdgeStyles.get(edge)?.introLength;
       if (previous) edge.style.setProperty('--intro-edge-length', previous);
       else edge.style.removeProperty('--intro-edge-length');
+      edge.style.removeProperty('--intro-delay');
     });
     document.body?.classList.remove('is-atlas-reveal', 'is-atlas-reveal-late');
+    document.body?.classList.remove('is-entry-latent');
+    clearTimeout(latentTimer);
+    latentTimer = 0;
     if (document.body) delete document.body.dataset.atlasRevealStage;
     nodeElements = [];
     edgeElements = [];
@@ -295,45 +543,45 @@
     const graphReady = await waitFor(() =>
       document.body?.dataset.graphMode === 'atlas' &&
       document.querySelectorAll('#site-graph .site-graph-node[data-node-id]').length >= graph.nodes.length,
-    5200);
+    12000);
     if (!graphReady || currentGeneration !== generation) return false;
 
-    const criticalCss = await waitFor(() => Boolean(
-      document.querySelector('link[data-profile-intro-atlas-style]')?.sheet
-    ), 2200);
-
-    const modulesReady = await waitFor(() => {
-      const halo = window.ProfileHaloRenderer?.snapshot?.();
-      return Boolean(
-        window.ProfileAtlasLOD &&
-        window.ProfileGeometry &&
-        halo?.ringCount >= graph.nodes.length &&
-        halo?.rootRingCount >= 2 &&
-        window.ProfileNodeInteraction &&
-        window.ProfileCameraComposition?.boot?.() &&
-        window.ProfileCameraMateriality?.snapshot?.().ready &&
-        window.ProfileScene?.transitions
-      );
-    }, 4200);
-
-    const fontReady = document.fonts?.ready ? await withTimeout(document.fonts.ready, 2200) : true;
     const portrait = new Image();
     portrait.src = 'assets/stepan-chrast.jpg';
-    const portraitReady = await withTimeout(
-      typeof portrait.decode === 'function' ? portrait.decode() : new Promise((resolve, reject) => {
+    const portraitPromise = typeof portrait.decode === 'function' ? portrait.decode() : new Promise((resolve, reject) => {
         portrait.onload = resolve;
         portrait.onerror = reject;
-      }),
-    2200);
+      });
+    const [criticalCss, modulesReady, fontReady, portraitReady] = await Promise.all([
+      waitFor(() => Boolean(document.querySelector('link[data-profile-intro-atlas-style]')?.sheet), 6000),
+      waitFor(() => {
+        const halo = window.ProfileHaloRenderer?.snapshot?.();
+        return Boolean(
+          window.ProfileAtlasLOD &&
+          window.ProfileGeometry &&
+          halo?.ringCount >= graph.nodes.length &&
+          halo?.rootRingCount >= 2 &&
+          window.ProfileNodeInteraction &&
+          window.ProfileCameraComposition?.boot?.() &&
+          window.ProfileCameraMateriality?.snapshot?.().ready &&
+          window.ProfileScene?.transitions
+        );
+      }, 12000),
+      document.fonts?.ready ? withTimeout(document.fonts.ready, 10000) : true,
+      withTimeout(portraitPromise, 10000)
+    ]);
 
     await raf();
-    window.ProfileAtlasLOD?.fit?.({ immediate: true });
+    window.ProfileAtlasLOD?.setTopologyMode?.('entry-full', { reason: 'intro-readiness' });
+    const fitted = window.ProfileAtlasLOD?.fit?.({ immediate: true, purpose: 'entry', recompute: true });
+    state.entryCamera = fitted ? { x: fitted.x, y: fitted.y, scale: fitted.scale } : null;
     await raf();
     await raf();
     const classified = classifyLiveAtlas();
+    const topologyReady = classified && await stabiliseAtlas(currentGeneration);
     const rootPoint = window.ProfileGeometry?.atlasPoint?.(rootId);
     const rootGeometry = Boolean(
-      classified &&
+      topologyReady &&
       Number.isFinite(rootPoint?.x) &&
       Number.isFinite(rootPoint?.y) &&
       Number.isFinite(Number(rootElement?.dataset.x)) &&
@@ -348,10 +596,12 @@
       fonts: fontReady,
       portrait: portraitReady,
       rootGeometry,
-      classified
+      classified,
+      topology: topologyReady,
+      labels: topologyReady
     };
     state.criticalReady = Boolean(
-      atlasRoute && graphReady && criticalCss && modulesReady && fontReady && portraitReady && rootGeometry && classified
+      atlasRoute && graphReady && criticalCss && modulesReady && fontReady && portraitReady && rootGeometry && classified && topologyReady && state.entryCamera
     );
     return state.criticalReady;
   };
@@ -377,11 +627,16 @@
         cleanupRevealPresentation();
         removeSkip();
         document.documentElement.dataset.profileIntro = 'bypass';
-        if (document.body) document.body.dataset.entryState = 'FALLBACK';
+        if (document.body) {
+          document.body.dataset.entryState = 'profile';
+          document.body.classList.add('is-entry-loader-complete');
+          document.body.classList.remove('is-entry-loader-releasing', 'is-entry-mask-finishing');
+        }
         state.state = STATES.BYPASSED;
         state.stage = 'fallback';
         state.running = false;
         state.result = 'fallback';
+        clearFailOpen();
         markSeen();
         emit('fallback', { reason: 'atlas-route-unavailable' });
         return false;
@@ -391,14 +646,29 @@
     if (!nodeElements.length) classifyLiveAtlas();
     revealEverything();
     setStage('settle');
-    window.ProfileCameraComposition?.fit?.({ duration: reducedMotion ? 0 : 360 });
-    await wait(reducedMotion ? 0 : reason === 'completed' ? 260 : 90);
+    if (!atlasFullyReady()) {
+      window.ProfileAtlasLOD?.setTopologyMode?.('entry-full', { reason: 'intro-ready-prepaint' });
+      const stableScale = window.ProfileAtlasLOD?.snapshot?.().camera?.scale;
+      if (Number.isFinite(stableScale)) window.ProfileAtlasLOD?.applyLOD?.(stableScale);
+    }
+    window.ProfileHaloRenderer?.refresh?.();
+    if (reason === 'completed') await visibilityInteractivePromise;
+    else await wait(reducedMotion ? 0 : 60);
 
-    cleanupRevealPresentation();
+    const maskFinishing = reason === 'completed' && Boolean(visibilityFrame);
+    cleanupRevealPresentation({ keepVisibility: maskFinishing });
     removeSkip();
     document.documentElement.dataset.profileIntro = 'ready';
     document.body?.classList.add('is-atlas-ready');
-    if (document.body) document.body.dataset.entryState = STATES.ATLAS_READY;
+    if (document.body) {
+      document.body.dataset.entryState = 'ready';
+      document.body.dataset.atlasTopology = 'entry-full';
+      document.body.classList.toggle('is-entry-mask-finishing', maskFinishing);
+      document.body.classList.toggle('is-entry-loader-complete', !maskFinishing);
+      if (!maskFinishing) document.body.classList.remove('is-entry-loader-releasing');
+    }
+    state.loaderReleased = true;
+    clearFailOpen();
     state.state = STATES.ATLAS_READY;
     state.stage = 'ready';
     state.running = false;
@@ -409,6 +679,11 @@
     window.ProfileNodeInteraction?.refresh?.();
     window.ProfileHaloRenderer?.refresh?.();
     emit('completed', { reason, entryState: STATES.ATLAS_READY });
+    if (maskFinishing) visibilityFieldPromise.then(() => {
+      if (!document.body?.classList.contains('is-entry-mask-finishing')) return;
+      document.body.classList.add('is-entry-loader-complete');
+      document.body.classList.remove('is-entry-loader-releasing', 'is-entry-mask-finishing');
+    });
     dispatchEvent(new CustomEvent('profile:atlas-ready', { detail: snapshot() }));
     track(reason === 'skipped' ? 'intro_skipped' : 'atlas_reveal_completed');
     if (state.keyboardCompletion) focusRootForKeyboard();
@@ -425,10 +700,15 @@
     removeSkip();
     document.documentElement.dataset.profileIntro = 'complete';
     document.body?.classList.remove('is-atlas-ready');
-    if (document.body) document.body.dataset.entryState = 'INTERRUPTED';
+    if (document.body) {
+      document.body.dataset.entryState = 'profile';
+      document.body.classList.add('is-entry-loader-complete');
+      document.body.classList.remove('is-entry-loader-releasing', 'is-entry-mask-finishing');
+    }
     state.running = false;
     state.result = 'interrupted';
     state.stage = 'interrupted';
+    clearFailOpen();
     markSeen();
     emit('interrupted', { reason, targetRoute: target });
     await internalRoute(target);
@@ -529,7 +809,6 @@
       apply('cross', TIMING.cross, 'crosslinks');
       apply('settle', TIMING.settle, 'settle', () => {
         recordWave('settle');
-        window.ProfileCameraComposition?.fit?.({ duration: reducedMotion ? 0 : 420 });
       });
       if (elapsed >= TIMING.ready) return resolve(true);
       frame = requestAnimationFrame(tick);
@@ -545,10 +824,18 @@
     state.running = false;
     state.result = null;
     state.revealedWaves = [];
+    state.loaderReleased = false;
     state.startedAt = performance.now();
     state.mobile = mobileQuery.matches;
     document.documentElement.dataset.profileIntro = 'preparing';
-    if (document.body) document.body.dataset.entryState = STATES.PREPARING;
+    if (document.body) {
+      document.body.dataset.entryState = 'preparing';
+      document.body.classList.remove('is-entry-loader-complete', 'is-entry-loader-releasing', 'is-entry-mask-finishing');
+    }
+    clearTimeout(latentTimer);
+    latentTimer = setTimeout(() => {
+      if (state.state === STATES.PREPARING) document.body?.classList.add('is-entry-latent');
+    }, 160);
     installParticipant();
     bindInteractions();
 
@@ -558,19 +845,34 @@
       return completeToReady('fallback');
     }
 
+    /* Readiness is real, not a decorative delay: only now may the loading
+       sphere collapse into the already-laid-out live root. */
+    document.documentElement.dataset.profileIntro = 'running';
+    document.body?.classList.remove('is-atlas-ready');
+    document.body?.classList.remove('is-entry-latent');
+    clearTimeout(latentTimer);
+    latentTimer = 0;
+    if (document.body) {
+      document.body.dataset.entryState = 'ignition';
+      document.body.classList.add('is-entry-loader-releasing');
+    }
+    visibilityFieldPromise = startVisibilityField();
+    await wait(reducedMotion ? 0 : 620);
+    if (currentGeneration !== generation) return false;
+
     state.state = STATES.ATLAS_REVEAL;
     state.stage = 'root';
     state.running = true;
     state.startedAt = performance.now();
-    document.documentElement.dataset.profileIntro = 'running';
-    document.body?.classList.remove('is-atlas-ready');
     document.body?.classList.add('is-atlas-reveal');
     if (document.body) {
-      document.body.dataset.entryState = STATES.ATLAS_REVEAL;
+      document.body.dataset.entryState = 'reveal';
       document.body.dataset.atlasRevealStage = 'root';
     }
     createSkip();
-    revealWave('root');
+    /* The complete live graph is present from the first reveal frame. The
+       soft radial light field, not discrete node pop-ins, owns visibility. */
+    revealEverything();
     emit('started', { source: 'live-atlas', entryState: STATES.ATLAS_REVEAL });
     track('intro_started');
 
@@ -619,8 +921,12 @@
   });
 
   if (!state.eligible) {
+    clearFailOpen();
     document.documentElement.dataset.profileIntro = 'bypass';
-    if (document.body) document.body.dataset.entryState = STATES.BYPASSED;
+    if (document.body) {
+      document.body.dataset.entryState = 'profile';
+      document.body.classList.add('is-entry-loader-complete');
+    }
     return;
   }
 

@@ -41,6 +41,15 @@
       return window.ProfileArtifacts?.hrefFor?.(id) || null;
     }
 
+    runtime() {
+      return window.ProfileScene?.objects || null;
+    }
+
+    syncRuntimeMedia(patch = {}) {
+      const runtimeId = this.active?.runtimeId || this.pending?.runtimeId || null;
+      if (runtimeId) this.runtime()?.setMediaState(runtimeId, patch);
+    }
+
     mediaKindFor(artifact) {
       const type = artifact?.type || '';
       const mediaType = artifact?.mediaType || '';
@@ -246,6 +255,7 @@
         image.style.setProperty('--object-focus-media-pan-x', `${panX.toFixed(2)}px`);
         image.style.setProperty('--object-focus-media-pan-y', `${panY.toFixed(2)}px`);
         readout.textContent = `${Math.round(scale * 100)}%`;
+        this.syncRuntimeMedia({ status: 'ready', zoom: scale, panX, panY });
       };
 
       const showReadout = () => {
@@ -404,11 +414,60 @@
     configurePassiveMedia(surface, primary, kind, overlay) {
       primary?.classList.add('object-focus-primary');
       surface.dataset.mediaKind = kind;
+      const runtimeId = this.active?.runtimeId || this.pending?.runtimeId || null;
+      const saved = runtimeId ? this.runtime()?.getState(runtimeId)?.media : null;
+      const media = primary instanceof HTMLMediaElement ? primary : null;
+      const sync = status => {
+        if (!media) return;
+        this.syncRuntimeMedia({
+          status,
+          currentTime: media.currentTime || 0,
+          duration: Number.isFinite(media.duration) ? media.duration : null,
+          muted: media.muted,
+          volume: media.volume
+        });
+      };
+      const onPlay = () => {
+        document.querySelectorAll('video,audio').forEach(other => {
+          if (other !== media && !other.paused) other.pause();
+        });
+        sync('playing');
+      };
+      const onPause = () => sync(media?.ended ? 'ended' : 'paused');
+      const onTime = () => sync(media?.paused ? 'paused' : 'playing');
+      const onEnded = () => sync('ended');
+      const onMetadata = () => {
+        if (!media) return;
+        if (saved?.currentTime > 0 && saved.currentTime < media.duration) media.currentTime = saved.currentTime;
+        if (typeof saved?.muted === 'boolean') media.muted = saved.muted;
+        if (Number.isFinite(saved?.volume)) media.volume = Math.max(0, Math.min(1, saved.volume));
+        sync(media.paused ? 'ready' : 'playing');
+      };
+      if (media) {
+        media.addEventListener('play', onPlay);
+        media.addEventListener('pause', onPause);
+        media.addEventListener('timeupdate', onTime);
+        media.addEventListener('volumechange', onTime);
+        media.addEventListener('ended', onEnded);
+        media.addEventListener('loadedmetadata', onMetadata);
+        if (media.readyState >= 1) queueMicrotask(onMetadata);
+      } else {
+        this.syncRuntimeMedia({ status: 'ready' });
+      }
       return {
         kind,
         reset: () => Promise.resolve(),
         snapshot: () => ({ kind, zoom: 1, panX: 0, panY: 0 }),
-        destroy() {
+        destroy: () => {
+          if (media) {
+            media.pause();
+            media.removeEventListener('play', onPlay);
+            media.removeEventListener('pause', onPause);
+            media.removeEventListener('timeupdate', onTime);
+            media.removeEventListener('volumechange', onTime);
+            media.removeEventListener('ended', onEnded);
+            media.removeEventListener('loadedmetadata', onMetadata);
+          }
           primary?.classList.remove('object-focus-primary');
           overlay.destroy();
         }
@@ -533,7 +592,7 @@
       delete viewer.dataset.mediaStage;
     }
 
-    async open({ source, artifact = null, artifactId = null, owner = 'artifact', ownerValid = null } = {}) {
+    async open({ source, artifact = null, artifactId = null, runtimeId = null, owner = 'artifact', ownerValid = null } = {}) {
       this.attach();
       const viewer = this.viewer();
       const id = artifactId || artifact?.id || source?.dataset?.artifactId || null;
@@ -544,8 +603,9 @@
       if (this.active || this.pending) this.interrupt();
       clearTimeout(this.hideTimer);
       const operation = ++this.operation;
-      const record = { source, artifactId: id, artifact, owner, ownerValid };
+      const record = { source, artifactId: id, artifact, runtimeId, owner, ownerValid };
       this.pending = record;
+      if (runtimeId) this.runtime()?.beginFocus(runtimeId, source.getBoundingClientRect());
       this.clearAnimation();
       this.clearMediaController();
       this.renderViewer(artifact, href);
@@ -571,6 +631,7 @@
         if (operation !== this.operation || this.active !== record || viewer.hidden) return;
         viewer.classList.remove('is-shared-focus-pending');
         viewer.dataset.sharedFocusPhase = 'settled';
+        if (runtimeId) this.runtime()?.settleFocus(runtimeId);
         viewer.querySelector('.artifact-focus-close')?.focus?.({ preventScroll: true });
       });
       return true;
@@ -591,6 +652,7 @@
       this.clearAnimation();
 
       if (wasActive && !interrupted) {
+        if (closing.runtimeId) this.runtime()?.beginReturn(closing.runtimeId);
         await this.mediaController?.reset?.({ animate: !reducedMotion.matches });
         if (operation !== this.operation) return false;
         viewer?.classList.add('is-shared-focus-closing');
@@ -602,6 +664,7 @@
         }
       } else {
         this.lastTransition = 'interrupted';
+        if (closing.runtimeId) this.runtime()?.interrupt(closing.runtimeId, 'object-focus-interrupted');
       }
 
       this.finishClose(closing, restoreFocus, interrupted);
@@ -613,6 +676,7 @@
       this.clearAnimation();
       this.clearMediaController();
       this.restoreSource(record?.source, restoreFocus);
+      if (record?.runtimeId && !immediate) this.runtime()?.completeReturn(record.runtimeId);
       document.body.classList.remove('has-artifact-focus', 'has-object-focus');
       if (!viewer) return;
 
@@ -669,6 +733,7 @@
       return {
         activeArtifactId: this.active?.artifactId || null,
         owner: this.active?.owner || this.pending?.owner || null,
+        runtimeId: this.active?.runtimeId || this.pending?.runtimeId || null,
         pendingArtifactId: this.pending?.artifactId || null,
         phase: viewer?.dataset.sharedFocusPhase || 'idle',
         lastTransition: this.lastTransition,

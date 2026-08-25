@@ -121,23 +121,37 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-read
   display:none
 }
 
-/* Phase F's portrait remains the one identity material. Phase H merely changes
-   its settled Overview presentation; no second portrait object is created. */
+/* The entry portrait belongs only to the first-session Atlas. Profile Overview
+   returns to the canonical named node; the existing detail dialog owns the
+   portrait after activation. */
 body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .root-entry-portrait{
-  opacity:.94!important;
-  transform:scale(.82)!important;
-  filter:saturate(.88) contrast(1.02)!important
+  opacity:0!important;
+  transform:scale(.42)!important;
+  filter:none!important;
+  pointer-events:none!important
 }
 
 body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-dot{
-  opacity:.10!important;
-  stroke-width:1.35!important
+  opacity:1!important;
+  stroke-width:2!important
 }
 
 body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-halo--primary{
-  opacity:.48!important;
-  transform:scale(1.18)!important
+  opacity:.48!important
 }
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-halo--secondary{
+  opacity:.20!important;
+  transform:scale(1)!important;
+  stroke-dasharray:2 6;
+  animation:profile-root-secondary-turn 15s linear infinite
+}
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-label{
+  font-weight:820!important
+}
+
+@keyframes profile-root-secondary-turn{to{stroke-dashoffset:-96}}
 
 body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-profile-root-branch="true"] > .site-graph-dot{
   stroke-width:2!important
@@ -362,7 +376,8 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-read
   .profile-root-route,
   .quick-overview-global-trigger,
   .quick-overview-close,
-  .quick-overview-dialog{
+  .quick-overview-dialog,
+  body[data-graph-mode="overview"] #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-halo--secondary{
     transition:none!important;
     animation:none!important
   }

@@ -2,6 +2,144 @@
    V3.1 Phase E — live Atlas reveal
    ========================================================================== */
 
+/* The inline first-paint guard owns the first frame. Once this stylesheet is
+   ready, the same real loading surface gains its full material. */
+.entry-loading-shell{
+  display:none;
+  position:fixed;
+  z-index:2147483647;
+  inset:0;
+  place-items:center;
+  overflow:hidden;
+  isolation:isolate;
+  background:#000;
+  color:#dffaf6;
+  pointer-events:auto
+}
+html[data-profile-intro="pending"] .entry-loading-shell,
+html[data-profile-intro="preparing"] .entry-loading-shell,
+html[data-profile-intro="running"] .entry-loading-shell{display:grid}
+
+.entry-visibility-mask{
+  position:absolute;
+  z-index:0;
+  inset:0;
+  width:100%;
+  height:100%;
+  overflow:visible;
+  pointer-events:none
+}
+#entry-visibility-cutout{mask-type:luminance}
+
+.entry-loading-object{
+  position:relative;
+  z-index:1;
+  width:clamp(92px,8vw,126px);
+  aspect-ratio:1;
+  filter:drop-shadow(0 0 14px color-mix(in srgb,var(--teal) 22%,transparent));
+  animation:entry-loader-float 2.8s ease-in-out infinite
+}
+.entry-loading-core,
+.entry-loading-orbit{
+  position:absolute;
+  inset:50%;
+  display:block;
+  border-radius:50%;
+  transform-origin:center
+}
+.entry-loading-core{
+  width:25%;
+  height:25%;
+  box-sizing:border-box;
+  border:2px solid var(--teal);
+  background:var(--paper);
+  box-shadow:0 0 0 6px color-mix(in srgb,var(--teal) 6%,transparent),0 0 16px color-mix(in srgb,var(--teal) 28%,transparent);
+  transform:translate(-50%,-50%);
+  animation:entry-loader-core 1.7s ease-in-out infinite alternate
+}
+.entry-loading-orbit{
+  box-sizing:border-box;
+  border:1.25px solid color-mix(in srgb,var(--teal) 76%,transparent);
+  transform:translate(-50%,-50%);
+  box-shadow:0 0 9px color-mix(in srgb,var(--teal) 9%,transparent)
+}
+.entry-loading-orbit.is-inner{
+  width:48%;height:48%;
+  border-style:solid;
+  border-left-color:transparent;
+  animation:entry-loader-orbit 4.2s linear infinite
+}
+.entry-loading-orbit.is-mid{
+  width:72%;height:72%;
+  border-style:dashed;
+  border-color:color-mix(in srgb,var(--teal) 52%,transparent);
+  animation:entry-loader-orbit 7.8s linear infinite reverse
+}
+.entry-loading-orbit.is-outer{
+  width:100%;height:100%;
+  border-style:dotted;
+  border-color:color-mix(in srgb,var(--teal) 34%,transparent);
+  animation:entry-loader-orbit 12s linear infinite
+}
+body.is-entry-loader-releasing .entry-loading-shell{
+  background:transparent
+}
+body.is-entry-mask-finishing .entry-loading-shell{
+  display:grid;
+  pointer-events:none
+}
+body.is-entry-loader-releasing .entry-loading-object{
+  animation:entry-loader-collapse .62s cubic-bezier(.72,.02,.84,.28) both
+}
+body.is-entry-loader-complete .entry-loading-shell{
+  display:none!important;
+  visibility:hidden!important;
+  pointer-events:none!important
+}
+@keyframes entry-loader-float{50%{transform:translateY(-7px) scale(1.025)}}
+@keyframes entry-loader-core{to{transform:translate(-50%,-50%) scale(1.10);box-shadow:0 0 0 8px color-mix(in srgb,var(--teal) 7%,transparent),0 0 22px color-mix(in srgb,var(--teal) 34%,transparent)}}
+@keyframes entry-loader-orbit{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes entry-loader-collapse{
+  0%{transform:scale(1);opacity:1;filter:drop-shadow(0 0 24px rgba(55,221,205,.16))}
+  54%{transform:scale(1.13);opacity:1;filter:drop-shadow(0 0 38px rgba(89,255,237,.34))}
+  100%{transform:scale(.015);opacity:0;filter:drop-shadow(0 0 0 transparent)}
+}
+/* Entry Atlas is a full-viewport composition. Its camera and utility surface
+   are intentionally separate from the ordinary Atlas reached later. */
+body:is([data-entry-state="preparing"],[data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] .profile-app{
+  position:fixed!important;
+  inset:0!important;
+  width:100vw!important;
+  height:100dvh!important;
+  min-height:0!important;
+  overflow:hidden!important
+}
+body:is([data-entry-state="preparing"],[data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] #site-explorer{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  max-width:none!important;
+  height:100%!important;
+  margin:0!important;
+  padding:0!important
+}
+body:is([data-entry-state="preparing"],[data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] :is(.scene-canvas,.site-graph-panel,.site-graph-viewport,#site-graph,#site-graph .site-graph-svg){
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important
+}
+body:is([data-entry-state="preparing"],[data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] :is(.graph-routebar,#atlas-controls,.mobile-control-sheet:has(#atlas-controls)),
+body.is-entry-atlas-condensation :is(.graph-routebar,#atlas-controls,.mobile-control-sheet:has(#atlas-controls),.profile-root-brief){
+  display:none!important;
+  visibility:hidden!important;
+  pointer-events:none!important
+}
+html[data-profile-intro="running"] body > .site-header{
+  opacity:1!important;
+  visibility:visible!important;
+  pointer-events:auto!important
+}
+
 html[data-profile-intro="preparing"] body > .site-header,
 html[data-profile-intro="preparing"] body > footer{
   opacity:0!important;
@@ -14,6 +152,23 @@ html[data-profile-intro="preparing"] .hero{
   pointer-events:none!important
 }
 
+body.is-entry-latent #site-explorer{
+  opacity:1!important;
+  visibility:visible!important
+}
+body.is-entry-latent #site-graph .site-graph-edges,
+body.is-entry-latent #site-graph .site-graph-node:not([data-node-id="stepan-chrast"]),
+body.is-entry-latent #site-graph .atlas-territory-label-layer{
+  opacity:0!important
+}
+body.is-entry-latent #site-graph .site-graph-node[data-node-id="stepan-chrast"]{
+  opacity:0!important;
+  pointer-events:none
+}
+body.is-entry-latent #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .root-entry-action{
+  opacity:0!important
+}
+
 body.is-atlas-reveal #site-explorer{
   opacity:1!important;
   visibility:visible!important
@@ -24,13 +179,13 @@ body.is-atlas-reveal .hero{
 }
 body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave]{
   opacity:.045!important;
-  transition:opacity .62s cubic-bezier(.22,.72,.2,1),filter .62s ease
+  transition:opacity .62s cubic-bezier(.22,.72,.2,1) var(--intro-delay,0ms),filter .62s ease var(--intro-delay,0ms)
 }
 body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave] .site-graph-dot{
   transform:scale(.72);
   transform-box:fill-box;
   transform-origin:center;
-  transition:transform .68s cubic-bezier(.18,.78,.18,1),fill .28s ease,stroke .28s ease,stroke-width .28s ease
+  transition:transform .68s cubic-bezier(.18,.78,.18,1) var(--intro-delay,0ms),fill .28s ease,stroke .28s ease,stroke-width .28s ease
 }
 body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave] .site-graph-label,
 body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave] .site-graph-meta{
@@ -59,7 +214,7 @@ body.is-atlas-reveal #site-graph .site-graph-node.is-intro-label-revealed .site-
    Far/medium Atlas LOD intentionally hides ordinary territory-node labels, so
    the dedicated LOD label layer is the canonical readable territory surface. */
 body.is-atlas-reveal #site-graph .atlas-territory-label-layer{
-  opacity:0!important;
+  opacity:1!important;
   transition:opacity .48s ease
 }
 body.is-atlas-reveal[data-atlas-reveal-stage="labels"] #site-graph .atlas-territory-label-layer,
@@ -72,7 +227,7 @@ body.is-atlas-reveal #site-graph .site-graph-edges path[data-intro-edge-wave]{
   opacity:.025!important;
   stroke-dasharray:var(--intro-edge-length,1) var(--intro-edge-length,1)!important;
   stroke-dashoffset:var(--intro-edge-length,1)!important;
-  transition:stroke-dashoffset .82s cubic-bezier(.2,.72,.18,1),opacity .62s ease,stroke .24s ease
+  transition:stroke-dashoffset .82s cubic-bezier(.2,.72,.18,1) var(--intro-delay,0ms),opacity .62s ease var(--intro-delay,0ms),stroke .24s ease
 }
 body.is-atlas-reveal #site-graph .site-graph-edges path.is-intro-revealed{
   opacity:.68!important;
@@ -127,24 +282,27 @@ body.is-atlas-ready[data-graph-mode="atlas"] #atlas-controls{
   outline:none
 }
 
-body.is-atlas-reveal[data-atlas-reveal-stage="settle"] #site-graph{
-  --atlas-reveal-settle:1
-}
-body.is-atlas-reveal[data-atlas-reveal-stage="settle"] #site-graph .site-graph-node[data-node-id="stepan-chrast"] .site-graph-dot{
-  transform:scale(1.035)
+/* The light field is the sole reveal animation. Keeping the already-rendered
+   topology static avoids 94 node transitions and a second wave of edge work. */
+body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave],
+body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave] > *,
+body.is-atlas-reveal #site-graph .site-graph-edges path[data-intro-edge-wave],
+body.is-atlas-reveal #site-graph .atlas-territory-label-layer{
+  transition:none!important
 }
 
 @media(max-width:900px){
   .atlas-reveal-skip{top:12px;right:14px}
-  body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave="deep"] .site-graph-label,
-  body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave="intermediate"] .site-graph-label,
-  body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave="deep"] .site-graph-meta,
-  body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave="intermediate"] .site-graph-meta{
-    opacity:0!important
-  }
 }
 
 @media(prefers-reduced-motion:reduce){
+  .entry-loading-object,
+  .entry-loading-core,
+  .entry-loading-orbit,
+  body.is-entry-loader-releasing .entry-loading-shell{
+    animation:none!important
+  }
+  body.is-entry-loader-releasing .entry-loading-shell{background:#000}
   body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave],
   body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave] .site-graph-dot,
   body.is-atlas-reveal #site-graph .site-graph-node[data-intro-wave] .site-graph-label,

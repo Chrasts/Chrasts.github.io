@@ -22,18 +22,21 @@
   });
 
   const NORMAL_TIMING = Object.freeze({
-    deep: 90,
-    intermediate: 285,
-    territories: 470,
-    branches: 675,
+    acknowledge: 140,
+    deep: 140,
+    intermediate: 310,
+    territories: 500,
+    branches: 700,
     durationDeep: 590,
     durationIntermediate: 565,
     durationTerritories: 540,
     durationBranches: 610,
-    total: 1360
+    microCommit: 1310,
+    total: 1420
   });
   const REDUCED_TIMING = Object.freeze({
-    deep: 0,
+    acknowledge: 30,
+    deep: 30,
     intermediate: 34,
     territories: 68,
     branches: 102,
@@ -41,6 +44,7 @@
     durationIntermediate: 115,
     durationTerritories: 105,
     durationBranches: 115,
+    microCommit: 220,
     total: 265
   });
 
@@ -65,6 +69,9 @@
     lastResult: null,
     lastReason: null,
     initialCamera: null,
+    initialTopologyMode: null,
+    entryOwned: false,
+    expectedNodeCount: Math.max(0, graph.nodes.length - 1),
     reducedMotion: reducedMotion.matches
   };
 
@@ -85,15 +92,19 @@
   }
 
   let frame = 0;
+  let emergenceFrame = 0;
   let cancelRestoreFrame = 0;
   let participantInstalled = false;
   let records = [];
   let edgeRecords = [];
+  let emergenceRecords = [];
+  let emergenceResolve = null;
   let massNodes = new Set();
   let graphRoot = null;
   let status = null;
 
   const clamp01 = value => Math.max(0, Math.min(1, value));
+  const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
   const ease = value => {
     const t = clamp01(value);
     return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -170,6 +181,22 @@
     condensed: false
   });
 
+  const samplePrimaryPath = (edge, parentAtSource) => {
+    if (!edge) return null;
+    try {
+      const length = edge.getTotalLength();
+      if (!Number.isFinite(length) || length <= 0) return null;
+      return Array.from({ length: 25 }, (_, index) => {
+        const progress = index / 24;
+        const distance = parentAtSource ? length * (1 - progress) : length * progress;
+        const sample = edge.getPointAtLength(distance);
+        return { x: sample.x, y: sample.y };
+      });
+    } catch (_) {
+      return null;
+    }
+  };
+
   const prepareRecords = () => {
     const edges = liveEdges();
     const primaryEdges = new Set();
@@ -211,6 +238,7 @@
         })),
         edge: primary.edge ? captureEdge(primary.edge) : null,
         parentAtSource: primary.parentAtSource,
+        pathSamples: samplePrimaryPath(primary.edge, primary.parentAtSource),
         progress: 0,
         absorbed: false
       });
@@ -220,7 +248,7 @@
     records = nextRecords;
     state.nodeCount = records.length;
     state.primaryEdgeCount = primaryEdges.size;
-    return records.length > 0;
+    return records.length === state.expectedNodeCount;
   };
 
   const restoreEdgeRecord = record => {
@@ -258,29 +286,53 @@
     massNodes = new Set();
   };
 
-  const cleanup = ({ result = 'cleanup', keepPortal = false, restoreCamera = false } = {}) => {
+  const cleanup = ({ result = 'cleanup', keepPortal = false, restoreCamera = false, keepRunning = false } = {}) => {
     cancelAnimationFrame(frame);
     frame = 0;
+    cancelAnimationFrame(emergenceFrame);
+    emergenceFrame = 0;
+    emergenceRecords.forEach(restoreEmergenceRecord);
+    emergenceRecords = [];
+    if (emergenceResolve) {
+      const resolveEmergence = emergenceResolve;
+      emergenceResolve = null;
+      resolveEmergence(false);
+    }
     clearMass();
     records.forEach(unwrapRecord);
     edgeRecords.forEach(restoreEdgeRecord);
     records = [];
     edgeRecords = [];
-    document.body?.classList.remove('is-atlas-condensing', 'is-atlas-condensation-committing');
+    document.body?.classList.remove(
+      'is-atlas-condensing',
+      'is-atlas-condensation-committing',
+      'is-atlas-root-micro-commit',
+      'is-root-entry-committing'
+    );
+    if (!keepRunning) {
+      document.body?.classList.remove('is-atlas-condensation-handoff', 'is-profile-root-emerging', 'is-entry-atlas-condensation');
+      window.__GRAPH_V6_FORCE_SNAP__ = false;
+    }
     if (graphRoot) {
       graphRoot.removeAttribute('aria-busy');
       delete graphRoot.dataset.condensationWave;
     }
     if (restoreCamera && state.initialCamera && mode() === 'atlas') {
-      window.ProfileAtlasLOD?.setScale?.(state.initialCamera.scale, { immediate: true });
-      window.ProfileAtlasLOD?.panTo?.(state.initialCamera.x, state.initialCamera.y, { immediate: true });
+      window.ProfileAtlasLOD?.setScale?.(state.initialCamera.scale, { immediate: true, preserveTopology: true });
+      window.ProfileAtlasLOD?.panTo?.(state.initialCamera.x, state.initialCamera.y, { immediate: true, preserveTopology: true });
+      window.ProfileAtlasLOD?.setTopologyMode?.('entry-full', { reason: 'condensation-restore' });
       window.ProfileAtlasLOD?.applyLOD?.(state.initialCamera.scale);
     } else if (mode() === 'atlas') {
       const scale = window.ProfileAtlasLOD?.snapshot?.().camera?.scale;
       if (Number.isFinite(scale)) window.ProfileAtlasLOD?.applyLOD?.(scale);
     }
     window.ProfileRootEntryPortal?.releaseEntry?.({ keepOpen: keepPortal && mode() === 'atlas', reason: `atlas-condensation:${result}` });
-    state.running = false;
+    window.ProfileNodeDynamics?.resume?.('atlas-condensation');
+    if (document.body) {
+      document.body.dataset.entryState = mode() === 'atlas' ? 'ready' : 'profile';
+      if (mode() === 'atlas') document.body.dataset.atlasTopology = 'entry-full';
+    }
+    if (!keepRunning) state.running = false;
     state.lastResult = result;
     state.lastReason = result;
   };
@@ -312,10 +364,14 @@
 
     const travelFactor = reducedMotion.matches ? .075 : 1;
     const movement = ease(clamp01(p / .96)) * travelFactor;
-    const dx = (record.to.x - record.from.x) * movement;
-    const dy = (record.to.y - record.from.y) * movement;
-    const scalePhase = ease(clamp01((p - .44) / .56));
-    const opacityPhase = ease(clamp01((p - .64) / .36));
+    const samples = record.pathSamples;
+    const samplePosition = samples?.length
+      ? samples[Math.min(samples.length - 1, Math.round(movement * (samples.length - 1)))]
+      : null;
+    const dx = samplePosition ? samplePosition.x - record.from.x : (record.to.x - record.from.x) * movement;
+    const dy = samplePosition ? samplePosition.y - record.from.y : (record.to.y - record.from.y) * movement;
+    const scalePhase = ease(clamp01((p - .68) / .32));
+    const opacityPhase = ease(clamp01((p - .72) / .28));
     const scale = reducedMotion.matches ? 1 - .06 * scalePhase : 1 - .82 * scalePhase;
     const opacity = 1 - opacityPhase;
 
@@ -380,15 +436,170 @@
     });
   };
 
+  const profileCompositionReady = () => {
+    if (mode() !== 'overview' || document.body?.dataset.rootLanding !== 'false') return false;
+    const branchCount = sections.filter(id => Boolean(liveNode(id))).length;
+    const camera = window.ProfileCameraComposition?.snapshot?.();
+    return branchCount === sections.length && !camera?.localAnimating;
+  };
+
   const waitForOverview = generation => new Promise(resolve => {
     const started = performance.now();
-    const check = () => {
-      if (generation !== state.generation) return resolve(false);
-      if (mode() === 'overview' && document.body?.dataset.rootLanding === 'false') return resolve(true);
-      if (performance.now() - started > 2600) return resolve(false);
-      requestAnimationFrame(check);
+    let frameId = 0;
+    let graphSettled = false;
+    const finish = value => {
+      cancelAnimationFrame(frameId);
+      removeEventListener('profile:graph-render-settled', onSettled);
+      removeEventListener('profile:root-overview-ready', onSettled);
+      removeEventListener('profile:profile-root-settled', onSettled);
+      removeEventListener('profile:scene-state', onSettled);
+      resolve(value);
     };
-    requestAnimationFrame(check);
+    const onSettled = event => {
+      if (generation !== state.generation) return finish(false);
+      if (event?.type === 'profile:graph-render-settled' && event.detail?.mode === 'overview') graphSettled = true;
+      if (graphSettled && profileCompositionReady()) finish(true);
+    };
+    const check = () => {
+      if (generation !== state.generation) return finish(false);
+      if (performance.now() - started > 3200) return finish(false);
+      frameId = requestAnimationFrame(check);
+    };
+    addEventListener('profile:graph-render-settled', onSettled);
+    addEventListener('profile:root-overview-ready', onSettled);
+    addEventListener('profile:profile-root-settled', onSettled);
+    addEventListener('profile:scene-state', onSettled);
+    frameId = requestAnimationFrame(check);
+  });
+
+  const createEmergenceGroup = node => {
+    const movable = [...node.children].filter(child => child.matches?.(
+      '.site-graph-hit,.site-graph-halo,.site-graph-dot,.site-graph-label,.site-graph-meta'
+    ));
+    if (!movable.length) return null;
+    const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    group.classList.add('profile-root-emergence-motion');
+    node.insertBefore(group, movable[0]);
+    movable.forEach(child => group.appendChild(child));
+    return group;
+  };
+
+  const restoreEmergenceRecord = record => {
+    if (record.group?.isConnected && record.group.parentElement === record.node) {
+      [...record.group.children].forEach(child => record.node.insertBefore(child, record.group));
+      record.group.remove();
+    }
+    if (!record.edge?.isConnected) return;
+    if (record.edgeStyle == null) record.edge.removeAttribute('style');
+    else record.edge.setAttribute('style', record.edgeStyle);
+    if (record.edgePathLength == null) record.edge.removeAttribute('pathLength');
+    else record.edge.setAttribute('pathLength', record.edgePathLength);
+  };
+
+  const animateProfileBranches = generation => new Promise(resolve => {
+    const root = liveNode(rootId);
+    const rootPoint = root ? { x: Number(root.dataset.x), y: Number(root.dataset.y) } : null;
+    const edges = liveEdges();
+    if (!rootPoint || !Number.isFinite(rootPoint.x) || !Number.isFinite(rootPoint.y)) {
+      document.body?.classList.remove('is-atlas-condensation-handoff', 'is-profile-root-emerging');
+      resolve(false);
+      return;
+    }
+
+    const branchRecords = sections.map((id, index) => {
+      const node = liveNode(id);
+      const x = Number(node?.dataset.x);
+      const y = Number(node?.dataset.y);
+      const group = node ? createEmergenceGroup(node) : null;
+      if (!node || !group || !Number.isFinite(x) || !Number.isFinite(y)) return null;
+      const primary = findPrimaryEdge(rootId, id, edges).edge;
+      const record = {
+        id,
+        index,
+        node,
+        group,
+        x,
+        y,
+        edge: primary,
+        edgeStyle: primary?.getAttribute('style'),
+        edgePathLength: primary?.getAttribute('pathLength')
+      };
+      const dx = rootPoint.x - x;
+      const dy = rootPoint.y - y;
+      group.setAttribute('transform', `translate(${dx.toFixed(2)} ${dy.toFixed(2)}) scale(.18)`);
+      group.style.opacity = '0';
+      if (primary) {
+        primary.setAttribute('pathLength', '1');
+        primary.style.strokeDasharray = '0 1';
+        primary.style.strokeDashoffset = '0';
+        primary.style.opacity = '0';
+      }
+      return record;
+    }).filter(Boolean);
+
+    if (branchRecords.length !== sections.length) {
+      branchRecords.forEach(restoreEmergenceRecord);
+      document.body?.classList.remove('is-atlas-condensation-handoff', 'is-profile-root-emerging');
+      resolve(false);
+      return;
+    }
+
+    emergenceRecords = branchRecords;
+    emergenceResolve = resolve;
+
+    document.body?.classList.add('is-profile-root-emerging');
+    document.body?.classList.remove('is-atlas-condensation-handoff');
+
+    const finish = result => {
+      cancelAnimationFrame(emergenceFrame);
+      emergenceFrame = 0;
+      branchRecords.forEach(restoreEmergenceRecord);
+      emergenceRecords = [];
+      document.body?.classList.remove('is-profile-root-emerging', 'is-atlas-condensation-handoff');
+      if (emergenceResolve) {
+        const resolveCurrent = emergenceResolve;
+        emergenceResolve = null;
+        resolveCurrent(result);
+      }
+    };
+    if (reducedMotion.matches) {
+      finish(true);
+      return;
+    }
+
+    const started = performance.now();
+    const duration = 760;
+    const stagger = 68;
+    const animate = now => {
+      emergenceFrame = 0;
+      if (generation !== state.generation || !state.running) {
+        finish(false);
+        return;
+      }
+      const elapsed = now - started;
+      let complete = true;
+      branchRecords.forEach(record => {
+        const raw = clamp01((elapsed - record.index * stagger) / duration);
+        const progress = ease(raw);
+        if (raw < 1) complete = false;
+        const dx = (rootPoint.x - record.x) * (1 - progress);
+        const dy = (rootPoint.y - record.y) * (1 - progress);
+        const scale = .18 + .82 * progress;
+        record.group.setAttribute(
+          'transform',
+          `translate(${dx.toFixed(2)} ${dy.toFixed(2)}) scale(${scale.toFixed(4)})`
+        );
+        record.group.style.opacity = String(ease(clamp01(raw / .72)));
+        if (record.edge?.isConnected) {
+          const edgeProgress = ease(clamp01((raw - .12) / .88));
+          record.edge.style.strokeDasharray = `${edgeProgress.toFixed(4)} 1`;
+          record.edge.style.opacity = String(Math.min(.82, edgeProgress * .82));
+        }
+      });
+      if (complete) finish(true);
+      else emergenceFrame = requestAnimationFrame(animate);
+    };
+    emergenceFrame = requestAnimationFrame(animate);
   });
 
   const atlasGeometryReady = () => {
@@ -403,8 +614,9 @@
 
   const restoreAtlasCamera = () => {
     if (!state.initialCamera || mode() !== 'atlas') return;
-    window.ProfileAtlasLOD?.setScale?.(state.initialCamera.scale, { immediate: true });
-    window.ProfileAtlasLOD?.panTo?.(state.initialCamera.x, state.initialCamera.y, { immediate: true });
+    window.ProfileAtlasLOD?.setScale?.(state.initialCamera.scale, { immediate: true, preserveTopology: true });
+    window.ProfileAtlasLOD?.panTo?.(state.initialCamera.x, state.initialCamera.y, { immediate: true, preserveTopology: true });
+    window.ProfileAtlasLOD?.setTopologyMode?.('entry-full', { reason: 'condensation-cancel-restore' });
     window.ProfileAtlasLOD?.applyLOD?.(state.initialCamera.scale);
   };
 
@@ -424,6 +636,11 @@
     transitions.commit(state.token, { operation: 'CONDENSE', targetRoute: 'overview', wave: 'root' });
     emit('wave', { wave: 'root' });
 
+    document.body?.classList.add('is-atlas-condensation-handoff');
+    await wait(reducedMotion.matches ? 0 : 320);
+    if (generation !== state.generation || !state.running) return false;
+    window.__GRAPH_V6_FORCE_SNAP__ = true;
+
     window.ProfileRootLanding?.commitExpanded?.({
       focusGraph: false,
       animate: false,
@@ -432,14 +649,27 @@
     if (location.hash !== '#overview') location.hash = '#overview';
     else dispatchEvent(new HashChangeEvent('hashchange'));
 
+    // Completion is semantic: the canonical graph renderer and composed camera
+    // must report the five-branch Profile Root before transient material is removed.
     const routed = await waitForOverview(generation);
     if (generation !== state.generation || !state.running) return false;
-    // site-graph owns the global Atlas→Overview RECOMPOSE. Keep absorbed
-    // material hidden until its canonical outer-node transition has settled.
-    if (routed && !reducedMotion.matches) await new Promise(resolve => setTimeout(resolve, 510));
+    window.__GRAPH_V6_FORCE_SNAP__ = false;
+    document.body?.classList.add('is-profile-root-emerging');
+    cleanup({
+      result: routed ? 'completed' : 'fallback',
+      keepPortal: false,
+      restoreCamera: false,
+      keepRunning: true
+    });
+    if (document.body) {
+      document.body.dataset.entryState = 'profile';
+      document.body.dataset.rootEntry = 'profile';
+    }
+    await animateProfileBranches(generation);
     if (generation !== state.generation || !state.running) return false;
-
-    cleanup({ result: routed ? 'completed' : 'fallback', keepPortal: false, restoreCamera: false });
+    document.body?.classList.remove('is-entry-atlas-condensation');
+    window.ProfileHaloRenderer?.refresh?.();
+    state.running = false;
     state.state = STATES.COMPLETE;
     state.completedAt = performance.now();
     state.elapsed = state.completedAt - state.startedAt;
@@ -475,6 +705,15 @@
     state.absorbedCount = absorbed;
     applyContextEdges(state.progress);
     applyParentMass();
+
+    if (elapsed >= timing.microCommit) {
+      document.body?.classList.add('is-atlas-root-micro-commit');
+      if (state.wave !== 'micro-commit') {
+        state.wave = 'micro-commit';
+        if (!state.waves.includes('micro-commit')) state.waves.push('micro-commit');
+        emit('wave', { wave: 'micro-commit' });
+      }
+    }
 
     if (elapsed >= timing.total) {
       commitProfile(state.generation);
@@ -583,8 +822,11 @@
     state.maxTravel = 0;
     state.lastResult = null;
     state.lastReason = null;
+    state.entryOwned = document.body?.dataset.entryState === 'ready' &&
+      document.documentElement.dataset.profileIntro === 'ready';
     state.reducedMotion = reducedMotion.matches;
     state.initialCamera = window.ProfileAtlasLOD?.snapshot?.().camera || null;
+    state.initialTopologyMode = window.ProfileAtlasLOD?.snapshot?.().topologyMode || null;
 
     const token = transitions.begin({
       operation: 'CONDENSE',
@@ -600,13 +842,17 @@
     }
     state.token = token;
 
-    document.body.classList.add('is-atlas-condensing');
+    document.body.classList.add('is-atlas-condensing', 'is-root-entry-committing');
+    document.body.classList.toggle('is-entry-atlas-condensation', state.entryOwned);
+    document.body.dataset.entryState = 'condensing';
+    document.body.dataset.rootEntry = 'committing';
     graphRoot.setAttribute('aria-busy', 'true');
     if (status) status.textContent = 'Compressing the Atlas into the profile overview.';
     window.ProfileNodeDynamics?.suspend?.('atlas-condensation');
     window.ProfileCameraMateriality?.reset?.();
-    window.ProfileAtlasLOD?.applyLOD?.(.94);
-    window.ProfileAtlasLOD?.setScale?.(.94, { immediate: reducedMotion.matches });
+    window.ProfileAtlasLOD?.setTopologyMode?.('entry-full', { reason: 'condensation-start' });
+    const visibleScale = state.initialCamera?.scale;
+    if (Number.isFinite(visibleScale)) window.ProfileAtlasLOD?.applyLOD?.(visibleScale);
 
     if (!prepareRecords()) {
       transitions.cancel(token, { reason: 'condensation-preparation-failed' });
@@ -652,6 +898,7 @@
       rootPresent: Boolean(liveNode(rootId)),
       rootMaterial: liveNode(rootId)?.dataset.rootEntryMaterial || null,
       wrapperCount: document.querySelectorAll('#site-graph .atlas-condense-motion').length,
+      emergenceCount: document.querySelectorAll('#site-graph .profile-root-emergence-motion').length,
       activePrimaryEdges: document.querySelectorAll('#site-graph [data-condense-primary="true"]').length,
       activeContextEdges: document.querySelectorAll('#site-graph [data-condense-context="true"]').length,
       sectionsPresent: sections.filter(id => Boolean(liveNode(id)))

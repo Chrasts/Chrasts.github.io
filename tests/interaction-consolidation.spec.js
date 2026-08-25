@@ -138,31 +138,33 @@ test.describe('Final graph interaction consolidation', () => {
     await expect(page.locator('.profile-root-inspector h2')).toHaveText('Štěpán Chrast');
   });
 
-  test('Atlas boundary navigation uses its dedicated handoff rather than V9', async ({ page }) => {
+  test('Profile to Atlas uses root-collapse/full-unfold instead of the retired snapshot handoff', async ({ page }) => {
     await bypassIntro(page);
     await activateOverview(page);
     await page.locator('[data-route="atlas"]').first().click();
-    await page.waitForFunction(() => document.body.classList.contains('is-atlas-handoff'));
-    await expect(page.locator('.profile-atlas-handoff')).toHaveCount(1);
+    await page.waitForFunction(() => document.body.dataset.profileAtlasPhase === 'collapse');
+    await expect(page.locator('.profile-atlas-unfold-bridge')).toHaveCount(1);
     expect(await page.evaluate(() => document.body.classList.contains('is-v9-transitioning'))).toBe(false);
-    await page.waitForFunction(() => document.body.dataset.graphMode === 'atlas' && document.body.dataset.globalCompass === 'fan-v3');
-    await page.waitForFunction(() => !document.body.classList.contains('is-atlas-handoff'), null, { timeout: 4_000 });
 
-    await page.evaluate(() => {
-      window.__compassHistory = [document.body.dataset.globalCompass];
-      window.__compassObserver = new MutationObserver(() => window.__compassHistory.push(document.body.dataset.globalCompass));
-      window.__compassObserver.observe(document.body, { attributes: true, attributeFilter: ['data-global-compass'] });
-    });
+    await page.waitForFunction(() => document.body.dataset.profileAtlasPhase === 'unfold', null, { timeout: 5_000 });
+    const unfolding = await page.evaluate(() => ({
+      bridgeNodes: document.querySelectorAll('.profile-atlas-unfold-bridge [data-bridge-node-id]').length,
+      graphNodes: window.SITE_DATA.graph.nodes.length,
+      oldHandoff: document.querySelectorAll('.profile-atlas-handoff').length
+    }));
+    expect(unfolding.bridgeNodes).toBe(unfolding.graphNodes);
+    expect(unfolding.oldHandoff).toBe(0);
+
+    await page.waitForFunction(() => document.body.dataset.graphMode === 'atlas' && document.body.dataset.globalCompass === 'fan-v3');
+    await page.waitForFunction(() => !window.ProfileAtlasFocus.snapshot().active, null, { timeout: 8_000 });
+    expect((await page.evaluate(() => window.ProfileAtlasFocus.snapshot().lastResult)).targetRoute).toBe('atlas');
+
+    /* Atlas -> Overview remains the ordinary reverse boundary; this request
+       only replaces profile -> Atlas with the semantic root unfold. */
     await page.locator('#atlas-controls [data-route="overview"]').click();
-    await page.waitForFunction(() => document.body.classList.contains('is-atlas-handoff'));
-    expect(await page.evaluate(() => document.body.classList.contains('is-v9-transitioning'))).toBe(false);
     await page.waitForFunction(() => document.body.dataset.graphMode === 'overview');
     await page.waitForFunction(() => !document.body.classList.contains('is-atlas-handoff'), null, { timeout: 4_000 });
-    const history = await page.evaluate(() => {
-      window.__compassObserver?.disconnect();
-      return window.__compassHistory;
-    });
-    expect(history.every(value => value === 'fan-v3')).toBe(true);
+    expect(await page.evaluate(() => document.body.dataset.globalCompass)).toBe('fan-v3');
   });
 });
 

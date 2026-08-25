@@ -64,7 +64,7 @@
     if (mode === 'atlas') {
       if (id === rootId) return 'Open profile entry';
       return element.classList.contains('is-previewed')
-        ? 'Details open; activate again to enter this area'
+        ? 'Details open; activate again or use the inspector action to enter this area'
         : 'Inspect in Atlas';
     }
 
@@ -88,11 +88,16 @@
     element.setAttribute('aria-label', `${label}. ${type}. ${nodeAction(id, element)}.`);
 
     const model = nodeMap.get(id);
-    const route = normaliseRoute(model?.route || '');
+    const route = model?.route ? normaliseRoute(model.route) : (id === rootId ? 'overview' : null);
     if (currentMode() !== 'atlas' && route && route === currentRoute()) element.setAttribute('aria-current', 'page');
     else element.removeAttribute('aria-current');
 
-    if (currentMode() === 'atlas' && id !== rootId) {
+    // Root-entry portal owns the root node's expanded/controls state. The
+    // accessibility projection may name that shared object, but must never
+    // erase or replace interaction state owned by Phase F/G.
+    if (id === rootId) return;
+
+    if (currentMode() === 'atlas') {
       element.setAttribute('aria-controls', 'site-detail-panel');
       element.setAttribute('aria-expanded', element.classList.contains('is-previewed') ? 'true' : 'false');
     } else {

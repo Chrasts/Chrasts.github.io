@@ -14,6 +14,8 @@
   let phase = 'idle';
   let context = null;
   let settleTimer = 0;
+  let arrivalFrame = 0;
+  let arrivalGeneration = 0;
   let interruptionCount = 0;
   let lastResult = null;
 
@@ -91,6 +93,12 @@
     };
   };
 
+  const cancelArrivalFrame = () => {
+    arrivalGeneration += 1;
+    cancelAnimationFrame(arrivalFrame);
+    arrivalFrame = 0;
+  };
+
   const writeState = (nextPhase, nextContext = context) => {
     phase = nextPhase;
     context = nextContext;
@@ -102,8 +110,9 @@
     else delete document.body.dataset.graphNavigationDirection;
     document.body.classList.toggle('is-graph-navigation-settling', nextPhase === 'settle' && !reducedMotion.matches);
     if (nextPhase === 'settle' && nextContext?.vector) {
-      document.body.style.setProperty('--graph-nav-label-x', `${(nextContext.vector.x * 3.2).toFixed(2)}px`);
-      document.body.style.setProperty('--graph-nav-label-y', `${(nextContext.vector.y * 3.2).toFixed(2)}px`);
+      const labelDistance = innerWidth <= 900 || matchMedia('(pointer: coarse)').matches ? 2.1 : 3.2;
+      document.body.style.setProperty('--graph-nav-label-x', `${(nextContext.vector.x * labelDistance).toFixed(2)}px`);
+      document.body.style.setProperty('--graph-nav-label-y', `${(nextContext.vector.y * labelDistance).toFixed(2)}px`);
     } else {
       document.body.style.removeProperty('--graph-nav-label-x');
       document.body.style.removeProperty('--graph-nav-label-y');
@@ -112,9 +121,10 @@
     dispatchEvent(new CustomEvent('profile:graph-navigation', { detail: snapshot() }));
   };
 
-  const clearVisualState = () => {
+  const clearVisualState = ({ cancelArrival = true } = {}) => {
     clearTimeout(settleTimer);
     settleTimer = 0;
+    if (cancelArrival) cancelArrivalFrame();
     if (document.body) {
       delete document.body.dataset.graphNavigationPhase;
       delete document.body.dataset.graphNavigationTarget;
@@ -150,9 +160,10 @@
 
   const beginTransition = payload => {
     if (payload?.kind !== 'graph-route') return;
-    if (phase === 'settle') {
+    cancelArrivalFrame();
+    if (phase === 'settle' || phase === 'handoff') {
       interruptionCount += 1;
-      clearVisualState();
+      clearVisualState({ cancelArrival: false });
     }
     const sourceRoute = normaliseRoute(payload.fromRoute);
     if (payload.fromMode === 'atlas' || sourceRoute === 'atlas' || sourceRoute.startsWith('work/project/')) return;
@@ -179,15 +190,12 @@
     writeState('transition', { ...context, ...resolved });
   };
 
-  const finishTransition = payload => {
-    if (payload?.kind !== 'graph-route') return;
-    const resolved = structuralContext(payload) || (context?.targetId ? context : null);
-    if (!resolved) {
+  const beginArrival = full => {
+    if (!full?.targetId) {
       clearVisualState();
       return;
     }
 
-    const full = { ...context, ...resolved, finishedTransitionAt: performance.now() };
     if (reducedMotion.matches) {
       lastResult = {
         result: 'completed',
@@ -231,6 +239,26 @@
       settledAt: null
     };
     settleTimer = setTimeout(() => completeSettle('timeout'), 1250);
+  };
+
+  const finishTransition = payload => {
+    if (payload?.kind !== 'graph-route') return;
+    const resolved = structuralContext(payload) || (context?.targetId ? context : null);
+    if (!resolved) {
+      clearVisualState();
+      return;
+    }
+
+    const full = { ...context, ...resolved, finishedTransitionAt: performance.now() };
+    writeState('handoff', full);
+    const operation = ++arrivalGeneration;
+    arrivalFrame = requestAnimationFrame(() => {
+      arrivalFrame = requestAnimationFrame(() => {
+        arrivalFrame = 0;
+        if (operation !== arrivalGeneration || phase !== 'handoff' || context?.targetId !== full.targetId) return;
+        beginArrival(full);
+      });
+    });
   };
 
   const cancelTransition = payload => {

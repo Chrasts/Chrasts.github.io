@@ -7,40 +7,33 @@ body.is-graph-navigation-settling #site-graph .site-graph-node.is-navigation-arr
 }
 
 body.is-graph-navigation-settling #site-graph .site-graph-node.is-navigation-arrival > .site-graph-meta {
-  animation-delay: 35ms;
+  animation-delay:35ms;
 }
 
 body.is-graph-navigation-settling #site-graph .site-graph-node.is-navigation-arrival > .site-graph-halo--primary {
-  animation: graph-navigation-halo-trail .52s cubic-bezier(.16,.78,.2,1) both;
-  animation-delay: 42ms;
+  animation:graph-navigation-halo-trail .52s cubic-bezier(.16,.78,.2,1) both;
+  animation-delay:42ms;
 }
 
 body.is-graph-navigation-settling #site-graph .site-graph-edges path.is-navigation-settling-edge {
-  animation: graph-navigation-edge-settle .46s ease-out both;
+  animation:graph-navigation-edge-settle .46s ease-out both;
 }
 
 @keyframes graph-navigation-label-settle {
-  0% { translate: var(--graph-nav-label-x, 0px) var(--graph-nav-label-y, 0px); opacity: .72; }
-  64% { opacity: 1; }
-  100% { translate: 0 0; opacity: 1; }
+  0% { translate:var(--graph-nav-label-x,0px) var(--graph-nav-label-y,0px); opacity:.72; }
+  64% { opacity:1; }
+  100% { translate:0 0; opacity:1; }
 }
 
 @keyframes graph-navigation-halo-trail {
-  0% { scale: .9; opacity: .18; }
-  48% { scale: 1.08; opacity: .62; }
-  100% { scale: 1; opacity: .42; }
+  0% { scale:.9; opacity:.18; }
+  48% { scale:1.08; opacity:.62; }
+  100% { scale:1; opacity:.42; }
 }
 
 @keyframes graph-navigation-edge-settle {
-  0% { filter: drop-shadow(0 0 4px color-mix(in srgb,var(--teal) 32%,transparent)); }
-  100% { filter: drop-shadow(0 0 0 transparent); }
-}
-
-@media (max-width:900px), (pointer:coarse) {
-  body.is-graph-navigation-settling {
-    --graph-nav-label-x: calc(var(--graph-nav-label-x, 0px) * .65);
-    --graph-nav-label-y: calc(var(--graph-nav-label-y, 0px) * .65);
-  }
+  0% { filter:drop-shadow(0 0 4px color-mix(in srgb,var(--teal) 32%,transparent)); }
+  100% { filter:drop-shadow(0 0 0 transparent); }
 }
 
 @media (prefers-reduced-motion:reduce) {
@@ -48,8 +41,8 @@ body.is-graph-navigation-settling #site-graph .site-graph-edges path.is-navigati
   body.is-graph-navigation-settling #site-graph .site-graph-node.is-navigation-arrival > .site-graph-meta,
   body.is-graph-navigation-settling #site-graph .site-graph-node.is-navigation-arrival > .site-graph-halo--primary,
   body.is-graph-navigation-settling #site-graph .site-graph-edges path.is-navigation-settling-edge {
-    animation: none!important;
-    translate: none!important;
-    scale: 1!important;
+    animation:none!important;
+    translate:none!important;
+    scale:1!important;
   }
 }

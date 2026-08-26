@@ -1,0 +1,25 @@
+/* The portrait and Enter profile CTA are entry-experience material only.
+   After Profile Root has been reached, keep only the semantic node + halos.
+   This selector intentionally is not scoped to #site-graph so transition
+   clones in .v9-transition-overlay cannot flash the retired portrait/CTA. */
+body.is-root-entry-retired .root-entry-portrait,
+body.is-root-entry-retired .root-entry-action{
+  display:none!important;
+  opacity:0!important;
+  pointer-events:none!important;
+  visibility:hidden!important
+}
+
+/* Cover the exact Profile Root handoff even before the persistence marker is
+   applied in the following microtask/frame. */
+body[data-entry-state="profile"] .root-entry-portrait,
+body[data-entry-state="profile"] .root-entry-action,
+body.is-profile-root-ready .root-entry-portrait,
+body.is-profile-root-ready .root-entry-action,
+body[data-graph-mode="overview"][data-root-landing="false"] .root-entry-portrait,
+body[data-graph-mode="overview"][data-root-landing="false"] .root-entry-action{
+  display:none!important;
+  opacity:0!important;
+  pointer-events:none!important;
+  visibility:hidden!important
+}

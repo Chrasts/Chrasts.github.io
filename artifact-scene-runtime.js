@@ -56,6 +56,7 @@
   let viewerArtifactId = null;
   let highlightedBindingId = null;
   const roots = new Map();
+  const lifecycle = new Map(bindings.map(binding => [binding.id, 'notLoaded']));
   const definitions = [];
   const issues = [];
 
@@ -245,11 +246,51 @@
 
   const recipeEnv = { artifactFor, hrefFor, openFocus, routeForNode };
 
+  const bindRootInteractions = (binding, root) => {
+    root.addEventListener('pointerenter', () => drawTether(binding, root));
+    root.addEventListener('pointerleave', event => {
+      if (!root.contains(event.relatedTarget)) clearNodeHighlight();
+    });
+    root.addEventListener('focusin', () => drawTether(binding, root));
+    root.addEventListener('focusout', event => {
+      if (!root.contains(event.relatedTarget)) clearNodeHighlight();
+    });
+  };
+
+  const resolveRoot = (binding, context) => {
+    if (!targetForRoute(binding, context?.route || location.hash)) return null;
+    let root = roots.get(binding.id);
+    if (root?.isConnected) return root;
+    root = recipes.render(binding, recipeEnv);
+    root.hidden = true;
+    bindRootInteractions(binding, root);
+    layer.appendChild(root);
+    roots.set(binding.id, root);
+    lifecycle.set(binding.id, 'mounted');
+    return root;
+  };
+
+  const releaseRoot = (binding, root) => {
+    if (viewerBindingId === binding.id) closeFocus({ restoreFocus: false });
+    if (highlightedBindingId === binding.id) clearNodeHighlight();
+    scene.objects?.unregisterScene?.(`artifact-scene:${binding.id}`);
+    root?.querySelectorAll?.('video, audio').forEach(media => {
+      media.pause?.();
+      media.removeAttribute('src');
+      media.load?.();
+    });
+    root?.remove();
+    roots.delete(binding.id);
+    lifecycle.set(binding.id, 'unmounted');
+  };
+
+  const bindingIds = new Set();
   bindings.forEach(binding => {
-    if (!binding?.id || roots.has(binding.id)) {
+    if (!binding?.id || bindingIds.has(binding.id)) {
       issues.push(`Artifact scene binding id must be unique: ${binding?.id || '(missing)'}`);
       return;
     }
+    bindingIds.add(binding.id);
     if (!recipes.has(binding.recipe)) {
       issues.push(`Unknown artifact scene recipe for ${binding.id}: ${binding.recipe}`);
       return;
@@ -264,21 +305,17 @@
       return;
     }
 
-    const root = recipes.render(binding, recipeEnv);
-    root.hidden = true;
-    layer.appendChild(root);
-    roots.set(binding.id, root);
-
     const definition = {
       id: `artifact-scene:${binding.id}`,
-      selector: `[data-artifact-scene="${binding.id}"]`,
+      resolve: context => resolveRoot(binding, context),
       anchorNodeId: binding.targets?.[0]?.anchorNodeId || null,
       placement: 'artifact-contextual',
       enter: 'artifact-rise',
       exit: 'artifact-fade',
       visible: context => Boolean(targetForRoute(binding, context.route)),
-      mount: context => syncPlacement(binding, root, context),
-      update: context => syncPlacement(binding, root, context),
+      mount: context => syncPlacement(binding, context.element, context),
+      update: context => syncPlacement(binding, context.element, context),
+      unmount: context => releaseRoot(binding, context.element),
       variants: {
         mobile: {
           placement: 'artifact-mobile-tray'
@@ -287,15 +324,6 @@
     };
     scene.registry.register(definition);
     definitions.push(definition);
-
-    root.addEventListener('pointerenter', () => drawTether(binding, root));
-    root.addEventListener('pointerleave', event => {
-      if (!root.contains(event.relatedTarget)) clearNodeHighlight();
-    });
-    root.addEventListener('focusin', () => drawTether(binding, root));
-    root.addEventListener('focusout', event => {
-      if (!root.contains(event.relatedTarget)) clearNodeHighlight();
-    });
   });
 
   layer.addEventListener('pointermove', event => {
@@ -367,7 +395,12 @@
     route: normaliseRoute(document.body.dataset.graphRoute || location.hash),
     recipeNames: recipes.names(),
     issues: issues.slice(),
-    visibleBindings: bindings.filter(binding => !roots.get(binding.id)?.hidden).map(binding => binding.id),
+    visibleBindings: bindings.filter(binding => {
+      const root = roots.get(binding.id);
+      return Boolean(root && !root.hidden);
+    }).map(binding => binding.id),
+    mountedBindings: [...roots.keys()],
+    lifecycle: Object.fromEntries(lifecycle),
     viewer: viewer.hidden ? null : { bindingId: viewerBindingId, artifactId: viewerArtifactId }
   });
 

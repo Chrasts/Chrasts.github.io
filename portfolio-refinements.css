@@ -172,3 +172,112 @@ body.has-artifact-focus #site-detail-panel{
   .work-project-anchor-v5 .work-project-hitbox-v5,
   .work-concept-projects.is-primary-project-choice .work-concept-project{transition:none!important}
 }
+
+/* Primary Overview destinations and the Atlas entry preview belong to the
+   always-available navigation surface, not to the deferred Atlas renderer. */
+body[data-graph-mode="overview"] #site-graph .site-graph-node.is-section .site-graph-dot{
+  transform:scale(1.52);
+  stroke-width:2.15
+}
+body[data-graph-mode="overview"] #site-graph .site-graph-node.is-section:hover .site-graph-dot,
+body[data-graph-mode="overview"] #site-graph .site-graph-node.is-section:focus-visible .site-graph-dot{
+  transform:scale(1.82)
+}
+body[data-graph-mode="overview"] #site-graph .site-graph-node.is-section .site-graph-hit{r:31px}
+body[data-graph-mode="overview"] #site-graph .site-graph-node.is-section .site-graph-label{
+  font-size:14.5px;
+  font-weight:800;
+  letter-spacing:-.012em
+}
+body[data-graph-mode="overview"] #site-graph .site-graph-node[data-node-id="stepan-chrast"] .site-graph-dot{
+  transform:scale(1.22);
+  stroke-width:2.35
+}
+body[data-graph-mode="overview"] #site-graph .site-graph-node[data-node-id="stepan-chrast"] .site-graph-label{
+  font-size:13px;
+  font-weight:790
+}
+body[data-graph-mode="overview"] #site-graph .site-graph-node[data-node-id="work"] .site-graph-label{
+  transform:translateY(-47px)
+}
+
+.atlas-button.atlas-entry-v7{
+  min-width:188px;
+  min-height:66px;
+  display:grid!important;
+  grid-template-columns:88px minmax(54px,1fr);
+  align-items:center;
+  gap:9px;
+  padding:7px 15px 7px 9px!important;
+  border:1px solid color-mix(in srgb,var(--line) 92%,transparent)!important;
+  border-radius:14px!important;
+  background:color-mix(in srgb,var(--paper) 90%,transparent)!important;
+  text-align:left!important;
+  overflow:hidden;
+  position:relative;
+  isolation:isolate
+}
+.atlas-button.atlas-entry-v7::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  background:radial-gradient(circle at 28% 48%,color-mix(in srgb,var(--teal) 10%,transparent),transparent 48%);
+  opacity:.52;
+  transition:opacity .18s ease,transform .24s cubic-bezier(.2,.72,.2,1)
+}
+.atlas-button.atlas-entry-v7:hover::before,
+.atlas-button.atlas-entry-v7:focus-visible::before{opacity:1;transform:scale(1.08)}
+.atlas-entry-copy{display:flex;align-items:center;min-width:0}
+.atlas-entry-copy strong{color:var(--ink);font:820 16px/1 var(--sans);letter-spacing:-.025em}
+.atlas-entry-glyph{width:88px;height:50px;overflow:visible}
+.atlas-entry-glyph-edges line{
+  stroke:color-mix(in srgb,var(--teal) 55%,var(--line));
+  stroke-width:1.05;
+  vector-effect:non-scaling-stroke;
+  stroke-dasharray:3 3;
+  animation:atlas-entry-edge-flow 4.8s linear infinite
+}
+.atlas-entry-glyph-edges line:nth-child(3n){
+  stroke:color-mix(in srgb,var(--brown) 55%,var(--line));
+  animation-duration:6.4s;
+  animation-direction:reverse
+}
+.atlas-entry-glyph-nodes circle{
+  fill:var(--paper);
+  stroke:var(--teal);
+  stroke-width:1.25;
+  vector-effect:non-scaling-stroke;
+  transform-box:fill-box;
+  transform-origin:center;
+  animation:atlas-entry-node-breathe 3.2s ease-in-out infinite alternate
+}
+.atlas-entry-glyph-nodes circle:first-child{fill:var(--teal);stroke:var(--teal);animation-duration:2.4s}
+.atlas-entry-glyph-nodes circle:nth-child(3n){animation-delay:-1.1s}
+.atlas-entry-glyph-nodes circle:nth-child(4n){animation-delay:-2s}
+.atlas-button.atlas-entry-v7:hover .atlas-entry-glyph,
+.atlas-button.atlas-entry-v7:focus-visible .atlas-entry-glyph{
+  transform:scale(1.045);
+  transition:transform .22s cubic-bezier(.2,.72,.2,1)
+}
+@keyframes atlas-entry-edge-flow{to{stroke-dashoffset:-24}}
+@keyframes atlas-entry-node-breathe{to{transform:scale(1.18)}}
+
+@media(max-width:900px){
+  .atlas-button.atlas-entry-v7{
+    min-width:148px;
+    min-height:54px;
+    grid-template-columns:58px 1fr;
+    gap:7px;
+    padding:6px 10px!important
+  }
+  .atlas-entry-glyph{width:58px;height:40px}
+  .atlas-entry-copy strong{font-size:13px}
+  body[data-graph-mode="overview"] #site-graph .site-graph-node.is-section .site-graph-label{font-size:12.8px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .atlas-button.atlas-entry-v7::before{transition-duration:.01ms!important}
+  .atlas-entry-glyph-edges line,
+  .atlas-entry-glyph-nodes circle{animation:none!important}
+}

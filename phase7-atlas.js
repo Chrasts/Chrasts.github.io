@@ -30,56 +30,12 @@
     }
     return path;
   };
-  const routeNode = route => route === 'overview'
-    ? nodeMap.get(rootId)
-    : graph.nodes.find(node => node.route === route) || null;
   const graphRoot = document.querySelector('#site-graph');
   const graphSvg = () => document.querySelector('#site-graph .site-graph-svg');
   const liveNodes = () => [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')]
     .filter(element => !element.closest('.v9-transition-overlay'));
   const liveEdges = () => [...document.querySelectorAll('#site-graph .site-graph-edges path[data-source][data-target]')]
     .filter(element => !element.closest('.v9-transition-overlay'));
-
-  /* --------------------------------------------------------------------
-     Local ancestor labels: one canonical pose, repaired before paint.
-     -------------------------------------------------------------------- */
-  let labelGuard = false;
-  let correctedLabelWrites = 0;
-  const setTextPose = (text, anchor, x, y) => {
-    if (!text) return false;
-    let changed = false;
-    if (text.getAttribute('text-anchor') !== anchor) { text.setAttribute('text-anchor', anchor); changed = true; }
-    if (text.getAttribute('x') !== String(x)) { text.setAttribute('x', String(x)); changed = true; }
-    if (text.getAttribute('y') !== String(y)) { text.setAttribute('y', String(y)); changed = true; }
-    return changed;
-  };
-  const applyLocalLabelPolicy = () => {
-    if (labelGuard || document.body?.dataset.graphMode !== 'focus') return false;
-    const target = routeNode(normaliseRoute(document.body?.dataset.graphRoute || location.hash));
-    if (!target) return false;
-    const ancestorIds = new Set(primaryPath(target).slice(0, -1).map(node => node.id));
-    labelGuard = true;
-    let changed = 0;
-    try {
-      liveNodes().forEach(node => {
-        const id = node.dataset.nodeId;
-        const label = node.querySelector('.site-graph-label');
-        const meta = node.querySelector('.site-graph-meta');
-        if (!label) return;
-        if (ancestorIds.has(id)) {
-          changed += Number(setTextPose(label, 'start', 17, 4));
-          changed += Number(setTextPose(meta, 'start', 17, 20));
-          node.dataset.localLabelRole = 'ancestor';
-        } else {
-          node.dataset.localLabelRole = id === target.id ? 'target' : 'branch';
-        }
-      });
-    } finally {
-      labelGuard = false;
-    }
-    correctedLabelWrites += changed;
-    return Boolean(changed);
-  };
 
   /* --------------------------------------------------------------------
      Structural depth / LOD.
@@ -539,6 +495,23 @@
     liveNodes().forEach(node => node.classList.remove('is-previewed'));
     return true;
   };
+  const requestLocalFocus = nodeId => {
+    if (window.ProfileAtlasFocus?.enterFocus) {
+      window.ProfileAtlasFocus.enterFocus(nodeId);
+      return;
+    }
+    const pending = window.ProfileFeatureBootstrap?.ensureRoute?.('atlas');
+    if (!pending?.then) {
+      focusNode(nodeId);
+      return;
+    }
+    pending
+      .then(() => {
+        if (window.ProfileAtlasFocus?.enterFocus) window.ProfileAtlasFocus.enterFocus(nodeId);
+        else focusNode(nodeId);
+      })
+      .catch(() => focusNode(nodeId));
+  };
   const decorateInspector = () => {
     if (document.body?.dataset.graphMode !== 'atlas') return;
     const detail = document.querySelector('#site-detail-panel');
@@ -637,54 +610,10 @@
   }
 
   /* --------------------------------------------------------------------
-     Atlas entry affordance: graph glyph + plain-language label.
-     -------------------------------------------------------------------- */
-  const decorateAtlasButton = button => {
-    if (!button || button.dataset.phase7V2Decorated === 'true') return;
-    button.dataset.phase7V2Decorated = 'true';
-    button.classList.add('atlas-entry-v7');
-    button.setAttribute('aria-label', 'Open Atlas, the full profile map');
-    button.replaceChildren();
-    const glyph = document.createElementNS(svgNS, 'svg');
-    glyph.classList.add('atlas-entry-glyph');
-    glyph.setAttribute('viewBox', '0 0 88 52');
-    glyph.setAttribute('aria-hidden', 'true');
-    const edges = document.createElementNS(svgNS, 'g');
-    edges.classList.add('atlas-entry-glyph-edges');
-    [
-      [44,26,13,10],[44,26,75,11],[44,26,14,40],[44,26,74,41],
-      [44,26,61,25],[13,10,30,17],[75,11,61,25],[14,40,32,34],[74,41,61,25],[30,17,32,34]
-    ].forEach(([x1,y1,x2,y2]) => {
-      const line = document.createElementNS(svgNS, 'line');
-      line.setAttribute('x1', x1); line.setAttribute('y1', y1);
-      line.setAttribute('x2', x2); line.setAttribute('y2', y2);
-      edges.appendChild(line);
-    });
-    const nodes = document.createElementNS(svgNS, 'g');
-    nodes.classList.add('atlas-entry-glyph-nodes');
-    [[44,26,4.2],[13,10,2.5],[75,11,2.3],[14,40,2.4],[74,41,2.7],[61,25,2.2],[30,17,1.8],[32,34,1.9]].forEach(([cx,cy,r]) => {
-      const circle = document.createElementNS(svgNS, 'circle');
-      circle.setAttribute('cx', cx); circle.setAttribute('cy', cy); circle.setAttribute('r', r);
-      nodes.appendChild(circle);
-    });
-    glyph.append(edges, nodes);
-    const copy = document.createElement('span');
-    copy.className = 'atlas-entry-copy';
-    const title = document.createElement('strong');
-    title.textContent = 'Atlas';
-    copy.appendChild(title);
-    button.append(glyph, copy);
-  };
-
-  /* --------------------------------------------------------------------
      Observers and interaction ownership.
      -------------------------------------------------------------------- */
   if (graphRoot) {
     new MutationObserver(mutations => {
-      if (!labelGuard && document.body?.dataset.graphMode === 'focus' && mutations.some(mutation =>
-        mutation.type === 'childList' || (mutation.type === 'attributes' && ['x', 'y', 'text-anchor'].includes(mutation.attributeName))
-      )) applyLocalLabelPolicy();
-
       if (document.body?.dataset.graphMode === 'atlas') {
         const topologyChanged = mutations.some(mutation => mutation.type === 'childList');
         const selectionChanged = mutations.some(mutation =>
@@ -719,7 +648,6 @@
   if (document.body) {
     let previousGraphMode = document.body.dataset.graphMode || null;
     new MutationObserver(() => {
-      applyLocalLabelPolicy();
       if (document.body.dataset.graphMode === 'atlas') {
         const introMarker = document.documentElement.dataset.profileIntro || '';
         if (previousGraphMode !== 'atlas' && !['pending', 'preparing', 'running'].includes(introMarker)) {
@@ -771,7 +699,6 @@
 
   addEventListener('profile:geometry-applied', scheduleLabelCollisionPass);
   addEventListener('profile:atlas-lod-change', scheduleLabelCollisionPass);
-  addEventListener('hashchange', applyLocalLabelPolicy);
   addEventListener('resize', scheduleLabelCollisionPass);
 
   document.addEventListener('change', event => {
@@ -815,7 +742,7 @@
     if (node && node.classList.contains('is-previewed')) {
       event.preventDefault();
       event.stopImmediatePropagation();
-      focusNode(node.dataset.nodeId);
+      requestLocalFocus(node.dataset.nodeId);
       return;
     }
 
@@ -839,7 +766,7 @@
     if (!node) return;
     event.preventDefault();
     event.stopImmediatePropagation();
-    focusNode(node.dataset.nodeId);
+    requestLocalFocus(node.dataset.nodeId);
   }, true);
 
   document.addEventListener('wheel', event => {
@@ -887,7 +814,6 @@
   document.addEventListener('pointerup', endGesture, true);
   document.addEventListener('pointercancel', endGesture, true);
 
-  document.querySelectorAll('.atlas-button').forEach(decorateAtlasButton);
   decorateAtlasControls();
 
   window.ProfileAtlasLOD = Object.freeze({
@@ -908,7 +834,6 @@
       if (!preserveTopology) setTopologyMode(TOPOLOGY_MODES.EXPLORATION_LOD, { reason: 'pan-to', apply: false });
       return setCamera({ x, y, scale: camera.targetScale }, { immediate });
     },
-    applyLocalLabelPolicy,
     resolveLabelCollisions: resolveAtlasLabelCollisions,
     snapshot: () => ({
       lod: currentLOD,
@@ -921,15 +846,12 @@
       topologyBounds: topologyBounds(),
       visibleNodeCount,
       hiddenNodeCount,
-      correctedLabelWrites,
       territoryLabels: document.querySelectorAll('.atlas-territory-label').length,
       selectedNodeId: document.querySelector('#site-graph .site-graph-node.is-previewed[data-node-id]')?.dataset.nodeId || null
     })
   });
 
   requestAnimationFrame(() => {
-    applyLocalLabelPolicy();
-    document.querySelectorAll('.atlas-button').forEach(decorateAtlasButton);
     decorateAtlasControls();
     if (document.body?.dataset.graphMode === 'atlas' && !document.querySelector('.profile-intro-overlay')) {
       updateAtlasHelp();

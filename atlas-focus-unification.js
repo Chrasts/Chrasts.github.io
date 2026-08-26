@@ -352,7 +352,7 @@
     if (matchMedia('(min-width: 901px)').matches) scene()?.camera?.use?.('desktop-local');
     window.ProfileGeometry?.stabilize?.(700);
     window.ProfileGeometry?.apply?.();
-    window.ProfileAtlasLOD?.applyLocalLabelPolicy?.();
+    window.ProfileLocalLabelPolicy?.schedule?.('atlas-focus-target');
     await raf();
     await raf();
     return expectedGeneration === generation;

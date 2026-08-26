@@ -103,17 +103,15 @@
   };
 
   ensureStylesheet('root-landing.css', 'data-profile-root-landing-style');
-  ensureStylesheet('intro-atlas-reveal.css', 'data-profile-intro-atlas-style');
   ensureStylesheet('motion-polish.css', 'data-profile-motion-polish-style');
   ensureStylesheet('graph-feel.css', 'data-profile-graph-feel-style');
   ensureStylesheet('node-dynamics.css', 'data-profile-node-dynamics-style');
   ensureStylesheet('camera-materiality.css', 'data-profile-camera-materiality-style');
   ensureStylesheet('intro-fixes-v3.css', 'data-profile-intro-fixes-v3-style');
-  ensureStylesheet('root-entry-portal.css', 'data-profile-root-entry-portal-style');
-  ensureStylesheet('atlas-condensation.css', 'data-profile-atlas-condensation-style');
   ensureStylesheet('profile-root.css', 'data-profile-root-overview-style');
-  ensureStylesheet('atlas-focus-unification.css', 'data-profile-atlas-focus-style');
   ensureStylesheet('graph-navigation-materiality.css', 'data-profile-graph-navigation-style');
+  ensureStylesheet('portfolio-refinements.css', 'data-profile-refinements-style');
+  ensureStylesheet('profile-post-entry.css', 'data-profile-post-entry-style');
   prepareRootLandingDom();
 
   document.body.dataset.rootLanding = initialRootLanding ? 'true' : 'false';
@@ -163,8 +161,6 @@
   };
 
   ensureScript('scene-composer.js', 'data-profile-scene-composer');
-  ensureScript('atlas-drag-activation-guard.js', 'data-profile-atlas-drag-activation-guard');
-  ensureScript('atlas-focus-unification.js', 'data-profile-atlas-focus-unification');
   ensureScript('camera-composition.js', 'data-profile-camera-composition');
   ensureScript('camera-materiality.js', 'data-profile-camera-materiality');
   ensureScript('halo-renderer.js', 'data-profile-halo-renderer');
@@ -176,10 +172,11 @@
   ensureScript('global-geometry-ownership.js', 'data-profile-global-geometry-ownership');
   ensureScript('root-landing.js', 'data-profile-root-landing');
   ensureScript('motion-polish.js', 'data-profile-motion-polish');
+  ensureScript('local-label-policy.js', 'data-profile-local-label-policy');
   ensureScript('intro-fixes-v3.js', 'data-profile-intro-fixes-v3');
-  ensureScript('intro-atlas-reveal.js', 'data-profile-intro-atlas-reveal');
-  ensureScript('root-entry-portal.js', 'data-profile-root-entry-portal');
-  ensureScript('atlas-condensation.js', 'data-profile-atlas-condensation');
   ensureScript('profile-root.js', 'data-profile-root-overview');
   ensureScript('accessibility-runtime.js', 'data-profile-accessibility-runtime');
+  ensureScript('portfolio-refinements.js', 'data-profile-refinements');
+  ensureScript('profile-post-entry.js', 'data-profile-post-entry');
+  ensureScript('node-detail-dismiss.js', 'data-profile-node-detail-dismiss');
 })();

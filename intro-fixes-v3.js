@@ -4,25 +4,10 @@
   if (!graph?.nodes?.length) return;
 
   const rootId = graph.rootId || 'stepan-chrast';
-  const nodeMap = new Map(graph.nodes.map(node => [node.id, node]));
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const svgNS = 'http://www.w3.org/2000/svg';
   const normaliseRoute = value =>
     (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
-  const routeNode = route => route === 'overview'
-    ? nodeMap.get(rootId)
-    : graph.nodes.find(node => node.route === route) || null;
-  const primaryPath = node => {
-    const path = [];
-    const seen = new Set();
-    let current = node;
-    while (current && !seen.has(current.id)) {
-      path.unshift(current);
-      seen.add(current.id);
-      current = current.parentIds?.[0] ? nodeMap.get(current.parentIds[0]) : null;
-    }
-    return path;
-  };
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   const raf = () => new Promise(resolve => requestAnimationFrame(resolve));
   const waitFor = (predicate, timeout = 2600) => new Promise(resolve => {
@@ -51,84 +36,10 @@
     document.head.appendChild(guard);
   }
 
-  /* ----------------------------------------------------------------------
-     Canonical local label pose
-     ---------------------------------------------------------------------- */
-  let labelFrame = 0;
-  let labelPinUntil = 0;
-  let labelGuard = false;
-
   const liveNodes = () => [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')]
     .filter(element => !element.closest('.v9-transition-overlay'));
-  const setText = (element, anchor, x, y) => {
-    if (!element) return;
-    if (element.getAttribute('text-anchor') !== anchor) element.setAttribute('text-anchor', anchor);
-    if (element.getAttribute('x') !== String(x)) element.setAttribute('x', String(x));
-    if (element.getAttribute('y') !== String(y)) element.setAttribute('y', String(y));
-  };
-  const applyLocalLabels = () => {
-    if (labelGuard || document.body?.dataset.graphMode !== 'focus') return false;
-    const target = routeNode(normaliseRoute(document.body.dataset.graphRoute || location.hash));
-    if (!target) return false;
-    labelGuard = true;
-    try {
-      const ancestorIds = new Set(primaryPath(target).slice(0, -1).map(node => node.id));
-      liveNodes().forEach(node => {
-        const id = node.dataset.nodeId;
-        const label = node.querySelector('.site-graph-label');
-        const meta = node.querySelector('.site-graph-meta');
-        if (!label) return;
-        if (ancestorIds.has(id)) {
-          setText(label, 'start', 17, 4);
-          setText(meta, 'start', 17, 20);
-          node.dataset.localLabelRole = 'ancestor';
-        } else {
-          setText(label, 'middle', 0, id === rootId ? -25 : 25);
-          setText(meta, 'middle', 0, 42);
-          node.dataset.localLabelRole = id === target.id ? 'target' : 'branch';
-        }
-      });
-      return true;
-    } finally {
-      labelGuard = false;
-    }
-  };
-  const pinLocalLabels = (ms = 1450) => {
-    labelPinUntil = Math.max(labelPinUntil, performance.now() + ms);
-    if (labelFrame) return;
-    const tick = now => {
-      applyLocalLabels();
-      if (now < labelPinUntil) labelFrame = requestAnimationFrame(tick);
-      else {
-        labelFrame = 0;
-        requestAnimationFrame(() => requestAnimationFrame(applyLocalLabels));
-      }
-    };
-    labelFrame = requestAnimationFrame(tick);
-  };
-
   const graphRoot = document.querySelector('#site-graph');
-  if (graphRoot) {
-    new MutationObserver(mutations => {
-      if (labelGuard) return;
-      if (mutations.some(mutation => mutation.type === 'childList' || mutation.type === 'attributes')) pinLocalLabels(1250);
-    }).observe(graphRoot, {
-      subtree: true,
-      childList: true,
-      attributes: true,
-      attributeFilter: ['x', 'y', 'text-anchor']
-    });
-  }
-  if (document.body) {
-    new MutationObserver(() => {
-      pinLocalLabels(1700);
-      syncRootOrbit();
-    }).observe(document.body, {
-      attributes: true,
-      attributeFilter: ['data-graph-mode', 'data-graph-route', 'data-root-landing', 'class']
-    });
-  }
-  addEventListener('hashchange', () => pinLocalLabels(1850));
+  addEventListener('profile:scene-state', syncRootOrbit);
 
   /* ----------------------------------------------------------------------
      Intro Enter gateway
@@ -262,13 +173,13 @@
       return targetRoute === 'atlas' ? mode === 'atlas' : route === targetRoute && mode !== 'atlas';
     });
     window.ProfileGeometry?.stabilize?.(1500);
-    pinLocalLabels(1750);
+    window.ProfileLocalLabelPolicy?.schedule?.('atlas-handoff-ready');
     await raf();
     await raf();
     await raf();
     await wait(reduced.matches ? 0 : 70);
     window.ProfileGeometry?.apply?.();
-    applyLocalLabels();
+    window.ProfileLocalLabelPolicy?.apply?.('atlas-handoff-geometry');
     syncRootOrbit();
 
     document.body.classList.add('is-atlas-handoff-revealing');
@@ -279,7 +190,7 @@
     delete document.body.dataset.atlasHandoffTarget;
     atlasHandoff = null;
     window.ProfileGeometry?.stabilize?.(900);
-    pinLocalLabels(900);
+    window.ProfileLocalLabelPolicy?.schedule?.('atlas-handoff-complete');
     return true;
   };
   const shouldOwnAtlasBoundary = targetRoute => {
@@ -421,16 +332,15 @@
       compassVersion: window.ProfileGeometry?.snapshot?.().compassVersion || null,
       inspectorOpen: Boolean(inspector),
       atlasHandoff: Boolean(atlasHandoff),
-      localAncestorLabels: document.querySelectorAll('#site-graph .site-graph-node[data-local-label-role="ancestor"]:not(.v9-transition-overlay *)').length,
       rootOrbit: Boolean(document.querySelector(`#site-graph .site-graph-node[data-node-id="${rootId}"] > .profile-root-overview-orbit`)),
-      gatewayOrbit: Boolean(document.querySelector('.profile-intro-enter .profile-intro-gateway-orbit'))
+      gatewayOrbit: Boolean(document.querySelector('.profile-intro-enter .profile-intro-gateway-orbit')),
+      localLabelPolicyReady: Boolean(window.ProfileLocalLabelPolicy)
     }),
     openProfileSummary: () => {
       const root = liveNodes().find(element => element.dataset.nodeId === rootId);
       if (root) openInspector(root);
     },
     closeProfileSummary: closeInspector,
-    applyLocalLabels,
     syncRootOrbit
   });
 })();

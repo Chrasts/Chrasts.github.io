@@ -325,8 +325,10 @@
   };
 
   let lastGeometryEvent = '';
+  let applyCount = 0;
   const applyCurrent = () => {
     if (!document.body) return false;
+    applyCount += 1;
     const mode = document.body.dataset.graphMode;
     if (mode === 'overview') applyOverview();
     else if (mode === 'atlas') applyAtlas();
@@ -348,19 +350,23 @@
   };
 
   let frame = 0;
-  let pinUntil = 0;
-  const stabilize = (duration = 760) => {
-    pinUntil = Math.max(pinUntil, performance.now() + duration);
-    if (frame) return;
-    const tick = now => {
+  let trailingFrame = 0;
+  let lastRequestedDuration = 0;
+  const stabilize = (duration = 0) => {
+    // Preserve the public signature while retiring the old duration-based RAF
+    // pin. Canonical geometry is applied now and reconciled once after layout;
+    // later writes are handled by their explicit events/observer callbacks.
+    lastRequestedDuration = Number(duration) || 0;
+    applyCurrent();
+    if (frame || trailingFrame) return;
+    frame = requestAnimationFrame(() => {
+      frame = 0;
       applyCurrent();
-      if (now < pinUntil) frame = requestAnimationFrame(tick);
-      else {
-        frame = 0;
-        requestAnimationFrame(() => requestAnimationFrame(applyCurrent));
-      }
-    };
-    frame = requestAnimationFrame(tick);
+      trailingFrame = requestAnimationFrame(() => {
+        trailingFrame = 0;
+        applyCurrent();
+      });
+    });
   };
 
   const directionName = vector => {
@@ -391,11 +397,11 @@
   if (graphRoot) new MutationObserver(mutations => {
     if (mutations.some(mutation => mutation.type === 'childList')) stabilize(900);
   }).observe(graphRoot, { childList: true, subtree: true });
-  if (document.body) new MutationObserver(() => stabilize(960)).observe(document.body, {
-    attributes: true,
-    attributeFilter: ['data-graph-mode', 'data-graph-route', 'class']
-  });
   window.addEventListener('hashchange', () => stabilize(1100));
+  window.addEventListener('profile:scene-state', () => stabilize());
+  window.addEventListener('profile:transition-finish', () => stabilize());
+  window.addEventListener('profile:transition-cancel', () => stabilize());
+  window.addEventListener('profile:root-activated', () => stabilize());
   window.addEventListener('resize', () => stabilize(900));
   window.addEventListener('load', () => stabilize(900), { once: true });
 
@@ -415,6 +421,11 @@
       compassVersion: 'fan-v3',
       center: { ...ATLAS.center },
       atlasSize: { width: ATLAS.width, height: ATLAS.height },
+      reconciliation: {
+        pending: Boolean(frame || trailingFrame),
+        applyCount,
+        lastRequestedDuration
+      },
       sections: Object.fromEntries(sections.map(id => [id, {
         vector: { ...compass[id] },
         atlas: atlasPoint(id),
@@ -423,23 +434,5 @@
     })
   });
 
-  const ensurePhase7 = () => {
-    if (!document.querySelector('link[data-profile-atlas-lod-v7]')) {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'phase7-atlas.css';
-      link.dataset.profileAtlasLodV7 = 'true';
-      document.head.appendChild(link);
-    }
-    if (!document.querySelector('script[data-profile-atlas-lod-v7]')) {
-      const script = document.createElement('script');
-      script.src = 'phase7-atlas.js';
-      script.async = false;
-      script.dataset.profileAtlasLodV7 = 'true';
-      document.head.appendChild(script);
-    }
-  };
-
   stabilize(980);
-  ensurePhase7();
 })();

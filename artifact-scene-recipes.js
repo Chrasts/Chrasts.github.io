@@ -75,29 +75,17 @@
     frame.dataset.mediaAspectReady = 'true';
   };
 
-  const pdfPageAspect = async href => {
-    if (!href || /^https?:\/\//i.test(href)) return null;
-    try {
-      const response = await fetch(href, { cache: 'force-cache' });
-      if (!response.ok) return null;
-      const buffer = await response.arrayBuffer();
-      const text = new TextDecoder('latin1').decode(buffer);
-      const readBox = name => {
-        const pattern = new RegExp(`\\/${name}\\s*\\[\\s*(-?\\d*\\.?\\d+)\\s+(-?\\d*\\.?\\d+)\\s+(-?\\d*\\.?\\d+)\\s+(-?\\d*\\.?\\d+)\\s*\\]`);
-        const match = text.match(pattern);
-        if (!match) return null;
-        const [x1, y1, x2, y2] = match.slice(1).map(Number);
-        const width = Math.abs(x2 - x1);
-        const height = Math.abs(y2 - y1);
-        return width > 0 && height > 0 ? width / height : null;
-      };
-      return readBox('CropBox') || readBox('MediaBox');
-    } catch (_) {
-      return null;
-    }
-  };
-
   const hydratePreviewAspect = (frame, artifact, href, image = null) => {
+    const presentation = artifact.presentation || {};
+    const metadataRatio = Number(presentation.aspectRatio) ||
+      (Number(presentation.width) > 0 && Number(presentation.height) > 0
+        ? Number(presentation.width) / Number(presentation.height)
+        : null);
+    if (validAspect(metadataRatio)) {
+      applyMediaAspect(frame, metadataRatio, 'metadata');
+      return;
+    }
+
     if (image) {
       const applyImageAspect = () => {
         if (image.naturalWidth && image.naturalHeight) {
@@ -109,13 +97,7 @@
       return;
     }
 
-    if (artifact.mediaType === 'application/pdf') {
-      frame.dataset.mediaAspectPending = 'true';
-      pdfPageAspect(href).then(ratio => {
-        delete frame.dataset.mediaAspectPending;
-        if (ratio) applyMediaAspect(frame, ratio, 'pdf-page');
-      });
-    }
+    if (artifact.mediaType === 'application/pdf') applyMediaAspect(frame, 1 / Math.sqrt(2), 'pdf-fallback');
   };
 
   const mediaPreview = (artifact, href, { className = '', eager = false } = {}) => {
@@ -129,6 +111,8 @@
       image.alt = artifact.title || '';
       image.loading = eager ? 'eager' : 'lazy';
       image.decoding = 'async';
+      if (artifact.presentation?.width) image.width = artifact.presentation.width;
+      if (artifact.presentation?.height) image.height = artifact.presentation.height;
       frame.appendChild(image);
       hydratePreviewAspect(frame, artifact, href, image);
       return frame;

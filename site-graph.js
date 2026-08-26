@@ -34,12 +34,8 @@
     const atlasZoomOut = document.querySelector('#atlas-zoom-out');
     const atlasReset = document.querySelector('#atlas-reset');
     const hero = document.querySelector('.hero');
-    const workLegacy = document.querySelector('#work');
     const footer = document.querySelector('footer');
     const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-
-    // Compatibility with a legacy hidden Work-renderer branch that references a global `count`.
-    if (!('count' in window)) window.count = 1;
 
     if (!root || !graphPanel || !explorer || !scene || !breadcrumb || !detail || !hero) return;
 
@@ -226,43 +222,134 @@
     };
 
     /* ----------------------------------------------------------------------
-       Move existing Work controls into the shared scene
+       Canonical Work controller and controls
        ---------------------------------------------------------------------- */
-    const contextControl = document.querySelector('#work .work-context-control');
-    const themeControl = document.querySelector('#work .work-theme-control');
-    const matchControl = document.querySelector('#work .theme-match-control');
-    const resetButton = document.querySelector('#work-reset');
-
+    let state = { route: 'overview', mode: 'overview', node: profileRoot, workProjectId: null };
+    const workFilterState = {
+      context: 'all',
+      selectedThemes: new Set(),
+      mode: 'any'
+    };
     const controls = document.createElement('div');
     controls.className = 'integrated-work-controls';
+    controls.setAttribute('role', 'region');
+    controls.setAttribute('aria-label', 'Work filters');
     const leftRail = document.createElement('aside');
     leftRail.className = 'integrated-work-rail is-left';
     const rightRail = document.createElement('aside');
     rightRail.className = 'integrated-work-rail is-right';
-    if (contextControl) leftRail.appendChild(contextControl);
-    if (themeControl) rightRail.appendChild(themeControl);
-    if (matchControl) rightRail.appendChild(matchControl);
-    if (resetButton) {
-      resetButton.classList.add('integrated-work-reset');
-      rightRail.appendChild(resetButton);
-    }
+
+    const makeControlGroup = (className, titleText, titleId) => {
+      const group = document.createElement('div');
+      group.className = `work-control-group ${className}`;
+      group.setAttribute('role', 'group');
+      group.setAttribute('aria-labelledby', titleId);
+      const title = document.createElement('p');
+      title.className = 'work-side-title';
+      title.id = titleId;
+      title.textContent = titleText;
+      group.appendChild(title);
+      return group;
+    };
+
+    const contextControl = makeControlGroup('work-context-control', 'Context', 'work-context-title');
+    const contextRoot = document.createElement('div');
+    contextRoot.id = 'work-context-filters';
+    contextRoot.className = 'work-context-filters';
+    contextControl.appendChild(contextRoot);
+    work.contextFilters.forEach(filter => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'work-filter';
+      button.dataset.context = filter.id;
+      button.textContent = filter.label;
+      button.addEventListener('click', () => {
+        workFilterState.context = filter.id;
+        syncWorkControls('context');
+      });
+      contextRoot.appendChild(button);
+    });
+
+    const themeControl = makeControlGroup('work-theme-control', 'Themes', 'work-theme-title');
+    const themeRoot = document.createElement('div');
+    themeRoot.id = 'work-theme-filters';
+    themeRoot.className = 'work-theme-filters';
+    themeControl.appendChild(themeRoot);
+    attributes.forEach(attribute => {
+      const label = document.createElement('label');
+      label.className = 'theme-filter-option';
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.dataset.themeId = attribute.id;
+      input.setAttribute('aria-label', attribute.label);
+      const text = document.createElement('span');
+      text.textContent = attribute.label;
+      input.addEventListener('change', () => {
+        if (input.checked) workFilterState.selectedThemes.add(attribute.id);
+        else workFilterState.selectedThemes.delete(attribute.id);
+        if (workFilterState.selectedThemes.size < 2) workFilterState.mode = 'any';
+        syncWorkControls('theme');
+      });
+      label.append(input, text);
+      themeRoot.appendChild(label);
+    });
+
+    const matchControl = makeControlGroup('theme-match-control', 'Match projects with', 'theme-match-title');
+    const matchButtons = document.createElement('div');
+    matchButtons.className = 'theme-match-buttons';
+    const modeButtons = new Map();
+    [['any', 'Any selected', '∨'], ['all', 'All selected', '∧']].forEach(([mode, label, symbol]) => {
+      const choice = document.createElement('div');
+      choice.className = 'theme-match-choice';
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'theme-match-button';
+      button.dataset.themeMode = mode;
+      button.textContent = label;
+      button.title = mode === 'any'
+        ? 'Show projects matching at least one selected theme'
+        : 'Show only projects matching every selected theme';
+      button.addEventListener('click', () => {
+        if (workFilterState.selectedThemes.size < 2) return;
+        workFilterState.mode = mode;
+        syncWorkControls('match-mode');
+      });
+      const logic = document.createElement('span');
+      logic.className = 'theme-logic-symbol';
+      logic.setAttribute('aria-hidden', 'true');
+      logic.textContent = symbol;
+      choice.append(button, logic);
+      matchButtons.appendChild(choice);
+      modeButtons.set(mode, button);
+    });
+    matchControl.appendChild(matchButtons);
+
+    const resultCount = document.createElement('span');
+    resultCount.id = 'work-result-count';
+    resultCount.className = 'work-result-count';
+    resultCount.setAttribute('aria-live', 'polite');
+    const resetButton = document.createElement('button');
+    resetButton.id = 'work-reset';
+    resetButton.className = 'work-reset integrated-work-reset';
+    resetButton.type = 'button';
+    resetButton.textContent = 'Reset filters';
+    resetButton.addEventListener('click', () => {
+      workFilterState.context = 'all';
+      workFilterState.selectedThemes.clear();
+      workFilterState.mode = 'any';
+      syncWorkControls('reset');
+    });
+
+    leftRail.appendChild(contextControl);
+    rightRail.append(themeControl, matchControl, resultCount, resetButton);
     controls.append(leftRail, rightRail);
     scene.appendChild(controls);
 
-    if (workLegacy) {
-      workLegacy.hidden = true;
-      workLegacy.classList.add('legacy-work-source');
-    }
-
-    const readWorkState = () => {
-      const context = document.querySelector('#work-context-filters .work-filter[aria-pressed="true"]')?.dataset.context || 'all';
-      const selectedThemes = new Set(
-        [...document.querySelectorAll('#work-theme-filters input[data-theme-id]:checked')]
-          .map(input => input.dataset.themeId)
-      );
-      const mode = document.querySelector('[data-theme-mode][aria-pressed="true"]')?.dataset.themeMode || 'any';
-      return { context, selectedThemes, mode };
-    };
+    const readWorkState = () => ({
+      context: workFilterState.context,
+      selectedThemes: new Set(workFilterState.selectedThemes),
+      mode: workFilterState.mode
+    });
 
     const projectMatchesWork = (project, filterState = readWorkState()) => {
       if (filterState.context !== 'all' && !project.contexts.includes(filterState.context)) return false;
@@ -271,26 +358,43 @@
       return filterState.mode === 'all' ? count === filterState.selectedThemes.size : count > 0;
     };
 
-    let suppressWorkControlRender = false;
-    const setThemesViaControls = (themeIds, mode = null) => {
-      const desired = new Set(themeIds);
-      suppressWorkControlRender = true;
-      document.querySelectorAll('#work-theme-filters input[data-theme-id]').forEach(input => {
-        if (input.checked !== desired.has(input.dataset.themeId)) input.click();
+    let workRenderFrame = 0;
+    const syncWorkControls = (reason = 'sync', { render = true } = {}) => {
+      contextRoot.querySelectorAll('.work-filter').forEach(button => {
+        button.setAttribute('aria-pressed', String(button.dataset.context === workFilterState.context));
       });
-      const targetMode = mode || (desired.size > 1 ? 'all' : 'any');
-      const modeButton = document.querySelector(`[data-theme-mode="${targetMode}"]`);
-      if (modeButton && modeButton.getAttribute('aria-pressed') !== 'true' && !modeButton.disabled) modeButton.click();
-      suppressWorkControlRender = false;
-      requestAnimationFrame(() => {
-        if (state.mode === 'work') renderGraph();
+      themeRoot.querySelectorAll('input[data-theme-id]').forEach(input => {
+        input.checked = workFilterState.selectedThemes.has(input.dataset.themeId);
+      });
+      modeButtons.forEach((button, mode) => {
+        button.setAttribute('aria-pressed', String(mode === workFilterState.mode));
+        button.disabled = workFilterState.selectedThemes.size < 2;
+      });
+      const visibleCount = projects.filter(project => projectMatchesWork(project)).length;
+      resultCount.textContent = `${visibleCount} of ${projects.length} ${visibleCount === 1 ? 'project' : 'projects'}`;
+      resetButton.disabled = workFilterState.context === 'all' &&
+        !workFilterState.selectedThemes.size && workFilterState.mode === 'any';
+      dispatchEvent(new CustomEvent('profile:work-filters', {
+        detail: { ...readWorkState(), selectedThemes: [...workFilterState.selectedThemes], visibleCount, reason }
+      }));
+      if (!render || state.mode !== 'work') return;
+      cancelAnimationFrame(workRenderFrame);
+      workRenderFrame = requestAnimationFrame(() => {
+        workRenderFrame = 0;
+        renderGraph();
       });
     };
+    const setThemesViaControls = (themeIds, mode = null, options = {}) => {
+      workFilterState.selectedThemes = new Set(themeIds.filter(id => attributeMap.has(id)));
+      workFilterState.mode = mode || (workFilterState.selectedThemes.size > 1 ? 'all' : 'any');
+      if (workFilterState.selectedThemes.size < 2) workFilterState.mode = 'any';
+      syncWorkControls('set-themes', options);
+    };
+    syncWorkControls('boot', { render: false });
 
     /* ----------------------------------------------------------------------
        Shared renderer state
        ---------------------------------------------------------------------- */
-    let state = { route: 'overview', mode: 'overview', node: profileRoot, workProjectId: null };
     let routeToken = 0;
     let atlasPinnedId = null;
     const atlasOptions = { hierarchy: true, crossLinks: true, secondary: false };
@@ -1626,7 +1730,6 @@
     const hideLegacy = () => {
       document.querySelectorAll('.legacy-section').forEach(element => element.hidden = true);
       if (footer) footer.hidden = true;
-      if (workLegacy) workLegacy.hidden = true;
     };
 
     const updateNavigation = () => {
@@ -1666,7 +1769,7 @@
 
         if (themeMatch) {
           const themeId = themeMatch[1];
-          if (attributeMap.has(themeId)) setThemesViaControls([themeId], 'any');
+          if (attributeMap.has(themeId)) setThemesViaControls([themeId], 'any', { render: false });
         }
 
         setCopy(workRoot);
@@ -1714,19 +1817,43 @@
       status.textContent = `${title.textContent} view open.`;
     };
 
-    /* Work control events occur after the legacy Work script updates its state. */
-    document.addEventListener('click', event => {
-      if (suppressWorkControlRender || state.mode !== 'work') return;
-      if (event.target.closest?.('.integrated-work-controls')) {
-        setTimeout(() => renderGraph(), 0);
-      }
+    window.ProfileWorkController = Object.freeze({
+      setContext: context => {
+        if (!work.contextFilters.some(filter => filter.id === context)) return false;
+        workFilterState.context = context;
+        syncWorkControls('api-context');
+        return true;
+      },
+      setThemes: (themeIds, mode) => {
+        setThemesViaControls(Array.isArray(themeIds) ? themeIds : [], mode);
+        return true;
+      },
+      reset: () => {
+        workFilterState.context = 'all';
+        workFilterState.selectedThemes.clear();
+        workFilterState.mode = 'any';
+        syncWorkControls('api-reset');
+        return true;
+      },
+      openProject: projectId => {
+        if (!projectMap.has(projectId)) return false;
+        updateHash(`work/project/${projectId}`);
+        return true;
+      },
+      snapshot: () => ({
+        context: workFilterState.context,
+        selectedThemes: [...workFilterState.selectedThemes],
+        mode: workFilterState.mode,
+        visibleProjectCount: projects.filter(project => projectMatchesWork(project)).length,
+        projectCount: projects.length,
+        conceptCount: displayConcepts.length,
+        route: state.route,
+        activeProjectId: state.workProjectId
+      })
     });
-    document.addEventListener('change', event => {
-      if (suppressWorkControlRender || state.mode !== 'work') return;
-      if (event.target.closest?.('.integrated-work-controls')) {
-        setTimeout(() => renderGraph(), 0);
-      }
-    });
+    dispatchEvent(new CustomEvent('profile:work-controller-ready', {
+      detail: window.ProfileWorkController.snapshot()
+    }));
 
     window.addEventListener('hashchange', () => renderRoute(location.hash));
     let resizeTimer = 0;

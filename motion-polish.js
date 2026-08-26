@@ -203,7 +203,7 @@
     cancelAnimationFrame(labelFrame);
     const overlay = document.querySelector('#site-graph .v9-transition-overlay');
     if (!overlay || !document.body.classList.contains('is-v9-transitioning')) return;
-    window.ProfileIntroFixesV3?.applyLocalLabels?.();
+    window.ProfileLocalLabelPolicy?.schedule?.('motion-polish');
     const records = [];
     overlay.querySelectorAll('.site-graph-node[data-node-id]').forEach(cloneNode => {
       const id = cloneNode.dataset.nodeId;

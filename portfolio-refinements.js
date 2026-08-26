@@ -4,6 +4,51 @@
   const svgNS = 'http://www.w3.org/2000/svg';
   const projectMap = new Map((window.SITE_DATA?.work?.projects || []).map(project => [project.id, project]));
 
+  const decorateAtlasButton = button => {
+    if (!button || button.dataset.phase7V2Decorated === 'true') return false;
+    button.dataset.phase7V2Decorated = 'true';
+    button.classList.add('atlas-entry-v7');
+    button.setAttribute('aria-label', 'Open Atlas, the full profile map');
+    button.replaceChildren();
+    const glyph = document.createElementNS(svgNS, 'svg');
+    glyph.classList.add('atlas-entry-glyph');
+    glyph.setAttribute('viewBox', '0 0 88 52');
+    glyph.setAttribute('aria-hidden', 'true');
+    const edges = document.createElementNS(svgNS, 'g');
+    edges.classList.add('atlas-entry-glyph-edges');
+    [
+      [44,26,13,10],[44,26,75,11],[44,26,14,40],[44,26,74,41],
+      [44,26,61,25],[13,10,30,17],[75,11,61,25],[14,40,32,34],[74,41,61,25],[30,17,32,34]
+    ].forEach(([x1,y1,x2,y2]) => {
+      const line = document.createElementNS(svgNS, 'line');
+      line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+      line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+      edges.appendChild(line);
+    });
+    const nodes = document.createElementNS(svgNS, 'g');
+    nodes.classList.add('atlas-entry-glyph-nodes');
+    [[44,26,4.2],[13,10,2.5],[75,11,2.3],[14,40,2.4],[74,41,2.7],[61,25,2.2],[30,17,1.8],[32,34,1.9]].forEach(([cx,cy,r]) => {
+      const circle = document.createElementNS(svgNS, 'circle');
+      circle.setAttribute('cx', cx); circle.setAttribute('cy', cy); circle.setAttribute('r', r);
+      nodes.appendChild(circle);
+    });
+    glyph.append(edges, nodes);
+    const copy = document.createElement('span');
+    copy.className = 'atlas-entry-copy';
+    const title = document.createElement('strong');
+    title.textContent = 'Atlas';
+    copy.appendChild(title);
+    button.append(glyph, copy);
+    return true;
+  };
+  const decorateAtlasButtons = () => {
+    let changed = false;
+    document.querySelectorAll('.atlas-button').forEach(button => {
+      changed = decorateAtlasButton(button) || changed;
+    });
+    return changed;
+  };
+
   const enhanceProjectAnchor = anchor => {
     if (!anchor || anchor.dataset.hitboxEnhanced === 'true') return false;
     const text = anchor.querySelector('text');
@@ -90,6 +135,7 @@
       frame = 0;
       enhanceProjectAnchors();
       enhanceConceptPanel();
+      decorateAtlasButtons();
     });
   };
 
@@ -112,9 +158,11 @@
   window.ProfileRefinements = Object.freeze({
     enhanceProjectAnchors,
     enhanceConceptPanel,
+    decorateAtlasButtons,
     snapshot: () => ({
       projectTargets: document.querySelectorAll('.work-project-anchor-v5[data-hitbox-enhanced="true"]').length,
-      conceptPanelEnhanced: Boolean(document.querySelector('#site-detail-panel[data-project-choices-enhanced="true"]'))
+      conceptPanelEnhanced: Boolean(document.querySelector('#site-detail-panel[data-project-choices-enhanced="true"]')),
+      atlasButtons: document.querySelectorAll('.atlas-button.atlas-entry-v7').length
     })
   });
 })();

@@ -117,7 +117,6 @@
   <script defer src="https://cloud.umami.is/script.js" data-website-id="8dd5c849-df0f-40a5-b4e1-3fbcb38f425b"></script>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="root-landing.css">
-  <link rel="stylesheet" href="intro-animation.css">
   <link rel="stylesheet" href="cross-link-travel.css">
   <link rel="stylesheet" href="radial-geometry.css">
 </head>
@@ -226,98 +225,22 @@
     <noscript>
       <section class="section wrap no-js-profile-summary" aria-labelledby="profile-summary-title">
         <div class="section-title"><h2 id="profile-summary-title">Profile map</h2></div>
-        <section><h3>Work</h3><p>Selected analytical, research and software projects are listed below.</p></section>
+        <section>
+          <h3>Work</h3>
+          <p>Selected analytical, research and software projects include:</p>
+          <ul>
+            <li><a href="https://github.com/Chrasts/insolvency-success-analysis">Insolvency Event-Log Analysis</a></li>
+            <li><a href="https://chrasts.github.io/Modal_Logic_Educational_Game/">Modal Logic Lab</a></li>
+            <li><a href="https://github.com/Chrasts/algebraic_logic-SQL_database">Algebraic Logic SQL Schema</a></li>
+            <li><a href="https://github.com/Chrasts/Filming-project-scene-Splitter">Film Scene Character Splitter</a></li>
+          </ul>
+        </section>
         <section><h3>Knowledge</h3><p>Mathematics and logic, data and computing, and research practice.</p></section>
         <section><h3>Experience</h3><p>Research support, customer-facing operations and event coordination.</p></section>
         <section><h3>Education</h3><p>Logic at Charles University, ESSLLI, the prg.ai Minor and additional credentials.</p></section>
         <section><h3>About</h3><p>Research interests, philosophy, games and RPG, music, and evidence-oriented inquiry.</p></section>
       </section>
     </noscript>
-
-    <section class="section wrap route-view" id="work">
-      <div class="route-view-header" id="work-route-header" hidden>
-        <nav class="graph-breadcrumb" id="work-breadcrumb" aria-label="Graph path"></nav>
-        <button class="route-back" id="work-route-back" type="button" data-route="overview">Back to profile graph</button>
-      </div>
-      <div class="section-title"><h2>Selected work</h2></div>
-
-      <div class="work-intro">
-        <p id="work-help">Choose a context or theme, then select a project to inspect it. The map shows how the work relates.</p>
-        <div class="work-summary">
-          <span id="work-result-count" aria-live="polite">9 projects</span>
-          <button id="work-reset" class="work-reset" type="button" disabled>Reset filters</button>
-        </div>
-      </div>
-
-      <div class="work-controls" role="region" aria-label="Work filters" aria-describedby="work-help">
-        <div class="work-control-group work-context-control" role="group" aria-labelledby="work-context-title">
-          <p class="work-side-title" id="work-context-title">Context</p>
-          <div id="work-context-filters" class="work-context-filters"></div>
-        </div>
-
-        <div class="work-control-group work-theme-control" role="group" aria-labelledby="work-theme-title">
-          <p class="work-side-title" id="work-theme-title">Themes</p>
-          <div id="work-theme-filters" class="work-theme-filters"></div>
-        </div>
-
-        <div class="work-control-group theme-match-control" role="group" aria-labelledby="theme-match-title">
-          <span class="theme-match-label" id="theme-match-title">Match projects with</span>
-          <div class="theme-match-buttons">
-            <div class="theme-match-choice">
-              <button type="button" class="theme-match-button" data-theme-mode="any" aria-pressed="true" title="Show projects matching at least one selected theme" disabled>Any selected</button>
-              <span class="theme-logic-symbol" aria-hidden="true">∨</span>
-            </div>
-            <div class="theme-match-choice">
-              <button type="button" class="theme-match-button" data-theme-mode="all" aria-pressed="false" title="Show only projects matching every selected theme" disabled>All selected</button>
-              <span class="theme-logic-symbol" aria-hidden="true">∧</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="work-stage">
-        <section class="work-map-panel" aria-labelledby="work-map-title">
-          <div class="work-panel-heading">
-            <div>
-              <p class="work-side-title">Concept map</p>
-              <h3 id="work-map-title">Relationships between projects</h3>
-              <p class="work-map-note">Projects share a position when their themes overlap; this does not imply a direct relationship between them.</p>
-            </div>
-            <button class="work-map-toggle" id="work-map-toggle" type="button" aria-expanded="true" aria-controls="work-map-content">Hide map</button>
-          </div>
-          <div id="work-map-content" class="work-map-content">
-            <div class="work-lattice-shell">
-              <div class="work-lattice-viewport">
-                <div id="work-lattice"></div>
-              </div>
-              <div class="sr-only" id="lattice-status" aria-live="polite"></div>
-            </div>
-          </div>
-        </section>
-
-        <aside class="work-detail-panel" aria-label="Project explorer">
-          <div class="work-detail-heading">
-            <p class="work-side-title">Projects</p>
-            <span class="work-detail-hint">Select to inspect</span>
-          </div>
-          <div class="work-project-tabs" id="work-project-tabs"></div>
-          <div class="work-project-detail" id="work-project-detail"></div>
-        </aside>
-      </div>
-
-      <noscript>
-        <div class="work-noscript">
-          <p>The interactive project explorer requires JavaScript. Public work remains available here:</p>
-          <ul>
-            <li><a href="https://github.com/Chrasts/insolvency-success-analysis">Insolvency Event-Log Analysis</a></li>
-            <li><a href="https://chrasts.github.io/Modal_Logic_Educational_Game/">Modal Logic Lab</a></li>
-            <li><a href="https://github.com/Chrasts/algebraic_logic-SQL_database">Algebraic Logic SQL Schema</a></li>
-            <li><a href="https://github.com/Chrasts/Filming-project-scene-Splitter">Film Scene Character Splitter</a></li>
-            <li><a href="https://github.com/Chrasts/The-Congruence-Lattice-Problem-A-Historical-Survey">The Congruence Lattice Problem — Historical Survey</a></li>
-          </ul>
-        </div>
-      </noscript>
-    </section>
 
     <section class="section background-section legacy-section" id="background">
       <div class="wrap">
@@ -411,6 +334,6 @@
   <script src="graph-transitions-v6.js"></script>
   <script src="cross-link-travel-v2.js"></script>
   <script src="scene-legacy-bridge.js"></script>
-  <script src="script.js"></script>
+  <script src="site-shell.js"></script>
 </body>
 </html>

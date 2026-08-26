@@ -24,7 +24,7 @@
       source: { kind: 'local', path: 'assets/stepan-chrast.jpg' },
       mediaType: 'image/jpeg',
       availability: 'public',
-      presentation: { preferredObject: 'image', role: 'identity' }
+      presentation: { preferredObject: 'image', role: 'identity', width: 720, height: 540, aspectRatio: 1.333333 }
     },
     {
       id: 'insolvency-analysis-report',
@@ -62,7 +62,7 @@
       source: { kind: 'local', path: 'assets/images/work/modal-logic-lab/lab.png' },
       mediaType: 'image/png',
       availability: 'public',
-      presentation: { preferredObject: 'image', role: 'project-preview' }
+      presentation: { preferredObject: 'image', role: 'project-preview', width: 1918, height: 1078, aspectRatio: 1.779221 }
     },
     {
       id: 'modal-logic-lab-screenshot-learn',
@@ -73,7 +73,7 @@
       source: { kind: 'local', path: 'assets/images/work/modal-logic-lab/learn.png' },
       mediaType: 'image/png',
       availability: 'public',
-      presentation: { preferredObject: 'image', role: 'project-preview' }
+      presentation: { preferredObject: 'image', role: 'project-preview', width: 1918, height: 1078, aspectRatio: 1.779221 }
     },
     {
       id: 'clp-survey-pdf',
@@ -84,7 +84,7 @@
       source: { kind: 'local', path: 'assets/documents/work/clp-survey/congruence-lattice-problem.pdf' },
       mediaType: 'application/pdf',
       availability: 'public',
-      presentation: { preferredObject: 'document', openMode: 'new-tab' }
+      presentation: { preferredObject: 'document', openMode: 'new-tab', aspectRatio: 0.707071 }
     },
     {
       id: 'bachelor-thesis-lattice-of-bands',
@@ -95,7 +95,7 @@
       source: { kind: 'local', path: 'assets/diagrams/work/bachelor-thesis/lattice-of-bands.pdf' },
       mediaType: 'application/pdf',
       availability: 'public',
-      presentation: { preferredObject: 'diagram' }
+      presentation: { preferredObject: 'diagram', aspectRatio: 0.738138 }
     },
     {
       id: 'bachelor-thesis-rol-non-a',
@@ -106,7 +106,7 @@
       source: { kind: 'local', path: 'assets/diagrams/work/bachelor-thesis/rol-non-a.pdf' },
       mediaType: 'application/pdf',
       availability: 'public',
-      presentation: { preferredObject: 'diagram' }
+      presentation: { preferredObject: 'diagram', aspectRatio: 1.844688 }
     },
     {
       id: 'simulation-credence-coursework',
@@ -117,7 +117,7 @@
       source: { kind: 'local', path: 'assets/documents/education/coursework/simulation-credence-and-its-consequences.pdf' },
       mediaType: 'application/pdf',
       availability: 'public',
-      presentation: { preferredObject: 'document', openMode: 'new-tab' }
+      presentation: { preferredObject: 'document', openMode: 'new-tab', aspectRatio: 0.707071 }
     },
     {
       id: 'cambridge-b2-certificate',
@@ -127,7 +127,7 @@
       source: { kind: 'local', path: 'assets/documents/certificates/cambridge-b2-first.pdf' },
       mediaType: 'application/pdf',
       availability: 'public',
-      presentation: { preferredObject: 'document' }
+      presentation: { preferredObject: 'document', aspectRatio: 0.707451 }
     },
     {
       id: 'ethics-ai-certificate',
@@ -138,7 +138,7 @@
       verificationUrl: 'https://certificates.mooc.fi/validate/reryypwawai',
       mediaType: 'image/png',
       availability: 'public',
-      presentation: { preferredObject: 'image' }
+      presentation: { preferredObject: 'image', width: 1282, height: 908, aspectRatio: 1.411894 }
     },
     {
       id: 'introduction-ai-certificate',
@@ -149,17 +149,17 @@
       verificationUrl: 'https://certificates.mooc.fi/validate/6vgxrj7s3fq',
       mediaType: 'image/png',
       availability: 'public',
-      presentation: { preferredObject: 'image' }
+      presentation: { preferredObject: 'image', width: 1288, height: 906, aspectRatio: 1.421634 }
     },
     {
       id: 'hedgehog-house-outside',
       type: 'image',
       title: 'Hedgehog House — exterior',
       anchorNodeIds: ['hedgehog-house'],
-      source: { kind: 'local', path: 'assets/images/about/woodworking/hedgehog-house/outside.png' },
-      mediaType: 'image/png',
+      source: { kind: 'local', path: 'assets/images/about/woodworking/hedgehog-house/outside.webp' },
+      mediaType: 'image/webp',
       availability: 'public',
-      presentation: { preferredObject: 'image', role: 'project-photo' }
+      presentation: { preferredObject: 'image', role: 'project-photo', width: 1448, height: 1086, aspectRatio: 1.333333 }
     },
     {
       id: 'hedgehog-house-inside',
@@ -169,7 +169,7 @@
       source: { kind: 'local', path: 'assets/images/about/woodworking/hedgehog-house/inside.jpg' },
       mediaType: 'image/jpeg',
       availability: 'public',
-      presentation: { preferredObject: 'image', role: 'project-photo' }
+      presentation: { preferredObject: 'image', role: 'project-photo', width: 1536, height: 1152, aspectRatio: 1.333333 }
     },
     {
       id: 'hedgehog-house-visitor',
@@ -179,7 +179,7 @@
       source: { kind: 'local', path: 'assets/images/about/woodworking/hedgehog-house/hedgehog.jpeg' },
       mediaType: 'image/jpeg',
       availability: 'public',
-      presentation: { preferredObject: 'image', role: 'project-photo' }
+      presentation: { preferredObject: 'image', role: 'project-photo', width: 1500, height: 2000, aspectRatio: 0.75 }
     },
     {
       id: 'mtg-norin-rocco-deck',

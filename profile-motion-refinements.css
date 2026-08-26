@@ -1,0 +1,122 @@
+/* Profile motion/layout refinements — Profile Root is a wide, compact identity strip. */
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready .site-graph-heading{
+  max-width:min(860px,78vw)!important
+}
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready .profile-root-brief{
+  display:grid;
+  grid-template-columns:minmax(230px,.78fr) minmax(350px,1.22fr);
+  grid-template-areas:
+    "identity summary"
+    "identity actions";
+  column-gap:30px;
+  row-gap:8px;
+  width:min(820px,74vw);
+  max-width:none;
+  align-items:end;
+  margin-top:5px
+}
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready .profile-root-identity-copy{
+  grid-area:identity;
+  align-self:center
+}
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready .profile-root-summary{
+  grid-area:summary;
+  align-self:end;
+  max-width:570px;
+  margin:0;
+  font-size:11.5px;
+  line-height:1.45
+}
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready .profile-root-actions{
+  grid-area:actions;
+  align-self:start;
+  margin-top:0
+}
+
+/* These instructions are redundant once the five semantic branches are visible. */
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready .profile-root-guide,
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph-help{
+  display:none!important
+}
+
+/* Profile Root emergence is node-first. atlas-condensation.js may update the
+   edge inline while the node is travelling; this rule deliberately wins until
+   every main branch has reached its final position. */
+body.is-profile-root-emerging #site-graph .site-graph-edges path[data-profile-main-edge="true"],
+body.is-profile-root-emerging #site-graph .site-graph-edges path[data-source="stepan-chrast"][data-type="hierarchy"],
+body.is-profile-root-emerging #site-graph .site-graph-edges path[data-source="stepan-chrast"][data-type="hierarchy-alt"]{
+  opacity:0!important;
+  stroke-dasharray:.0001 1!important;
+  stroke-dashoffset:0!important
+}
+
+body[data-profile-branch-edge-phase="drawing"] #site-graph .site-graph-edges path[data-profile-main-edge="true"]{
+  pointer-events:none
+}
+
+/* Hierarchical Profile -> Atlas bridge. Keep the canonical renderer mounted for
+   geometry measurement but let one overlay own the visible motion. */
+.profile-hierarchy-atlas-bridge{
+  position:fixed;
+  inset:0;
+  width:100vw;
+  height:100dvh;
+  z-index:74;
+  overflow:visible;
+  pointer-events:none;
+  background:transparent;
+  opacity:1;
+  transition:opacity 70ms linear
+}
+.profile-hierarchy-atlas-bridge.is-finishing{opacity:0}
+.profile-hierarchy-atlas-bridge .profile-hierarchy-edge{
+  fill:none;
+  stroke:var(--line-strong,var(--line));
+  stroke-width:1.18;
+  vector-effect:non-scaling-stroke;
+  stroke-linecap:round;
+  opacity:.62
+}
+.profile-hierarchy-atlas-bridge .profile-hierarchy-edge[data-edge-role="cross"]{
+  stroke-dasharray:4 5;
+  opacity:.46
+}
+.profile-hierarchy-atlas-bridge [data-hierarchy-node-id]{pointer-events:none!important}
+.profile-hierarchy-atlas-bridge [data-hierarchy-node-id] .site-graph-hit{opacity:0!important}
+
+body.is-profile-hierarchy-atlas-transitioning #site-graph .site-graph-svg{
+  visibility:hidden!important
+}
+body.is-profile-hierarchy-atlas-transitioning #site-detail-panel{
+  opacity:0!important;
+  pointer-events:none!important
+}
+body.is-profile-hierarchy-atlas-transitioning .atlas-controls,
+body.is-profile-hierarchy-atlas-transitioning .graph-routebar{
+  pointer-events:none!important
+}
+
+@media(max-width:900px){
+  body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready .site-graph-heading{
+    max-width:min(640px,92vw)!important
+  }
+  body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready .profile-root-brief{
+    display:grid;
+    grid-template-columns:1fr;
+    grid-template-areas:"identity" "summary" "actions";
+    width:min(560px,90vw);
+    row-gap:6px
+  }
+  body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready .profile-root-summary{
+    margin-top:2px
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .profile-hierarchy-atlas-bridge{transition:none!important}
+}

@@ -4,6 +4,30 @@
   const STORAGE_KEY = 'profileRootReached';
   let retired = false;
 
+  const ensureMotionRefinements = () => {
+    if (!document.querySelector('link[data-profile-motion-refinements-style]')) {
+      const style = document.createElement('link');
+      style.rel = 'stylesheet';
+      style.href = 'profile-motion-refinements.css';
+      style.setAttribute('data-profile-motion-refinements-style', 'true');
+      document.head.appendChild(style);
+    }
+    if (!window.ProfileMotionRefinements && !document.querySelector('script[data-profile-motion-refinements]')) {
+      const script = document.createElement('script');
+      script.src = 'profile-motion-refinements.js';
+      script.async = false;
+      script.setAttribute('data-profile-motion-refinements', 'true');
+      document.head.appendChild(script);
+    }
+    if (!window.ProfileMotionCompat && !document.querySelector('script[data-profile-motion-compat]')) {
+      const script = document.createElement('script');
+      script.src = 'profile-motion-compat.js';
+      script.async = false;
+      script.setAttribute('data-profile-motion-compat', 'true');
+      document.head.appendChild(script);
+    }
+  };
+
   const persist = () => {
     try { sessionStorage.setItem(STORAGE_KEY, 'true'); } catch (_) {}
   };
@@ -75,5 +99,9 @@
     })() })
   });
 
+  // Load before the Atlas interaction bundle is lazy-booted. The motion module
+  // therefore registers the Profile -> Atlas boundary listener first, while the
+  // existing Atlas -> local Focus owner remains available for the reverse side.
+  ensureMotionRefinements();
   boot();
 })();

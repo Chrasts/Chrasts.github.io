@@ -19,6 +19,13 @@
       script.setAttribute('data-profile-motion-refinements', 'true');
       document.head.appendChild(script);
     }
+    if (!window.ProfileMotionCompat && !document.querySelector('script[data-profile-motion-compat]')) {
+      const script = document.createElement('script');
+      script.src = 'profile-motion-compat.js';
+      script.async = false;
+      script.setAttribute('data-profile-motion-compat', 'true');
+      document.head.appendChild(script);
+    }
   };
 
   const persist = () => {

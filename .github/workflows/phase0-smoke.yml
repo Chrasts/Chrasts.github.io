@@ -92,13 +92,15 @@ jobs:
           npx playwright test \
             tests/phase1-scene.spec.js \
             tests/scene-system-contracts.spec.js \
-            tests/scene-composition.spec.js
+            tests/scene-composition.spec.js \
+            tests/scene-object-runtime.spec.js
 
       - name: Run interaction smoke tests
         if: matrix.suite == 'interactions'
         run: |
           npx playwright test \
             tests/phase3-intro.spec.js \
+            tests/intro-entry-experience.spec.js \
             tests/root-entry-portal.spec.js \
             tests/atlas-condensation.spec.js \
             tests/profile-root.spec.js \

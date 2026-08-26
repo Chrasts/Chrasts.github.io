@@ -11,7 +11,8 @@ const waitRuntime = async page => {
     window.ProfileArtifactScenes &&
     window.ProfileObjectFocus
   ));
-  await page.waitForFunction(() => window.ProfileScene.objects.snapshot().objects.length >= 8);
+  await page.waitForFunction(() => window.ProfileScene.objects.snapshot().objects
+    .filter(record => record.sceneId === 'artifact-scene:hedgehog-house-gallery').length === 3);
   await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
 };
 

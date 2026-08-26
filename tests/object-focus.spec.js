@@ -5,13 +5,14 @@ const bypassIntro = async page => {
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
 };
 
-const waitObjectFocus = async page => {
+const waitObjectFocus = async (page, { certificate = false } = {}) => {
   await page.waitForFunction(() => Boolean(
     window.ProfileArtifactScenes &&
-    window.ProfilePhase8 &&
-    window.ProfileObjectFocus &&
-    window.ProfileObjectFocusCertificateAdapter
+    window.ProfileObjectFocus
   ));
+  if (certificate) {
+    await page.waitForFunction(() => Boolean(window.ProfilePhase8 && window.ProfileObjectFocusCertificateAdapter));
+  }
   await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
   await page.waitForTimeout(180);
 };
@@ -31,7 +32,7 @@ const openHedgehog = async page => {
 
 test('Object Focus exposes one reusable controller contract', async ({ page }) => {
   await bypassIntro(page);
-  await page.goto('/#overview');
+  await page.goto('/#about/woodworking/hedgehog-house');
   await waitObjectFocus(page);
 
   const api = await page.evaluate(() => ({
@@ -88,7 +89,7 @@ test('Hedgehog House media uses direct Object Focus inspection', async ({ page }
 test('certificate selection stays scene-owned and deep inspection uses Object Focus', async ({ page }) => {
   await bypassIntro(page);
   await page.goto('/#education/credentials');
-  await waitObjectFocus(page);
+  await waitObjectFocus(page, { certificate: true });
 
   const stack = page.locator('[data-phase8-object="certificate-stack"]');
   const ethics = stack.locator('.phase8-certificate-paper[data-artifact-id="ethics-ai-certificate"]');

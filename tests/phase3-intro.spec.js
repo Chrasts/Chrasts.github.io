@@ -10,11 +10,6 @@ const freshSession = async page => {
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
 };
 
-const waitIntro = async page => {
-  await page.waitForFunction(() => Boolean(window.ProfileIntro?.__v31), null, { timeout: 8_000 });
-  return page.evaluate(() => window.ProfileIntro.snapshot());
-};
-
 const waitReveal = async (page, timeout = 8_000) => {
   await page.waitForFunction(() => Boolean(window.ProfileIntro?.__v31), null, { timeout });
   await page.evaluate(() => {
@@ -282,19 +277,17 @@ test.describe('V3.1 Phase E live Atlas reveal — desktop', () => {
     await page.goto('/');
     await waitReady(page);
     await page.reload();
-    const refreshed = await waitIntro(page);
-    expect(refreshed.eligible).toBe(false);
-    expect(refreshed.result).toBe('bypassed');
+    await page.waitForFunction(() => document.documentElement.dataset.profileIntro === 'bypass');
+    expect(await page.evaluate(() => Boolean(window.ProfileIntro))).toBe(false);
     expect(await page.evaluate(() => document.body.dataset.graphMode)).toBe('atlas');
 
     const deepPage = await page.context().newPage();
     await deepPage.addInitScript(() => sessionStorage.clear());
     await deepPage.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
     await deepPage.goto('/#knowledge');
-    await deepPage.waitForFunction(() => Boolean(window.ProfileIntro?.__v31));
-    const deep = await deepPage.evaluate(() => window.ProfileIntro.snapshot());
-    expect(deep.eligible).toBe(false);
-    expect(deep.result).toBe('bypassed');
+    await deepPage.waitForFunction(() => document.body.dataset.graphRoute === 'knowledge');
+    expect(await deepPage.evaluate(() => Boolean(window.ProfileIntro))).toBe(false);
+    expect(await deepPage.evaluate(() => document.documentElement.dataset.profileIntro)).toBe('bypass');
     expect(await deepPage.evaluate(() => document.body.dataset.graphRoute)).toBe('knowledge');
     await deepPage.close();
   });

@@ -22,15 +22,45 @@ const waitSettled = async page => {
   await page.waitForFunction(() => window.ProfileObjectFocus?.snapshot().phase === 'settled');
 };
 
-test('artifact architecture boots with reusable folio and deck recipes', async ({ page }) => {
+test('overview keeps the heavy artifact feature and artifact media dormant', async ({ page }) => {
   await bypassIntro(page);
+  const requests = [];
+  page.on('request', request => requests.push(new URL(request.url()).pathname));
   await page.goto('/#overview');
+  await page.waitForFunction(() => window.ProfileFeatureBootstrap?.snapshot().states.bindings === 'ready');
+
+  const state = await page.evaluate(() => ({
+    artifacts: Boolean(window.ProfileArtifactScenes),
+    manifest: Boolean(window.ProfileArtifacts),
+    phase8: Boolean(window.ProfilePhase8),
+    objectFocus: Boolean(window.ProfileObjectFocus),
+    roots: document.querySelectorAll('[data-artifact-scene]').length,
+    media: document.querySelectorAll('.artifact-scene-layer img, .artifact-scene-layer iframe, .artifact-scene-layer video').length,
+    resources: window.ProfileFeatureBootstrap.snapshot().resources
+  }));
+  expect(state).toMatchObject({ artifacts: false, manifest: false, phase8: false, objectFocus: false, roots: 0, media: 0 });
+  expect(state.resources).not.toContain('script:artifact-scene-runtime.js');
+  expect(requests.some(path => /\.(?:pdf|mp4)(?:$|\?)/i.test(path))).toBe(false);
+  expect(requests.some(path => /hedgehog-house\/outside\.(?:png|webp)$/i.test(path))).toBe(false);
+});
+
+test('artifact route mounts one scene, tears it down and remounts without multiplication', async ({ page }) => {
+  await bypassIntro(page);
+  await page.goto('/#work/project/bachelor-thesis');
   await waitArtifactScenes(page);
 
-  const snapshot = await page.evaluate(() => window.ProfileArtifactScenes.snapshot());
-  expect(snapshot.issues).toEqual([]);
-  expect(snapshot.recipeNames.sort()).toEqual(['document-folio', 'media-deck']);
-  expect(await page.locator('[data-artifact-scene]').count()).toBe(5);
+  expect(await page.locator('[data-artifact-scene]').count()).toBe(1);
+  expect((await page.evaluate(() => window.ProfileArtifactScenes.snapshot())).mountedBindings).toEqual(['bachelor-thesis-diagrams']);
+
+  await page.evaluate(() => { location.hash = '#overview'; });
+  await page.waitForFunction(() => document.body.dataset.graphRoute === 'overview');
+  await expect.poll(() => page.locator('[data-artifact-scene]').count()).toBe(0);
+  expect((await page.evaluate(() => window.ProfileArtifactScenes.snapshot())).lifecycle['bachelor-thesis-diagrams']).toBe('unmounted');
+
+  await page.evaluate(() => { location.hash = '#work/project/bachelor-thesis'; });
+  await page.waitForFunction(() => document.body.dataset.graphRoute === 'work/project/bachelor-thesis');
+  await expect(page.locator('[data-artifact-scene="bachelor-thesis-diagrams"]')).toHaveCount(1);
+  await expect(page.locator('[data-artifact-scene="bachelor-thesis-diagrams"] iframe')).toHaveCount(2);
 });
 
 test('Simulation Credence is a document object and opens in Object Focus', async ({ page }) => {
@@ -91,7 +121,7 @@ test('thesis diagrams use their PDF page aspect and show the whole page', async 
     };
   })));
   mediaGeometry.forEach(item => {
-    expect(item.source).toBe('pdf-page');
+    expect(item.source).toBe('metadata');
     expect(item.ratio).toBeGreaterThan(.28);
     expect(item.ratio).toBeLessThan(5);
     expect(Math.abs(item.cardWidth - item.previewWidth)).toBeLessThanOrEqual(4);
@@ -190,7 +220,7 @@ test('Hedgehog House photo fan keeps every rotated photograph inside the viewpor
   await expect(viewer).toBeVisible();
   await expect(viewer).toHaveAttribute('data-media-kind', 'image');
   await expect(viewer).toHaveAttribute('data-shared-focus-artifact', 'hedgehog-house-outside');
-  await expect(viewer.locator('.artifact-focus-media img.object-focus-panzoom-media')).toHaveAttribute('src', /assets\/images\/about\/woodworking\/hedgehog-house\/outside\.png$/);
+  await expect(viewer.locator('.artifact-focus-media img.object-focus-panzoom-media')).toHaveAttribute('src', /assets\/images\/about\/woodworking\/hedgehog-house\/outside\.webp$/);
   await page.keyboard.press('Escape');
   await expect(viewer).toBeHidden();
 });
@@ -224,7 +254,8 @@ test('clicking elsewhere on the node view dismisses the open inspector like its 
   await bypassIntro(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/#atlas');
-  await waitArtifactScenes(page);
+  await page.waitForFunction(() => Boolean(window.ProfileNodeDetailDismiss));
+  await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
   await page.waitForFunction(() => Boolean(window.ProfileAtlasLOD) && document.body.dataset.graphMode === 'atlas');
 
   const node = page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]');

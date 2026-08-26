@@ -7,7 +7,7 @@ const bypassIntro = async page => {
 
 const activateOverview = async page => {
   await page.goto('/#overview');
-  await page.waitForFunction(() => Boolean(window.ProfileRootLanding && window.ProfileAtlasLOD));
+  await page.waitForFunction(() => Boolean(window.ProfileRootLanding && window.ProfileLocalLabelPolicy));
   await page.evaluate(() => window.ProfileRootLanding.activate({ focusGraph: false }));
   await page.waitForFunction(() => document.body.dataset.graphMode === 'overview' && document.body.dataset.rootLanding === 'false');
 };
@@ -42,8 +42,8 @@ test.describe('Phase 7 label continuity and Overview emphasis', () => {
   test('every ancestor in a deep Logic for AI chain uses the stable side pose', async ({ page }) => {
     await bypassIntro(page);
     await page.goto('/#knowledge/logic-math/mathematical-logic/computational-logic/logic-for-ai');
-    await page.waitForFunction(() => Boolean(window.ProfileAtlasLOD) && document.body.dataset.graphMode === 'focus');
-    await page.evaluate(() => window.ProfileAtlasLOD.applyLocalLabelPolicy());
+    await page.waitForFunction(() => Boolean(window.ProfileLocalLabelPolicy) && document.body.dataset.graphMode === 'focus');
+    await page.evaluate(() => window.ProfileLocalLabelPolicy.apply('phase7-contract'));
 
     const ids = ['stepan-chrast', 'knowledge', 'logic-math', 'mathematical-logic', 'computational-logic'];
     for (const id of ids) expect(await liveLabelPose(page, id)).toEqual(['start', '17', '4']);

@@ -4,7 +4,10 @@ const boot = async (page, route) => {
   await page.addInitScript(() => sessionStorage.setItem('profileIntroSeen', 'true'));
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
   await page.goto(`/#${route}`);
-  await page.waitForFunction(() => Boolean(window.ProfileSceneComposer && window.ProfileArtifactScenes && window.ProfileScene?.manager));
+  await page.waitForFunction(() => Boolean(window.ProfileSceneComposer && window.ProfileScene?.manager));
+  if (route === 'about/woodworking/hedgehog-house') {
+    await page.waitForFunction(() => Boolean(window.ProfileArtifactScenes));
+  }
   await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
   await page.waitForTimeout(260);
 };

@@ -8,12 +8,14 @@ const bypassIntro = async page => {
 const boot = async (page, route) => {
   await bypassIntro(page);
   await page.goto(`/#${route}`);
-  await page.waitForFunction(() => Boolean(
-    window.ProfileObjectFocus &&
-    window.ProfileArtifactScenes &&
-    window.ProfileArtifactOpenGuard &&
-    window.ProfilePostEntry
-  ));
+  await page.waitForFunction(() => Boolean(window.ProfilePostEntry));
+  if (route !== 'overview') {
+    await page.waitForFunction(() => Boolean(
+      window.ProfileObjectFocus &&
+      window.ProfileArtifactScenes &&
+      window.ProfileArtifactOpenGuard
+    ));
+  }
   await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
   await page.waitForTimeout(180);
 };

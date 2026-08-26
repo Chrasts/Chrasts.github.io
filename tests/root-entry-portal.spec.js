@@ -5,7 +5,7 @@ const bootAtlas = async (page, { reducedMotion = false } = {}) => {
   await page.addInitScript(() => sessionStorage.setItem('profileIntroSeen', 'true'));
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
   await page.goto('/#atlas');
-  await page.waitForFunction(() => Boolean(window.ProfileRootEntryPortal && window.ProfileIntro && window.ProfileRootLanding));
+  await page.waitForFunction(() => Boolean(window.ProfileRootEntryPortal && window.ProfileRootLanding));
   await page.waitForFunction(() => {
     const state = window.ProfileRootEntryPortal.snapshot();
     return state.mode === 'atlas' && state.available && state.rootPresent && state.portraitInsideRoot && state.actionInsideRoot;

@@ -15,6 +15,14 @@ const waitSettled = async page => {
   await page.waitForFunction(() => Boolean(window.ProfileAtlasFocus) && !window.ProfileAtlasFocus.snapshot().active, null, { timeout: 8_000 });
 };
 
+const waitRouteCore = async (page, route, mode) => {
+  await page.waitForFunction(({ expectedRoute, expectedMode }) => Boolean(
+    window.ProfileFeatureBootstrap?.snapshot?.().states.bindings === 'ready' &&
+    document.body.dataset.graphRoute === expectedRoute &&
+    document.body.dataset.graphMode === expectedMode
+  ), { expectedRoute: route, expectedMode: mode });
+};
+
 test.describe('V3.1 Phase I Atlas / Focus unification', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
@@ -70,10 +78,11 @@ test.describe('V3.1 Phase I Atlas / Focus unification', () => {
   test('deep Focus to Atlas collapses into the centred root, then unfolds the complete Atlas from that root', async ({ page }) => {
     await bypassIntro(page);
     await page.goto(`/#${SAT_ROUTE}`);
-    await waitReady(page);
-    await page.waitForFunction(route => document.body.dataset.graphMode === 'focus' && document.body.dataset.graphRoute === route, SAT_ROUTE);
+    await waitRouteCore(page, SAT_ROUTE, 'focus');
+    expect(await page.evaluate(() => Boolean(window.ProfileAtlasFocus))).toBe(false);
 
     await page.locator('.atlas-button[data-route="atlas"]').click();
+    await page.waitForFunction(() => Boolean(window.ProfileAtlasFocus?.snapshot?.().ready));
     await page.waitForFunction(() => document.body.dataset.profileAtlasPhase === 'collapse');
     await expect(page.locator('.profile-atlas-unfold-bridge')).toHaveCount(1);
 
@@ -122,13 +131,13 @@ test.describe('V3.1 Phase I Atlas / Focus unification', () => {
     test(`${source.mode} to Atlas uses the same root-collapse/full-unfold grammar`, async ({ page }) => {
       await bypassIntro(page);
       await page.goto(`/#${source.route}`);
-      await waitReady(page);
-      await page.waitForFunction(expected => document.body.dataset.graphMode === expected, source.mode);
+      await waitRouteCore(page, source.route, source.mode);
       if (source.mode === 'overview') {
         await page.waitForFunction(() => window.ProfileRootOverview?.snapshot?.().visible === true);
       }
 
       await page.locator('.atlas-button[data-route="atlas"]').click();
+      await page.waitForFunction(() => Boolean(window.ProfileAtlasFocus?.snapshot?.().ready));
       await page.waitForFunction(() => document.body.dataset.profileAtlasPhase === 'collapse');
       await page.waitForFunction(() => document.body.dataset.profileAtlasPhase === 'unfold', null, { timeout: 5_000 });
       await waitSettled(page);
@@ -179,8 +188,9 @@ test.describe('V3.1 Phase I reduced motion', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await bypassIntro(page);
     await page.goto(`/#${SAT_ROUTE}`);
-    await waitReady(page);
+    await waitRouteCore(page, SAT_ROUTE, 'focus');
     await page.locator('.atlas-button[data-route="atlas"]').click();
+    await page.waitForFunction(() => Boolean(window.ProfileAtlasFocus?.snapshot?.().ready));
     await page.waitForFunction(() => document.body.dataset.graphMode === 'atlas');
     await waitSettled(page);
     await expect(page.locator('.atlas-focus-bridge')).toHaveCount(0);

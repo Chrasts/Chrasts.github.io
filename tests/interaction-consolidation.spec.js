@@ -65,7 +65,7 @@ test.describe('Final graph interaction consolidation', () => {
     await bypassIntro(page);
     await page.goto('/#knowledge/logic-math/mathematical-logic/computational-logic/logic-for-ai');
     await page.waitForFunction(() => document.body.dataset.graphRoute?.endsWith('/logic-for-ai') && document.body.dataset.graphMode === 'focus');
-    await page.waitForFunction(() => window.ProfileIntroFixesV3?.snapshot?.().localAncestorLabels >= 4);
+    await page.waitForFunction(() => window.ProfileLocalLabelPolicy?.snapshot?.().ancestorCount >= 4);
 
     const ids = ['stepan-chrast', 'knowledge', 'logic-math', 'mathematical-logic', 'computational-logic'];
     const poses = await page.evaluate(ids => Object.fromEntries(ids.map(id => {

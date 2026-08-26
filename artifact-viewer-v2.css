@@ -2,12 +2,19 @@
    Loaded after artifact-scenes.css and object-focus.css so these rules are the
    presentation contract for focused and floating artifact media. */
 
-/* Keep the application visible. The transparent backdrop remains only as the
-   outside-click hit surface; it must not tint, blur or desaturate the page. */
-.artifact-focus-backdrop{
+/* Keep the application visible. The backdrop remains only as the outside-click
+   hit surface; it must never tint, blur, filter or desaturate the page. The
+   higher-specificity focus selector is intentional so this invariant survives
+   even if another base focus stylesheet is inserted later. */
+.artifact-focus-backdrop,
+html body.has-artifact-focus .artifact-focus-viewer .artifact-focus-backdrop{
   background:transparent!important;
+  background-color:transparent!important;
+  background-image:none!important;
   backdrop-filter:none!important;
-  -webkit-backdrop-filter:none!important
+  -webkit-backdrop-filter:none!important;
+  filter:none!important;
+  opacity:1!important
 }
 
 /* Focus mode adds only two informational bubbles: caption + source. The title

@@ -17,12 +17,10 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-
       - name: Check JavaScript syntax
         run: |
           set -euo pipefail
@@ -30,13 +28,10 @@ jobs:
             [ -f "$file" ] || continue
             node --check "$file"
           done
-
       - name: Validate portfolio model
         run: node scripts/validate-portfolio-model.mjs
-
       - name: Validate artifact manifest
         run: node scripts/validate-artifacts.mjs
-
       - name: Validate artifact scenes
         run: node scripts/validate-artifact-scenes.mjs
 
@@ -51,82 +46,81 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-
       - name: Install Playwright test runner
         run: npm install --no-save @playwright/test@1.55.0
-
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-
       - name: Start static site
         run: |
           python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/portfolio-http.log 2>&1 &
           echo $! > /tmp/portfolio-http.pid
           for i in {1..30}; do
-            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then
-              exit 0
-            fi
+            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
             sleep 1
           done
           cat /tmp/portfolio-http.log
           exit 1
-
       - name: Run core smoke tests
         if: matrix.suite == 'core'
-        run: |
-          npx playwright test \
-            tests/phase0.spec.js \
-            tests/phase0-breakpoint.spec.js \
-            tests/phase2-root-landing.spec.js \
-            tests/radial-geometry.spec.js \
-            tests/dev-surfaces.spec.js
-
+        run: npx playwright test tests/phase0.spec.js tests/phase0-breakpoint.spec.js tests/phase2-root-landing.spec.js tests/radial-geometry.spec.js tests/dev-surfaces.spec.js
       - name: Run architecture smoke tests
         if: matrix.suite == 'architecture'
-        run: |
-          npx playwright test \
-            tests/phase1-scene.spec.js \
-            tests/scene-system-contracts.spec.js \
-            tests/scene-composition.spec.js
-
+        run: npx playwright test tests/phase1-scene.spec.js tests/scene-system-contracts.spec.js tests/scene-composition.spec.js
       - name: Run interaction smoke tests
         if: matrix.suite == 'interactions'
         run: |
           npx playwright test \
-            tests/phase3-intro.spec.js \
-            tests/root-entry-portal.spec.js \
-            tests/atlas-condensation.spec.js \
-            tests/profile-root.spec.js \
-            tests/atlas-focus-unification.spec.js \
-            tests/graph-navigation-materiality.spec.js \
-            tests/phase-k-checkpoint.spec.js \
-            tests/motion-polish.spec.js \
-            tests/intro-unfold.spec.js \
-            tests/phase6-cross-link.spec.js \
-            tests/interaction-consolidation.spec.js \
-            tests/interaction-contracts.spec.js \
-            tests/phase7-atlas-drag.spec.js \
-            tests/pre-phase8-mobile.spec.js \
-            tests/phase8-semantic-scenes.spec.js \
-            tests/artifact-scenes.spec.js \
-            tests/object-focus.spec.js \
-            tests/object-focus-fit.spec.js \
-            tests/camera-composition.spec.js \
-            tests/camera-composition-local.spec.js \
-            tests/graph-feel.spec.js \
-            tests/node-dynamics.spec.js \
-            tests/camera-materiality.spec.js
-
+            tests/phase3-intro.spec.js tests/root-entry-portal.spec.js tests/atlas-condensation.spec.js \
+            tests/profile-root.spec.js tests/atlas-focus-unification.spec.js tests/graph-navigation-materiality.spec.js \
+            tests/phase-k-checkpoint.spec.js tests/motion-polish.spec.js tests/intro-unfold.spec.js \
+            tests/phase6-cross-link.spec.js tests/interaction-consolidation.spec.js tests/interaction-contracts.spec.js \
+            tests/phase7-atlas-drag.spec.js tests/pre-phase8-mobile.spec.js tests/mobile-device-matrix.spec.js \
+            tests/phase8-semantic-scenes.spec.js tests/artifact-scenes.spec.js tests/object-focus.spec.js \
+            tests/object-focus-fit.spec.js tests/camera-composition.spec.js tests/camera-composition-local.spec.js \
+            tests/graph-feel.spec.js tests/node-dynamics.spec.js tests/camera-materiality.spec.js
       - name: Upload Playwright diagnostics
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-test-results-${{ matrix.suite }}-${{ github.run_attempt }}
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  mobile-webkit-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install Playwright test runner
+        run: npm install --no-save @playwright/test@1.55.0
+      - name: Install WebKit
+        run: npx playwright install --with-deps webkit
+      - name: Start static site
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/portfolio-http.log 2>&1 &
+          for i in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/portfolio-http.log
+          exit 1
+      - name: Run mobile WebKit smoke
+        run: npx playwright test tests/pre-phase8-mobile.spec.js tests/mobile-device-matrix.spec.js --project=webkit
+      - name: Upload WebKit diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-mobile-webkit-${{ github.run_attempt }}
           path: test-results/
           if-no-files-found: ignore
           retention-days: 7
@@ -138,34 +132,25 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-
       - name: Install Playwright test runner
         run: npm install --no-save @playwright/test@1.55.0
-
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-
       - name: Start static site
         run: |
           python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/portfolio-http.log 2>&1 &
-          echo $! > /tmp/portfolio-http.pid
           for i in {1..30}; do
-            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then
-              exit 0
-            fi
+            if curl --fail --silent http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
             sleep 1
           done
           cat /tmp/portfolio-http.log
           exit 1
-
       - name: Run full regression suite
         run: npx playwright test
-
       - name: Upload Playwright diagnostics
         if: failure()
         uses: actions/upload-artifact@v4

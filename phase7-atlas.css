@@ -105,6 +105,23 @@ body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-previewed .site-gr
   transform:scale(1.48)
 }
 
+/* Atlas relation preview uses color on relations, not on the related nodes.
+   Parents/children/lateral nodes retain their semantic dot + label colors and
+   only receive the existing size emphasis. All traversed relations use teal. */
+html body[data-graph-mode="atlas"] #site-graph .site-graph-node:is(.is-upstream,.is-downstream,.is-lateral):not(.is-atlas-origin):not(.is-previewed) .site-graph-dot{
+  stroke:var(--brown)!important;
+  transform:scale(1.12)!important
+}
+html body[data-graph-mode="atlas"] #site-graph .site-graph-node:is(.is-upstream,.is-downstream,.is-lateral):not(.is-atlas-origin):not(.is-previewed):not(.is-section) .site-graph-label.site-graph-label{
+  fill:var(--ink)!important
+}
+html body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-section:is(.is-upstream,.is-downstream,.is-lateral):not(.is-atlas-origin):not(.is-previewed) .site-graph-label.site-graph-label{
+  fill:var(--teal)!important
+}
+html body[data-graph-mode="atlas"] #site-graph .site-graph-edges path:is(.is-upstream,.is-downstream,.is-lateral){
+  stroke:var(--teal)!important
+}
+
 /* --------------------------------------------------------------------------
    Atlas camera cursor.
    -------------------------------------------------------------------------- */

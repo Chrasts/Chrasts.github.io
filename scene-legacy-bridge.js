@@ -276,11 +276,9 @@
   );
 
   const loadObjectFocus = () => loadFeature('object-focus', async () => {
-    await Promise.all([
-      loadStyle('object-focus.css', 'data-profile-object-focus-style'),
-      loadStyle('phase-b-object-emergence.css', 'data-profile-phase-b-object-emergence-style'),
-      loadStyle('phase-b-object-emergence-refinements.css', 'data-profile-phase-b-object-emergence-refinements')
-    ]);
+    // Object Focus is the base viewer layer. Artifact-specific emergence and
+    // viewer refinements are loaded later, in a deterministic cascade order.
+    await loadStyle('object-focus.css', 'data-profile-object-focus-style');
     await loadScript('object-focus-controller.js', 'data-profile-object-focus', () => Boolean(window.ProfileObjectFocus));
     await loadScript('object-focus-fit.js', 'data-profile-object-focus-fit', () => Boolean(window.ProfileObjectFocusFit));
   });
@@ -323,18 +321,30 @@
   });
 
   const bootArtifactScenes = () => loadFeature('artifacts', async () => {
+    // The artifact presentation is a deliberate cascade, not a bag of styles:
+    // base scene -> base focus -> spatial emergence -> spatial refinements ->
+    // layout refinements -> transparent viewer. Loading these in parallel made
+    // the winning layer depend on network timing and caused both missing-looking
+    // floating decks and the old grey Object Focus backdrop to reappear.
     await Promise.all([
       loadBindings(),
       loadArtifactData(),
-      loadObjectFocus(),
-      loadStyle('artifact-scenes.css', 'data-profile-artifact-scenes-style'),
-      loadStyle('artifact-scenes-layout.css', 'data-profile-artifact-scenes-layout-style'),
-      loadStyle('artifact-viewer-v2.css', 'data-profile-artifact-viewer-v2-style')
+      loadStyle('artifact-scenes.css', 'data-profile-artifact-scenes-style')
     ]);
+    await loadObjectFocus();
+    await loadStyle('phase-b-object-emergence.css', 'data-profile-phase-b-object-emergence-style');
+    await loadStyle('phase-b-object-emergence-refinements.css', 'data-profile-phase-b-object-emergence-refinements');
+    await loadStyle('artifact-scenes-layout.css', 'data-profile-artifact-scenes-layout-style');
+    await loadStyle('artifact-viewer-v2.css', 'data-profile-artifact-viewer-v2-style');
+
     await loadScript('artifact-scene-recipes.js', 'data-profile-artifact-scene-recipes', () => Boolean(window.ProfileArtifactSceneRecipes));
     await loadScript('artifact-scene-runtime.js', 'data-profile-artifact-scene-runtime', () => Boolean(window.ProfileArtifactScenes));
     await loadScript('artifact-scene-layout-compat.js', 'data-profile-artifact-layout-compat', () => Boolean(window.ProfileArtifactSceneLayout));
-    manager.scheduleRefresh('artifact-scenes-bundle-ready');
+
+    // Registering lazy scene definitions already schedules a refresh, but an
+    // immediate final refresh removes the route-entry race where the destination
+    // was committed before the artifact bundle finished mounting.
+    manager.refresh({ reason: 'artifact-scenes-bundle-ready' });
   });
 
   const bootPhase8 = route => loadFeature('phase8', async () => {

@@ -1,9 +1,11 @@
 /* V3.1 Phase G — semantic Atlas condensation. */
 
-body.is-atlas-condensing #site-graph .site-graph-svg{
+body.is-atlas-condensing #site-graph .site-graph-svg,
+body.is-profile-root-emerging #site-graph .site-graph-svg{
   pointer-events:none;
-  cursor:progress
 }
+
+body.is-atlas-condensing #site-graph .site-graph-svg{cursor:progress}
 
 body.is-atlas-condensing #atlas-controls,
 body.is-atlas-condensing .atlas-controls{
@@ -17,15 +19,10 @@ body.is-atlas-condensing #site-graph .atlas-territory-label-layer{
   transition:opacity .24s ease!important
 }
 
+/* The entire visual node — halo included — travels into its parent. */
 #site-graph .atlas-condense-motion{
   transform-box:view-box;
   transform-origin:0 0;
-  will-change:transform,opacity
-}
-
-body.is-atlas-condensing #site-graph .site-graph-node[data-condense-progress] > .site-graph-halo{
-  transform-box:fill-box;
-  transform-origin:center;
   will-change:transform,opacity
 }
 
@@ -35,12 +32,12 @@ body.is-atlas-condensing #site-graph .site-graph-node.is-condense-parent .site-g
   transition:filter .08s linear!important
 }
 
-body.is-atlas-condensing #site-graph .site-graph-node.is-condense-parent > .site-graph-halo--primary{
+body.is-atlas-condensing #site-graph .site-graph-node.is-condense-parent .site-graph-halo--primary{
   opacity:calc(.34 + var(--condense-parent-mass,0) * .36)!important;
   stroke-width:calc(1.25px + var(--condense-parent-mass,0) * .8px)!important
 }
 
-body.is-atlas-condensing #site-graph .site-graph-node.is-condense-parent > .site-graph-halo--secondary{
+body.is-atlas-condensing #site-graph .site-graph-node.is-condense-parent .site-graph-halo--secondary{
   opacity:calc(.12 + var(--condense-parent-mass,0) * .22)!important
 }
 
@@ -48,91 +45,58 @@ body.is-atlas-condensing #site-graph .site-graph-node.is-condense-absorbed{
   pointer-events:none
 }
 
-body.is-atlas-condensing #site-graph .site-graph-edges path[data-condense-primary="true"]{
-  stroke-linecap:round;
+body.is-atlas-condensing #site-graph .site-graph-edges path[data-condense-primary="true"],
+body.is-atlas-condensing #site-graph .site-graph-edges path[data-condense-context="true"],
+body.is-profile-root-emerging #site-graph .site-graph-edges path{
   transition:none!important
 }
 
-body.is-atlas-condensing #site-graph .site-graph-edges path[data-condense-context="true"]{
-  transition:none!important
-}
-
-body.is-atlas-condensation-committing #site-graph .atlas-condense-motion{
-  pointer-events:none
-}
-
-body.is-atlas-condensation-handoff #site-graph .site-graph-node:not([data-node-id="stepan-chrast"]),
-body.is-atlas-condensation-handoff #site-graph .site-graph-edges path{
+/* Hard semantic plateau: when the last first-level branch is absorbed there is
+   one object on screen — the shared profile root — and no structural residue. */
+body.is-atlas-condensation-root-only #site-graph .site-graph-node:not([data-node-id="stepan-chrast"]),
+body.is-atlas-condensation-root-only #site-graph .site-graph-edges path,
+body.is-atlas-condensation-root-only #site-graph .atlas-territory-label-layer,
+body.is-profile-root-pending-emergence #site-graph .site-graph-node:not([data-node-id="stepan-chrast"]),
+body.is-profile-root-pending-emergence #site-graph .site-graph-edges path{
   opacity:0!important;
   visibility:hidden!important;
   transition:none!important
 }
 
-body.is-atlas-condensing.is-atlas-condensation-handoff.is-atlas-condensation-committing #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .root-entry-portrait{
+body.is-atlas-condensation-root-only #site-graph .site-graph-node[data-node-id="stepan-chrast"]{
+  opacity:1!important;
+  visibility:visible!important
+}
+
+body.is-atlas-condensation-root-only #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .root-entry-portrait{
   opacity:0!important;
   transform:scale(.34)!important;
   filter:saturate(.8) brightness(.7)!important;
-  transition:opacity .3s ease,transform .42s cubic-bezier(.4,0,.2,1),filter .3s ease!important
+  transition:opacity .24s ease,transform .34s cubic-bezier(.4,0,.2,1),filter .24s ease!important
 }
 
-body.is-atlas-condensing.is-atlas-condensation-handoff.is-atlas-condensation-committing #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-dot{
+body.is-atlas-condensation-root-only #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-dot{
   opacity:1!important;
   transform:scale(1)!important;
-  transition:opacity .28s ease,transform .42s cubic-bezier(.16,1,.3,1)!important
+  transition:opacity .22s ease,transform .32s cubic-bezier(.16,1,.3,1)!important
 }
 
-body.is-atlas-condensing.is-atlas-condensation-handoff.is-atlas-condensation-committing #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-halo{
+body.is-atlas-condensation-root-only #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-halo{
   opacity:.38!important;
   transform:scale(.82)!important;
-  transition:opacity .34s ease,transform .46s cubic-bezier(.16,1,.3,1)!important
+  transition:opacity .28s ease,transform .36s cubic-bezier(.16,1,.3,1)!important
 }
 
+/* Profile Root emergence is owned entirely by atlas-condensation.js: each of
+   the five first-level nodes starts at the root, travels to its final point,
+   and draws its root edge alongside it. No CSS keyframe may override that SVG
+   transform. */
 #site-graph .profile-root-emergence-motion{
   pointer-events:none;
-  transform-box:fill-box;
-  transform-origin:center;
-  will-change:transform,opacity
-}
-
-body.is-profile-root-emerging #site-graph .site-graph-svg{
-  pointer-events:none
-}
-
-body.is-profile-root-emerging #site-graph .site-graph-edges path{
-  transition:none!important
-}
-
-/* The Profile Root branches do not fly from the sides/root after Atlas
-   condensation. Their canonical positions are already final; they materialize
-   in place while the root-to-branch edges are drawn by atlas-condensation.js. */
-body.is-profile-root-emerging #site-graph .site-graph-node[data-node-id="work"] > .profile-root-emergence-motion,
-body.is-profile-root-emerging #site-graph .site-graph-node[data-node-id="knowledge"] > .profile-root-emergence-motion,
-body.is-profile-root-emerging #site-graph .site-graph-node[data-node-id="experience"] > .profile-root-emergence-motion,
-body.is-profile-root-emerging #site-graph .site-graph-node[data-node-id="education"] > .profile-root-emergence-motion,
-body.is-profile-root-emerging #site-graph .site-graph-node[data-node-id="about"] > .profile-root-emergence-motion{
-  animation:profile-root-branch-emerge 760ms cubic-bezier(.16,1,.3,1) both
-}
-
-body.is-profile-root-emerging #site-graph .site-graph-node[data-node-id="knowledge"] > .profile-root-emergence-motion{animation-delay:68ms}
-body.is-profile-root-emerging #site-graph .site-graph-node[data-node-id="experience"] > .profile-root-emergence-motion{animation-delay:136ms}
-body.is-profile-root-emerging #site-graph .site-graph-node[data-node-id="education"] > .profile-root-emergence-motion{animation-delay:204ms}
-body.is-profile-root-emerging #site-graph .site-graph-node[data-node-id="about"] > .profile-root-emergence-motion{animation-delay:272ms}
-
-@keyframes profile-root-branch-emerge{
-  0%{transform:scale(.18)}
-  72%{transform:scale(1.055)}
-  100%{transform:scale(1)}
-}
-
-body.is-atlas-root-micro-commit #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-dot,
-body.is-atlas-root-micro-commit #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .root-entry-portrait{
-  transform:scale(.94)!important;
-  transition:transform .11s cubic-bezier(.3,0,.3,1)!important
-}
-
-body.is-atlas-root-micro-commit #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-halo{
-  opacity:.24!important;
-  transition:opacity .11s linear!important
+  transform-box:view-box;
+  transform-origin:0 0;
+  will-change:transform,opacity;
+  animation:none!important
 }
 
 body.is-atlas-condensing #site-graph .site-graph-node[data-node-id="stepan-chrast"].is-root-entry-entering > .root-entry-portrait{
@@ -153,16 +117,12 @@ body.is-atlas-condensing #site-graph .site-graph-node[data-node-id="stepan-chras
 
 @media(max-width:900px),(pointer:coarse){
   body.is-atlas-condensing #atlas-controls,
-  body.is-atlas-condensing .atlas-controls{
-    opacity:.28!important
-  }
+  body.is-atlas-condensing .atlas-controls{opacity:.28!important}
 }
 
 @media(prefers-reduced-motion:reduce){
   body.is-atlas-condensing #site-graph .atlas-condense-motion,
   body.is-atlas-condensing #site-graph .site-graph-node,
-  body.is-atlas-condensing #site-graph .site-graph-halo,
-  body.is-atlas-condensing #site-graph .site-graph-dot,
   body.is-profile-root-emerging #site-graph .profile-root-emergence-motion,
   body.is-atlas-condensing #site-graph .atlas-territory-label-layer{
     transition:none!important;

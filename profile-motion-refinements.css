@@ -44,18 +44,28 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-read
   display:none!important
 }
 
-/* Profile Root emergence is node-first. atlas-condensation.js may update the
-   edge inline while the node is travelling; this rule deliberately wins until
-   every main branch has reached its final position. */
+/* Profile Root emergence is strictly node-first. The temporary class covers the
+   physical travel itself; the explicit phase attribute closes the handoff frame
+   after the wrappers settle but before the relation-draw pass starts. Thus no
+   root relation can become visible until all five main nodes are stationary. */
 body.is-profile-root-emerging #site-graph .site-graph-edges path[data-profile-main-edge="true"],
 body.is-profile-root-emerging #site-graph .site-graph-edges path[data-source="stepan-chrast"][data-type="hierarchy"],
-body.is-profile-root-emerging #site-graph .site-graph-edges path[data-source="stepan-chrast"][data-type="hierarchy-alt"]{
+body.is-profile-root-emerging #site-graph .site-graph-edges path[data-source="stepan-chrast"][data-type="hierarchy-alt"],
+body[data-profile-branch-edge-phase="nodes"] #site-graph .site-graph-edges path[data-profile-main-edge="true"],
+body[data-profile-branch-edge-phase="nodes"] #site-graph .site-graph-edges path[data-source="stepan-chrast"][data-target="work"],
+body[data-profile-branch-edge-phase="nodes"] #site-graph .site-graph-edges path[data-source="stepan-chrast"][data-target="knowledge"],
+body[data-profile-branch-edge-phase="nodes"] #site-graph .site-graph-edges path[data-source="stepan-chrast"][data-target="experience"],
+body[data-profile-branch-edge-phase="nodes"] #site-graph .site-graph-edges path[data-source="stepan-chrast"][data-target="education"],
+body[data-profile-branch-edge-phase="nodes"] #site-graph .site-graph-edges path[data-source="stepan-chrast"][data-target="about"]{
   opacity:0!important;
+  visibility:hidden!important;
   stroke-dasharray:.0001 1!important;
-  stroke-dashoffset:0!important
+  stroke-dashoffset:0!important;
+  transition:none!important
 }
 
 body[data-profile-branch-edge-phase="drawing"] #site-graph .site-graph-edges path[data-profile-main-edge="true"]{
+  visibility:visible;
   pointer-events:none
 }
 

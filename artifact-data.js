@@ -156,8 +156,8 @@
       type: 'image',
       title: 'Hedgehog House — exterior',
       anchorNodeIds: ['hedgehog-house'],
-      source: { kind: 'local', path: 'assets/images/about/woodworking/hedgehog-house/outside.png' },
-      mediaType: 'image/png',
+        source: { kind: 'local', path: 'assets/images/about/woodworking/hedgehog-house/outside.webp' },
+        mediaType: 'image/webp',
       availability: 'public',
       presentation: { preferredObject: 'image', role: 'project-photo', width: 1448, height: 1086, aspectRatio: 1.333333 }
     },

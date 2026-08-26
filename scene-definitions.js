@@ -112,6 +112,7 @@
   ensureStylesheet('graph-navigation-materiality.css', 'data-profile-graph-navigation-style');
   ensureStylesheet('portfolio-refinements.css', 'data-profile-refinements-style');
   ensureStylesheet('profile-post-entry.css', 'data-profile-post-entry-style');
+  ensureStylesheet('profile-motion-refinements.css', 'data-profile-motion-refinements-style');
   prepareRootLandingDom();
 
   document.body.dataset.rootLanding = initialRootLanding ? 'true' : 'false';
@@ -168,8 +169,6 @@
   ensureScript('graph-feel.js', 'data-profile-graph-feel');
   ensureScript('node-dynamics.js', 'data-profile-node-dynamics');
   ensureScript('graph-navigation-materiality.js', 'data-profile-graph-navigation-materiality');
-  ensureScript('phase7-pointer-hotfix.js', 'data-profile-atlas-pointer-hotfix');
-  ensureScript('global-geometry-ownership.js', 'data-profile-global-geometry-ownership');
   ensureScript('root-landing.js', 'data-profile-root-landing');
   ensureScript('motion-polish.js', 'data-profile-motion-polish');
   ensureScript('local-label-policy.js', 'data-profile-local-label-policy');
@@ -178,5 +177,7 @@
   ensureScript('accessibility-runtime.js', 'data-profile-accessibility-runtime');
   ensureScript('portfolio-refinements.js', 'data-profile-refinements');
   ensureScript('profile-post-entry.js', 'data-profile-post-entry');
+  ensureScript('profile-motion-refinements.js', 'data-profile-motion-refinements');
+  ensureScript('profile-motion-compat.js', 'data-profile-motion-compat');
   ensureScript('node-detail-dismiss.js', 'data-profile-node-detail-dismiss');
 })();

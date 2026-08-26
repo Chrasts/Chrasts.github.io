@@ -76,15 +76,10 @@
     installSnapshotAdapter();
     markBridgeCompatibility();
   });
-
-  const observer = new MutationObserver(() => {
-    installSnapshotAdapter();
-    markBridgeCompatibility();
-  });
+  addEventListener('profile:motion-bridge-created', markBridgeCompatibility);
 
   const boot = () => {
     if (!document.body) return requestAnimationFrame(boot);
-    observer.observe(document.body, { subtree: true, childList: true });
     installSnapshotAdapter();
     markBridgeCompatibility();
   };

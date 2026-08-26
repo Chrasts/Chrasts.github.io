@@ -7,8 +7,7 @@ const boot = async (page, route) => {
   await page.waitForFunction(() => Boolean(
     window.ProfileArtifactScenes &&
     window.ProfileObjectFocus &&
-    window.ProfileObjectFocusFit &&
-    window.ProfileArtifactViewerV2
+    window.ProfileObjectFocusFit
   ));
   await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
   await page.waitForTimeout(180);
@@ -16,7 +15,7 @@ const boot = async (page, route) => {
 
 const waitSettled = page => page.waitForFunction(() => window.ProfileObjectFocus?.snapshot().phase === 'settled');
 
-test.describe('Artifact viewer V2 media contract', () => {
+test.describe('Integrated artifact viewer media contract', () => {
   test('focused image keeps the page visually unchanged and shows caption + source bubbles', async ({ page }) => {
     await boot(page, 'about/woodworking/hedgehog-house');
     const card = page.locator('[data-artifact-scene="hedgehog-house-gallery"] .artifact-deck-card.is-active');

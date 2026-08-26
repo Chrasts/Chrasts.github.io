@@ -326,13 +326,13 @@
     const oldURL = location.href;
     const next = new URL(location.href);
     next.hash = `#${target}`;
-    window.__GRAPH_V6_FORCE_SNAP__ = true;
+    window.ProfileMotionPolicy?.setForceSnap?.(true);
     history.replaceState(history.state, '', next.toString());
     dispatchHashChange(oldURL, next.toString());
     const reached = await waitFor(() =>
       normaliseRoute(document.body?.dataset.graphRoute || location.hash) === target,
     4200);
-    window.__GRAPH_V6_FORCE_SNAP__ = false;
+    window.ProfileMotionPolicy?.setForceSnap?.(false);
     return reached;
   };
 

@@ -381,8 +381,15 @@ body[data-graph-mode="atlas"] .site-graph-svg{cursor:grab}
 .scene-detail .atlas-facts{margin-top:18px}
 .scene-detail .atlas-open-local{margin-top:26px}
 
-/* Old standalone Work renderer stays in DOM only as a data/control source. */
-#work.legacy-work-source{display:none!important}
+/* Canonical graph hit targets are declared statically; no prototype or runtime
+   CSS patch is needed to keep labels and transparent hit circles interactive. */
+#site-graph .site-graph-node:not(.is-atlas-lod-hidden){pointer-events:bounding-box}
+#site-graph .site-graph-node:not(.is-atlas-lod-hidden) .site-graph-hit{pointer-events:all}
+#site-graph .site-graph-node:not(.is-atlas-lod-hidden) .site-graph-label,
+#site-graph .site-graph-node:not(.is-atlas-lod-hidden) .site-graph-meta{
+  pointer-events:visiblePainted;
+  cursor:pointer
+}
 
 /* Keep all graph content inside the usable desktop viewport. */
 body[data-graph-mode="overview"] .site-graph-heading,

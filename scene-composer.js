@@ -26,21 +26,11 @@
       window.addEventListener('profile:transition-finish', () => this.schedule('transition-finish'));
       window.addEventListener('profile:artifact-scenes-ready', () => this.schedule('artifact-scenes-ready'));
       window.addEventListener('profile:phase8-ready', () => this.schedule('phase8-ready'));
+      window.addEventListener('profile:detail-rendered', () => this.schedule('detail-rendered'));
+      window.addEventListener('profile:detail-closed', () => this.schedule('detail-closed'));
+      window.addEventListener('profile:graph-render-settled', () => this.schedule('graph-render-settled'));
       window.addEventListener('resize', () => this.schedule('resize'));
       mobileQuery.addEventListener?.('change', () => this.schedule('variant'));
-      if (this.canvas) {
-        this.observer = new MutationObserver(mutations => {
-          if (mutations.some(mutation => mutation.type === 'childList' || ['hidden', 'data-scene-visible', 'data-scene-placement'].includes(mutation.attributeName))) {
-            this.schedule('scene-dom');
-          }
-        });
-        this.observer.observe(this.canvas, {
-          subtree: true,
-          childList: true,
-          attributes: true,
-          attributeFilter: ['hidden', 'data-scene-visible', 'data-scene-placement']
-        });
-      }
       this.schedule('boot');
     }
 

@@ -126,8 +126,6 @@
     return true;
   };
 
-  const graph = document.querySelector('#site-graph');
-  const detail = document.querySelector('#site-detail-panel');
   let frame = 0;
   const schedule = () => {
     cancelAnimationFrame(frame);
@@ -139,17 +137,9 @@
     });
   };
 
-  if (graph) {
-    new MutationObserver(schedule).observe(graph, { childList: true, subtree: true });
-  }
-  if (detail) {
-    new MutationObserver(schedule).observe(detail, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['class', 'hidden']
-    });
-  }
+  window.addEventListener('profile:graph-render-settled', schedule);
+  window.addEventListener('profile:detail-rendered', schedule);
+  window.addEventListener('profile:work-filters', schedule);
   window.addEventListener('profile:scene-state', schedule);
   window.addEventListener('hashchange', schedule);
 

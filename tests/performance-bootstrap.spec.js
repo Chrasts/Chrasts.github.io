@@ -3,6 +3,18 @@ const { test, expect } = require('@playwright/test');
 const bypassIntro = async page => {
   await page.addInitScript(() => {
     sessionStorage.setItem('profileIntroSeen', 'true');
+    window.__profileNativeDomMethods = {
+      elementSetAttribute: Element.prototype.setAttribute,
+      documentQuerySelectorAll: Document.prototype.querySelectorAll
+    };
+    window.__profileMutationObserverCreations = 0;
+    const NativeMutationObserver = window.MutationObserver;
+    window.MutationObserver = class ProfileMeasuredMutationObserver extends NativeMutationObserver {
+      constructor(callback) {
+        window.__profileMutationObserverCreations += 1;
+        super(callback);
+      }
+    };
     window.__profileLongTasks = [];
     if ('PerformanceObserver' in window) {
       try {
@@ -57,16 +69,20 @@ test('settled overview stays inside the improved bootstrap and media budgets', a
       atlasInteractionResources: resources.filter(entry =>
         /(?:phase7-atlas|atlas-drag-activation-guard|atlas-focus-unification|atlas-condensation|root-entry-portal)\.(?:js|css)(?:$|\?)/i.test(entry.name)
       ).map(entry => entry.name),
-      longTasks: window.__profileLongTasks || []
+      longTasks: window.__profileLongTasks || [],
+      mutationObserverCreations: window.__profileMutationObserverCreations,
+      nativeDomMethodsIntact:
+        Element.prototype.setAttribute === window.__profileNativeDomMethods.elementSetAttribute &&
+        Document.prototype.querySelectorAll === window.__profileNativeDomMethods.documentQuerySelectorAll
     };
   });
 
   // Baseline was 48 eager first-party scripts / 818,271 source bytes and 28
   // styles; the current structural target is 32 scripts / ~563 kB / 15 styles.
   // These ceilings leave CI variance while rejecting either lazy-chain relapse.
-  expect(metrics.scriptRequests).toBeLessThanOrEqual(35);
-  expect(metrics.scriptBytes).toBeLessThanOrEqual(620_000);
-  expect(metrics.styleRequests).toBeLessThanOrEqual(17);
+  expect(metrics.scriptRequests).toBeLessThanOrEqual(34);
+  expect(metrics.scriptBytes).toBeLessThanOrEqual(600_000);
+  expect(metrics.styleRequests).toBeLessThanOrEqual(16);
   expect(metrics.unrelatedArtifactMedia).toEqual([]);
   expect(metrics.artifactRoots).toBe(0);
   expect(metrics.artifactMedia).toBe(0);
@@ -83,6 +99,8 @@ test('settled overview stays inside the improved bootstrap and media budgets', a
   expect(metrics.domNodes).toBeLessThanOrEqual(1800);
   expect(Math.max(0, ...metrics.longTasks)).toBeLessThan(300);
   expect(metrics.longTasks.reduce((sum, value) => sum + value, 0)).toBeLessThan(1000);
+  expect(metrics.mutationObserverCreations).toBe(0);
+  expect(metrics.nativeDomMethodsIntact).toBe(true);
 
   const before = await page.evaluate(() => ({
     geometry: window.ProfileGeometry.snapshot().reconciliation,

@@ -30,7 +30,6 @@
     }
     return path;
   };
-  const graphRoot = document.querySelector('#site-graph');
   const graphSvg = () => document.querySelector('#site-graph .site-graph-svg');
   const liveNodes = () => [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')]
     .filter(element => !element.closest('.v9-transition-overlay'));
@@ -203,7 +202,6 @@
      -------------------------------------------------------------------- */
   const atlasSize = geometry.snapshot().atlasSize || { width: 2520, height: 1580 };
   const camera = { x: 0, y: 0, scale: 1, targetX: 0, targetY: 0, targetScale: 1, frame: 0 };
-  let cameraWriting = false;
   let lastWrittenTransform = '';
   let gesture = null;
   let suppressAtlasClickUntil = 0;
@@ -240,10 +238,8 @@
     const element = cameraElement();
     if (!element || document.body?.dataset.graphMode !== 'atlas') return;
     const transform = `translate(${camera.x.toFixed(2)} ${camera.y.toFixed(2)}) scale(${camera.scale.toFixed(4)})`;
-    cameraWriting = true;
     lastWrittenTransform = transform;
     if (element.getAttribute('transform') !== transform) element.setAttribute('transform', transform);
-    cameraWriting = false;
     applyLOD(camera.scale);
   };
   const animateCamera = () => {
@@ -526,7 +522,8 @@
     const action = detail.querySelector('.atlas-open-local');
     if (!action) return;
     const selectedId = document.querySelector('#site-graph .site-graph-node.is-previewed[data-node-id]')?.dataset.nodeId;
-    action.textContent = selectedId === rootId ? 'Back to overview' : selectedId === 'work' ? 'Open Work' : 'Explore this section';
+    const actionCopy = selectedId === rootId ? 'Back to overview' : selectedId === 'work' ? 'Open Work' : 'Explore this section';
+    if (action.textContent !== actionCopy) action.textContent = actionCopy;
     if (!detail.querySelector('.atlas-repeat-click-hint')) {
       const hint = document.createElement('p');
       hint.className = 'atlas-repeat-click-hint';
@@ -610,92 +607,49 @@
   }
 
   /* --------------------------------------------------------------------
-     Observers and interaction ownership.
+     Explicit Atlas lifecycle. Renderer, route and inspector owners announce
+     their commits; Phase 7 reconciles once after each commit.
      -------------------------------------------------------------------- */
-  if (graphRoot) {
-    new MutationObserver(mutations => {
-      if (document.body?.dataset.graphMode === 'atlas') {
-        const topologyChanged = mutations.some(mutation => mutation.type === 'childList');
-        const selectionChanged = mutations.some(mutation =>
-          mutation.type === 'attributes' &&
-          mutation.attributeName === 'class' &&
-          (mutation.target.classList?.contains('is-previewed') || String(mutation.oldValue || '').includes('is-previewed'))
-        );
-        const labelGeometryChanged = mutations.some(mutation =>
-          mutation.type === 'attributes' && ['x', 'y', 'text-anchor'].includes(mutation.attributeName)
-        );
-        if (!topologyChanged && !selectionChanged) {
-          if (labelGeometryChanged) scheduleLabelCollisionPass();
-          return;
-        }
-        requestAnimationFrame(() => {
-          observeCamera();
-          applyLOD(camera.scale);
-          scrubLateralHighlight();
-          decorateInspector();
-          scheduleLabelCollisionPass();
-        });
-      }
-    }).observe(graphRoot, {
-      subtree: true,
-      childList: true,
-      attributes: true,
-      attributeOldValue: true,
-      attributeFilter: ['x', 'y', 'text-anchor', 'class']
-    });
-  }
-
-  if (document.body) {
-    let previousGraphMode = document.body.dataset.graphMode || null;
-    new MutationObserver(() => {
-      if (document.body.dataset.graphMode === 'atlas') {
-        const introMarker = document.documentElement.dataset.profileIntro || '';
-        if (previousGraphMode !== 'atlas' && !['pending', 'preparing', 'running'].includes(introMarker)) {
-          setTopologyMode(TOPOLOGY_MODES.EXPLORATION_LOD, { reason: 'atlas-route-entry', apply: false });
-        }
-        updateAtlasHelp();
-        decorateAtlasControls();
-        requestAnimationFrame(() => {
-          syncCameraFromDOM();
-          ensureTerritoryLayer();
-          applyLOD(camera.scale);
-          decorateInspector();
-          scheduleLabelCollisionPass();
-        });
-      } else {
-        delete document.body.dataset.atlasLod;
-        delete document.body.dataset.atlasTopology;
-        clearAtlasLabelOffsets();
-      }
-      previousGraphMode = document.body.dataset.graphMode;
-    }).observe(document.body, { attributes: true, attributeFilter: ['data-graph-mode', 'data-graph-route', 'class'] });
-  }
-
-  const detail = document.querySelector('#site-detail-panel');
-  if (detail) new MutationObserver(decorateInspector).observe(detail, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'class'] });
-
-  const cameraObserver = new MutationObserver(() => {
-    if (cameraWriting || document.body?.dataset.graphMode !== 'atlas') return;
-    const current = cameraElement()?.getAttribute('transform') || '';
-    if (current === lastWrittenTransform) return;
-    if (performance.now() < preserveCameraUntil && preservedCamera) {
-      restorePreservedCamera();
+  let previousGraphMode = document.body?.dataset.graphMode || null;
+  const syncAtlasLifecycle = reason => {
+    const mode = document.body?.dataset.graphMode;
+    if (mode !== 'atlas') {
+      delete document.body.dataset.atlasLod;
+      delete document.body.dataset.atlasTopology;
+      clearAtlasLabelOffsets();
+      previousGraphMode = mode;
       return;
     }
-    syncCameraFromDOM();
+    const introMarker = document.documentElement.dataset.profileIntro || '';
+    if (previousGraphMode !== 'atlas' && !['pending', 'preparing', 'running'].includes(introMarker)) {
+      setTopologyMode(TOPOLOGY_MODES.EXPLORATION_LOD, { reason: 'atlas-route-entry', apply: false });
+    }
+    previousGraphMode = mode;
+    updateAtlasHelp();
+    decorateAtlasControls();
+    requestAnimationFrame(() => {
+      const currentTransform = cameraElement()?.getAttribute('transform') || '';
+      if (performance.now() < preserveCameraUntil && preservedCamera && currentTransform !== lastWrittenTransform) {
+        restorePreservedCamera();
+      } else if (currentTransform !== lastWrittenTransform) {
+        syncCameraFromDOM();
+      }
+      ensureTerritoryLayer();
+      applyLOD(camera.scale);
+      scrubLateralHighlight();
+      decorateInspector();
+      scheduleLabelCollisionPass();
+    });
+  };
+  addEventListener('profile:scene-state', () => syncAtlasLifecycle('scene-state'));
+  addEventListener('profile:graph-render-settled', () => syncAtlasLifecycle('graph-render-settled'));
+  addEventListener('profile:detail-rendered', decorateInspector);
+  addEventListener('profile:node-interaction', () => {
+    if (document.body?.dataset.graphMode !== 'atlas') return;
+    scrubLateralHighlight();
+    applyLOD(camera.scale);
   });
-  let observedCamera = null;
-  function observeCamera() {
-    const element = cameraElement();
-    if (!element || element === observedCamera) return;
-    cameraObserver.disconnect();
-    observedCamera = element;
-    cameraObserver.observe(element, { attributes: true, attributeFilter: ['transform'] });
-  }
-  requestAnimationFrame(() => {
-    observeCamera();
-    syncCameraFromDOM();
-  });
+  requestAnimationFrame(() => syncAtlasLifecycle('boot'));
 
   addEventListener('profile:geometry-applied', scheduleLabelCollisionPass);
   addEventListener('profile:atlas-lod-change', scheduleLabelCollisionPass);
@@ -782,7 +736,6 @@
     const svg = event.target.closest?.('#site-graph .site-graph-svg');
     if (!svg) return;
     gesture = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, moved: false };
-    svg.setPointerCapture?.(event.pointerId);
     svg.classList.add('is-phase7-dragging');
     event.stopImmediatePropagation();
   }, true);
@@ -807,7 +760,6 @@
     if (!gesture || (event.pointerId != null && event.pointerId !== gesture.pointerId)) return;
     if (gesture.moved) suppressAtlasClickUntil = performance.now() + 260;
     const svg = graphSvg();
-    svg?.releasePointerCapture?.(gesture.pointerId);
     svg?.classList.remove('is-phase7-dragging');
     gesture = null;
   };
@@ -855,7 +807,6 @@
     decorateAtlasControls();
     if (document.body?.dataset.graphMode === 'atlas' && !document.querySelector('.profile-intro-overlay')) {
       updateAtlasHelp();
-      observeCamera();
       syncCameraFromDOM();
       ensureTerritoryLayer();
       applyLOD(camera.scale);

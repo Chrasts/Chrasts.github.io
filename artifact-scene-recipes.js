@@ -118,8 +118,33 @@
       return frame;
     }
 
+    if (artifact.type === 'video' || /^video\//i.test(artifact.mediaType || '')) {
+      frame.classList.add('is-video', 'is-inline-interactive');
+      const video = document.createElement('video');
+      video.src = href;
+      video.controls = true;
+      video.autoplay = true;
+      video.muted = true;
+      video.defaultMuted = true;
+      video.loop = true;
+      video.playsInline = true;
+      video.preload = 'metadata';
+      video.dataset.artifactInlineVideo = 'true';
+      video.setAttribute('aria-label', artifact.title || 'Video artifact');
+      ['pointerdown', 'click', 'dblclick'].forEach(type => {
+        video.addEventListener(type, event => event.stopPropagation());
+      });
+      video.addEventListener('loadedmetadata', () => {
+        if (video.videoWidth && video.videoHeight) {
+          applyMediaAspect(frame, video.videoWidth / video.videoHeight, 'video');
+        }
+      }, { once: true });
+      frame.appendChild(video);
+      return frame;
+    }
+
     if (artifact.mediaType === 'application/pdf') {
-      frame.classList.add('is-pdf');
+      frame.classList.add('is-pdf', 'is-inline-interactive', 'has-inline-expand');
       const label = element('div', 'artifact-pdf-fallback');
       label.append(
         element('span', 'artifact-pdf-mark', 'PDF'),
@@ -128,10 +153,18 @@
       const iframe = document.createElement('iframe');
       iframe.src = `${href}#page=1&toolbar=0&navpanes=0&scrollbar=0&view=Fit`;
       iframe.title = `${artifact.title} preview`;
-      iframe.tabIndex = -1;
+      iframe.tabIndex = 0;
       iframe.loading = 'lazy';
-      iframe.setAttribute('aria-hidden', 'true');
-      frame.append(label, iframe);
+      iframe.dataset.artifactInlinePdf = 'true';
+      const expand = element('span', 'artifact-inline-expand', 'Expand ↗');
+      expand.setAttribute('aria-hidden', 'true');
+      const activate = event => {
+        event.preventDefault();
+        event.stopPropagation();
+        frame.closest('[data-artifact-focus]')?.click();
+      };
+      expand.addEventListener('click', activate);
+      frame.append(label, iframe, expand);
       hydratePreviewAspect(frame, artifact, href);
       return frame;
     }

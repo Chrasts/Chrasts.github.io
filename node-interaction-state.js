@@ -13,7 +13,6 @@
   });
 
   let root = null;
-  let observer = null;
   let frame = 0;
   let sequence = 0;
   let input = 'pointer';
@@ -120,9 +119,7 @@
   const bind = () => {
     const next = document.querySelector('#site-graph');
     if (!next) return false;
-    if (root === next && observer) return true;
-
-    observer?.disconnect();
+    if (root === next) return true;
     root = next;
     root.dataset.nodeInteractionBound = 'true';
 
@@ -170,16 +167,6 @@
       clearPressed();
     }, true);
 
-    observer = new MutationObserver(mutations => {
-      if (mutations.some(mutation => mutation.type === 'childList' || mutation.attributeName === 'class')) schedule();
-    });
-    observer.observe(root, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['class']
-    });
-
     schedule();
     return true;
   };
@@ -200,6 +187,8 @@
   });
   window.addEventListener('profile:scene-state', schedule);
   window.addEventListener('profile:atlas-lod-change', schedule);
+  window.addEventListener('profile:graph-render-settled', schedule);
+  window.addEventListener('profile:work-filters', schedule);
 
   function stateFor(id) {
     const node = nodeById(id);
@@ -237,11 +226,7 @@
 
   const boot = () => {
     if (bind()) return;
-    const bootObserver = new MutationObserver(() => {
-      if (!bind()) return;
-      bootObserver.disconnect();
-    });
-    bootObserver.observe(document.documentElement, { childList: true, subtree: true });
+    document.addEventListener('DOMContentLoaded', bind, { once: true });
   };
   boot();
 })();

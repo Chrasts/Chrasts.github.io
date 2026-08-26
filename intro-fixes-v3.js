@@ -38,7 +38,6 @@
 
   const liveNodes = () => [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')]
     .filter(element => !element.closest('.v9-transition-overlay'));
-  const graphRoot = document.querySelector('#site-graph');
   addEventListener('profile:scene-state', syncRootOrbit);
 
   /* ----------------------------------------------------------------------
@@ -55,16 +54,9 @@
       enter.prepend(orbit);
     });
   };
-  const introObserver = new MutationObserver(mutations => {
-    for (const mutation of mutations) {
-      mutation.addedNodes.forEach(node => {
-        if (!(node instanceof Element)) return;
-        if (node.matches?.('.profile-intro-overlay')) patchGateway(node);
-        node.querySelectorAll?.('.profile-intro-overlay').forEach(patchGateway);
-      });
-    }
-  });
-  if (document.body) introObserver.observe(document.body, { childList: true, subtree: true });
+  const patchCurrentGateway = () => document.querySelectorAll('.profile-intro-overlay').forEach(patchGateway);
+  addEventListener('profile:intro-started', patchCurrentGateway);
+  addEventListener('profile:intro-stage', patchCurrentGateway);
   document.querySelectorAll('.profile-intro-overlay').forEach(patchGateway);
 
   addEventListener('click', event => {
@@ -119,7 +111,7 @@
       }
     });
   }
-  if (graphRoot) new MutationObserver(syncRootOrbit).observe(graphRoot, { childList: true, subtree: true });
+  addEventListener('profile:graph-render-settled', () => requestAnimationFrame(syncRootOrbit));
   addEventListener('profile:root-activated', () => requestAnimationFrame(syncRootOrbit));
   addEventListener('profile:intro-completed', () => requestAnimationFrame(syncRootOrbit));
   requestAnimationFrame(syncRootOrbit);

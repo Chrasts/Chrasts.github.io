@@ -146,99 +146,20 @@
     serialize: readViewBox
   });
 
-  let transitionToken = null;
-  let lastStableRoute = currentRoute();
-  let commitFrame = 0;
-
-  transitions.hook('cancel', payload => {
-    if (!transitionToken || payload?.token !== transitionToken) return;
-    cancelAnimationFrame(commitFrame);
-    commitFrame = 0;
-    transitionToken = null;
+  window.addEventListener('profile:graph-state-committed', () => {
+    syncGraphState(document.body.classList.contains('is-v9-transitioning') ? 'transition-render' : 'renderer-state');
   });
-
-  const scheduleCommit = () => {
-    if (!transitionToken) return;
-    cancelAnimationFrame(commitFrame);
-    commitFrame = requestAnimationFrame(() => requestAnimationFrame(() => {
-      if (!transitionToken || !transitions.matches(transitionToken)) return;
-      transitions.commit(transitionToken, {
-        toRoute: currentRoute(),
-        toMode: currentMode(),
-        toScene: manager.snapshot()
-      });
-    }));
-  };
-
-  const observer = new MutationObserver(mutations => {
-    if (transitionToken && !transitions.matches(transitionToken)) transitionToken = null;
-    const classChanged = mutations.some(mutation =>
-      mutation.type === 'attributes' && mutation.attributeName === 'class'
-    );
-    const graphStateChanged = mutations.some(mutation =>
-      mutation.type === 'attributes' &&
-      (mutation.attributeName === 'data-graph-mode' || mutation.attributeName === 'data-graph-route')
-    );
-    const transitioning = document.body.classList.contains('is-v9-transitioning');
-
-    if (classChanged && transitioning && !transitionToken) {
-      transitionToken = transitions.begin({
-        kind: 'graph-route',
-        fromRoute: lastStableRoute,
-        fromMode: manager.graphState.mode,
-        fromScene: manager.snapshot(),
-        trigger: 'legacy-graph-transition'
-      });
-    }
-
-    if (graphStateChanged) {
-      syncGraphState(transitionToken ? 'transition-render' : 'renderer-state');
-      if (transitionToken) {
-        transitions.prepare(transitionToken, {
-          toRoute: currentRoute(),
-          toMode: currentMode(),
-          activeNodeId: activeNodeId(),
-          toScene: manager.snapshot()
-        });
-        scheduleCommit();
-      } else {
-        lastStableRoute = currentRoute();
-      }
-    }
-
-    if (classChanged && !transitioning && transitionToken) {
-      cancelAnimationFrame(commitFrame);
-      transitions.finish(transitionToken, {
-        toRoute: currentRoute(),
-        toMode: currentMode(),
-        activeNodeId: activeNodeId(),
-        toScene: manager.snapshot()
-      });
-      transitionToken = null;
-      lastStableRoute = currentRoute();
-      syncGraphState('transition-finish');
-    }
+  window.addEventListener('profile:transition-finish', () => {
+    syncGraphState('transition-finish');
   });
-
-  observer.observe(document.body, {
-    attributes: true,
-    attributeFilter: ['class', 'data-graph-mode', 'data-graph-route']
+  ['profile:detail-rendered', 'profile:detail-closed'].forEach(type => {
+    window.addEventListener(type, () => manager.refreshObject('detail-panel', { reason: type }));
   });
-
-  const detail = document.querySelector('#site-detail-panel');
-  if (detail) {
-    const detailObserver = new MutationObserver(() => manager.refreshObject('detail-panel', { reason: 'detail-visibility' }));
-    detailObserver.observe(detail, {
-      attributes: true,
-      attributeFilter: ['hidden', 'class']
-    });
-  }
 
   window.addEventListener('hashchange', () => {
     if (!document.body.classList.contains('is-v9-transitioning')) {
       requestAnimationFrame(() => {
         syncGraphState('hashchange');
-        lastStableRoute = currentRoute();
       });
     }
   });
@@ -408,14 +329,11 @@
       loadObjectFocus(),
       loadStyle('artifact-scenes.css', 'data-profile-artifact-scenes-style'),
       loadStyle('artifact-scenes-layout.css', 'data-profile-artifact-scenes-layout-style'),
-      loadStyle('artifact-viewer-v2.css', 'data-profile-artifact-viewer-v2-style'),
-      loadStyle('artifact-open-guard.css', 'data-profile-artifact-open-guard-style')
+      loadStyle('artifact-viewer-v2.css', 'data-profile-artifact-viewer-v2-style')
     ]);
     await loadScript('artifact-scene-recipes.js', 'data-profile-artifact-scene-recipes', () => Boolean(window.ProfileArtifactSceneRecipes));
     await loadScript('artifact-scene-runtime.js', 'data-profile-artifact-scene-runtime', () => Boolean(window.ProfileArtifactScenes));
     await loadScript('artifact-scene-layout-compat.js', 'data-profile-artifact-layout-compat', () => Boolean(window.ProfileArtifactSceneLayout));
-    await loadScript('artifact-viewer-v2.js', 'data-profile-artifact-viewer-v2', () => Boolean(window.ProfileArtifactViewerV2));
-    await loadScript('artifact-open-guard.js', 'data-profile-artifact-open-guard', () => Boolean(window.ProfileArtifactOpenGuard));
     manager.scheduleRefresh('artifact-scenes-bundle-ready');
   });
 

@@ -10,8 +10,7 @@
   const attributeMap = new Map((work?.attributes || []).map(attribute => [attribute.id, attribute]));
   const rootId = graph.rootId || 'stepan-chrast';
   let root = null;
-  let graphObserver = null;
-  let bodyObserver = null;
+  let bound = false;
   let frame = 0;
   let syncCount = 0;
 
@@ -174,23 +173,18 @@
   const bind = () => {
     const next = document.querySelector('#site-graph');
     if (!next) return false;
-    if (root === next && graphObserver) {
+    if (root === next && bound) {
       schedule();
       return true;
     }
-
-    graphObserver?.disconnect();
-    bodyObserver?.disconnect();
     root = next;
-    graphObserver = new MutationObserver(schedule);
-    graphObserver.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
-
-    bodyObserver = new MutationObserver(schedule);
-    bodyObserver.observe(document.body, { attributes: true, attributeFilter: ['data-graph-route', 'data-graph-mode', 'data-root-landing'] });
-
+    bound = true;
     window.addEventListener('hashchange', schedule);
     window.addEventListener('profile:scene-state', schedule);
     window.addEventListener('profile:transition-finish', schedule);
+    window.addEventListener('profile:graph-render-settled', schedule);
+    window.addEventListener('profile:node-interaction', schedule);
+    window.addEventListener('profile:work-filters', schedule);
     root.addEventListener('click', schedule, true);
     root.addEventListener('keydown', schedule, true);
     schedule();
@@ -217,11 +211,5 @@
 
   window.ProfileAccessibility = Object.freeze({ refresh: schedule, snapshot });
 
-  if (!bind()) {
-    const observer = new MutationObserver(() => {
-      if (!bind()) return;
-      observer.disconnect();
-    });
-    observer.observe(document.documentElement, { childList: true, subtree: true });
-  }
+  if (!bind()) document.addEventListener('DOMContentLoaded', bind, { once: true });
 })();

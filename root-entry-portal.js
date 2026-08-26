@@ -15,8 +15,6 @@
   let rootNode = null;
   let portrait = null;
   let action = null;
-  let observer = null;
-  let bootObserver = null;
   let frame = 0;
   let closeTimer = 0;
   let open = false;
@@ -328,16 +326,6 @@
     rootNode.dataset.rootEntryMaterial = 'shared-root';
     syncOpenPresentation();
 
-    if (!observer || observer.__root !== graphRoot) {
-      observer?.disconnect();
-      observer = new MutationObserver(mutations => {
-        if (!mutations.some(mutation => mutation.type === 'childList')) return;
-        cancelAnimationFrame(frame);
-        frame = requestAnimationFrame(ensurePortal);
-      });
-      observer.__root = graphRoot;
-      observer.observe(graphRoot, { childList: true, subtree: true });
-    }
     return true;
   };
 
@@ -353,6 +341,7 @@
   addEventListener('profile:atlas-ready', refresh);
   addEventListener('profile:intro-completed', refresh);
   addEventListener('profile:scene-state', refresh);
+  addEventListener('profile:graph-render-settled', refresh);
   addEventListener('profile:transition-begin', () => {
     if (!entering) closePortal('transition', { force: true });
   });
@@ -390,12 +379,5 @@
     snapshot
   });
 
-  if (!ensurePortal()) {
-    bootObserver = new MutationObserver(() => {
-      if (!ensurePortal()) return;
-      bootObserver.disconnect();
-      bootObserver = null;
-    });
-    bootObserver.observe(document.documentElement, { childList: true, subtree: true });
-  }
+  if (!ensurePortal()) document.addEventListener('DOMContentLoaded', ensurePortal, { once: true });
 })();

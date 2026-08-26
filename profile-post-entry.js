@@ -4,30 +4,6 @@
   const STORAGE_KEY = 'profileRootReached';
   let retired = false;
 
-  const ensureMotionRefinements = () => {
-    if (!document.querySelector('link[data-profile-motion-refinements-style]')) {
-      const style = document.createElement('link');
-      style.rel = 'stylesheet';
-      style.href = 'profile-motion-refinements.css';
-      style.setAttribute('data-profile-motion-refinements-style', 'true');
-      document.head.appendChild(style);
-    }
-    if (!window.ProfileMotionRefinements && !document.querySelector('script[data-profile-motion-refinements]')) {
-      const script = document.createElement('script');
-      script.src = 'profile-motion-refinements.js';
-      script.async = false;
-      script.setAttribute('data-profile-motion-refinements', 'true');
-      document.head.appendChild(script);
-    }
-    if (!window.ProfileMotionCompat && !document.querySelector('script[data-profile-motion-compat]')) {
-      const script = document.createElement('script');
-      script.src = 'profile-motion-compat.js';
-      script.async = false;
-      script.setAttribute('data-profile-motion-compat', 'true');
-      document.head.appendChild(script);
-    }
-  };
-
   const persist = () => {
     try { sessionStorage.setItem(STORAGE_KEY, 'true'); } catch (_) {}
   };
@@ -63,33 +39,27 @@
     if (retired || shouldAlreadyBeRetired()) retire(reason || 'sync');
   };
 
-  addEventListener('profile:profile-root-settled', () => retire('profile-root-settled'));
-  addEventListener('profile:atlas-condensation-complete', () => requestAnimationFrame(() => sync('condensation-complete')));
-  addEventListener('profile:scene-state', () => sync('scene-state'));
-  addEventListener('profile:transition-finish', () => sync('transition-finish'));
-  addEventListener('hashchange', () => requestAnimationFrame(() => sync('hashchange')));
-
-  const observer = new MutationObserver(() => {
-    if (!retired) sync('body-state');
+  const markRetiredMaterial = () => {
     if (!retired) return;
-    // Graph transitions clone SVG nodes. Mark newly created copies as retired
-    // too; CSS uses the body marker so no portrait can flash in an overlay.
     document.querySelectorAll('[data-root-entry-portrait]:not([data-root-entry-retired]),[data-root-entry-action]:not([data-root-entry-retired])')
       .forEach(element => {
         element.dataset.rootEntryRetired = 'true';
         element.setAttribute('aria-hidden', 'true');
       });
-  });
+  };
+
+  addEventListener('profile:profile-root-settled', () => retire('profile-root-settled'));
+  addEventListener('profile:atlas-condensation-complete', () => requestAnimationFrame(() => sync('condensation-complete')));
+  addEventListener('profile:scene-state', () => sync('scene-state'));
+  addEventListener('profile:transition-finish', () => sync('transition-finish'));
+  addEventListener('profile:transition-begin', () => requestAnimationFrame(markRetiredMaterial));
+  addEventListener('profile:graph-render-settled', markRetiredMaterial);
+  addEventListener('hashchange', () => requestAnimationFrame(() => sync('hashchange')));
 
   const boot = () => {
     if (!document.body) return requestAnimationFrame(boot);
-    observer.observe(document.body, {
-      subtree: true,
-      childList: true,
-      attributes: true,
-      attributeFilter: ['data-entry-state', 'data-graph-mode', 'data-root-landing', 'class']
-    });
     sync('boot');
+    markRetiredMaterial();
   };
 
   window.ProfilePostEntry = Object.freeze({
@@ -99,9 +69,5 @@
     })() })
   });
 
-  // Load before the Atlas interaction bundle is lazy-booted. The motion module
-  // therefore registers the Profile -> Atlas boundary listener first, while the
-  // existing Atlas -> local Focus owner remains available for the reverse side.
-  ensureMotionRefinements();
   boot();
 })();

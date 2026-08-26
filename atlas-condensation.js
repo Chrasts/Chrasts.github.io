@@ -461,6 +461,7 @@
     emergenceRecords = branchRecords;
 
     document.body?.classList.add('is-profile-root-emerging');
+    dispatchEvent(new CustomEvent('profile:profile-root-emergence', { detail: { phase: 'nodes' } }));
     document.body?.classList.remove(
       'is-profile-root-pending-emergence',
       'is-atlas-condensation-root-only',
@@ -471,6 +472,7 @@
       branchRecords.forEach(restoreEmergence);
       emergenceRecords = [];
       document.body?.classList.remove('is-profile-root-emerging');
+      dispatchEvent(new CustomEvent('profile:profile-root-emergence', { detail: { phase: 'settled', reducedMotion: true } }));
       return resolve(true);
     }
 
@@ -482,6 +484,7 @@
         branchRecords.forEach(restoreEmergence);
         emergenceRecords = [];
         document.body?.classList.remove('is-profile-root-emerging');
+        dispatchEvent(new CustomEvent('profile:profile-root-emergence', { detail: { phase: 'cancelled' } }));
         return resolve(false);
       }
       const elapsed = now - started;
@@ -503,6 +506,7 @@
         branchRecords.forEach(restoreEmergence);
         emergenceRecords = [];
         document.body?.classList.remove('is-profile-root-emerging');
+        dispatchEvent(new CustomEvent('profile:profile-root-emergence', { detail: { phase: 'settled' } }));
         resolve(true);
         return;
       }
@@ -535,7 +539,7 @@
     await wait(timing().rootHold);
     if (generation !== state.generation || !state.running) return false;
 
-    window.__GRAPH_V6_FORCE_SNAP__ = true;
+    window.ProfileMotionPolicy?.setForceSnap?.(true);
     window.ProfileRootLanding?.commitExpanded?.({
       focusGraph: false,
       animate: false,
@@ -546,7 +550,7 @@
 
     const routed = await waitForOverview(generation);
     if (generation !== state.generation || !state.running) return false;
-    window.__GRAPH_V6_FORCE_SNAP__ = false;
+    window.ProfileMotionPolicy?.setForceSnap?.(false);
 
     // Old Atlas records may now be detached. Restore/remove their temporary
     // wrappers while the pending-emergence guard keeps the new Overview at a
@@ -638,7 +642,7 @@
     emergenceRecords.forEach(restoreEmergence);
     emergenceRecords = [];
     restoreTransient();
-    window.__GRAPH_V6_FORCE_SNAP__ = false;
+    window.ProfileMotionPolicy?.setForceSnap?.(false);
 
     if (location.hash !== '#atlas') location.hash = '#atlas';
     requestAnimationFrame(() => requestAnimationFrame(() => {

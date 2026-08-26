@@ -94,16 +94,9 @@
     enter.addEventListener('blur', deactivate);
   };
 
-  const introObserver = new MutationObserver(mutations => {
-    for (const mutation of mutations) {
-      for (const node of mutation.addedNodes) {
-        if (!(node instanceof Element)) continue;
-        if (node.matches?.('.profile-intro-overlay')) patchIntroOverlay(node);
-        node.querySelectorAll?.('.profile-intro-overlay').forEach(patchIntroOverlay);
-      }
-    }
-  });
-  if (document.body) introObserver.observe(document.body, { childList: true, subtree: true });
+  const patchCurrentIntro = () => document.querySelectorAll('.profile-intro-overlay').forEach(patchIntroOverlay);
+  window.addEventListener('profile:intro-started', patchCurrentIntro);
+  window.addEventListener('profile:intro-stage', patchCurrentIntro);
   document.querySelectorAll('.profile-intro-overlay').forEach(patchIntroOverlay);
 
   const hideConvergingLabels = shell => {

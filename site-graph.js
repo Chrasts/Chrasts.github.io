@@ -753,8 +753,16 @@
        ---------------------------------------------------------------------- */
     const edgeKey = edge => `${edge.source}|${edge.target}|${edge.type}`;
     const pointOf = element => ({ x: Number(element?.dataset.x || 0), y: Number(element?.dataset.y || 0) });
+    const visualPoint = point => {
+      const projection = window.ProfileMobileProjection;
+      return projection?.activeFor?.(state.mode) ? projection.mapPoint(point, state.mode) : point;
+    };
+    const setVisualTransform = (element, point) => {
+      const visual = visualPoint(point);
+      element.setAttribute('transform', `translate(${visual.x.toFixed(1)} ${visual.y.toFixed(1)})`);
+    };
     const setPoint = (element, point) => {
-      element.setAttribute('transform', `translate(${point.x.toFixed(1)} ${point.y.toFixed(1)})`);
+      setVisualTransform(element, point);
       element.dataset.x = point.x;
       element.dataset.y = point.y;
     };
@@ -762,7 +770,9 @@
       const dx = to.x - from.x, dy = to.y - from.y;
       const distance = Math.max(1, Math.hypot(dx, dy));
       const bend = Math.max(-70, Math.min(70, ((stableNumber(key) % 61) - 30) + Math.min(22, Math.abs(dx) * .045)));
-      return `M ${from.x.toFixed(1)} ${from.y.toFixed(1)} Q ${((from.x + to.x) / 2 - dy / distance * bend).toFixed(1)} ${((from.y + to.y) / 2 + dx / distance * bend).toFixed(1)} ${to.x.toFixed(1)} ${to.y.toFixed(1)}`;
+      const path = `M ${from.x.toFixed(1)} ${from.y.toFixed(1)} Q ${((from.x + to.x) / 2 - dy / distance * bend).toFixed(1)} ${((from.y + to.y) / 2 + dx / distance * bend).toFixed(1)} ${to.x.toFixed(1)} ${to.y.toFixed(1)}`;
+      const projection = window.ProfileMobileProjection;
+      return projection?.activeFor?.(state.mode) ? projection.projectPath(path, state.mode) : path;
     };
 
     const createNode = node => {
@@ -983,7 +993,7 @@
             renderer.decorationElements.set(key, group);
             renderer.decorations.appendChild(group);
           }
-          group.setAttribute('transform', `translate(${pos.x} ${pos.y + 24 + index * 20})`);
+          setVisualTransform(group, { x: pos.x, y: pos.y + 24 + index * 20 });
           group.classList.toggle('is-filtered-out', !visibleProjects.has(project.id));
           group.classList.toggle('is-selected', state.workProjectId === project.id);
 
@@ -1038,7 +1048,10 @@
           renderer.decorations.appendChild(group);
         }
         const t = .64;
-        group.setAttribute('transform', `translate(${top.x + (lower.x - top.x) * t} ${top.y + (lower.y - top.y) * t})`);
+        setVisualTransform(group, {
+          x: top.x + (lower.x - top.x) * t,
+          y: top.y + (lower.y - top.y) * t
+        });
         group.classList.toggle('is-selected', filter.selectedThemes.has(attribute.id));
       });
 
@@ -1067,10 +1080,12 @@
           renderer.timeline.classList.add('site-graph-timeline');
           renderer.edges.prepend(renderer.timeline);
         }
-        renderer.timeline.setAttribute('x1', layout.timeline.x1);
-        renderer.timeline.setAttribute('x2', layout.timeline.x2);
-        renderer.timeline.setAttribute('y1', layout.timeline.y);
-        renderer.timeline.setAttribute('y2', layout.timeline.y);
+        const timelineStart = visualPoint({ x: layout.timeline.x1, y: layout.timeline.y });
+        const timelineEnd = visualPoint({ x: layout.timeline.x2, y: layout.timeline.y });
+        renderer.timeline.setAttribute('x1', timelineStart.x);
+        renderer.timeline.setAttribute('x2', timelineEnd.x);
+        renderer.timeline.setAttribute('y1', timelineStart.y);
+        renderer.timeline.setAttribute('y2', timelineEnd.y);
       } else if (renderer.timeline) {
         renderer.timeline.remove();
         renderer.timeline = null;
@@ -1134,7 +1149,7 @@
 
       const leavingEdges = [...renderer.edgeElements].filter(([key]) => !edgeIds.has(key));
       cancelAnimationFrame(renderer.frame);
-      const duration = reducedMotion.matches || window.__GRAPH_V6_FORCE_SNAP__ ? 0 : 450;
+      const duration = reducedMotion.matches || window.ProfileMotionPolicy?.snapshot?.().forceSnap ? 0 : 450;
       const started = performance.now();
       const ease = t => 1 - Math.pow(1 - t, 3);
 
@@ -1455,6 +1470,7 @@
       clearTimeout(detailTimer);
       detail.classList.remove('is-open');
       detailTimer = setTimeout(() => detail.hidden = true, reducedMotion.matches ? 0 : 180);
+      dispatchEvent(new CustomEvent('profile:detail-closed'));
     };
 
     const showDetailShell = (eyebrowText, titleText, summaryText) => {
@@ -1530,6 +1546,7 @@
       action.textContent = node.id === profileRoot.id ? 'Open overview' : node.id === 'work' ? 'Open Work graph' : 'Open local graph';
       action.addEventListener('click', () => updateHash(routeForNode(node)));
       detail.appendChild(action);
+      dispatchEvent(new CustomEvent('profile:detail-rendered', { detail: { kind: 'atlas', id: node.id } }));
     };
 
     const openWorkProjectDetail = projectId => {
@@ -1562,6 +1579,7 @@
         });
         detail.append(heading, links);
       }
+      dispatchEvent(new CustomEvent('profile:detail-rendered', { detail: { kind: 'work-project', id: project.id } }));
     };
 
     const openLeafDetail = node => {
@@ -1576,6 +1594,7 @@
         .filter(edge => edge.source === node.id || edge.target === node.id)
         .map(edge => nodeMap.get(edge.source === node.id ? edge.target : edge.source))
         .filter(Boolean));
+      dispatchEvent(new CustomEvent('profile:detail-rendered', { detail: { kind: 'leaf', id: node.id } }));
     };
 
     /* ----------------------------------------------------------------------
@@ -1759,6 +1778,7 @@
         };
         document.body.dataset.graphMode = 'work';
         document.body.dataset.graphRoute = route;
+        dispatchEvent(new CustomEvent('profile:graph-state-committed', { detail: { route, mode: 'work' } }));
         hero.hidden = true;
         explorer.hidden = false;
         graphPanel.hidden = false;
@@ -1794,6 +1814,7 @@
 
       document.body.dataset.graphMode = state.mode;
       document.body.dataset.graphRoute = state.route;
+      dispatchEvent(new CustomEvent('profile:graph-state-committed', { detail: { route: state.route, mode: state.mode } }));
       hero.hidden = state.mode !== 'overview';
       explorer.hidden = false;
       graphPanel.hidden = false;
@@ -1856,6 +1877,10 @@
     }));
 
     window.addEventListener('hashchange', () => renderRoute(location.hash));
+    window.addEventListener('profile:mobile-projection-ready', () => {
+      window.ProfileMotionPolicy?.setForceSnap?.(true, 'mobile-projection-ready');
+      renderGraph();
+    });
     let resizeTimer = 0;
     window.addEventListener('resize', () => {
       clearTimeout(resizeTimer);

@@ -3,7 +3,6 @@
 
   const mobile = matchMedia('(max-width: 900px)');
   let viewer = null;
-  let observer = null;
   let frame = 0;
 
   const schedule = () => {
@@ -73,22 +72,7 @@
   function sync() {
     const nextViewer = window.ProfileArtifactScenes?.viewer || document.querySelector('.artifact-focus-viewer');
     if (!nextViewer) return false;
-    if (viewer !== nextViewer) {
-      observer?.disconnect();
-      viewer = nextViewer;
-      observer = new MutationObserver(() => {
-        // Mutations caused by opening Object Focus are delivered before paint.
-        // Fit synchronously in that microtask so shared-element flight measures
-        // the final target box rather than the temporary full-surface iframe.
-        sync();
-      });
-      observer.observe(viewer, {
-        subtree: true,
-        childList: true,
-        attributes: true,
-        attributeFilter: ['hidden', 'data-media-kind', 'data-shared-focus-artifact', 'data-shared-focus-phase']
-      });
-    }
+    viewer = nextViewer;
     if (viewer.hidden) return true;
 
     const surface = viewer.querySelector('.artifact-focus-media');

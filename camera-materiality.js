@@ -50,7 +50,6 @@
   let frame = 0;
   let bootFrame = 0;
   let bootAttempts = 0;
-  let mutationObserver = null;
   let pendingSemantic = null;
   let lastCameraSample = null;
   let lastTime = 0;
@@ -463,20 +462,9 @@
     });
   };
 
-  const installObserver = () => {
-    if (mutationObserver || !graphRoot) return;
-    mutationObserver = new MutationObserver(mutations => {
-      const relevant = mutations.some(mutation => mutation.type === 'childList' || mutation.attributeName === 'class');
-      if (!relevant) return;
-      requestAnimationFrame(assignDepthChannels);
-    });
-    mutationObserver.observe(graphRoot, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
-  };
-
   const boot = () => {
     if (!upgradeComposition()) return false;
     if (!assignDepthChannels()) return false;
-    installObserver();
     window.dispatchEvent(new CustomEvent('profile:camera-materiality-ready', { detail: snapshot() }));
     return true;
   };
@@ -527,6 +515,7 @@
   window.addEventListener('profile:transition-begin', () => neutralise());
   window.addEventListener('profile:transition-finish', assignDepthChannels);
   window.addEventListener('profile:transition-cancel', assignDepthChannels);
+  window.addEventListener('profile:graph-render-settled', assignDepthChannels);
   window.addEventListener('profile:intro-stage', () => {
     if (introOwnsMotion()) neutralise();
   });

@@ -782,27 +782,6 @@
       this.transitions.hook('finish', payload => this.onTransition('finish', payload));
       this.transitions.hook('cancel', payload => this.onTransition('cancel', payload));
 
-      const observe = () => {
-        if (!document.body) return;
-
-        const stateObserver = new MutationObserver(() => this.scheduleRefresh('graph-state-dom'));
-        stateObserver.observe(document.body, {
-          attributes: true,
-          attributeFilter: ['data-graph-mode', 'data-graph-route']
-        });
-
-        const canvas = document.querySelector('.scene-canvas');
-        if (canvas) {
-          const sceneRootObserver = new MutationObserver(mutations => {
-            if (mutations.some(mutation => mutation.type === 'childList')) {
-              this.scheduleRefresh('scene-root-dom');
-            }
-          });
-          sceneRootObserver.observe(canvas, { childList: true });
-        }
-      };
-      if (document.body) observe();
-      else document.addEventListener('DOMContentLoaded', observe, { once: true });
     }
 
     context(extra = {}) {

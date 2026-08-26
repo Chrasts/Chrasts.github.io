@@ -16,8 +16,6 @@
   });
 
   let root = null;
-  let observer = null;
-  let entryObserver = null;
 
   const entryHeroActive = () => ['preparing', 'ignition', 'reveal', 'ready']
     .includes(document.body?.dataset?.entryState || '') ||
@@ -111,29 +109,16 @@
   const attach = target => {
     const next = target || document.querySelector('#site-graph');
     if (!next) return false;
-    if (root === next && observer) {
+    if (root === next) {
       ensureAll();
       return true;
     }
-    observer?.disconnect();
     root = next;
     ensureAll();
-    observer = new MutationObserver(mutations => {
-      if (mutations.some(mutation => mutation.type === 'childList')) ensureAll();
-    });
-    observer.observe(root, { childList: true, subtree: true });
-    if (!entryObserver && document.body) {
-      entryObserver = new MutationObserver(() => ensureAll());
-      entryObserver.observe(document.body, { attributes: true, attributeFilter: ['data-entry-state'] });
-    }
     return true;
   };
 
   const detach = () => {
-    observer?.disconnect();
-    observer = null;
-    entryObserver?.disconnect();
-    entryObserver = null;
     root = null;
   };
 
@@ -163,11 +148,11 @@
 
   const boot = () => {
     if (attach()) return;
-    const bootObserver = new MutationObserver(() => {
-      if (!attach()) return;
-      bootObserver.disconnect();
-    });
-    bootObserver.observe(document.documentElement, { childList: true, subtree: true });
+    document.addEventListener('DOMContentLoaded', () => attach(), { once: true });
   };
+  addEventListener('profile:graph-render-settled', ensureAll);
+  addEventListener('profile:scene-state', ensureAll);
+  addEventListener('profile:intro-stage', ensureAll);
+  addEventListener('profile:profile-root-emergence', ensureAll);
   boot();
 })();

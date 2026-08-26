@@ -12,6 +12,8 @@ const geometry = read('radial-geometry.js');
 const introFixes = read('intro-fixes-v3.js');
 const localLabels = read('local-label-policy.js');
 const phase7 = read('phase7-atlas.js');
+const postEntry = read('profile-post-entry.js');
+const productionScripts = fs.readdirSync('.').filter(file => file.endsWith('.js'));
 
 if (/createElement\(['"](?:script|link)['"]\)|ensureScript|ensureStyle/.test(bindings)) {
   issues.push('artifact-scene-bindings.js must remain declarative and must not load dependencies.');
@@ -72,6 +74,38 @@ if (/src=["']script\.js["']/.test(index) || /id=["']work["']/.test(index)) {
 }
 if (!/window\.ProfileWorkController\s*=\s*Object\.freeze/.test(read('site-graph.js')) || fs.existsSync('script.js')) {
   issues.push('Work filtering and FCA projection must remain owned by the canonical site graph controller.');
+}
+if (fs.existsSync('global-geometry-ownership.js') || /global-geometry-ownership\.js/.test(definitions)) {
+  issues.push('The global geometry repair observer must not return; canonical render events own reconciliation.');
+}
+if (/new\s+MutationObserver/.test(geometry) || !/profile:graph-render-settled/.test(geometry)) {
+  issues.push('Canonical geometry must reconcile from explicit graph-render events, not subtree observation.');
+}
+if (fs.existsSync('phase7-pointer-hotfix.js') || /phase7-pointer-hotfix\.js/.test(definitions)) {
+  issues.push('The Atlas pointer/prototype hotfix must not return; owners must use local event and CSS contracts.');
+}
+if (fs.existsSync('artifact-viewer-v2.js') || fs.existsSync('artifact-open-guard.js') || /artifact-(?:viewer-v2|open-guard)\.js/.test(bridge)) {
+  issues.push('Artifact media and repeat-open handling must remain integrated into recipes and Object Focus.');
+}
+const prototypePatches = ['graph-transition-prelude.js', 'mobile-app.js', 'phase0-stability.js']
+  .filter(file => /(?:Document|Element|SVGElement|Node|DOMTokenList)\.prototype\.[A-Za-z]+\s*=/.test(read(file)));
+if (prototypePatches.length) {
+  issues.push(`Global DOM prototype patches must stay absent: ${prototypePatches.join(', ')}`);
+}
+const mutationObserverOwners = productionScripts.filter(file => /\bnew\s+MutationObserver\b/.test(read(file)));
+if (mutationObserverOwners.length) {
+  issues.push(`Production state must use explicit lifecycle events, not DOM observers: ${mutationObserverOwners.join(', ')}`);
+}
+const retiredFiles = [
+  'intro-animation.css', 'intro-unfold.js', 'intro-unfold.css',
+  'intro-state-consistency.js', 'graph-v4.css', 'artifact-open-guard.css'
+];
+const returnedRetiredFiles = retiredFiles.filter(file => fs.existsSync(file));
+if (returnedRetiredFiles.length) {
+  issues.push(`Retired runtime assets must stay deleted: ${returnedRetiredFiles.join(', ')}`);
+}
+if (/createElement\(['"](?:script|link)['"]\)/.test(postEntry) || !/profile-motion-refinements\.js/.test(definitions)) {
+  issues.push('Core motion resources must be owned by scene-definitions, not a nested post-entry loader chain.');
 }
 
 if (issues.length) {

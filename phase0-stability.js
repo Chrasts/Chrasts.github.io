@@ -1,27 +1,5 @@
 (() => {
   const mobileBreakpoint = window.matchMedia('(max-width: 900px)');
-  const graphNodes = window.SITE_DATA?.graph?.nodes || [];
-  const graphNodeMap = new Map(graphNodes.map(node => [node.id, node]));
-  const rootId = window.SITE_DATA?.graph?.rootId || 'stepan-chrast';
-
-  const normaliseRoute = value =>
-    (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
-
-  const routeNode = route => route === 'overview'
-    ? graphNodeMap.get(rootId)
-    : graphNodes.find(node => node.route === route) || null;
-
-  const primaryPath = node => {
-    const path = [];
-    const seen = new Set();
-    let current = node;
-    while (current && !seen.has(current.id)) {
-      path.unshift(current);
-      seen.add(current.id);
-      current = current.parentIds?.[0] ? graphNodeMap.get(current.parentIds[0]) : null;
-    }
-    return path;
-  };
 
   const mobileRuntimePresent = () => Boolean(
     window.MobileProfileScene ||
@@ -152,90 +130,25 @@
     if (title !== 'Atlas' || !hasGraphGlyph) button.replaceChildren(...atlasMarkup());
   };
 
-  /* The base/live renderer owns the settled label pose. Transition overlay
-     labels are explicitly excluded: graph-transitions-v6 must be free to keep
-     the source pose and animate/crossfade it into that live destination. */
-  const nativeSetAttribute = Element.prototype.setAttribute;
-  let labelWriteGuard = false;
-
-  const canonicalLabelPose = label => {
-    if (!label?.classList?.contains('site-graph-label')) return null;
-    if (label.closest?.('.v9-transition-overlay')) return null;
-    const nodeElement = label.closest?.('.site-graph-node[data-node-id]');
-    if (!nodeElement) return null;
-    const mode = document.body?.dataset.graphMode;
-    if (mode !== 'focus' && mode !== 'overview') return null;
-
-    const id = nodeElement.dataset.nodeId;
-    if (mode === 'overview') {
-      return { anchor: 'middle', x: '0', y: id === rootId ? '-25' : '25' };
-    }
-
-    const route = normaliseRoute(document.body?.dataset.graphRoute || location.hash);
-    const target = routeNode(route);
-    if (!target) return null;
-    const ancestorIds = new Set(primaryPath(target).slice(0, -1).map(node => node.id));
-    if (ancestorIds.has(id)) return { anchor: 'start', x: '17', y: '4' };
-    return { anchor: 'middle', x: '0', y: id === rootId ? '-25' : '25' };
-  };
-
-  Element.prototype.setAttribute = function(name, value) {
-    if (!labelWriteGuard && ['text-anchor', 'x', 'y'].includes(name) && this.classList?.contains('site-graph-label')) {
-      const pose = canonicalLabelPose(this);
-      if (pose) {
-        labelWriteGuard = true;
-        try {
-          return nativeSetAttribute.call(this, name, name === 'text-anchor' ? pose.anchor : pose[name]);
-        } finally {
-          labelWriteGuard = false;
-        }
-      }
-    }
-    return nativeSetAttribute.call(this, name, value);
-  };
-
-  const syncCanonicalLabels = () => {
-    if (labelWriteGuard) return;
-    [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id] .site-graph-label')]
-      .filter(label => !label.closest('.v9-transition-overlay'))
-      .forEach(label => {
-        const pose = canonicalLabelPose(label);
-        if (!pose) return;
-        labelWriteGuard = true;
-        try {
-          nativeSetAttribute.call(label, 'text-anchor', pose.anchor);
-          nativeSetAttribute.call(label, 'x', pose.x);
-          nativeSetAttribute.call(label, 'y', pose.y);
-        } finally {
-          labelWriteGuard = false;
-        }
-      });
-  };
-
   const syncCleanup = () => {
     syncAtlasEntryButton();
-    syncCanonicalLabels();
+    window.ProfileLocalLabelPolicy?.schedule?.('phase0-cleanup');
     if (document.body?.dataset.rootLanding === 'false' && window.scrollY !== 0) window.scrollTo(0, 0);
   };
-
-  const cleanupObserver = new MutationObserver(mutations => {
-    if (mutations.some(mutation => mutation.type === 'childList')) requestAnimationFrame(syncCleanup);
-    if (mutations.some(mutation => mutation.type === 'attributes')) requestAnimationFrame(syncCleanup);
-  });
-
-  const startCleanupObserver = () => {
-    if (!document.body) return;
-    cleanupObserver.observe(document.body, {
-      subtree: true,
-      childList: true,
-      attributes: true,
-      attributeFilter: ['data-graph-mode', 'data-graph-route', 'data-root-landing', 'class']
+  let cleanupFrame = 0;
+  const scheduleCleanup = () => {
+    cancelAnimationFrame(cleanupFrame);
+    cleanupFrame = requestAnimationFrame(() => {
+      cleanupFrame = 0;
+      syncCleanup();
     });
-    syncCleanup();
   };
-
-  if (document.body) startCleanupObserver();
-  else document.addEventListener('DOMContentLoaded', startCleanupObserver, { once: true });
-  window.addEventListener('hashchange', () => requestAnimationFrame(syncCleanup));
-  window.addEventListener('resize', () => requestAnimationFrame(syncCleanup));
+  addEventListener('profile:graph-render-settled', scheduleCleanup);
+  addEventListener('profile:scene-state', scheduleCleanup);
+  addEventListener('profile:transition-finish', scheduleCleanup);
+  addEventListener('profile:transition-cancel', scheduleCleanup);
+  addEventListener('profile:root-landing', scheduleCleanup);
+  addEventListener('hashchange', scheduleCleanup);
+  addEventListener('resize', scheduleCleanup);
+  scheduleCleanup();
 })();

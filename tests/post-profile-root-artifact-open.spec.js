@@ -12,8 +12,7 @@ const boot = async (page, route) => {
   if (route !== 'overview') {
     await page.waitForFunction(() => Boolean(
       window.ProfileObjectFocus &&
-      window.ProfileArtifactScenes &&
-      window.ProfileArtifactOpenGuard
+      window.ProfileArtifactScenes
     ));
   }
   await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
@@ -69,7 +68,7 @@ test('Modal Logic Lab double-click resolves to one stable Object Focus open', as
   expect(snapshot.pendingArtifactId).toBeNull();
   await expect(page.locator('.artifact-focus-viewer')).toBeVisible();
   await expect(page.locator('.object-focus-flight')).toHaveCount(0);
-  expect(await page.evaluate(() => window.ProfileArtifactOpenGuard.snapshot().installed)).toBe(true);
+  expect(snapshot.supportedMediaKinds).toContain('pdf');
 });
 
 test('BSc PDF stays scroll-interactive and exposes a reliable expand affordance', async ({ page }) => {

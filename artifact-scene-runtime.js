@@ -135,6 +135,18 @@
     if (highlightedBindingId === binding.id) requestAnimationFrame(() => drawTether(binding, root));
   };
 
+  const syncInlineMedia = root => {
+    root?.querySelectorAll?.('video[data-artifact-inline-video]').forEach(video => {
+      const visible = root.isConnected && !root.hidden && document.visibilityState === 'visible';
+      if (visible) {
+        video.muted = true;
+        video.play()?.catch?.(() => {});
+      } else if (!video.paused) {
+        video.pause();
+      }
+    });
+  };
+
   const focusableMedia = (artifact, href) => {
     if (/^image\//.test(artifact.mediaType || '')) {
       const image = document.createElement('img');
@@ -373,6 +385,7 @@
       if (!binding || !targetForRoute(binding, route)) closeFocus({ restoreFocus: false });
     }
     requestAnimationFrame(() => {
+      roots.forEach(syncInlineMedia);
       if (highlightedBindingId) {
         const binding = bindings.find(item => item.id === highlightedBindingId);
         const root = binding ? roots.get(binding.id) : null;
@@ -381,6 +394,8 @@
       }
     });
   });
+
+  document.addEventListener('visibilitychange', () => roots.forEach(syncInlineMedia));
 
   window.addEventListener('resize', () => {
     if (!highlightedBindingId) return;

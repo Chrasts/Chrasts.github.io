@@ -31,19 +31,7 @@
     };
   };
 
-  const nativeSetAttribute = Element.prototype.setAttribute;
   const numberPattern = /-?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?/gi;
-  const projectedTransformElement = element =>
-    element?.classList?.contains('site-graph-node') ||
-    element?.classList?.contains('work-project-anchor-v5') ||
-    element?.classList?.contains('work-theme-label-v5');
-
-  const projectTranslate = (value, mode = modeNow()) => {
-    const match = String(value).match(/^translate\(\s*(-?(?:\d+\.?\d*|\.\d+))[,\s]+(-?(?:\d+\.?\d*|\.\d+))\s*\)$/i);
-    if (!match) return value;
-    const point = mapPoint({ x: Number(match[1]), y: Number(match[2]) }, mode);
-    return `translate(${point.x.toFixed(1)} ${point.y.toFixed(1)})`;
-  };
 
   const projectPath = (value, mode = modeNow()) => {
     const p = projectionFor(mode);
@@ -58,28 +46,12 @@
     });
   };
 
-  SVGElement.prototype.setAttribute = function(name, value) {
-    if (mq.matches && localMode()) {
-      const mode = modeNow();
-      if (name === 'transform' && projectedTransformElement(this)) {
-        value = projectTranslate(value, mode);
-      } else if (
-        name === 'd' &&
-        this.tagName?.toLowerCase() === 'path' &&
-        this.parentElement?.classList?.contains('site-graph-edges')
-      ) {
-        value = projectPath(value, mode);
-      } else if (this.classList?.contains('site-graph-timeline')) {
-        const number = Number(value);
-        const p = projectionFor(mode);
-        if (Number.isFinite(number)) {
-          if (name === 'x1' || name === 'x2') value = p.centreX + (number - p.centreX) * p.scaleX;
-          if (name === 'y1' || name === 'y2') value = p.originY + (number - p.originY) * p.scaleY;
-        }
-      }
-    }
-    return nativeSetAttribute.call(this, name, value);
+  window.ProfileMobileProjection = {
+    activeFor: mode => mq.matches && mode !== 'atlas',
+    mapPoint: (point, mode = modeNow()) => mapPoint(point, mode),
+    projectPath: (value, mode = modeNow()) => projectPath(value, mode)
   };
+  window.dispatchEvent(new CustomEvent('profile:mobile-projection-ready'));
 
   const baseNodes = () => $$('#site-graph .site-graph-node[data-node-id]')
     .filter(element => !element.closest('.v9-transition-overlay'));
@@ -93,9 +65,9 @@
     return Number.isFinite(x) && Number.isFinite(y) ? { x, y } : null;
   };
 
-  const setNativeTransform = (element, point, mode = modeNow()) => {
+  const setProjectedTransform = (element, point, mode = modeNow()) => {
     const mapped = mapPoint(point, mode);
-    nativeSetAttribute.call(element, 'transform', `translate(${mapped.x.toFixed(1)} ${mapped.y.toFixed(1)})`);
+    element.setAttribute('transform', `translate(${mapped.x.toFixed(1)} ${mapped.y.toFixed(1)})`);
   };
 
   const stableNumber = value => {
@@ -126,7 +98,8 @@
       const source = points.get(edge.dataset.source);
       const target = points.get(edge.dataset.target);
       if (!source || !target) return;
-      edge.setAttribute('d', edgeDesktopPath(source, target, `${edge.dataset.source}|${edge.dataset.target}`));
+      const desktopPath = edgeDesktopPath(source, target, `${edge.dataset.source}|${edge.dataset.target}`);
+      edge.setAttribute('d', projectPath(desktopPath));
     });
   };
 
@@ -134,7 +107,7 @@
     if (!localMode()) return;
     baseNodes().forEach(element => {
       const point = dataPoint(element);
-      if (point) setNativeTransform(element, point);
+      if (point) setProjectedTransform(element, point);
     });
     syncEdgesFromData();
   };
@@ -143,7 +116,7 @@
     if (modeNow() !== 'atlas') return;
     baseNodes().forEach(element => {
       const point = dataPoint(element);
-      if (point) nativeSetAttribute.call(element, 'transform', `translate(${point.x.toFixed(1)} ${point.y.toFixed(1)})`);
+      if (point) element.setAttribute('transform', `translate(${point.x.toFixed(1)} ${point.y.toFixed(1)})`);
     });
   };
 
@@ -186,7 +159,7 @@
       if (!point) return;
       element.dataset.x = String(point.x);
       element.dataset.y = String(point.y);
-      setNativeTransform(element, point);
+      setProjectedTransform(element, point);
     });
     syncEdgesFromData();
   };
@@ -384,8 +357,8 @@
     if (!target) return;
     constrainCamera();
     const box = cameraBox();
-    nativeSetAttribute.call(target, 'viewBox', `${box.x.toFixed(2)} ${box.y.toFixed(2)} ${box.width.toFixed(2)} ${box.height.toFixed(2)}`);
-    nativeSetAttribute.call(target, 'preserveAspectRatio', 'xMidYMid meet');
+    target.setAttribute('viewBox', `${box.x.toFixed(2)} ${box.y.toFixed(2)} ${box.width.toFixed(2)} ${box.height.toFixed(2)}`);
+    target.setAttribute('preserveAspectRatio', 'xMidYMid meet');
   };
 
   const animateCamera = (target, duration = 360) => {
@@ -771,23 +744,23 @@
     registerExistingObjects();
     syncMode();
 
-    let v9WasActive = document.body.classList.contains('is-v9-transitioning');
-    const observer = new MutationObserver(mutations => {
-      const modeChanged = mutations.some(mutation =>
-        mutation.type === 'attributes' && mutation.target === document.body && mutation.attributeName === 'data-graph-mode'
-      );
-      const v9Active = document.body.classList.contains('is-v9-transitioning');
-      const transitionEnded = v9WasActive && !v9Active;
-      v9WasActive = v9Active;
-      if (modeChanged) syncMode();
-      if (transitionEnded) settleScene();
+    const refreshRuntimeBindings = () => {
       adoptModeControls();
       bindViewport();
+    };
+    window.addEventListener('profile:scene-state', () => {
+      syncMode();
+      refreshRuntimeBindings();
     });
-    observer.observe(document.body, {
-      attributes: true,
-      attributeFilter: ['data-graph-mode', 'class']
+    window.addEventListener('profile:graph-render-settled', () => {
+      refreshRuntimeBindings();
+      settleScene({ instant: true });
     });
+    ['profile:transition-finish', 'profile:transition-cancel', 'profile:graph-transition-interrupted']
+      .forEach(type => window.addEventListener(type, () => {
+        refreshRuntimeBindings();
+        settleScene();
+      }));
 
     window.addEventListener('hashchange', () => settleScene());
     window.addEventListener('orientationchange', () => setTimeout(() => settleScene({ instant: true }), 140));
@@ -805,7 +778,8 @@
       zoomOut: () => localMode() ? zoomAt(.84) : atlasClick('#atlas-zoom-out'),
       closeSheet,
       projectionFor,
-      mapPoint
+      mapPoint,
+      projectPath
     };
   };
 

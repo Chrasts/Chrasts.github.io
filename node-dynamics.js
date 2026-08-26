@@ -29,8 +29,6 @@
   let lastActiveNodeId = null;
   let transitionSettling = false;
   let lastTransitionSettle = null;
-  let mutationObserver = null;
-  let environmentObserver = null;
   const records = new Map();
   const canonicalEdgePaths = new WeakMap();
 
@@ -455,9 +453,7 @@
   const bind = () => {
     const next = document.querySelector('#site-graph');
     if (!next) return false;
-    if (root === next && mutationObserver) return true;
-
-    mutationObserver?.disconnect();
+    if (root === next) return true;
     root = next;
     syncRecords();
     root.dataset.nodeDynamicsBound = 'true';
@@ -476,22 +472,19 @@
       hardReset();
     }, true);
 
-    mutationObserver = new MutationObserver(mutations => {
-      if (introOwned()) return;
-      if (mutations.some(mutation => mutation.type === 'childList')) {
-        hardReset({ restore: false });
-        syncRecords();
-        requestAnimationFrame(wake);
-      }
-    });
-    mutationObserver.observe(root, { childList: true, subtree: true });
-
     window.addEventListener('profile:node-interaction', wake);
     window.addEventListener('profile:scene-state', () => requestAnimationFrame(wake));
     window.addEventListener('profile:atlas-lod-change', wake);
     window.addEventListener('profile:transition-begin', () => suspend('transition'));
     window.addEventListener('profile:transition-finish', resume);
     window.addEventListener('profile:transition-cancel', resume);
+
+    window.addEventListener('profile:graph-render-settled', () => {
+      if (introOwned()) return;
+      hardReset({ restore: false });
+      syncRecords();
+      requestAnimationFrame(wake);
+    });
 
     const environmentChanged = () => {
       if (introOwned() || document.body.classList.contains('is-v9-transitioning')) {
@@ -500,10 +493,8 @@
         resume();
       }
     };
-    environmentObserver?.disconnect();
-    environmentObserver = new MutationObserver(environmentChanged);
-    environmentObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-profile-intro'] });
-    environmentObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    ['profile:intro-stage', 'profile:intro-completed', 'profile:intro-interrupted', 'profile:profile-root-emergence']
+      .forEach(type => window.addEventListener(type, environmentChanged));
     environmentChanged();
 
     return true;
@@ -568,12 +559,9 @@
       wake();
       return;
     }
-    const observer = new MutationObserver(() => {
-      if (!bind()) return;
-      observer.disconnect();
-      wake();
-    });
-    observer.observe(document.documentElement, { childList: true, subtree: true });
+    document.addEventListener('DOMContentLoaded', () => {
+      if (bind()) wake();
+    }, { once: true });
   };
 
   boot();

@@ -2,7 +2,6 @@
   if (window.ProfileObjectFocusCertificateAdapter) return;
 
   let attached = false;
-  let observer = null;
 
   const stack = () => document.querySelector('.phase8-certificate-stack');
   const inspector = () => document.querySelector('.phase8-certificate-inspector');
@@ -74,14 +73,6 @@
     if (attached || !window.ProfilePhase8 || !window.ProfileObjectFocus || !stack()) return false;
     attached = true;
     document.addEventListener('click', handleCertificateClick, true);
-    const target = root();
-    if (target) {
-      observer = new MutationObserver(() => {
-        ensureInspectAction();
-        syncStates();
-      });
-      observer.observe(target, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'hidden'] });
-    }
     ensureInspectAction();
     syncStates();
     return true;
@@ -90,6 +81,10 @@
   window.addEventListener('profile:phase8-ready', attach);
   window.addEventListener('profile:object-focus-ready', attach);
   window.addEventListener('profile:scene-state', () => requestAnimationFrame(syncStates));
+  window.addEventListener('profile:graph-render-settled', () => requestAnimationFrame(() => {
+    ensureInspectAction();
+    syncStates();
+  }));
   attach();
 
   window.ProfileObjectFocusCertificateAdapter = Object.freeze({

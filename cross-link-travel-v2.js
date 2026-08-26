@@ -14,7 +14,7 @@
   const reducedQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
   const reducedMotion = {
     get matches() {
-      return Boolean(window.__PROFILE_REDUCED_MOTION__) || reducedQuery.matches;
+      return Boolean(window.__PROFILE_INTRO_BOOTSTRAP__?.reducedMotion) || reducedQuery.matches;
     }
   };
   if (!explorer || !routebar) return;
@@ -505,11 +505,9 @@
   window.addEventListener('hashchange', scheduleRender);
   window.addEventListener('profile:scene-state', scheduleRender);
   window.addEventListener('profile:geometry-applied', scheduleRender);
-  const observer = new MutationObserver(mutations => {
-    if (mutations.some(mutation => mutation.type === 'attributes')) scheduleRender();
-  });
-  observer.observe(document.body, { attributes: true, attributeFilter: ['data-graph-mode', 'data-graph-route'] });
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-profile-intro'] });
+  window.addEventListener('profile:intro-stage', scheduleRender);
+  window.addEventListener('profile:intro-completed', scheduleRender);
+  window.addEventListener('profile:graph-render-settled', scheduleRender);
 
   window.ProfileCrossLinkTravel = Object.freeze({
     navigate: (targetId, type = null) => navigate({ sourceId: currentSourceId(), targetId, type }),

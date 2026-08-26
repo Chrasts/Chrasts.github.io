@@ -1,6 +1,4 @@
 (() => {
-  window.__GRAPH_V6_RESTORE_MATCH_MEDIA__?.();
-
   const site = window.SITE_DATA;
   const graph = site?.graph;
   if (!graph?.nodes?.length) return;
@@ -451,17 +449,26 @@
   };
 
   const cleanupTransitionShell = current => {
+    if (pending === current) pending = null;
+    if (activeTransition === current) activeTransition = null;
     current?.overlay?.remove();
     const camera = graphCamera();
     camera?.style.removeProperty('opacity');
     current?.camera?.style?.removeProperty?.('opacity');
     document.body.classList.remove('is-v9-transitioning');
-    window.__GRAPH_V6_FORCE_SNAP__ = false;
+    window.ProfileMotionPolicy?.setForceSnap?.(false);
+    if (current?.sceneToken && sceneTransitions?.matches?.(current.sceneToken)) {
+      sceneTransitions.cancel(current.sceneToken, {
+        reason: 'graph-transition-unavailable',
+        source: 'graph-transitions-v6'
+      });
+    }
   };
 
-  const interruptTransition = ({ reason = 'interrupted', preserveVisual = true } = {}) => {
+  const interruptTransition = ({ reason = 'interrupted', preserveVisual = true, coordinate = true } = {}) => {
     const hadTransition = Boolean(pending || activeTransition || document.body.classList.contains('is-v9-transitioning'));
     if (!hadTransition) return false;
+    const sceneToken = activeTransition?.sceneToken || pending?.sceneToken || null;
     const snapshot = preserveVisual ? captureVisualSnapshot() : null;
     transitionOperation += 1;
     cancelAnimationFrame(transitionFrame);
@@ -473,7 +480,7 @@
     const camera = graphCamera();
     camera?.style.removeProperty('opacity');
     document.body.classList.remove('is-v9-transitioning');
-    window.__GRAPH_V6_FORCE_SNAP__ = false;
+    window.ProfileMotionPolicy?.setForceSnap?.(false);
     carriedSnapshot = snapshot;
     window.dispatchEvent(new CustomEvent('profile:graph-transition-interrupted', {
       detail: {
@@ -483,6 +490,9 @@
         operation: transitionOperation
       }
     }));
+    if (coordinate && sceneToken && sceneTransitions?.matches?.(sceneToken)) {
+      sceneTransitions.cancel(sceneToken, { reason, source: 'graph-transition' });
+    }
     return true;
   };
 
@@ -493,7 +503,10 @@
       nodeCount: visualOverlayNodes()?.querySelectorAll(':scope > .site-graph-node[data-node-id]').length || 0,
       operation: transitionOperation
     }),
-    cancel: payload => interruptTransition({ reason: payload?.reason || 'coordinator-interrupt' })
+    cancel: payload => interruptTransition({
+      reason: payload?.reason || 'coordinator-interrupt',
+      coordinate: false
+    })
   });
 
   const prepare = ({ targetId = null, targetRoute = null, trigger = 'click' } = {}) => {
@@ -564,9 +577,17 @@
       });
     }
 
+    const sceneToken = sceneTransitions?.begin?.({
+      kind: 'graph-route',
+      fromRoute: currentRoute,
+      fromMode: document.body.dataset.graphMode || 'overview',
+      targetRoute: resolvedTargetRoute,
+      trigger,
+      source: 'graph-transitions-v6'
+    }) || null;
     if (!reduced.matches) camera.style.opacity = '0';
     document.body.classList.add('is-v9-transitioning');
-    window.__GRAPH_V6_FORCE_SNAP__ = true;
+    window.ProfileMotionPolicy?.setForceSnap?.(true);
 
     const operation = ++transitionOperation;
     pending = {
@@ -583,7 +604,8 @@
       overlayEdges,
       overlayDecorations,
       overlayNodes,
-      camera
+      camera,
+      sceneToken
     };
   };
 
@@ -650,9 +672,16 @@
     if (camera) camera.style.opacity = '';
     current.overlay.remove();
     document.body.classList.remove('is-v9-transitioning');
-    window.__GRAPH_V6_FORCE_SNAP__ = false;
+    window.ProfileMotionPolicy?.setForceSnap?.(false);
     lastStableRoute = normaliseRoute(document.body.dataset.graphRoute || location.hash);
     activeTransition = null;
+    if (current.sceneToken && sceneTransitions?.matches?.(current.sceneToken)) {
+      sceneTransitions.finish(current.sceneToken, {
+        toRoute: lastStableRoute,
+        toMode: document.body.dataset.graphMode || 'overview',
+        result: 'completed'
+      });
+    }
 
     requestAnimationFrame(() => requestAnimationFrame(() => {
       if (current.operation !== transitionOperation) return;
@@ -694,6 +723,16 @@
     const afterElements = new Map(nodeElements().map(element => [element.dataset.nodeId, element]));
     const after = new Map([...afterElements].map(([id, element]) => [id, pointOf(element)]));
     const activeRoute = normaliseRoute(document.body.dataset.graphRoute || location.hash);
+    if (current.sceneToken && sceneTransitions?.matches?.(current.sceneToken)) {
+      sceneTransitions.prepare(current.sceneToken, {
+        toRoute: activeRoute,
+        toMode: document.body.dataset.graphMode || 'overview'
+      });
+      sceneTransitions.commit(current.sceneToken, {
+        toRoute: activeRoute,
+        toMode: document.body.dataset.graphMode || 'overview'
+      });
+    }
     const activeNode = routeNode(activeRoute) || (activeRoute.startsWith('work') ? nodeMap.get('work') : null);
 
     const finalTargetId = current.targetId && after.has(current.targetId)

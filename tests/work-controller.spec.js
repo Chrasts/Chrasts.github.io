@@ -19,7 +19,7 @@ test('Work uses one canonical controller without the retired hidden renderer', a
   await expect(page.locator('.integrated-work-controls')).toHaveCount(1);
 
   const initial = await page.evaluate(() => window.ProfileWorkController.snapshot());
-  expect(initial.projectCount).toBe(window === undefined ? 10 : initial.projectCount);
+  expect(initial.projectCount).toBe(10);
   expect(initial.visibleProjectCount).toBe(initial.projectCount);
   expect(initial.conceptCount).toBeGreaterThan(1);
 

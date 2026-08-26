@@ -61,57 +61,28 @@
     if (event.matches) ensureMobileLayer();
   });
 
-  const nativeDocumentQuerySelectorAll = Document.prototype.querySelectorAll;
-  const transitionBaseSelectors = new Set([
-    '#site-graph .site-graph-node[data-node-id]',
-    '#site-graph .site-graph-edges path[data-source][data-target]'
-  ]);
-
-  Document.prototype.querySelectorAll = function(selector) {
-    const result = nativeDocumentQuerySelectorAll.call(this, selector);
-    if (
-      this !== document ||
-      !document.body?.classList.contains('is-v9-transitioning') ||
-      !transitionBaseSelectors.has(selector)
-    ) {
-      return result;
-    }
-    return [...result].filter(element => !element.closest('.v9-transition-overlay'));
-  };
-
-  const realMatchMedia = window.matchMedia.bind(window);
-  const realReduced = realMatchMedia('(prefers-reduced-motion: reduce)');
+  const realReduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   let forceSnap = false;
-
-  Object.defineProperty(window, '__GRAPH_V6_FORCE_SNAP__', {
-    configurable: true,
-    get: () => forceSnap,
-    set: value => {
-      forceSnap = Boolean(value);
-      if (!forceSnap) return;
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        forceSnap = false;
-      }));
+  let forceFrame = 0;
+  const setForceSnap = value => {
+    forceSnap = Boolean(value);
+    cancelAnimationFrame(forceFrame);
+    forceFrame = 0;
+    if (forceSnap) {
+      forceFrame = requestAnimationFrame(() => {
+        forceFrame = requestAnimationFrame(() => {
+          forceFrame = 0;
+          forceSnap = false;
+        });
+      });
     }
+    dispatchEvent(new CustomEvent('profile:motion-policy', { detail: { forceSnap, reducedMotion: realReduced.matches } }));
+    return forceSnap;
+  };
+  window.ProfileMotionPolicy = Object.freeze({
+    setForceSnap,
+    snapshot: () => ({ forceSnap, reducedMotion: realReduced.matches, pending: Boolean(forceFrame) })
   });
-
-  const proxyReduced = {
-    get matches() { return forceSnap || realReduced.matches; },
-    media: realReduced.media,
-    onchange: null,
-    addListener: (...args) => realReduced.addListener?.(...args),
-    removeListener: (...args) => realReduced.removeListener?.(...args),
-    addEventListener: (...args) => realReduced.addEventListener?.(...args),
-    removeEventListener: (...args) => realReduced.removeEventListener?.(...args),
-    dispatchEvent: (...args) => realReduced.dispatchEvent?.(...args)
-  };
-
-  window.__GRAPH_V6_REAL_MATCH_MEDIA__ = realMatchMedia;
-  window.__GRAPH_V6_RESTORE_MATCH_MEDIA__ = () => {
-    setTimeout(() => { window.matchMedia = realMatchMedia; }, 0);
-  };
-  window.matchMedia = query =>
-    query === '(prefers-reduced-motion: reduce)' ? proxyReduced : realMatchMedia(query);
 
   let atlasRootPinned = false;
   let atlasRootVisuallyCleared = false;
@@ -215,6 +186,7 @@
     document.body.classList.remove('has-work-concept-detail');
     if (!panel?.classList.contains('is-work-concept-detail')) return;
     panel.classList.remove('is-open');
+    dispatchEvent(new CustomEvent('profile:detail-closed', { detail: { kind: 'work-concept' } }));
     setTimeout(() => {
       if (!panel.classList.contains('is-open')) {
         panel.hidden = true;
@@ -227,6 +199,7 @@
     const panel = detailPanel();
     if (!panel?.classList.contains('is-work-project-detail-local')) return false;
     panel.classList.remove('is-open', 'is-work-project-detail-local');
+    dispatchEvent(new CustomEvent('profile:detail-closed', { detail: { kind: 'work-project' } }));
     if (normaliseRoute(location.hash).startsWith('work/project/')) {
       history.replaceState(null, '', '#work');
       document.body.dataset.graphRoute = 'work';
@@ -301,6 +274,7 @@
       element.classList.toggle('is-selected', element.dataset.projectId === project.id);
     });
     requestAnimationFrame(() => panel.classList.add('is-open'));
+    dispatchEvent(new CustomEvent('profile:detail-rendered', { detail: { kind: 'work-project', id: project.id } }));
     return true;
   };
 
@@ -369,6 +343,7 @@
     }
 
     requestAnimationFrame(() => panel.classList.add('is-open'));
+    dispatchEvent(new CustomEvent('profile:detail-rendered', { detail: { kind: 'work-concept', ids } }));
   };
 
   const workConceptThemes = element => {

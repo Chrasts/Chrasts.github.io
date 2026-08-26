@@ -141,10 +141,6 @@
       if (node && ['Enter', ' '].includes(event.key)) activate(node);
     }, true);
 
-    new MutationObserver(mutations => {
-      if (mutations.some(mutation => mutation.type === 'childList')) schedule();
-    }).observe(root, { childList: true, subtree: true });
-
     window.addEventListener('profile:node-interaction', schedule);
     window.addEventListener('profile:artifact-scenes-ready', schedule);
     window.addEventListener('profile:scene-state', schedule);
@@ -153,6 +149,7 @@
     window.addEventListener('profile:transition-finish', schedule);
     window.addEventListener('profile:transition-cancel', schedule);
     window.addEventListener('profile:graph-navigation', schedule);
+    window.addEventListener('profile:graph-render-settled', schedule);
 
     schedule();
     return true;
@@ -160,11 +157,7 @@
 
   const boot = () => {
     if (bind()) return;
-    const observer = new MutationObserver(() => {
-      if (!bind()) return;
-      observer.disconnect();
-    });
-    observer.observe(document.documentElement, { childList: true, subtree: true });
+    document.addEventListener('DOMContentLoaded', bind, { once: true });
   };
 
   function snapshot() {

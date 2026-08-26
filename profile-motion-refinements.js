@@ -117,19 +117,21 @@
     branchEdgeFrame = requestAnimationFrame(step);
   };
 
-  const syncEmergencePhase = () => {
-    const emerging = document.body?.classList.contains('is-profile-root-emerging');
-    if (emerging) {
+  const syncEmergencePhase = phase => {
+    const emerging = phase === 'nodes' || document.body?.classList.contains('is-profile-root-emerging');
+    if (emerging && phase !== 'settled' && phase !== 'cancelled') {
       wasEmerging = true;
       markMainBranchEdges();
       if (document.body) document.body.dataset.profileBranchEdgePhase = 'nodes';
       return;
     }
-    if (!wasEmerging) return;
+    if (!wasEmerging || phase === 'cancelled') {
+      wasEmerging = false;
+      return;
+    }
     wasEmerging = false;
-    // atlas-condensation restores the canonical edge styles before removing the
-    // emergence class. MutationObserver runs before paint, so no edge flash is
-    // exposed between the node and relation phases.
+    // Atlas condensation announces its settled commit after restoring canonical
+    // edge styles, so the relation draw begins without an intermediate flash.
     drawMainBranchEdges();
   };
 
@@ -349,6 +351,7 @@
       edgeLayer.appendChild(path);
     });
     document.body.appendChild(overlay);
+    dispatchEvent(new CustomEvent('profile:motion-bridge-created', { detail: { overlay } }));
     return { overlay, edgeLayer, nodeLayer };
   };
 
@@ -654,7 +657,7 @@
     transitionFrame = 0;
     active?.bridge?.overlay?.remove();
     active = null;
-    window.__GRAPH_V6_FORCE_SNAP__ = false;
+    window.ProfileMotionPolicy?.setForceSnap?.(false);
     document.body?.classList.remove('is-profile-hierarchy-atlas-transitioning', 'is-atlas-focus-transitioning', 'is-profile-atlas-transitioning');
     if (document.body) {
       delete document.body.dataset.profileAtlasHierarchyPhase;
@@ -690,14 +693,14 @@
 
     await atlasReady.catch(() => false);
     if (operation !== generation) return false;
-    window.__GRAPH_V6_FORCE_SNAP__ = true;
+    window.ProfileMotionPolicy?.setForceSnap?.(true);
     if (!history) {
       if (location.hash !== '#atlas') location.hash = '#atlas';
       else dispatchEvent(new HashChangeEvent('hashchange'));
     }
 
     const ready = await prepareAtlasTarget(operation);
-    window.__GRAPH_V6_FORCE_SNAP__ = false;
+    window.ProfileMotionPolicy?.setForceSnap?.(false);
     if (!ready || operation !== generation) {
       cleanup('atlas-target-unavailable');
       return false;
@@ -766,21 +769,15 @@
   addEventListener('click', ownAtlasClick, true);
   addEventListener('keydown', ownAtlasKeyboard, true);
 
-  const observer = new MutationObserver(mutations => {
-    if (mutations.some(mutation => mutation.attributeName === 'class')) syncEmergencePhase();
+  addEventListener('profile:profile-root-emergence', event => syncEmergencePhase(event.detail?.phase));
+  addEventListener('profile:graph-render-settled', () => {
     refineProfileRootCopy();
     if (document.body?.classList.contains('is-profile-root-emerging')) markMainBranchEdges();
   });
   const boot = () => {
     if (!document.body) return requestAnimationFrame(boot);
-    observer.observe(document.body, {
-      subtree: true,
-      childList: true,
-      attributes: true,
-      attributeFilter: ['class', 'data-graph-mode', 'data-root-landing']
-    });
     wasEmerging = document.body.classList.contains('is-profile-root-emerging');
-    syncEmergencePhase();
+    syncEmergencePhase(wasEmerging ? 'nodes' : null);
     refineProfileRootCopy();
   };
 

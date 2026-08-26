@@ -485,7 +485,7 @@
       }
       if (kind === 'pdf') {
         const frame = document.createElement('iframe');
-        frame.src = `${href}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`;
+        frame.src = `${href}#toolbar=1&navpanes=0&scrollbar=0&view=Fit`;
         frame.title = artifact.title || 'PDF artifact';
         return frame;
       }
@@ -600,6 +600,9 @@
       const href = id ? this.hrefFor(id) : null;
       if (!viewer || !source || !artifact || !href) return false;
 
+      const current = this.active || this.pending;
+      if (current?.artifactId === id && current.source === source) return true;
+
       if (this.active || this.pending) this.interrupt();
       clearTimeout(this.hideTimer);
       const operation = ++this.operation;
@@ -617,6 +620,7 @@
       viewer.dataset.sharedFocusPhase = 'preparing';
       document.body.classList.add('has-artifact-focus', 'has-object-focus');
       this.configureMediaStage(artifact);
+      window.ProfileObjectFocusFit?.syncNow?.();
 
       requestAnimationFrame(async () => {
         if (operation !== this.operation || this.pending !== record) return;

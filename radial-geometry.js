@@ -393,11 +393,8 @@
     return normalise({ x: targetVector.x - sourceVector.x || 1, y: targetVector.y - sourceVector.y });
   };
 
-  const graphRoot = document.querySelector('#site-graph');
-  if (graphRoot) new MutationObserver(mutations => {
-    if (mutations.some(mutation => mutation.type === 'childList')) stabilize(900);
-  }).observe(graphRoot, { childList: true, subtree: true });
   window.addEventListener('hashchange', () => stabilize(1100));
+  window.addEventListener('profile:graph-render-settled', () => stabilize());
   window.addEventListener('profile:scene-state', () => stabilize());
   window.addEventListener('profile:transition-finish', () => stabilize());
   window.addEventListener('profile:transition-cancel', () => stabilize());

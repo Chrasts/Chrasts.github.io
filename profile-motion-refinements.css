@@ -47,6 +47,7 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-read
 /* Profile Root emergence is node-first. atlas-condensation.js may update the
    edge inline while the node is travelling; this rule deliberately wins until
    every main branch has reached its final position. */
+body.is-profile-root-emerging #site-graph .site-graph-edges path[data-profile-main-edge="true"],
 body.is-profile-root-emerging #site-graph .site-graph-edges path[data-source="stepan-chrast"][data-type="hierarchy"],
 body.is-profile-root-emerging #site-graph .site-graph-edges path[data-source="stepan-chrast"][data-type="hierarchy-alt"]{
   opacity:0!important;

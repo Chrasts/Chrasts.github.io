@@ -95,6 +95,8 @@
     ensureScript('artifact-scene-layout-compat.js', 'data-profile-artifact-layout-compat');
     ensureStyle('portfolio-refinements.css', 'data-profile-refinements-style');
     ensureScript('portfolio-refinements.js', 'data-profile-refinements');
+    ensureStyle('profile-post-entry.css', 'data-profile-post-entry-style');
+    ensureScript('profile-post-entry.js', 'data-profile-post-entry');
     ensureStyle('object-focus.css', 'data-profile-object-focus-style');
     ensureStyle('phase-b-object-emergence.css', 'data-profile-phase-b-object-emergence-style');
     ensureStyle('phase-b-object-emergence-refinements.css', 'data-profile-phase-b-object-emergence-refinements');
@@ -102,6 +104,8 @@
     ensureScript('object-focus-fit.js', 'data-profile-object-focus-fit');
     ensureStyle('artifact-viewer-v2.css', 'data-profile-artifact-viewer-v2-style');
     ensureScript('artifact-viewer-v2.js', 'data-profile-artifact-viewer-v2');
+    ensureStyle('artifact-open-guard.css', 'data-profile-artifact-open-guard-style');
+    ensureScript('artifact-open-guard.js', 'data-profile-artifact-open-guard');
     ensureScript('object-focus-certificate-adapter.js', 'data-profile-object-focus-certificate-adapter');
     ensureScript('node-detail-dismiss.js', 'data-profile-node-detail-dismiss');
   }

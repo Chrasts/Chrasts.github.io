@@ -55,11 +55,9 @@
   };
 
   const fitPdf = (surface, iframe, artifactId) => {
-    const current = iframe.getAttribute('src') || '';
-    const base = current.split('#')[0];
-    const desired = `${base}#toolbar=1&navpanes=0&scrollbar=0&view=Fit`;
-    if (current !== desired) iframe.setAttribute('src', desired);
-
+    // Do not rewrite iframe.src here. Reassigning only the PDF fragment starts
+    // a second native PDF load during Object Focus and is the source of both a
+    // visible sizing jump and intermittent blank PDF surfaces on larger files.
     const ratio = sourceAspect(artifactId) || .7071;
     const box = fitBox(surface, ratio, mobile.matches
       ? { horizontal: .94, vertical: .88 }
@@ -78,7 +76,12 @@
     if (viewer !== nextViewer) {
       observer?.disconnect();
       viewer = nextViewer;
-      observer = new MutationObserver(schedule);
+      observer = new MutationObserver(() => {
+        // Mutations caused by opening Object Focus are delivered before paint.
+        // Fit synchronously in that microtask so shared-element flight measures
+        // the final target box rather than the temporary full-surface iframe.
+        sync();
+      });
       observer.observe(viewer, {
         subtree: true,
         childList: true,
@@ -105,6 +108,7 @@
 
   window.ProfileObjectFocusFit = Object.freeze({
     refresh: schedule,
+    syncNow: sync,
     snapshot: () => ({
       active: Boolean(viewer && !viewer.hidden),
       artifactId: viewer?.dataset.sharedFocusArtifact || null,

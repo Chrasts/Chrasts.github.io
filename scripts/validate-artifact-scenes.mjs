@@ -37,9 +37,9 @@ if (!issues.length) {
         if (!artifact) issues.push(`${binding.id} references unknown artifact: ${artifactId}`);
         else if (artifact.availability === 'planned') issues.push(`${binding.id} cannot render planned artifact: ${artifactId}`);
       }
-      if (binding.recipe === 'media-deck' && binding.artifactIds.length < 2) {
-        issues.push(`${binding.id} uses media-deck but has fewer than two artifacts.`);
-      }
+      // A media deck is also the generic floating-media recipe. It may contain
+      // one artifact (for example a single gameplay video) or several stacked
+      // artifacts; cardinality is presentation data, not a validity rule.
     }
 
     for (const artifactId of binding.actionArtifactIds || []) {

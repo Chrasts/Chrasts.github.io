@@ -11,6 +11,27 @@
   const hrefFor = id => window.ProfileArtifacts?.hrefFor?.(id) || null;
   const viewer = () => window.ProfileArtifactScenes?.viewer || document.querySelector('.artifact-focus-viewer');
 
+  // Object Focus already owns media construction. Refine its generic PDF path
+  // once, by media kind, while the iframe is still detached. Reassigning src on
+  // a detached iframe does not create the second visible/native PDF navigation
+  // that used to happen after the viewer was already on screen.
+  const installPdfFocusUrlPolicy = () => {
+    const Controller = window.ObjectFocusController;
+    const prototype = Controller?.prototype;
+    if (!prototype?.makeMedia || prototype.makeMedia.__artifactViewerV2) return Boolean(prototype?.makeMedia);
+    const original = prototype.makeMedia;
+    const refined = function (artifact, href) {
+      const media = original.call(this, artifact, href);
+      if (this.mediaKindFor?.(artifact) === 'pdf' && media instanceof HTMLIFrameElement) {
+        media.src = `${href}#toolbar=1&navpanes=0&scrollbar=0&view=Fit`;
+      }
+      return media;
+    };
+    refined.__artifactViewerV2 = true;
+    prototype.makeMedia = refined;
+    return true;
+  };
+
   const setMediaAspect = (frame, video) => {
     if (!frame || !video?.videoWidth || !video?.videoHeight) return;
     const ratio = video.videoWidth / video.videoHeight;
@@ -172,6 +193,7 @@
   };
 
   const refresh = () => {
+    installPdfFocusUrlPolicy();
     installLayerObserver();
     installViewerObserver();
     scanPreviews(document);

@@ -18,6 +18,21 @@ for (const artifact of api.all()) {
   if (!fs.existsSync(artifact.source.path)) {
     issues.push(`Missing local artifact file for ${artifact.id}: ${artifact.source.path}`);
   }
+  const presentation = artifact.presentation || {};
+  if (artifact.mediaType === 'application/pdf') {
+    const ratio = Number(presentation.aspectRatio);
+    if (!Number.isFinite(ratio) || ratio < .28 || ratio > 5) {
+      issues.push(`Local PDF ${artifact.id} requires a valid presentation.aspectRatio.`);
+    }
+  }
+  if (/^image\//i.test(artifact.mediaType || '')) {
+    const width = Number(presentation.width);
+    const height = Number(presentation.height);
+    const ratio = Number(presentation.aspectRatio);
+    if (!(width > 0 && height > 0 && ratio >= .28 && ratio <= 5)) {
+      issues.push(`Local image ${artifact.id} requires width, height and a valid aspectRatio.`);
+    }
+  }
 }
 
 if (issues.length) {

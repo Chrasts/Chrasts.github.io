@@ -34,6 +34,13 @@
     });
   };
 
+  const hierarchicalAtlas = fallback => (...args) => {
+    if (document.body?.dataset.graphMode !== 'atlas' && window.ProfileMotionRefinements?.transitionToAtlas) {
+      return window.ProfileMotionRefinements.transitionToAtlas();
+    }
+    return fallback?.(...args) ?? false;
+  };
+
   const installSnapshotAdapter = () => {
     const legacy = window.ProfileAtlasFocus;
     if (!legacy || legacy === wrappedLegacy || legacy.__profileMotionCompat) return Boolean(legacy);
@@ -42,6 +49,8 @@
 
     const wrapper = {
       ...legacy,
+      enterAtlas: hierarchicalAtlas(legacy.enterAtlas),
+      returnToAtlas: hierarchicalAtlas(legacy.returnToAtlas),
       snapshot: () => {
         const base = legacySnapshot();
         const motion = window.ProfileMotionRefinements?.snapshot?.() || null;

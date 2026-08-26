@@ -69,8 +69,9 @@
       video.dataset.artifactInlineVideo = 'true';
       video.setAttribute('aria-label', artifact.title || 'Video artifact');
 
-      // The floating object remains focusable/openable, but native video
-      // controls must not bubble into the card's Object Focus click handler.
+      // Native controls own pointer input. They must not bubble into the card's
+      // Object Focus click handler; expansion remains available from the card
+      // surface around the player / keyboard focus on the artifact object.
       ['pointerdown', 'click', 'dblclick'].forEach(type => {
         video.addEventListener(type, event => event.stopPropagation());
       });
@@ -175,11 +176,10 @@
     installViewerObserver();
     scanPreviews(document);
     syncFocusedPresentation();
-    videoBindings.forEach?.(() => {});
   };
 
-  // WeakMap is intentionally not enumerable; route refresh instead asks each
-  // inline player to resynchronise through its root/source mutation observers.
+  // WeakMap is intentionally not enumerable; route refresh asks every inline
+  // player currently in the DOM to resynchronise its stored lifecycle binding.
   const syncVisibleVideos = () => {
     document.querySelectorAll('video[data-artifact-inline-video]').forEach(video => {
       videoBindings.get(video)?.sync?.();

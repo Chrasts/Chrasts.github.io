@@ -1,0 +1,113 @@
+/* Artifact viewer V2 — transparent focus stage + type-aware inline media.
+   Loaded after artifact-scenes.css and object-focus.css so these rules are the
+   presentation contract for focused and floating artifact media. */
+
+/* Keep the application visible. The transparent backdrop remains only as the
+   outside-click hit surface; it must not tint, blur or desaturate the page. */
+.artifact-focus-backdrop{
+  background:transparent!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important
+}
+
+/* Focus mode adds only two informational bubbles: caption + source. The title
+   remains available to assistive technology in the dialog header, but does not
+   create a third visual card. */
+.artifact-focus-header>div{display:none!important}
+.artifact-focus-close{
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  color:var(--ink)!important;
+  opacity:.72
+}
+.artifact-focus-close:hover,.artifact-focus-close:focus-visible{
+  background:color-mix(in srgb,var(--paper) 84%,transparent)!important;
+  color:var(--ink)!important;
+  opacity:1
+}
+
+.artifact-focus-footer{
+  align-items:flex-end!important;
+  justify-content:space-between!important
+}
+.artifact-focus-description{
+  max-width:min(520px,62%)!important;
+  padding:8px 11px!important;
+  border:1px solid color-mix(in srgb,var(--line) 84%,transparent)!important;
+  border-radius:999px!important;
+  background:color-mix(in srgb,var(--paper) 94%,var(--cream))!important;
+  color:var(--ink)!important;
+  box-shadow:0 10px 28px color-mix(in srgb,var(--ink) 10%,transparent)!important;
+  backdrop-filter:blur(8px)!important
+}
+.artifact-focus-footer .artifact-action{
+  flex:0 0 auto;
+  padding:8px 12px!important;
+  border:1px solid color-mix(in srgb,var(--teal) 44%,var(--line))!important;
+  border-radius:999px!important;
+  background:color-mix(in srgb,var(--paper) 95%,var(--cream))!important;
+  color:var(--teal)!important;
+  box-shadow:0 10px 28px color-mix(in srgb,var(--ink) 10%,transparent)!important;
+  backdrop-filter:blur(8px)!important
+}
+.artifact-focus-footer .artifact-action:hover,.artifact-focus-footer .artifact-action:focus-visible{
+  background:var(--paper)!important;
+  color:var(--brown)!important
+}
+
+/* Interaction is discoverable from cursor/controls; avoid extra transient UI
+   pills over the artifact itself. */
+.object-focus-media-hint,
+.object-focus-media-zoom-readout{display:none!important}
+
+/* PDF previews are live documents, not screenshots. Wheel/touch input reaches
+   the native browser PDF viewer even before Object Focus is opened. */
+.artifact-media-preview.is-pdf iframe{
+  pointer-events:auto!important;
+  touch-action:auto!important;
+  overscroll-behavior:contain
+}
+
+/* Generic type=video artifacts become real inline players through
+   artifact-viewer-v2.js. Muted autoplay is permitted by modern browsers;
+   controls let the user unmute, seek or pause without opening Object Focus. */
+.artifact-media-preview video[data-artifact-inline-video]{
+  display:block;
+  width:100%;
+  height:100%;
+  border:0;
+  background:#000;
+  object-fit:contain;
+  pointer-events:auto;
+  touch-action:auto
+}
+.artifact-deck-preview:has(video[data-artifact-inline-video]){background:#000}
+
+/* Keep focused media large but visibly embedded in the unchanged page. */
+.artifact-focus-media[data-media-kind="pdf"] iframe.object-focus-primary{
+  box-shadow:0 20px 54px color-mix(in srgb,var(--ink) 22%,transparent)!important
+}
+.artifact-focus-media[data-media-kind="video"] video.object-focus-primary,
+.artifact-focus-media[data-media-kind="image"] img.object-focus-primary{
+  box-shadow:none
+}
+
+@media(max-width:900px){
+  .artifact-focus-description{
+    display:block!important;
+    max-width:min(66vw,390px)!important;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap
+  }
+  .artifact-focus-footer{gap:7px!important}
+  .artifact-focus-footer .artifact-action{padding:7px 10px!important}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .artifact-focus-description,
+  .artifact-focus-footer .artifact-action,
+  .artifact-focus-close{transition:none!important}
+}

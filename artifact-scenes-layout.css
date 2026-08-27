@@ -23,15 +23,15 @@
     right:auto!important
   }
 
-  /* Two-card diagrams: keep each card in a stable slot, but compact the spread
-     when the side lane is narrower than the ideal 340px footprint. */
+  /* Two-card diagrams keep the original readable PDF scale when the lane allows
+     it, then compact continuously instead of switching to a route-specific size. */
   .artifact-object[data-artifact-variant="diagram"]{
-    --artifact-diagram-card-width:min(210px,calc(var(--artifact-lane-width) - 28px));
+    --artifact-diagram-card-width:min(258px,calc(var(--artifact-lane-width) - 28px));
     --artifact-diagram-spread:clamp(14px,calc((var(--artifact-lane-width) - var(--artifact-diagram-card-width))/2),65px)
   }
   .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card{
     width:var(--artifact-diagram-card-width);
-    height:205px
+    height:244px
   }
   .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(1){
     transform:translateX(calc(-50% - var(--artifact-diagram-spread))) translateY(8px) rotate(-3deg)
@@ -69,14 +69,14 @@
   }
 
   /* Three-photo fans keep all three cards selectable while fitting the actual
-     side corridor. This replaces route-specific Hedgehog positioning. */
+     side corridor. A slightly wider card/spread preserves independent hit areas. */
   .artifact-object[data-artifact-variant="fan"]{
-    --artifact-fan-card-width:min(160px,calc(var(--artifact-lane-width) - 36px));
-    --artifact-fan-spread:clamp(18px,calc((var(--artifact-lane-width) - var(--artifact-fan-card-width))/2),102px)
+    --artifact-fan-card-width:min(190px,calc(var(--artifact-lane-width) - 36px));
+    --artifact-fan-spread:clamp(28px,calc((var(--artifact-lane-width) - var(--artifact-fan-card-width))/2),110px)
   }
   .artifact-object[data-artifact-variant="fan"] .artifact-deck-card{
     width:var(--artifact-fan-card-width);
-    height:190px
+    height:228px
   }
   .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(1){
     transform:translateX(calc(-50% - var(--artifact-fan-spread))) translateY(22px) rotate(-8deg)

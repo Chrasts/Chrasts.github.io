@@ -28,14 +28,14 @@
     settle: 480,
     ready: 560
   } : {
-    primary: 900,
-    territories: 1800,
-    structure: 2500,
-    deep: 2750,
-    labels: 2900,
-    cross: 3050,
-    settle: 3200,
-    ready: 3300
+    primary: 675,
+    territories: 1350,
+    structure: 1875,
+    deep: 2060,
+    labels: 2175,
+    cross: 2290,
+    settle: 2400,
+    ready: 2475
   });
 
   const state = {
@@ -209,7 +209,7 @@
       return;
     }
     const delay = 160;
-    const duration = 6350;
+    const duration = 4760;
     /* The field starts during ignition, before ATLAS_REVEAL. Deriving this
        threshold from that lead keeps the visible first second deliberately
        calm even if the ignition handoff is tuned later. */

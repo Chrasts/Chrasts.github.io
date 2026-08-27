@@ -50,6 +50,7 @@ test.describe('Intro interactivity and Atlas relation colors', () => {
     await blockAnalytics(page);
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => window.ProfileIntro?.snapshot?.().state === 'ATLAS_REVEAL', null, { timeout: 20_000 });
+    await page.waitForTimeout(700);
 
     const rootHit = page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-hit').first();
     const box = await rootHit.boundingBox();

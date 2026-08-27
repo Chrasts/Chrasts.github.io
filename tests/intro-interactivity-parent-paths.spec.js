@@ -5,17 +5,15 @@ const blockAnalytics = page => page.route('https://cloud.umami.is/**', route => 
 test.describe('Intro interactivity and Atlas relation colors', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('a revealed Atlas node is interactive before ATLAS_READY', async ({ page }) => {
+  test('the full Atlas interaction surface unlocks before ATLAS_READY', async ({ page }) => {
     await page.addInitScript(() => sessionStorage.removeItem('profileIntroSeen'));
     await blockAnalytics(page);
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
-    await page.waitForFunction(() => {
-      const node = document.querySelector('#site-graph .site-graph-node[data-node-id="work"]');
-      return window.ProfileIntro?.snapshot?.().state === 'ATLAS_REVEAL' &&
-        document.body.classList.contains('is-entry-loader-releasing') &&
-        node?.classList.contains('is-intro-revealed');
-    }, null, { timeout: 20_000 });
+    await page.waitForFunction(() =>
+      window.ProfileIntro?.snapshot?.().state === 'ATLAS_REVEAL' &&
+      document.body.classList.contains('is-atlas-reveal-late'),
+    null, { timeout: 20_000 });
 
     const beforeHover = await page.evaluate(() => ({
       introState: window.ProfileIntro.snapshot().state,
@@ -29,7 +27,28 @@ test.describe('Intro interactivity and Atlas relation colors', () => {
 
     await page.locator('#site-graph .site-graph-node[data-node-id="work"] > .site-graph-hit').hover();
     await expect.poll(() => page.evaluate(() => window.ProfileNodeInteraction?.snapshot?.().hoveredNodeId)).toBe('work');
-    expect(await page.evaluate(() => window.ProfileIntro.snapshot().state)).toBe('ATLAS_REVEAL');
+  });
+
+  test('the root previews and enters the profile on the first reveal click', async ({ page }) => {
+    await page.addInitScript(() => sessionStorage.removeItem('profileIntroSeen'));
+    await blockAnalytics(page);
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => window.ProfileIntro?.snapshot?.().state === 'ATLAS_REVEAL', null, { timeout: 20_000 });
+
+    const root = page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]').first();
+    await root.hover();
+    await expect.poll(() => page.evaluate(() => window.ProfileRootEntryPortal?.snapshot?.().open)).toBe(true);
+
+    const preview = await page.evaluate(() => window.ProfileRootEntryPortal.snapshot());
+    expect(preview.previewAvailable).toBe(true);
+    expect(preview.introState).toBe('ATLAS_REVEAL');
+
+    await root.locator(':scope > .site-graph-hit').click();
+    await page.waitForFunction(() => {
+      const state = window.ProfileAtlasCondensation?.snapshot?.().state;
+      return ['PREPARING', 'CONDENSING', 'COMMITTING', 'COMPLETE'].includes(state);
+    }, null, { timeout: 8_000 });
+    expect(await page.evaluate(() => window.ProfileIntro.snapshot().state)).not.toBe('ATLAS_REVEAL');
   });
 
   test('Atlas hover uses brown parent paths and teal child paths', async ({ page }) => {

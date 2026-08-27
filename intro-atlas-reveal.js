@@ -210,10 +210,18 @@
     }
     const delay = 160;
     const duration = 6350;
+    const accelerationStart = .58;
+    const acceleratedCompleteAt = .75;
+    const accelerationWindow = acceleratedCompleteAt - accelerationStart;
+    const acceleration = (1 - acceleratedCompleteAt) / (accelerationWindow * accelerationWindow);
     const started = performance.now();
     const tick = now => {
       const elapsed = now - started - delay;
-      const progress = Math.max(0, Math.min(1, elapsed / duration));
+      const linearProgress = Math.max(0, Math.min(1, elapsed / duration));
+      const tailProgress = Math.max(0, linearProgress - accelerationStart);
+      const progress = linearProgress <= accelerationStart
+        ? linearProgress
+        : Math.min(1, linearProgress + acceleration * tailProgress * tailProgress);
       visibilityMetrics(progress);
       if (progress >= .76 && visibilityInteractiveResolve) {
         const resolveInteractive = visibilityInteractiveResolve;

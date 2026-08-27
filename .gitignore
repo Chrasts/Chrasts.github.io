@@ -1,6 +1,14 @@
-debug.log
-node_modules/
-playwright-report/
+# Local/browser diagnostics
+*.log
+
+# Test runner output
 test-results/
+playwright-report/
+blob-report/
+
+# Local dependency installs
+node_modules/
+
+# OS/editor noise
 .DS_Store
 Thumbs.db

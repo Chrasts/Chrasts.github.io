@@ -79,7 +79,7 @@ jobs:
         if: matrix.suite == 'interactions'
         run: |
           npx playwright test \
-            tests/phase3-intro.spec.js tests/root-entry-portal.spec.js tests/atlas-condensation.spec.js \
+            tests/phase3-intro.spec.js tests/intro-entry-experience.spec.js tests/root-entry-portal.spec.js tests/atlas-condensation.spec.js \
             tests/profile-root.spec.js tests/atlas-focus-unification.spec.js tests/graph-navigation-materiality.spec.js \
             tests/profile-motion-refinements.spec.js tests/phase7-atlas.spec.js tests/work-controller.spec.js \
             tests/phase-k-checkpoint.spec.js tests/motion-polish.spec.js tests/intro-unfold.spec.js \

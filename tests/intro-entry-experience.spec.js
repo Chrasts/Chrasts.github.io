@@ -63,6 +63,7 @@ test.describe('Intro entry experience master contract', () => {
         camera: atlas.camera,
         entryCamera: intro.entryCamera,
         revealElapsed: intro.elapsed,
+        timing: intro.timing,
         readinessTopology: intro.readiness.topology,
         readinessLabels: intro.readiness.labels,
         terminalOpacity: Number(getComputedStyle(terminal).opacity),
@@ -82,7 +83,8 @@ test.describe('Intro entry experience master contract', () => {
     expect(state.camera.x).toBeCloseTo(state.entryCamera.x, 1);
     expect(state.camera.y).toBeCloseTo(state.entryCamera.y, 1);
     expect(state.camera.scale).toBeCloseTo(state.entryCamera.scale, 3);
-    expect(state.revealElapsed).toBeGreaterThan(4200);
+    expect(state.revealElapsed).toBeGreaterThanOrEqual(state.timing.ready - 100);
+    expect(state.revealElapsed).toBeLessThan(state.timing.ready + 600);
     expect(state.readinessTopology).toBe(true);
     expect(state.readinessLabels).toBe(true);
     expect(state.terminalOpacity).toBeGreaterThan(.2);

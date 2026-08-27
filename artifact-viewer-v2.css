@@ -101,31 +101,10 @@ html body.has-artifact-focus .artifact-focus-viewer .artifact-focus-backdrop{
   box-shadow:none
 }
 
-/* Work projects are an artifact-bearing scene. Keep their ambient media above
-   the Work graph/controls, while leaving the project inspector above the media.
-   The exact-route guards are intentionally narrow: if the lazy SceneManager
-   finishes one frame late, an already-mounted requested artifact must not stay
-   visually hidden on its own destination route. */
+/* Desktop depth is semantic rather than route-specific: graph controls sit at
+   24/28, ambient artifacts at 32, and the canonical inspector at 40. */
 @media(min-width:901px){
-  body[data-graph-mode="work"]:not(.has-artifact-focus) .artifact-scene-layer{
-    z-index:36!important
-  }
-
-  body[data-graph-route="work/project/bachelor-thesis"] .artifact-object[data-artifact-scene="bachelor-thesis-diagrams"],
-  body[data-graph-route="work/project/modal-logic-lab"] .artifact-object[data-artifact-scene="modal-logic-lab-screens"],
-  body[data-graph-route="work/project/axiom-wilds"] .artifact-object[data-artifact-scene="axiom-wilds-gameplay"]{
-    display:block!important;
-    visibility:visible!important;
-    opacity:1!important
-  }
-
-  /* When the right-side Hedgehog inspector makes the photo fan use the left
-     lane, keep the whole fan inside that lane rather than pinning its first
-     rotated photo against the far-left edge of the viewport. */
-  body[data-graph-route="about/woodworking/hedgehog-house"] .artifact-object[data-artifact-variant="fan"][data-artifact-side="left"]{
-    left:clamp(260px,24vw,340px)!important;
-    right:auto!important
-  }
+  .artifact-scene-layer{z-index:32!important}
 }
 
 @media(max-width:900px){

@@ -14,6 +14,17 @@
   const asNumber = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
   const opposite = side => side === 'left' ? 'right' : 'left';
   const normaliseRoute = value => (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
+  const visibleElement = element => {
+    if (!element?.isConnected || !element.getClientRects().length) return false;
+    const style = getComputedStyle(element);
+    return style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity || 1) > .03;
+  };
+  const unionRects = rects => rects.length ? rects.reduce((result, rect) => ({
+    left: Math.min(result.left, rect.left),
+    top: Math.min(result.top, rect.top),
+    right: Math.max(result.right, rect.right),
+    bottom: Math.max(result.bottom, rect.bottom)
+  }), { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity }) : null;
 
   class SceneComposer {
     constructor() {
@@ -35,12 +46,22 @@
     }
 
     context(extra = {}) {
+      const managed = scene.manager.context();
+      const canvasRect = this.canvas?.getBoundingClientRect();
       return {
-        ...scene.manager.context(),
-        route: normaliseRoute(document.body.dataset.graphRoute || scene.manager.graphState?.route || 'overview'),
-        mode: document.body.dataset.graphMode || scene.manager.graphState?.mode || 'overview',
+        ...managed,
+        route: normaliseRoute(managed.route || 'overview'),
+        mode: managed.mode || 'overview',
         variant: mobileQuery.matches ? 'mobile' : 'desktop',
         viewport: { width: innerWidth, height: innerHeight },
+        canvas: canvasRect ? {
+          left: canvasRect.left,
+          top: canvasRect.top,
+          right: canvasRect.right,
+          bottom: canvasRect.bottom,
+          width: canvasRect.width,
+          height: canvasRect.height
+        } : { left: 0, top: 0, right: innerWidth, bottom: innerHeight, width: innerWidth, height: innerHeight },
         ...extra
       };
     }
@@ -74,9 +95,9 @@
           priority: 50,
           role: 'artifact',
           containViewport: true,
-          // Leave a small reserve for card transform interpolation and
-          // sub-pixel rounding after the initial composition measurement.
-          viewportMargin: 28
+          avoidGraph: true,
+          viewportMargin: 28,
+          graphMargin: 28
         };
       }
       if (/^semantic-right-/.test(placement)) {
@@ -103,7 +124,9 @@
         priority: asNumber(request.priority, 0),
         role: request.role || 'scene',
         containViewport: Boolean(request.containViewport),
+        avoidGraph: Boolean(request.avoidGraph),
         viewportMargin: asNumber(request.viewportMargin, 20),
+        graphMargin: asNumber(request.graphMargin, 24),
         element: instance.element,
         definition,
         request
@@ -121,56 +144,116 @@
       return { width: rect.width || request.element.offsetWidth || 0, height: rect.height || request.element.offsetHeight || 0 };
     }
 
+    graphSafeBounds(context, top = null, height = null, margin = 24) {
+      if (context.variant === 'mobile') return null;
+      const rangeTop = Number.isFinite(top) ? context.canvas.top + top - margin : -Infinity;
+      const rangeBottom = Number.isFinite(top) && Number.isFinite(height) ? context.canvas.top + top + height + margin : Infinity;
+      const selectors = [
+        '#site-graph .site-graph-node:not(.is-atlas-lod-hidden)',
+        '#site-graph .work-project-anchor-v5:not(.is-filtered-out)',
+        '#site-graph .work-theme-label-v5'
+      ].join(',');
+      const rects = [...document.querySelectorAll(selectors)]
+        .filter(element => !element.closest('.v9-transition-overlay') && visibleElement(element))
+        .map(element => element.getBoundingClientRect())
+        .filter(rect => rect.width > .5 && rect.height > .5 && rect.bottom > rangeTop && rect.top < rangeBottom);
+      const bounds = unionRects(rects);
+      if (!bounds) return null;
+      const selected = document.querySelector('#site-graph .site-graph-node.is-selected, #site-graph .site-graph-node.is-previewed');
+      const selectedRect = visibleElement(selected) ? selected.getBoundingClientRect() : null;
+      const padding = Math.max(margin, selectedRect ? 30 : 24);
+      return {
+        left: Math.max(context.canvas.left, bounds.left - padding),
+        top: Math.max(context.canvas.top, bounds.top - padding),
+        right: Math.min(context.canvas.right, bounds.right + padding),
+        bottom: Math.min(context.canvas.bottom, bounds.bottom + padding)
+      };
+    }
+
+    sideMargin(context) {
+      return Math.max(52, Math.min(104, context.canvas.width * .07));
+    }
+
+    sideControlBoundary(side, context) {
+      const selector = side === 'left' ? '.integrated-work-rail.is-left' : '.integrated-work-rail.is-right';
+      const control = document.querySelector(selector);
+      if (!visibleElement(control)) return null;
+      const rect = control.getBoundingClientRect();
+      if (rect.bottom <= context.canvas.top || rect.top >= context.canvas.bottom) return null;
+      return side === 'left' ? rect.right + 24 : rect.left - 24;
+    }
+
+    sideCorridor(side, request, context, graphBounds) {
+      const margin = Math.max(request.viewportMargin, this.sideMargin(context));
+      const laneCap = Math.min(470, context.canvas.width * .42);
+      let left = context.canvas.left + margin;
+      let right = context.canvas.right - margin;
+
+      if (side === 'left') {
+        right = Math.min(right, left + laneCap);
+        const controlRight = this.sideControlBoundary('left', context);
+        if (Number.isFinite(controlRight)) left = Math.max(left, controlRight);
+        if (request.avoidGraph && graphBounds) right = Math.min(right, graphBounds.left - request.graphMargin);
+      } else {
+        left = Math.max(left, right - laneCap);
+        const controlLeft = this.sideControlBoundary('right', context);
+        if (Number.isFinite(controlLeft)) right = Math.min(right, controlLeft);
+        if (request.avoidGraph && graphBounds) left = Math.max(left, graphBounds.right + request.graphMargin);
+      }
+
+      return { left, right, width: Math.max(0, right - left) };
+    }
+
     sideCost(side, request, lane, context, size) {
       const preferredPenalty = request.preferredSide && side !== request.preferredSide ? 36 : 0;
       const used = lane[side].used;
       const top = zones['side-stage'].top + used;
-      const overflow = Math.max(0, top + size.height - (context.viewport.height - 64));
-      return preferredPenalty + used * .075 + overflow * 4.5;
+      const overflow = Math.max(0, top + size.height - (context.canvas.height - 64));
+      const graphBounds = this.graphSafeBounds(context, top, size.height, request.graphMargin);
+      const corridor = this.sideCorridor(side, request, context, graphBounds);
+      const widthDeficit = Math.max(0, Math.min(size.width || 0, 470) - corridor.width);
+      const noRoomPenalty = corridor.width < 150 ? 100000 : 0;
+      return preferredPenalty + used * .075 + overflow * 4.5 + widthDeficit * 18 + noRoomPenalty;
     }
 
     chooseSide(request, lane, blockers, context, size) {
       if (request.side && !request.allowFlip) return request.side;
       const preferred = request.preferredSide || request.side || 'right';
       if (!request.allowFlip) return preferred;
+      const alternate = opposite(preferred);
 
-      /* Preserve a resolved lane for the lifetime of the same route. A newly
-         appearing blocker may push an object away once, but removing that blocker
-         must not make the whole scene jump back across the canvas. */
       const previous = assignments.get(request.id);
-      if (previous?.route === context.route && previous.side) {
-        if (!blockers.has(previous.side)) return previous.side;
-        const alternate = opposite(previous.side);
-        if (!blockers.has(alternate)) return alternate;
+      if (previous?.route === context.route && previous.side && !blockers.has(previous.side)) {
+        const previousCost = this.sideCost(previous.side, request, lane, context, size);
+        const alternateSide = opposite(previous.side);
+        const alternateCost = blockers.has(alternateSide)
+          ? Infinity
+          : this.sideCost(alternateSide, request, lane, context, size);
+        if (previousCost <= alternateCost + 48) return previous.side;
       }
 
-      /* Fixed occupancy is a hard constraint. Overflow and stacking heuristics
-         may choose between available lanes, but they must never place a flexible
-         scene object underneath an inspector simply because the other lane is
-         taller. */
-      const alternate = opposite(preferred);
       if (blockers.has(preferred) && !blockers.has(alternate)) return alternate;
       if (!blockers.has(preferred) && blockers.has(alternate)) return preferred;
 
-      const preferredCost = this.sideCost(preferred, request, lane, context, size);
-      const alternateCost = this.sideCost(alternate, request, lane, context, size);
+      const preferredCost = blockers.has(preferred)
+        ? Infinity
+        : this.sideCost(preferred, request, lane, context, size);
+      const alternateCost = blockers.has(alternate)
+        ? Infinity
+        : this.sideCost(alternate, request, lane, context, size);
       return alternateCost + .01 < preferredCost ? alternate : preferred;
     }
 
-    horizontalInset(request, side, context) {
-      if (request.role === 'semantic') return '18px';
-      if (request.role !== 'artifact') return '18px';
-      if (context.mode === 'work' && side === 'left') return 'clamp(340px,31vw,450px)';
-      return 'clamp(72px,11vw,168px)';
-    }
-
     clearComposedGeometry(element) {
-      if (element.dataset.sceneCompositionOwnsGeometry === 'true') ['left', 'right', 'top', 'bottom'].forEach(property => element.style.removeProperty(property));
+      if (element.dataset.sceneCompositionOwnsGeometry === 'true') {
+        ['left', 'right', 'top', 'bottom', 'max-width', '--scene-side-available-width'].forEach(property => element.style.removeProperty(property));
+      }
       delete element.dataset.sceneCompositionOwnsGeometry;
       delete element.dataset.sceneZone;
       delete element.dataset.sceneSide;
       delete element.dataset.sceneSlot;
       delete element.dataset.sceneCollisionAdjusted;
+      delete element.dataset.sceneSafeAdjusted;
       delete element.dataset.sceneComposed;
     }
 
@@ -184,16 +267,29 @@
       if (assignment.collisionAdjusted) element.dataset.sceneCollisionAdjusted = assignment.collisionAdjusted;
       if (assignment.zone !== 'side-stage' || context.variant === 'mobile') return;
 
-      const inset = this.horizontalInset(assignment.request, assignment.side, context);
-      assignment.inset = inset;
+      const graphBounds = this.graphSafeBounds(context, assignment.top, assignment.size.height, assignment.request.graphMargin);
+      const corridor = this.sideCorridor(assignment.side, assignment.request, context, graphBounds);
+      assignment.corridor = corridor;
+      const availableWidth = Math.max(0, Math.floor(corridor.width));
+      const effectiveWidth = Math.min(assignment.size.width || availableWidth, availableWidth);
+      const spare = Math.max(0, corridor.width - effectiveWidth);
+      const centredInset = spare / 2;
+      const offset = assignment.side === 'left'
+        ? corridor.left - context.canvas.left + centredInset
+        : context.canvas.right - corridor.right + centredInset;
+
+      assignment.offset = Math.max(0, offset);
+      assignment.availableWidth = availableWidth;
       element.dataset.sceneCompositionOwnsGeometry = 'true';
+      element.style.setProperty('--scene-side-available-width', `${availableWidth}px`);
+      element.style.setProperty('max-width', `${availableWidth}px`, 'important');
       element.style.setProperty('top', `${Math.round(assignment.top)}px`, 'important');
       element.style.setProperty('bottom', 'auto', 'important');
       if (assignment.side === 'left') {
-        element.style.setProperty('left', inset, 'important');
+        element.style.setProperty('left', `${Math.round(assignment.offset)}px`, 'important');
         element.style.setProperty('right', 'auto', 'important');
       } else {
-        element.style.setProperty('right', inset, 'important');
+        element.style.setProperty('right', `${Math.round(assignment.offset)}px`, 'important');
         element.style.setProperty('left', 'auto', 'important');
       }
       if (assignment.request.role === 'artifact') {
@@ -210,27 +306,57 @@
         request.element.querySelectorAll('.artifact-deck-card,.artifact-folio-page,.artifact-orbit-actions,[data-artifact-focus]').forEach(element => elements.push(element));
       }
       const rects = elements.map(element => element.getBoundingClientRect()).filter(rect => rect.width || rect.height);
-      if (!rects.length) return null;
-      return rects.reduce((result, rect) => ({
-        left: Math.min(result.left, rect.left),
-        top: Math.min(result.top, rect.top),
-        right: Math.max(result.right, rect.right),
-        bottom: Math.max(result.bottom, rect.bottom)
-      }), { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity });
+      return unionRects(rects);
     }
 
     containAssignment(assignment, context) {
       if (!assignment.request.containViewport || assignment.zone !== 'side-stage' || context.variant === 'mobile') return;
-      const bounds = this.visualBounds(assignment.request);
+      let bounds = this.visualBounds(assignment.request);
       if (!bounds) return;
-      const margin = assignment.request.viewportMargin;
-      let correction = 0;
-      if (assignment.side === 'left' && bounds.left < margin) correction = margin - bounds.left;
-      if (assignment.side === 'right' && bounds.right > context.viewport.width - margin) correction = bounds.right - (context.viewport.width - margin);
-      if (correction <= .5) return;
-      const property = assignment.side === 'left' ? 'left' : 'right';
-      assignment.element.style.setProperty(property, `calc(${assignment.inset} + ${Math.ceil(correction)}px)`, 'important');
-      assignment.viewportCorrection = Math.ceil(correction);
+      const actualGraphBounds = this.graphSafeBounds(
+        context,
+        bounds.top - context.canvas.top,
+        bounds.bottom - bounds.top,
+        assignment.request.graphMargin
+      );
+      let corridor = this.sideCorridor(assignment.side, assignment.request, context, actualGraphBounds);
+      if (corridor.width + .5 < assignment.availableWidth) {
+        assignment.availableWidth = Math.max(0, Math.floor(corridor.width));
+        assignment.element.style.setProperty('--scene-side-available-width', `${assignment.availableWidth}px`);
+        assignment.element.style.setProperty('max-width', `${assignment.availableWidth}px`, 'important');
+        bounds = this.visualBounds(assignment.request) || bounds;
+        corridor = this.sideCorridor(assignment.side, assignment.request, context, actualGraphBounds);
+      }
+      assignment.corridor = corridor;
+      const topLimit = context.canvas.top + assignment.request.viewportMargin;
+      const bottomLimit = context.canvas.bottom - assignment.request.viewportMargin;
+      let shiftX = 0;
+      let shiftY = 0;
+
+      if (bounds.left < corridor.left) shiftX += corridor.left - bounds.left;
+      if (bounds.right > corridor.right) shiftX -= bounds.right - corridor.right;
+      if (bounds.top < topLimit) shiftY += topLimit - bounds.top;
+      if (bounds.bottom > bottomLimit) shiftY -= bounds.bottom - bottomLimit;
+
+      if (Math.abs(shiftX) > .5) {
+        const nextOffset = assignment.side === 'left'
+          ? assignment.offset + shiftX
+          : assignment.offset - shiftX;
+        assignment.offset = Math.max(0, nextOffset);
+        const property = assignment.side === 'left' ? 'left' : 'right';
+        assignment.element.style.setProperty(property, `${Math.round(assignment.offset)}px`, 'important');
+      }
+      if (Math.abs(shiftY) > .5) {
+        assignment.top += shiftY;
+        assignment.element.style.setProperty('top', `${Math.round(assignment.top)}px`, 'important');
+      }
+      if (Math.abs(shiftX) > .5 || Math.abs(shiftY) > .5) {
+        assignment.safeCorrection = { x: Math.round(shiftX), y: Math.round(shiftY) };
+        assignment.element.dataset.sceneSafeAdjusted = 'true';
+        assignment.collisionAdjusted = assignment.collisionAdjusted || 'safe-frame';
+        assignment.element.dataset.sceneCollisionAdjusted = assignment.collisionAdjusted;
+        if (assignment.request.role === 'artifact') assignment.element.dataset.artifactCollisionAdjusted = 'scene-composer';
+      }
     }
 
     compose(reason = 'manual') {
@@ -241,7 +367,6 @@
       const blockers = new Set(requests.filter(request => request.blocksSideStage && request.side).map(request => request.side));
       const lane = { left: { used: 0, count: 0 }, right: { used: 0, count: 0 } };
       const next = new Map();
-
       requests.filter(request => request.zone !== 'side-stage').forEach(request => {
         next.set(request.id, {
           id: request.id,
@@ -266,7 +391,7 @@
         const top = zones['side-stage'].top + lane[side].used;
         lane[side].used += Math.max(1, size.height) + zones['side-stage'].gap;
         const collisionAdjusted = request.preferredSide && side !== request.preferredSide
-          ? blockers.has(request.preferredSide) ? `blocked-${request.preferredSide}` : `stable-${side}`
+          ? blockers.has(request.preferredSide) ? `blocked-${request.preferredSide}` : `safe-${side}`
           : slot > 0 ? `stacked-${side}` : null;
         next.set(request.id, {
           id: request.id,
@@ -305,13 +430,15 @@
     }
 
     snapshot() {
+      const managed = scene.manager.context();
       return {
         sequence: this.sequence,
         reason: this.lastReason,
-        route: normaliseRoute(document.body.dataset.graphRoute || scene.manager.graphState?.route || 'overview'),
-        mode: document.body.dataset.graphMode || scene.manager.graphState?.mode || 'overview',
+        route: normaliseRoute(managed.route || 'overview'),
+        mode: managed.mode || 'overview',
         variant: mobileQuery.matches ? 'mobile' : 'desktop',
         zones: Object.keys(zones),
+        graphSafeBounds: this.graphSafeBounds(this.context()),
         assignments: [...assignments.values()].map(assignment => ({
           id: assignment.id,
           zone: assignment.zone,
@@ -320,7 +447,8 @@
           preferredSide: assignment.request.preferredSide || null,
           role: assignment.request.role,
           collisionAdjusted: assignment.collisionAdjusted || null,
-          viewportCorrection: assignment.viewportCorrection || 0
+          safeCorrection: assignment.safeCorrection || null,
+          availableWidth: assignment.availableWidth || null
         }))
       };
     }

@@ -19,13 +19,17 @@ test.describe('Intro interactivity and Atlas relation colors', () => {
       introState: window.ProfileIntro.snapshot().state,
       shellPointerEvents: getComputedStyle(document.querySelector('.entry-loading-shell')).pointerEvents,
       workPointerEvents: getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="work"]')).pointerEvents,
-      rootPointerEvents: getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"]')).pointerEvents
+      rootPointerEvents: getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"]')).pointerEvents,
+      rootHitPointerEvents: getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-hit')).pointerEvents,
+      rootPreviewAvailable: window.ProfileRootEntryPortal?.snapshot?.().previewAvailable
     }));
 
     expect(duringReveal.introState).toBe('ATLAS_REVEAL');
     expect(duringReveal.shellPointerEvents).toBe('none');
     expect(duringReveal.workPointerEvents).toBe('none');
     expect(duringReveal.rootPointerEvents).toBe('none');
+    expect(duringReveal.rootHitPointerEvents).toBe('none');
+    expect(duringReveal.rootPreviewAvailable).toBe(false);
 
     await page.waitForFunction(() => window.ProfileIntro?.snapshot?.().state === 'ATLAS_READY', null, { timeout: 10_000 });
 
@@ -39,6 +43,49 @@ test.describe('Intro interactivity and Atlas relation colors', () => {
 
     await page.locator('#site-graph .site-graph-node[data-node-id="work"] > .site-graph-hit').hover();
     await expect.poll(() => page.evaluate(() => window.ProfileNodeInteraction?.snapshot?.().hoveredNodeId)).toBe('work');
+  });
+
+  test('hovering or clicking the root during reveal cannot preview or skip into profile Atlas', async ({ page }) => {
+    await page.addInitScript(() => sessionStorage.removeItem('profileIntroSeen'));
+    await blockAnalytics(page);
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => window.ProfileIntro?.snapshot?.().state === 'ATLAS_REVEAL', null, { timeout: 20_000 });
+
+    const rootHit = page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-hit').first();
+    const box = await rootHit.boundingBox();
+    expect(box).not.toBeNull();
+
+    const before = await page.evaluate(() => ({
+      introState: window.ProfileIntro.snapshot().state,
+      entryState: document.body.dataset.entryState,
+      portraitTransform: getComputedStyle(document.querySelector('#site-graph [data-node-id="stepan-chrast"] > .root-entry-portrait')).transform,
+      portal: window.ProfileRootEntryPortal.snapshot(),
+      condensationState: window.ProfileAtlasCondensation?.snapshot?.().state || null
+    }));
+
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height / 2;
+    await page.mouse.move(x, y);
+    await page.waitForTimeout(120);
+    await page.mouse.click(x, y);
+    await page.waitForTimeout(180);
+
+    const after = await page.evaluate(() => ({
+      introState: window.ProfileIntro.snapshot().state,
+      entryState: document.body.dataset.entryState,
+      portraitTransform: getComputedStyle(document.querySelector('#site-graph [data-node-id="stepan-chrast"] > .root-entry-portrait')).transform,
+      portal: window.ProfileRootEntryPortal.snapshot(),
+      condensationState: window.ProfileAtlasCondensation?.snapshot?.().state || null
+    }));
+
+    expect(before.introState).toBe('ATLAS_REVEAL');
+    expect(after.introState).toBe('ATLAS_REVEAL');
+    expect(after.entryState).toBe('reveal');
+    expect(after.portal.previewAvailable).toBe(false);
+    expect(after.portal.open).toBe(false);
+    expect(after.portal.entering).toBe(false);
+    expect(after.portraitTransform).toBe(before.portraitTransform);
+    expect(after.condensationState).toBe(before.condensationState);
   });
 
   test('the root previews and enters the profile on the first click once Atlas is ready', async ({ page }) => {

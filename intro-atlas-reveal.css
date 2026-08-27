@@ -241,7 +241,7 @@ body.is-atlas-reveal #site-graph .site-graph-edges path[data-intro-edge-wave="cr
 body.is-atlas-reveal #site-graph .site-graph-node:not([data-node-id="stepan-chrast"]){
   pointer-events:none
 }
-body.is-atlas-reveal #site-graph .site-graph-node.is-intro-revealed{
+body.is-atlas-reveal.is-atlas-reveal-late #site-graph .site-graph-node:not([data-node-id="stepan-chrast"]){
   pointer-events:auto
 }
 body.is-atlas-reveal #site-graph .site-graph-node[data-node-id="stepan-chrast"]{

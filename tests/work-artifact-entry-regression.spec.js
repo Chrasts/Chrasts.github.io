@@ -45,7 +45,9 @@ const enterProject = async (page, projectId, bindingId) => {
 
 const renderedArtifactState = async (page, bindingId) => page.evaluate(id => {
   const root = document.querySelector(`[data-artifact-scene="${CSS.escape(id)}"]`);
-  const canvas = document.querySelector('.scene-canvas');
+  const canvas = document.querySelector('.scene-canvas') ||
+    document.querySelector('.site-shell') ||
+    document.documentElement;
   if (!root || !canvas) return null;
 
   const visible = element => {

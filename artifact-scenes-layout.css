@@ -13,6 +13,16 @@
     --artifact-lane-width:var(--scene-side-available-width,430px)
   }
 
+  /* Phase-B emergence originally anchored cards to opposite root edges. Shared
+     lane-aware transforms are center-based, so normalize every desktop deck to
+     one canonical horizontal origin before applying adaptive spread. */
+  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card,
+  .artifact-object[data-artifact-variant="screens"] .artifact-deck-card,
+  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card{
+    left:50%!important;
+    right:auto!important
+  }
+
   /* Two-card diagrams: keep each card in a stable slot, but compact the spread
      when the side lane is narrower than the ideal 340px footprint. */
   .artifact-object[data-artifact-variant="diagram"]{

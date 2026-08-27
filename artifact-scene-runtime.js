@@ -11,6 +11,7 @@
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const normaliseRoute = value =>
     (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
+  const currentSceneRoute = () => normaliseRoute(scene.manager.context().route || 'overview');
   const routeForNode = id => nodeMap.get(id)?.route || null;
   const artifactFor = id => artifacts.get(id);
   const hrefFor = id => artifacts.hrefFor(id);
@@ -68,7 +69,7 @@
     }) || null;
   };
 
-  const currentTarget = binding => targetForRoute(binding, document.body.dataset.graphRoute || location.hash);
+  const currentTarget = binding => targetForRoute(binding, currentSceneRoute());
 
   const bindingNodeIds = binding => {
     const ids = new Set((binding.targets || []).map(target => target.anchorNodeId).filter(Boolean));
@@ -126,7 +127,7 @@
   };
 
   const syncPlacement = (binding, root, context) => {
-    const target = targetForRoute(binding, context?.route || location.hash);
+    const target = targetForRoute(binding, context?.route || currentSceneRoute());
     if (!target) return;
     root.dataset.artifactTargetRoute = normaliseRoute(target.route);
     root.dataset.artifactAnchorNode = target.anchorNodeId;
@@ -270,7 +271,7 @@
   };
 
   const resolveRoot = (binding, context) => {
-    if (!targetForRoute(binding, context?.route || location.hash)) return null;
+    if (!targetForRoute(binding, context?.route || currentSceneRoute())) return null;
     let root = roots.get(binding.id);
     if (root?.isConnected) return root;
     root = recipes.render(binding, recipeEnv);
@@ -379,7 +380,7 @@
   });
 
   window.addEventListener('profile:scene-state', event => {
-    const route = normaliseRoute(event.detail?.current?.route || location.hash);
+    const route = normaliseRoute(event.detail?.current?.route || currentSceneRoute());
     if (viewerBindingId) {
       const binding = bindings.find(item => item.id === viewerBindingId);
       if (!binding || !targetForRoute(binding, route)) closeFocus({ restoreFocus: false });
@@ -407,7 +408,7 @@
   scene.manager.scheduleRefresh('artifact-scenes-ready');
 
   const snapshot = () => ({
-    route: normaliseRoute(document.body.dataset.graphRoute || location.hash),
+    route: currentSceneRoute(),
     recipeNames: recipes.names(),
     issues: issues.slice(),
     visibleBindings: bindings.filter(binding => {

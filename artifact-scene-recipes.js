@@ -11,9 +11,10 @@
 
   const normaliseRoute = value =>
     (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
+  const currentSceneRoute = () => normaliseRoute(window.ProfileScene?.manager?.context?.().route || 'overview');
 
   const bindingOwnsCurrentRoute = binding => {
-    const route = normaliseRoute(document.body.dataset.graphRoute || location.hash);
+    const route = currentSceneRoute();
     return (binding.targets || []).some(target => {
       const value = normaliseRoute(target.route);
       return target.match === 'prefix' ? route === value || route.startsWith(`${value}/`) : route === value;

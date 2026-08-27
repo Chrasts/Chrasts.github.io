@@ -33,13 +33,7 @@
     const state = introState();
     return !state || ['ATLAS_READY', 'BYPASSED'].includes(state);
   };
-  const introPreviewAvailable = () => Boolean(
-    mode() === 'atlas' &&
-    introState() === 'ATLAS_REVEAL' &&
-    document.body?.classList.contains('is-atlas-reveal') &&
-    document.body?.classList.contains('is-entry-loader-releasing')
-  );
-  const previewAvailable = () => available() || introPreviewAvailable();
+  const previewAvailable = () => available();
   const emit = (type, detail = {}) => {
     sequence += 1;
     dispatchEvent(new CustomEvent('profile:root-entry-portal', {
@@ -244,25 +238,6 @@
     return fallbackEnterProfile(source);
   };
 
-  const finishIntroAndEnter = source => {
-    if (introState() !== 'ATLAS_REVEAL' || entering) return false;
-    entering = true;
-    lastReason = 'intro-enter-request';
-    syncOpenPresentation();
-    const reason = source.includes('keyboard') ? 'keyboard' : 'pointer';
-    Promise.resolve(window.ProfileIntro?.complete?.(reason))
-      .then(() => {
-        entering = false;
-        syncOpenPresentation();
-        if (available()) enterProfile(source);
-      })
-      .catch(() => {
-        entering = false;
-        syncOpenPresentation();
-      });
-    return true;
-  };
-
   const bindAction = element => {
     element.addEventListener('pointerdown', event => event.stopPropagation());
     element.addEventListener('click', event => {
@@ -294,7 +269,6 @@
     node.setAttribute('aria-haspopup', 'false');
     node.setAttribute('role', 'button');
     node.setAttribute('aria-label', 'Enter profile — Štěpán Chrast');
-    node.style.cursor = 'pointer';
     const hit = node.querySelector(':scope > .site-graph-hit');
     if (hit) hit.setAttribute('r', '48');
 
@@ -363,28 +337,6 @@
       else syncOpenPresentation();
     }));
   };
-
-  /* Root activation during the live reveal is an interruption, not a dead
-     click. This listener is registered before the intro listener and promotes
-     the already-prepared Atlas to ATLAS_READY before delegating the same user
-     gesture to the normal Enter Profile path. */
-  addEventListener('click', event => {
-    if (event.button !== 0 || introState() !== 'ATLAS_REVEAL') return;
-    const root = event.target.closest?.(`#site-graph .site-graph-node[data-node-id="${CSS.escape(rootId)}"]`);
-    if (!root) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    finishIntroAndEnter(event.pointerType === 'touch' || coarsePointer.matches ? 'touch-root' : 'pointer-root');
-  }, true);
-
-  addEventListener('keydown', event => {
-    if (!['Enter', ' '].includes(event.key) || introState() !== 'ATLAS_REVEAL') return;
-    const root = event.target.closest?.(`#site-graph .site-graph-node[data-node-id="${CSS.escape(rootId)}"]`);
-    if (!root) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    finishIntroAndEnter('keyboard-root');
-  }, true);
 
   addEventListener('profile:atlas-ready', refresh);
   addEventListener('profile:intro-completed', refresh);

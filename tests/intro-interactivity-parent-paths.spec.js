@@ -5,7 +5,7 @@ const blockAnalytics = page => page.route('https://cloud.umami.is/**', route => 
 test.describe('Intro interactivity and Atlas relation colors', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('the full Atlas interaction surface unlocks before ATLAS_READY', async ({ page }) => {
+  test('the Atlas stays inert through reveal and unlocks at ATLAS_READY', async ({ page }) => {
     await page.addInitScript(() => sessionStorage.removeItem('profileIntroSeen'));
     await blockAnalytics(page);
     await page.goto('/', { waitUntil: 'domcontentloaded' });
@@ -15,25 +15,37 @@ test.describe('Intro interactivity and Atlas relation colors', () => {
       document.body.classList.contains('is-atlas-reveal-late'),
     null, { timeout: 20_000 });
 
-    const beforeHover = await page.evaluate(() => ({
+    const duringReveal = await page.evaluate(() => ({
       introState: window.ProfileIntro.snapshot().state,
       shellPointerEvents: getComputedStyle(document.querySelector('.entry-loading-shell')).pointerEvents,
-      nodePointerEvents: getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="work"]')).pointerEvents
+      workPointerEvents: getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="work"]')).pointerEvents,
+      rootPointerEvents: getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"]')).pointerEvents
     }));
 
-    expect(beforeHover.introState).toBe('ATLAS_REVEAL');
-    expect(beforeHover.shellPointerEvents).toBe('none');
-    expect(beforeHover.nodePointerEvents).not.toBe('none');
+    expect(duringReveal.introState).toBe('ATLAS_REVEAL');
+    expect(duringReveal.shellPointerEvents).toBe('none');
+    expect(duringReveal.workPointerEvents).toBe('none');
+    expect(duringReveal.rootPointerEvents).toBe('none');
+
+    await page.waitForFunction(() => window.ProfileIntro?.snapshot?.().state === 'ATLAS_READY', null, { timeout: 10_000 });
+
+    const afterReady = await page.evaluate(() => ({
+      workPointerEvents: getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="work"]')).pointerEvents,
+      rootPointerEvents: getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"]')).pointerEvents
+    }));
+
+    expect(afterReady.workPointerEvents).not.toBe('none');
+    expect(afterReady.rootPointerEvents).not.toBe('none');
 
     await page.locator('#site-graph .site-graph-node[data-node-id="work"] > .site-graph-hit').hover();
     await expect.poll(() => page.evaluate(() => window.ProfileNodeInteraction?.snapshot?.().hoveredNodeId)).toBe('work');
   });
 
-  test('the root previews and enters the profile on the first reveal click', async ({ page }) => {
+  test('the root previews and enters the profile on the first click once Atlas is ready', async ({ page }) => {
     await page.addInitScript(() => sessionStorage.removeItem('profileIntroSeen'));
     await blockAnalytics(page);
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForFunction(() => window.ProfileIntro?.snapshot?.().state === 'ATLAS_REVEAL', null, { timeout: 20_000 });
+    await page.waitForFunction(() => window.ProfileIntro?.snapshot?.().state === 'ATLAS_READY', null, { timeout: 20_000 });
 
     const root = page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]').first();
     await root.hover();
@@ -41,7 +53,7 @@ test.describe('Intro interactivity and Atlas relation colors', () => {
 
     const preview = await page.evaluate(() => window.ProfileRootEntryPortal.snapshot());
     expect(preview.previewAvailable).toBe(true);
-    expect(preview.introState).toBe('ATLAS_REVEAL');
+    expect(preview.introState).toBe('ATLAS_READY');
 
     await root.locator(':scope > .site-graph-hit').click();
     await page.waitForFunction(() => {

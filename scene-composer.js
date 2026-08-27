@@ -11,6 +11,7 @@
     'mobile-tray': Object.freeze({ axis: 'stack' }),
     unmanaged: Object.freeze({ axis: 'none' })
   });
+  const MIN_SIDE_WIDTH = 172;
   const asNumber = (value, fallback = 0) => Number.isFinite(Number(value)) ? Number(value) : fallback;
   const opposite = side => side === 'left' ? 'right' : 'left';
   const normaliseRoute = value => (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
@@ -186,22 +187,48 @@
     sideCorridor(side, request, context, graphBounds) {
       const margin = Math.max(request.viewportMargin, this.sideMargin(context));
       const laneCap = Math.min(470, context.canvas.width * .42);
-      let left = context.canvas.left + margin;
-      let right = context.canvas.right - margin;
+      const canvasLeft = context.canvas.left + margin;
+      const canvasRight = context.canvas.right - margin;
+      let baseLeft;
+      let baseRight;
 
       if (side === 'left') {
-        right = Math.min(right, left + laneCap);
         const controlRight = this.sideControlBoundary('left', context);
-        if (Number.isFinite(controlRight)) left = Math.max(left, controlRight);
-        if (request.avoidGraph && graphBounds) right = Math.min(right, graphBounds.left - request.graphMargin);
+        baseLeft = Math.max(canvasLeft, Number.isFinite(controlRight) ? controlRight : canvasLeft);
+        baseRight = Math.min(canvasRight, baseLeft + laneCap);
       } else {
-        left = Math.max(left, right - laneCap);
         const controlLeft = this.sideControlBoundary('right', context);
-        if (Number.isFinite(controlLeft)) right = Math.min(right, controlLeft);
-        if (request.avoidGraph && graphBounds) left = Math.max(left, graphBounds.right + request.graphMargin);
+        baseRight = Math.min(canvasRight, Number.isFinite(controlLeft) ? controlLeft : canvasRight);
+        baseLeft = Math.max(canvasLeft, baseRight - laneCap);
       }
 
-      return { left, right, width: Math.max(0, right - left) };
+      const base = {
+        left: baseLeft,
+        right: baseRight,
+        width: Math.max(0, baseRight - baseLeft),
+        graphFallback: false
+      };
+      if (!request.avoidGraph || !graphBounds) return base;
+
+      const constrained = side === 'left'
+        ? {
+            left: base.left,
+            right: Math.min(base.right, graphBounds.left - request.graphMargin)
+          }
+        : {
+            left: Math.max(base.left, graphBounds.right + request.graphMargin),
+            right: base.right
+          };
+      constrained.width = Math.max(0, constrained.right - constrained.left);
+      constrained.graphFallback = false;
+
+      // The graph envelope is deliberately conservative: a broad union may span
+      // an otherwise usable side lane. Never let that approximation collapse a
+      // semantic scene to 0px. Prefer the graph-safe corridor when it is usable;
+      // otherwise fall back to the viewport/control-safe lane and let the exact
+      // visual-containment pass resolve the final placement.
+      if (constrained.width >= MIN_SIDE_WIDTH || base.width < MIN_SIDE_WIDTH) return constrained;
+      return { ...base, graphFallback: true };
     }
 
     sideCost(side, request, lane, context, size) {
@@ -212,8 +239,9 @@
       const graphBounds = this.graphSafeBounds(context, top, size.height, request.graphMargin);
       const corridor = this.sideCorridor(side, request, context, graphBounds);
       const widthDeficit = Math.max(0, Math.min(size.width || 0, 470) - corridor.width);
-      const noRoomPenalty = corridor.width < 150 ? 100000 : 0;
-      return preferredPenalty + used * .075 + overflow * 4.5 + widthDeficit * 18 + noRoomPenalty;
+      const noRoomPenalty = corridor.width < MIN_SIDE_WIDTH ? 100000 : 0;
+      const graphFallbackPenalty = corridor.graphFallback ? 320 : 0;
+      return preferredPenalty + used * .075 + overflow * 4.5 + widthDeficit * 18 + noRoomPenalty + graphFallbackPenalty;
     }
 
     chooseSide(request, lane, blockers, context, size) {
@@ -254,6 +282,7 @@
       delete element.dataset.sceneSlot;
       delete element.dataset.sceneCollisionAdjusted;
       delete element.dataset.sceneSafeAdjusted;
+      delete element.dataset.sceneGraphFallback;
       delete element.dataset.sceneComposed;
     }
 
@@ -270,6 +299,7 @@
       const graphBounds = this.graphSafeBounds(context, assignment.top, assignment.size.height, assignment.request.graphMargin);
       const corridor = this.sideCorridor(assignment.side, assignment.request, context, graphBounds);
       assignment.corridor = corridor;
+      assignment.graphFallback = Boolean(corridor.graphFallback);
       const availableWidth = Math.max(0, Math.floor(corridor.width));
       const effectiveWidth = Math.min(assignment.size.width || availableWidth, availableWidth);
       const spare = Math.max(0, corridor.width - effectiveWidth);
@@ -281,6 +311,7 @@
       assignment.offset = Math.max(0, offset);
       assignment.availableWidth = availableWidth;
       element.dataset.sceneCompositionOwnsGeometry = 'true';
+      if (assignment.graphFallback) element.dataset.sceneGraphFallback = 'true';
       element.style.setProperty('--scene-side-available-width', `${availableWidth}px`);
       element.style.setProperty('max-width', `${availableWidth}px`, 'important');
       element.style.setProperty('top', `${Math.round(assignment.top)}px`, 'important');
@@ -320,6 +351,9 @@
         assignment.request.graphMargin
       );
       let corridor = this.sideCorridor(assignment.side, assignment.request, context, actualGraphBounds);
+      assignment.graphFallback = Boolean(corridor.graphFallback);
+      if (assignment.graphFallback) assignment.element.dataset.sceneGraphFallback = 'true';
+      else delete assignment.element.dataset.sceneGraphFallback;
       if (corridor.width + .5 < assignment.availableWidth) {
         assignment.availableWidth = Math.max(0, Math.floor(corridor.width));
         assignment.element.style.setProperty('--scene-side-available-width', `${assignment.availableWidth}px`);
@@ -448,6 +482,7 @@
           role: assignment.request.role,
           collisionAdjusted: assignment.collisionAdjusted || null,
           safeCorrection: assignment.safeCorrection || null,
+          graphFallback: Boolean(assignment.graphFallback),
           availableWidth: assignment.availableWidth || null
         }))
       };

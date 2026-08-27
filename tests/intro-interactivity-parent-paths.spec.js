@@ -2,15 +2,6 @@ const { test, expect } = require('@playwright/test');
 
 const blockAnalytics = page => page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
 
-const normaliseCssColor = value => {
-  const probe = document.createElement('span');
-  probe.style.color = value;
-  document.body.appendChild(probe);
-  const color = getComputedStyle(probe).color;
-  probe.remove();
-  return color;
-};
-
 test.describe('Intro interactivity and Atlas relation colors', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
@@ -60,6 +51,14 @@ test.describe('Intro interactivity and Atlas relation colors', () => {
     );
 
     const colors = await page.evaluate(() => {
+      const normaliseCssColor = value => {
+        const probe = document.createElement('span');
+        probe.style.color = value;
+        document.body.appendChild(probe);
+        const color = getComputedStyle(probe).color;
+        probe.remove();
+        return color;
+      };
       const rootStyle = getComputedStyle(document.documentElement);
       const upstream = document.querySelector('#site-graph .site-graph-edges path.is-upstream');
       const downstream = document.querySelector('#site-graph .site-graph-edges path.is-downstream');

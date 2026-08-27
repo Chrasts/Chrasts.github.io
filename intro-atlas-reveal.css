@@ -238,10 +238,10 @@ body.is-atlas-reveal #site-graph .site-graph-edges path[data-intro-edge-wave="cr
   opacity:.32!important
 }
 
-/* The reveal is presentation-only: graph interaction resumes only when the
-   prepared Atlas reaches ATLAS_READY, synchronized with visual completion of
-   the accelerated radial visibility field. */
-body.is-atlas-reveal #site-graph .site-graph-node{
+/* The reveal is presentation-only. Lock the entire SVG subtree so child hit
+   targets cannot override the node-level pointer-events gate. */
+body.is-atlas-reveal #site-graph,
+body.is-atlas-reveal #site-graph *{
   pointer-events:none!important
 }
 

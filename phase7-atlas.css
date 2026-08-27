@@ -107,7 +107,8 @@ body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-previewed .site-gr
 
 /* Atlas relation preview uses color on relations, not on the related nodes.
    Parents/children/lateral nodes retain their semantic dot + label colors and
-   only receive the existing size emphasis. All traversed relations use teal. */
+   only receive the existing size emphasis. Parent paths are brown while child
+   and lateral paths retain the existing teal emphasis. */
 html body[data-graph-mode="atlas"] #site-graph .site-graph-node:is(.is-upstream,.is-downstream,.is-lateral):not(.is-atlas-origin):not(.is-previewed) .site-graph-dot{
   stroke:var(--brown)!important;
   transform:scale(1.12)!important
@@ -118,8 +119,11 @@ html body[data-graph-mode="atlas"] #site-graph .site-graph-node:is(.is-upstream,
 html body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-section:is(.is-upstream,.is-downstream,.is-lateral):not(.is-atlas-origin):not(.is-previewed) .site-graph-label.site-graph-label{
   fill:var(--teal)!important
 }
-html body[data-graph-mode="atlas"] #site-graph .site-graph-edges path:is(.is-upstream,.is-downstream,.is-lateral){
-  stroke:var(--teal)!important
+html body[data-graph-mode="atlas"] #site-graph .site-graph-edges path.is-upstream{
+  stroke:var(--graph-upstream,var(--brown))!important
+}
+html body[data-graph-mode="atlas"] #site-graph .site-graph-edges path:is(.is-downstream,.is-lateral){
+  stroke:var(--graph-downstream,var(--teal))!important
 }
 
 /* --------------------------------------------------------------------------

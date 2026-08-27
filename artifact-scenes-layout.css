@@ -1,5 +1,7 @@
 /* Artifact scene spatial contract.
-   Rich scene objects keep their own lane and overlapping media remains directly selectable. */
+   Rich scene objects keep their own lane and overlapping media remains directly selectable.
+   Desktop spread is derived from the lane width supplied by SceneComposer, so new
+   artifact decks compact automatically before they can cross a graph-safe boundary. */
 .artifact-deck-card .artifact-media-preview,
 .artifact-deck-card .artifact-media-preview *,
 .artifact-deck-card .artifact-deck-label{
@@ -7,63 +9,81 @@
 }
 
 @media (min-width:901px){
-  /* Two-card diagrams: keep each card in its own stable slot even when active. */
+  .artifact-object[data-scene-zone="side-stage"]{
+    --artifact-lane-width:var(--scene-side-available-width,430px)
+  }
+
+  /* Two-card diagrams: keep each card in a stable slot, but compact the spread
+     when the side lane is narrower than the ideal 340px footprint. */
+  .artifact-object[data-artifact-variant="diagram"]{
+    --artifact-diagram-card-width:min(210px,calc(var(--artifact-lane-width) - 28px));
+    --artifact-diagram-spread:clamp(14px,calc((var(--artifact-lane-width) - var(--artifact-diagram-card-width))/2),65px)
+  }
   .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card{
-    width:210px;
+    width:var(--artifact-diagram-card-width);
     height:205px
   }
   .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(1){
-    transform:translateX(calc(-50% - 65px)) translateY(8px) rotate(-3deg)
+    transform:translateX(calc(-50% - var(--artifact-diagram-spread))) translateY(8px) rotate(-3deg)
   }
   .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(2){
-    transform:translateX(calc(-50% + 65px)) translateY(18px) rotate(3deg)
+    transform:translateX(calc(-50% + var(--artifact-diagram-spread))) translateY(18px) rotate(3deg)
   }
   .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(1).is-active{
-    transform:translateX(calc(-50% - 65px)) translateY(-4px) rotate(0deg)
+    transform:translateX(calc(-50% - var(--artifact-diagram-spread))) translateY(-4px) rotate(0deg)
   }
   .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(2).is-active{
-    transform:translateX(calc(-50% + 65px)) translateY(-4px) rotate(0deg)
+    transform:translateX(calc(-50% + var(--artifact-diagram-spread))) translateY(-4px) rotate(0deg)
   }
 
-  /* Screen pairs use the same direct-selection contract, with a wider spread. */
+  /* Screen pairs use the same lane-aware contract with a wider ideal spread. */
+  .artifact-object[data-artifact-variant="screens"]{
+    --artifact-screen-card-width:min(250px,calc(var(--artifact-lane-width) - 28px));
+    --artifact-screen-spread:clamp(14px,calc((var(--artifact-lane-width) - var(--artifact-screen-card-width))/2),73px)
+  }
   .artifact-object[data-artifact-variant="screens"] .artifact-deck-card{
-    width:250px;
+    width:var(--artifact-screen-card-width);
     height:202px
   }
   .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(1){
-    transform:translateX(calc(-50% - 73px)) translateY(7px) rotate(-2.2deg)
+    transform:translateX(calc(-50% - var(--artifact-screen-spread))) translateY(7px) rotate(-2.2deg)
   }
   .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(2){
-    transform:translateX(calc(-50% + 73px)) translateY(18px) rotate(2.2deg)
+    transform:translateX(calc(-50% + var(--artifact-screen-spread))) translateY(18px) rotate(2.2deg)
   }
   .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(1).is-active{
-    transform:translateX(calc(-50% - 73px)) translateY(-4px) rotate(0deg)
+    transform:translateX(calc(-50% - var(--artifact-screen-spread))) translateY(-4px) rotate(0deg)
   }
   .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(2).is-active{
-    transform:translateX(calc(-50% + 73px)) translateY(-4px) rotate(0deg)
+    transform:translateX(calc(-50% + var(--artifact-screen-spread))) translateY(-4px) rotate(0deg)
   }
 
-  /* Three-photo fans expose the centre of every card; active means lift, not recenter. */
+  /* Three-photo fans keep all three cards selectable while fitting the actual
+     side corridor. This replaces route-specific Hedgehog positioning. */
+  .artifact-object[data-artifact-variant="fan"]{
+    --artifact-fan-card-width:min(160px,calc(var(--artifact-lane-width) - 36px));
+    --artifact-fan-spread:clamp(18px,calc((var(--artifact-lane-width) - var(--artifact-fan-card-width))/2),102px)
+  }
   .artifact-object[data-artifact-variant="fan"] .artifact-deck-card{
-    width:160px;
+    width:var(--artifact-fan-card-width);
     height:190px
   }
   .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(1){
-    transform:translateX(calc(-50% - 102px)) translateY(22px) rotate(-8deg)
+    transform:translateX(calc(-50% - var(--artifact-fan-spread))) translateY(22px) rotate(-8deg)
   }
   .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(2){
     transform:translateX(-50%) translateY(3px) rotate(0deg)
   }
   .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(3){
-    transform:translateX(calc(-50% + 102px)) translateY(22px) rotate(8deg)
+    transform:translateX(calc(-50% + var(--artifact-fan-spread))) translateY(22px) rotate(8deg)
   }
   .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(1).is-active{
-    transform:translateX(calc(-50% - 102px)) translateY(-7px) rotate(0deg)
+    transform:translateX(calc(-50% - var(--artifact-fan-spread))) translateY(-7px) rotate(0deg)
   }
   .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(2).is-active{
     transform:translateX(-50%) translateY(-7px) rotate(0deg)
   }
   .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(3).is-active{
-    transform:translateX(calc(-50% + 102px)) translateY(-7px) rotate(0deg)
+    transform:translateX(calc(-50% + var(--artifact-fan-spread))) translateY(-7px) rotate(0deg)
   }
 }

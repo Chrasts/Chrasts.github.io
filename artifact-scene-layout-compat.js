@@ -2,25 +2,7 @@
   const boot = () => {
     const composer = window.ProfileSceneComposer;
     const runtime = window.ProfileArtifactScenes;
-    const manager = window.ProfileScene?.manager;
-    if (!composer || !runtime || !manager || window.ProfileArtifactSceneLayout) return false;
-
-    const normaliseRoute = value =>
-      (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
-
-    const syncCommittedRoute = reason => {
-      const route = normaliseRoute(document.body.dataset.graphRoute || location.hash);
-      const current = manager.snapshot?.().graphState || {};
-      const mode = document.body.dataset.graphMode || current.mode || 'overview';
-      const workProjectId = route.match(/^work\/project\/([^/]+)$/)?.[1] || null;
-
-      if (current.route === route && current.mode === mode && current.workProjectId === workProjectId) {
-        manager.scheduleRefresh(reason);
-        return;
-      }
-
-      manager.setGraphState({ route, mode, workProjectId }, { reason });
-    };
+    if (!composer || !runtime || window.ProfileArtifactSceneLayout) return false;
 
     const snapshot = () => {
       const composition = composer.snapshot();
@@ -49,17 +31,10 @@
       snapshot
     });
 
-    // Lazy artifact code can finish after the graph transition that requested it.
-    // Reconcile the SceneManager with the route already committed by the renderer
-    // so Work-project artifacts cannot remain mounted against the previous route.
-    requestAnimationFrame(() => syncCommittedRoute('artifact-layout-ready-route-sync'));
-    window.addEventListener('profile:transition-finish', () => {
-      requestAnimationFrame(() => syncCommittedRoute('artifact-transition-finish-route-sync'));
-    });
-    window.addEventListener('hashchange', () => {
-      requestAnimationFrame(() => syncCommittedRoute('artifact-hash-route-sync'));
-    });
-
+    // Compatibility exposes the old public facade only. Route ownership stays
+    // in SceneManager; lazy artifact registration merely asks the composer to
+    // reconcile the already-committed scene state.
+    requestAnimationFrame(() => composer.compose('artifact-layout-ready'));
     return true;
   };
 

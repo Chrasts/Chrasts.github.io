@@ -10,24 +10,100 @@ const waitForGraph = async page => {
   await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
 };
 
-test('Work artifact scenes survive navigation into all artifact-bearing projects', async ({ page }) => {
+const navigateToArtifactTarget = async (page, route, binding) => {
+  await page.evaluate(next => { location.hash = `#${next}`; }, route);
+  await page.waitForFunction(expected => document.body.dataset.graphRoute === expected, route);
+  await page.waitForFunction(() => Boolean(window.ProfileArtifactScenes && window.ProfileArtifactSceneLayout));
+  await page.waitForFunction(expected => window.ProfileScene.manager.snapshot().graphState.route === expected, route);
+  await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
+  await page.waitForFunction(id => {
+    const element = document.querySelector(`[data-artifact-scene="${CSS.escape(id)}"]`);
+    return Boolean(element && !element.hidden && element.dataset.sceneVisible === 'true' && element.dataset.sceneComposed === 'true');
+  }, binding);
+};
+
+const artifactGeometry = async (page, binding) => page.evaluate(id => {
+  const root = document.querySelector(`[data-artifact-scene="${CSS.escape(id)}"]`);
+  const canvas = document.querySelector('.scene-canvas');
+  if (!root || !canvas) return null;
+
+  const visible = element => {
+    if (!element?.getClientRects().length) return false;
+    const style = getComputedStyle(element);
+    return style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity || 1) > .03;
+  };
+  const rectValue = rect => ({
+    left: rect.left,
+    top: rect.top,
+    right: rect.right,
+    bottom: rect.bottom,
+    width: rect.width,
+    height: rect.height
+  });
+  const union = rects => rects.reduce((result, rect) => ({
+    left: Math.min(result.left, rect.left),
+    top: Math.min(result.top, rect.top),
+    right: Math.max(result.right, rect.right),
+    bottom: Math.max(result.bottom, rect.bottom)
+  }), { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity });
+  const intersects = (a, b, gap = 0) =>
+    a.left < b.right + gap && a.right > b.left - gap && a.top < b.bottom + gap && a.bottom > b.top - gap;
+
+  const visualElements = [
+    root,
+    ...root.querySelectorAll('.artifact-deck-card,.artifact-folio-page,.artifact-orbit-actions,[data-artifact-focus]')
+  ].filter(visible);
+  const visualRects = visualElements.map(element => element.getBoundingClientRect()).filter(rect => rect.width > .5 && rect.height > .5);
+  const footprint = union(visualRects);
+  const canvasRect = rectValue(canvas.getBoundingClientRect());
+
+  const graphElements = [...document.querySelectorAll([
+    '#site-graph .site-graph-node:not(.is-atlas-lod-hidden)',
+    '#site-graph .work-project-anchor-v5:not(.is-filtered-out)',
+    '#site-graph .work-theme-label-v5'
+  ].join(','))].filter(element => !element.closest('.v9-transition-overlay') && visible(element));
+  const graphCollisions = graphElements
+    .map(element => ({
+      id: element.dataset.nodeId || element.dataset.projectId || element.textContent?.trim() || element.tagName,
+      rect: rectValue(element.getBoundingClientRect())
+    }))
+    .filter(item => item.rect.width > .5 && item.rect.height > .5 && intersects(footprint, item.rect, 8));
+
+  const hardObstacles = [
+    document.querySelector('#site-detail-panel:not([hidden])'),
+    document.querySelector('.integrated-work-rail.is-left'),
+    document.querySelector('.integrated-work-rail.is-right')
+  ].filter(element => element && visible(element));
+  const obstacleCollisions = hardObstacles
+    .map(element => ({ className: element.className, rect: rectValue(element.getBoundingClientRect()) }))
+    .filter(item => item.rect.width > .5 && item.rect.height > .5 && intersects(footprint, item.rect, 6));
+
+  return {
+    footprint,
+    canvas: canvasRect,
+    side: root.dataset.artifactSide || null,
+    availableWidth: root.style.getPropertyValue('--scene-side-available-width') || null,
+    graphCollisions,
+    obstacleCollisions
+  };
+}, binding);
+
+test('Work artifact scenes survive navigation into every artifact-bearing project', async ({ page }) => {
   await bypassIntro(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/#work');
   await waitForGraph(page);
+  await page.waitForFunction(() => Array.isArray(window.ARTIFACT_SCENE_BINDINGS));
 
-  const cases = [
-    ['work/project/bachelor-thesis', 'bachelor-thesis-diagrams'],
-    ['work/project/modal-logic-lab', 'modal-logic-lab-screens'],
-    ['work/project/axiom-wilds', 'axiom-wilds-gameplay']
-  ];
+  const cases = await page.evaluate(() => window.ARTIFACT_SCENE_BINDINGS.flatMap(binding =>
+    (binding.targets || [])
+      .filter(target => String(target.route || '').startsWith('work/project/'))
+      .map(target => [target.route, binding.id])
+  ));
+  expect(cases.length).toBeGreaterThan(0);
 
   for (const [route, binding] of cases) {
-    await page.evaluate(next => { location.hash = `#${next}`; }, route);
-    await page.waitForFunction(expected => document.body.dataset.graphRoute === expected, route);
-    await page.waitForFunction(() => Boolean(window.ProfileArtifactScenes && window.ProfileArtifactSceneLayout));
-    await page.waitForFunction(expected => window.ProfileScene.manager.snapshot().graphState.route === expected, route);
-    await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
+    await navigateToArtifactTarget(page, route, binding);
 
     const scene = page.locator(`[data-artifact-scene="${binding}"]`);
     await expect(scene).toBeVisible();
@@ -59,6 +135,31 @@ test('Work artifact scenes survive navigation into all artifact-bearing projects
     await page.evaluate(() => { location.hash = '#work'; });
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'work');
     await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
+  }
+});
+
+test('every desktop artifact target stays inside the canvas and outside graph/hard safe zones', async ({ page }) => {
+  await bypassIntro(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/#overview');
+  await waitForGraph(page);
+  await page.waitForFunction(() => Array.isArray(window.ARTIFACT_SCENE_BINDINGS));
+
+  const cases = await page.evaluate(() => window.ARTIFACT_SCENE_BINDINGS.flatMap(binding =>
+    (binding.targets || []).map(target => [target.route, binding.id])
+  ));
+
+  for (const [route, binding] of cases) {
+    await navigateToArtifactTarget(page, route, binding);
+    const geometry = await artifactGeometry(page, binding);
+    expect(geometry, `${binding} on ${route} should expose geometry`).not.toBeNull();
+    expect(geometry.availableWidth, `${binding} should receive a composed side-lane width`).not.toBe('');
+    expect(geometry.footprint.left, `${binding} left bound on ${route}`).toBeGreaterThanOrEqual(geometry.canvas.left + 20);
+    expect(geometry.footprint.right, `${binding} right bound on ${route}`).toBeLessThanOrEqual(geometry.canvas.right - 20);
+    expect(geometry.footprint.top, `${binding} top bound on ${route}`).toBeGreaterThanOrEqual(geometry.canvas.top + 20);
+    expect(geometry.footprint.bottom, `${binding} bottom bound on ${route}`).toBeLessThanOrEqual(geometry.canvas.bottom - 20);
+    expect(geometry.graphCollisions, `${binding} overlaps graph content on ${route}`).toEqual([]);
+    expect(geometry.obstacleCollisions, `${binding} overlaps inspector/Work controls on ${route}`).toEqual([]);
   }
 });
 
@@ -133,7 +234,7 @@ test('Atlas relation preview colors only relations while related nodes keep thei
   expect(colors.relation).toBe(colors.tealReference);
 });
 
-test('Hedgehog photo fan remains inside its left scene lane when inspector flips it', async ({ page }) => {
+test('Hedgehog photo fan uses the shared safe lane instead of a route-specific offset', async ({ page }) => {
   await bypassIntro(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/#about/woodworking/hedgehog-house');
@@ -142,11 +243,11 @@ test('Hedgehog photo fan remains inside its left scene lane when inspector flips
 
   const gallery = page.locator('[data-artifact-scene="hedgehog-house-gallery"]');
   await expect(gallery).toBeVisible();
-  const side = await gallery.getAttribute('data-artifact-side');
-  if (side === 'left') {
-    const minLeft = await gallery.locator('.artifact-deck-card').evaluateAll(cards =>
-      Math.min(...cards.map(card => card.getBoundingClientRect().left))
-    );
-    expect(minLeft).toBeGreaterThan(200);
-  }
+  await page.waitForFunction(() => document.querySelector('[data-artifact-scene="hedgehog-house-gallery"]')?.dataset.sceneComposed === 'true');
+
+  const geometry = await artifactGeometry(page, 'hedgehog-house-gallery');
+  expect(geometry.side).toBe('left');
+  expect(geometry.footprint.left).toBeGreaterThanOrEqual(geometry.canvas.left + 48);
+  expect(geometry.graphCollisions).toEqual([]);
+  expect(geometry.obstacleCollisions).toEqual([]);
 });

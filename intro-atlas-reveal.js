@@ -210,8 +210,8 @@
     }
     const delay = 160;
     const duration = 6350;
-    const accelerationStart = .50;
-    const acceleratedCompleteAt = .75;
+    const accelerationStart = .40;
+    const acceleratedCompleteAt = .72;
     const accelerationWindow = acceleratedCompleteAt - accelerationStart;
     const acceleration = (1 - acceleratedCompleteAt) / (accelerationWindow * accelerationWindow);
     const started = performance.now();

@@ -10,6 +10,36 @@
   const normaliseRoute = value =>
     (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
 
+  const graphRouteState = detail => {
+    const route = normaliseRoute(detail?.route || document.body?.dataset.graphRoute || location.hash);
+    const mode = detail?.mode || document.body?.dataset.graphMode || 'overview';
+    const routeNode = graphNodes.find(node => normaliseRoute(node.route) === route);
+    const activeNodeId = route === 'overview' || route === 'atlas'
+      ? rootId
+      : route === 'work' || route.startsWith('work/')
+        ? 'work'
+        : routeNode?.id || scene.manager.context().activeNodeId || rootId;
+    return {
+      route,
+      mode,
+      activeNodeId,
+      workProjectId: route.match(/^work\/project\/([^/]+)$/)?.[1] || null
+    };
+  };
+
+  const syncCommittedGraphState = (reason, detail = null) => {
+    const next = graphRouteState(detail);
+    const current = scene.manager.context();
+    if (
+      normaliseRoute(current.route) === next.route &&
+      current.mode === next.mode &&
+      current.activeNodeId === next.activeNodeId &&
+      (current.workProjectId || null) === next.workProjectId
+    ) return false;
+    scene.manager.setGraphState(next, { reason });
+    return true;
+  };
+
   let sequence = 0;
   let installFrame = 0;
   let installAttempts = 0;
@@ -148,6 +178,19 @@
     });
   };
 
+  window.addEventListener('profile:graph-state-committed', event => {
+    syncCommittedGraphState('transition-graph-commit', event.detail || null);
+  });
+  if (document.body) {
+    const graphStateObserver = new MutationObserver(() => {
+      syncCommittedGraphState('transition-graph-attributes');
+    });
+    graphStateObserver.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['data-graph-route', 'data-graph-mode']
+    });
+  }
+
   window.addEventListener('click', event => maybeInterruptNavigation(event, 'pointer'), true);
   window.addEventListener('keydown', event => {
     if (!['Enter', ' '].includes(event.key)) return;
@@ -162,6 +205,7 @@
     interrupt,
     installParticipants,
     navigationIntent,
+    syncCommittedGraphState,
     snapshot: () => ({
       sequence,
       locked: transitions.isLocked,
@@ -173,5 +217,6 @@
     })
   });
 
+  syncCommittedGraphState('transition-coordination-boot');
   installParticipants();
 })();

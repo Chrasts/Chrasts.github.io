@@ -1,0 +1,13 @@
+{
+  "name": "stepan-chrast-portfolio",
+  "private": true,
+  "scripts": {
+    "validate": "node scripts/validate-portfolio-model.mjs && node scripts/validate-artifacts.mjs && node scripts/validate-artifact-scenes.mjs && node scripts/validate-performance-contracts.mjs",
+    "test": "playwright test",
+    "test:performance": "playwright test tests/performance-bootstrap.spec.js",
+    "measure:performance": "node scripts/measure-performance.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.55.0"
+  }
+}

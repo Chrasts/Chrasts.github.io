@@ -76,6 +76,7 @@
   let currentLOD = null;
   let currentScale = 1;
   let topologyMode = TOPOLOGY_MODES.EXPLORATION_LOD;
+  let appliedTopologyMode = null;
   let entryFit = null;
   let visibleNodeCount = 0;
   let hiddenNodeCount = 0;
@@ -168,6 +169,7 @@
     hiddenNodeCount = visibility.size - visibleNodeCount;
     const previous = currentLOD;
     currentLOD = lod;
+    appliedTopologyMode = topologyMode;
     document.body.dataset.atlasLod = lod;
     document.body.dataset.atlasTopology = topologyMode;
     syncTerritoryLabels(currentScale);
@@ -234,13 +236,21 @@
     state.y = clamp(state.y, bounds.minY, bounds.maxY);
     return state;
   };
-  const writeCamera = () => {
+  const writeCamera = ({ forceLOD = false } = {}) => {
     const element = cameraElement();
     if (!element || document.body?.dataset.graphMode !== 'atlas') return;
     const transform = `translate(${camera.x.toFixed(2)} ${camera.y.toFixed(2)}) scale(${camera.scale.toFixed(4)})`;
     lastWrittenTransform = transform;
     if (element.getAttribute('transform') !== transform) element.setAttribute('transform', transform);
-    applyLOD(camera.scale);
+    currentScale = camera.scale;
+    syncTerritoryLabels(camera.scale);
+    // A camera frame only changes one SVG transform. Rewriting LOD classes,
+    // datasets and collision work for every node and edge on every frame made
+    // Atlas zoom main-thread bound. Reconcile the graph only at a threshold or
+    // topology boundary, and once more at the settled target.
+    if (forceLOD || lodForScale(camera.scale) !== currentLOD || topologyMode !== appliedTopologyMode) {
+      applyLOD(camera.scale);
+    }
   };
   const animateCamera = () => {
     if (camera.frame) return;
@@ -259,7 +269,7 @@
         camera.y = camera.targetY;
         camera.scale = camera.targetScale;
         camera.frame = 0;
-        writeCamera();
+        writeCamera({ forceLOD: true });
         dispatchEvent(new CustomEvent('profile:atlas-camera-settled', {
           detail: { x: camera.x, y: camera.y, scale: camera.scale }
         }));
@@ -280,7 +290,7 @@
       camera.x = next.x;
       camera.y = next.y;
       camera.scale = next.scale;
-      writeCamera();
+      writeCamera({ forceLOD: true });
       dispatchEvent(new CustomEvent('profile:atlas-camera-settled', {
         detail: { x: camera.x, y: camera.y, scale: camera.scale, immediate: true }
       }));

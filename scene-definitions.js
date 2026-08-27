@@ -105,7 +105,6 @@
   ensureStylesheet('root-landing.css', 'data-profile-root-landing-style');
   ensureStylesheet('motion-polish.css', 'data-profile-motion-polish-style');
   ensureStylesheet('graph-feel.css', 'data-profile-graph-feel-style');
-  ensureStylesheet('node-dynamics.css', 'data-profile-node-dynamics-style');
   ensureStylesheet('camera-materiality.css', 'data-profile-camera-materiality-style');
   ensureStylesheet('intro-fixes-v3.css', 'data-profile-intro-fixes-v3-style');
   ensureStylesheet('profile-root.css', 'data-profile-root-overview-style');

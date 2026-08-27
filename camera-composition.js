@@ -536,10 +536,14 @@
   };
 
   const boot = () => {
+    const wasBooted = booted;
+    const wasAtlasBooted = atlasBooted;
     const localReady = installLocalAdapter();
-    const atlasReady = installAtlasAdapter();
-    booted = Boolean(localReady && atlasReady);
-    if (booted) {
+    installAtlasAdapter();
+    // Local Focus must not wait for the lazy Atlas runtime. The Atlas adapter
+    // is installed opportunistically when its feature becomes available.
+    booted = Boolean(localReady);
+    if (booted && (!wasBooted || wasAtlasBooted !== atlasBooted)) {
       cancelAnimationFrame(bootFrame);
       bootFrame = 0;
       window.dispatchEvent(new CustomEvent('profile:camera-composition-ready', { detail: snapshotState() }));
@@ -614,6 +618,8 @@
     maybeAutoMakeRoom();
     window.dispatchEvent(new CustomEvent('profile:camera-safe-frame', { detail: snapshotState() }));
   });
+  window.addEventListener('profile:atlas-lod-change', ensureBoot);
+  window.addEventListener('profile:atlas-focus-ready', ensureBoot);
   window.addEventListener('resize', () => {
     if (currentMode() !== 'atlas') {
       localHomes.delete(localHomeKey());
@@ -627,6 +633,10 @@
     if (!atlasBooted || currentMode() !== 'atlas' || event.button !== 0) return;
     const node = event.target.closest?.('#site-graph .site-graph-node.is-previewed[data-node-id]');
     if (!node) return;
+    // Once the Atlas/Focus bridge is available it owns repeated activation.
+    // Keeping the legacy INSPECT handler active here stopped the later bridge
+    // listener on the same window before it could receive the event.
+    if (window.ProfileAtlasFocus) return;
     event.preventDefault();
     event.stopImmediatePropagation();
     command(PRESETS.INSPECT, { nodeId: node.dataset.nodeId });
@@ -636,6 +646,7 @@
     if (!atlasBooted || currentMode() !== 'atlas' || !['Enter', ' '].includes(event.key)) return;
     const node = event.target.closest?.('#site-graph .site-graph-node.is-previewed[data-node-id]');
     if (!node) return;
+    if (window.ProfileAtlasFocus) return;
     event.preventDefault();
     event.stopImmediatePropagation();
     command(PRESETS.INSPECT, { nodeId: node.dataset.nodeId });

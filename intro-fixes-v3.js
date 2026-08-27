@@ -189,7 +189,11 @@
     if (!targetRoute || document.querySelector('.profile-intro-overlay')) return false;
     const currentRoute = normaliseRoute(document.body?.dataset.graphRoute || location.hash);
     if (targetRoute === currentRoute) return false;
-    return document.body?.dataset.graphMode === 'atlas' || targetRoute === 'atlas';
+    // The shared Atlas/Focus bridge owns local graph routes in both
+    // directions. This legacy snapshot handoff remains only for Atlas ->
+    // overview/Work, which are not local Focus routes.
+    return document.body?.dataset.graphMode === 'atlas' &&
+      (targetRoute === 'overview' || targetRoute === 'work');
   };
   addEventListener('click', event => {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;

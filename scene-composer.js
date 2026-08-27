@@ -74,7 +74,9 @@
           priority: 50,
           role: 'artifact',
           containViewport: true,
-          viewportMargin: 20
+          // Leave a small reserve for card transform interpolation and
+          // sub-pixel rounding after the initial composition measurement.
+          viewportMargin: 28
         };
       }
       if (/^semantic-right-/.test(placement)) {

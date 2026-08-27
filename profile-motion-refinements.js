@@ -743,31 +743,11 @@
     return true;
   };
 
-  const atlasControl = target => {
-    if (mode() === 'atlas') return null;
-    return target?.closest?.('[data-route="atlas"], [data-route-target="atlas"], a[href="#atlas"]') || null;
-  };
-
-  const ownAtlasClick = event => {
-    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    if (!atlasControl(event.target)) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    transitionProfileToAtlas();
-  };
-  const ownAtlasKeyboard = event => {
-    if (event.defaultPrevented || !['Enter', ' '].includes(event.key)) return;
-    if (!atlasControl(event.target)) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    transitionProfileToAtlas();
-  };
-
-  // Register on window before lazy atlas-focus-unification.js exists. This is
-  // the single owner of non-Atlas -> Atlas; the older module still owns the
-  // opposite Atlas -> local Focus boundary.
-  addEventListener('click', ownAtlasClick, true);
-  addEventListener('keydown', ownAtlasKeyboard, true);
+  // Atlas boundary input is owned by the lazy feature bridge in
+  // scene-legacy-bridge.js. It loads atlas-focus-unification.js and replays the
+  // original intent, giving both directions one transition owner. The legacy
+  // transition function remains as a temporary API fallback for callers that
+  // invoke ProfileMotionRefinements.transitionToAtlas() directly.
 
   addEventListener('profile:profile-root-emergence', event => syncEmergencePhase(event.detail?.phase));
   addEventListener('profile:graph-render-settled', () => {

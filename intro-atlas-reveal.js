@@ -10,6 +10,8 @@
   const nodeMap = new Map(graph.nodes.map(node => [node.id, node]));
   const reducedMotion = Boolean(bootstrap.reducedMotion) || matchMedia('(prefers-reduced-motion: reduce)').matches;
   const mobileQuery = matchMedia('(max-width: 900px)');
+  const REVEAL_IGNITION_LEAD = reducedMotion ? 0 : 620;
+  const REVEAL_ACCELERATION_AFTER_START = 1000;
   const STATES = Object.freeze({
     PREPARING: 'PREPARING',
     ATLAS_REVEAL: 'ATLAS_REVEAL',
@@ -28,12 +30,12 @@
   } : {
     primary: 900,
     territories: 1800,
-    structure: 2800,
-    deep: 3300,
-    labels: 3600,
-    cross: 3900,
-    settle: 4150,
-    ready: 4300
+    structure: 2500,
+    deep: 2750,
+    labels: 2900,
+    cross: 3050,
+    settle: 3200,
+    ready: 3300
   });
 
   const state = {
@@ -149,10 +151,8 @@
         Math.hypot(width - cx, height - cy)
       );
     }
-    /* The clear core of the gradient ends at 52%. Finishing against the real
-       content bounds (plus breathing room) makes visual completion and input
-       activation the same frame instead of animating an invisible remainder
-       toward empty viewport corners. */
+    /* The clear core of the gradient ends at 52%. Finish against the real
+       content bounds so the reveal does not waste its tail on empty corners. */
     return { width, height, cx, cy, targetRadius: (graphDistance + 8) / .515 };
   };
 
@@ -210,8 +210,13 @@
     }
     const delay = 160;
     const duration = 6350;
-    const accelerationStart = .40;
-    const acceleratedCompleteAt = .72;
+    /* The field starts during ignition, before ATLAS_REVEAL. Deriving this
+       threshold from that lead keeps the visible first second deliberately
+       calm even if the ignition handoff is tuned later. */
+    const accelerationStart = Math.max(0, Math.min(1,
+      (REVEAL_IGNITION_LEAD + REVEAL_ACCELERATION_AFTER_START - delay) / duration
+    ));
+    const acceleratedCompleteAt = .55;
     const accelerationWindow = acceleratedCompleteAt - accelerationStart;
     const acceleration = (1 - acceleratedCompleteAt) / (accelerationWindow * accelerationWindow);
     const started = performance.now();
@@ -865,7 +870,7 @@
       document.body.classList.add('is-entry-loader-releasing');
     }
     visibilityFieldPromise = startVisibilityField();
-    await wait(reducedMotion ? 0 : 620);
+    await wait(REVEAL_IGNITION_LEAD);
     if (currentGeneration !== generation) return false;
 
     state.state = STATES.ATLAS_REVEAL;

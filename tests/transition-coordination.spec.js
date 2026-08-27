@@ -62,7 +62,7 @@ test.describe('Phase G interruptible transition coordination', () => {
     });
 
     const card = page.locator('[data-artifact-scene="bachelor-thesis-diagrams"] button[data-artifact-id="bachelor-thesis-rol-non-a"]');
-    await card.click();
+    await card.locator('.artifact-inline-expand').click();
     await page.waitForFunction(() => window.ProfileObjectFocus.snapshot().phase !== 'idle');
     await page.locator('#main-nav [data-route="knowledge"]').click({ force: true });
 

@@ -12,6 +12,11 @@ const boot = async (page, route) => {
 const waitSettled = page => page.waitForFunction(() => window.ProfileObjectFocus?.snapshot().phase === 'settled');
 const artifactControl = (page, scene, artifact) =>
   page.locator(`[data-artifact-scene="${scene}"] [data-artifact-focus="${artifact}"]`);
+const openArtifact = async control => {
+  const expand = control.locator('.artifact-inline-expand');
+  if (await expand.count()) await expand.click();
+  else await control.click();
+};
 
 const expectDetailOwned = async detail => {
   await expect(detail).toHaveClass(/is-open/);
@@ -80,7 +85,7 @@ test('thesis and Modal Lab artifacts open Object Focus without dismissing their 
     const detail = page.locator('#site-detail-panel');
     const card = artifactControl(page, sample.scene, sample.artifact);
     await expect(detail).toBeVisible();
-    await card.click();
+    await openArtifact(card);
     await waitSettled(page);
     await expect(page.locator('.artifact-focus-viewer')).toHaveAttribute('data-shared-focus-artifact', sample.artifact);
     await expect(page.locator('.artifact-focus-viewer')).toHaveAttribute('data-media-kind', sample.kind);
@@ -94,7 +99,7 @@ test('thesis and Modal Lab artifacts open Object Focus without dismissing their 
 test('focused PDF uses whole-page fit with user zoom controls available', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await boot(page, 'work/project/bachelor-thesis');
-  await artifactControl(page, 'bachelor-thesis-diagrams', 'bachelor-thesis-lattice-of-bands').click();
+  await openArtifact(artifactControl(page, 'bachelor-thesis-diagrams', 'bachelor-thesis-lattice-of-bands'));
   await waitSettled(page);
   const frame = page.locator('.artifact-focus-media iframe.object-focus-primary');
   await expect(frame).toHaveAttribute('data-object-focus-fit', 'contain');

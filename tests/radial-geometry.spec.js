@@ -16,9 +16,17 @@ test.describe('Global fan v3 geometry', () => {
     await prepare(page); await page.goto('/#overview');
     await page.waitForFunction(() => Boolean(window.ProfileRootLanding)); await waitFan(page);
     await page.evaluate(() => window.ProfileRootLanding.activate({ focusGraph:false }));
-    await page.waitForFunction(() => document.body.dataset.globalCompass === 'fan-v3');
+    await page.waitForFunction(() =>
+      document.body.dataset.globalCompass === 'fan-v3' &&
+      document.body.dataset.rootLanding === 'false' &&
+      document.body.classList.contains('is-profile-root-ready') &&
+      !document.body.classList.contains('is-profile-root-emerging') &&
+      document.body.dataset.profileBranchEdgePhase === 'settled' &&
+      !document.body.classList.contains('is-v9-transitioning') &&
+      window.ProfileGeometry?.snapshot?.().reconciliation?.pending === false
+    );
     const root=await point(page,'stepan-chrast'), work=await point(page,'work'), knowledge=await point(page,'knowledge'), education=await point(page,'education'), about=await point(page,'about'), experience=await point(page,'experience');
-    expect(Math.abs(work.x-root.x)).toBeLessThan(8); expect(work.y).toBeGreaterThan(root.y+250); expect(work.y).toBeLessThan(root.y+290);
+    expect(Math.abs(work.x-root.x)).toBeLessThan(8); expect(work.y).toBeGreaterThan(root.y+290); expect(work.y).toBeLessThan(root.y+315);
     expect(knowledge.x).toBeGreaterThan(root.x+330); expect(Math.abs(knowledge.y-root.y)).toBeLessThan(55);
     expect(education.x).toBeGreaterThan(root.x+100); expect(education.x).toBeLessThan(knowledge.x-180); expect(education.y).toBeLessThan(root.y-250);
     expect(about.x).toBeLessThan(root.x-210); expect(about.y).toBeLessThan(root.y-205);

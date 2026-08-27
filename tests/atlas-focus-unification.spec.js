@@ -8,7 +8,12 @@ const bypassIntro = async page => {
 const SAT_ROUTE = 'knowledge/logic-math/mathematical-logic/computational-logic/sat-smt';
 
 const waitReady = async page => {
-  await page.waitForFunction(() => Boolean(window.ProfileAtlasFocus?.snapshot?.().ready && window.ProfileAtlasLOD));
+  await page.waitForFunction(() => Boolean(
+    window.ProfileAtlasFocus?.snapshot?.().ready &&
+    window.ProfileAtlasLOD &&
+    !document.body.classList.contains('is-v9-transitioning') &&
+    !window.ProfileScene?.transitions?.isLocked
+  ));
 };
 
 const waitSettled = async page => {
@@ -19,7 +24,9 @@ const waitRouteCore = async (page, route, mode) => {
   await page.waitForFunction(({ expectedRoute, expectedMode }) => Boolean(
     window.ProfileFeatureBootstrap?.snapshot?.().states.bindings === 'ready' &&
     document.body.dataset.graphRoute === expectedRoute &&
-    document.body.dataset.graphMode === expectedMode
+    document.body.dataset.graphMode === expectedMode &&
+    !document.body.classList.contains('is-v9-transitioning') &&
+    !window.ProfileScene?.transitions?.isLocked
   ), { expectedRoute: route, expectedMode: mode });
 };
 

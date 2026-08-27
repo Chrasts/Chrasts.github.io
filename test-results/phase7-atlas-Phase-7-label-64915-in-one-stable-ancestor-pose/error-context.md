@@ -1,0 +1,95 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - link "Overview" [ref=e4] [cursor=pointer]:
+      - /url: "#overview"
+      - text: ŠC
+    - generic [ref=e5]:
+      - navigation "Primary navigation" [ref=e6]:
+        - link "Overview" [ref=e7] [cursor=pointer]:
+          - /url: "#overview"
+        - link "Work" [ref=e8] [cursor=pointer]:
+          - /url: "#work"
+        - link "Knowledge" [ref=e9] [cursor=pointer]:
+          - /url: "#knowledge"
+        - link "Experience" [ref=e10] [cursor=pointer]:
+          - /url: "#experience"
+        - link "Education" [ref=e11] [cursor=pointer]:
+          - /url: "#education"
+        - link "About" [ref=e12] [cursor=pointer]:
+          - /url: "#about"
+        - link "Atlas" [ref=e13] [cursor=pointer]:
+          - /url: "#atlas"
+      - link "Email" [ref=e14] [cursor=pointer]:
+        - /url: mailto:chraststepan@gmail.com
+      - link "GitHub ↗" [ref=e15] [cursor=pointer]:
+        - /url: https://github.com/Chrasts
+      - link "LinkedIn ↗" [ref=e16] [cursor=pointer]:
+        - /url: https://www.linkedin.com/in/stepan-chrast
+      - button "Switch to dark mode" [ref=e17] [cursor=pointer]:
+        - generic [ref=e18] [cursor=pointer]: ☾
+  - main [ref=e19]:
+    - region "Interactive profile graph" [ref=e20]:
+      - generic:
+        - navigation "Graph path" [ref=e21]:
+          - button "Štěpán Chrast" [ref=e22] [cursor=pointer]
+          - button "About" [ref=e24] [cursor=pointer]
+        - button "Quick overview" [ref=e25] [cursor=pointer]
+        - button "Open Atlas, the full profile map" [ref=e26] [cursor=pointer]:
+          - img [ref=e27] [cursor=pointer]
+          - strong [ref=e49] [cursor=pointer]: Atlas
+      - region "About" [ref=e51]:
+        - generic:
+          - heading "About" [level=2]
+        - generic "Atlas structure controls" [ref=e52]:
+          - generic [ref=e53]: Structure
+          - generic [ref=e54] [cursor=pointer]:
+            - checkbox "Hierarchy" [checked] [ref=e55]
+            - text: Hierarchy
+          - generic [ref=e56] [cursor=pointer]:
+            - checkbox "Cross-links" [checked] [ref=e57]
+            - text: Cross-links
+          - generic [ref=e58] [cursor=pointer]:
+            - checkbox "Secondary relations" [ref=e59]
+            - text: Secondary relations
+          - button "Structure only" [ref=e60] [cursor=pointer]
+          - button "All relations" [ref=e61] [cursor=pointer]
+          - button "Fit all" [ref=e62] [cursor=pointer]
+          - button "Zoom out" [ref=e63] [cursor=pointer]: "-"
+          - button "Zoom in" [ref=e64] [cursor=pointer]: +
+          - button "Reset view" [ref=e65] [cursor=pointer]
+          - button "Back to overview" [ref=e66] [cursor=pointer]
+        - group "About Select a connected node to move deeper. Ancestors remain in the graph." [ref=e69]:
+          - generic [ref=e84]:
+            - button "Štěpán Chrast. Profile. Open this profile area." [ref=e85] [cursor=pointer]:
+              - generic [ref=e88] [cursor=pointer]: Štěpán Chrast
+            - button "About. Profile area. Current profile area." [ref=e89] [cursor=pointer]:
+              - generic [ref=e92] [cursor=pointer]: About
+            - button "Research Interests. About item. Open this profile area." [ref=e93] [cursor=pointer]:
+              - generic [ref=e96] [cursor=pointer]: Research Interests
+            - button "Philosophy. About item. Open this profile area." [ref=e97] [cursor=pointer]:
+              - generic [ref=e100] [cursor=pointer]: Philosophy
+            - button "Games. About item. Open this profile area." [ref=e101] [cursor=pointer]:
+              - generic [ref=e104] [cursor=pointer]: Games
+            - button "Music. About item. Open this profile area." [ref=e105] [cursor=pointer]:
+              - generic [ref=e108] [cursor=pointer]: Music
+            - button "Woodworking. About item. Open this profile area." [ref=e109] [cursor=pointer]:
+              - generic [ref=e112] [cursor=pointer]: Woodworking
+            - button "Logic & AI. About item. Open this profile area." [ref=e113] [cursor=pointer]:
+              - generic [ref=e116] [cursor=pointer]: Logic & AI
+            - button "AI-assisted Mathematics & Automated Reasoning. About item. Open this profile area." [ref=e117] [cursor=pointer]:
+              - generic [ref=e120] [cursor=pointer]: AI-assisted Mathematics
+            - button "Philosophy of AI. About item. Open this profile area." [ref=e121] [cursor=pointer]:
+              - generic [ref=e124] [cursor=pointer]: Philosophy of AI
+            - button "Philosophy of Mind. About item. Open this profile area." [ref=e125] [cursor=pointer]:
+              - generic [ref=e128] [cursor=pointer]: Philosophy of Mind
+            - button "RPG / D&D. About item. Open this profile area." [ref=e129] [cursor=pointer]:
+              - generic [ref=e132] [cursor=pointer]: RPG / D&D
+            - 'button "Magic: The Gathering. About item. Open this profile area." [ref=e133] [cursor=pointer]':
+              - generic [ref=e136] [cursor=pointer]: "Magic: The Gathering"
+        - generic [ref=e137]: About view open.
+```

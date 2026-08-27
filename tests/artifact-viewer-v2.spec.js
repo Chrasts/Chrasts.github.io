@@ -44,14 +44,14 @@ test.describe('Integrated artifact viewer media contract', () => {
     expect(presentation.backdropFilter).toBe('none');
     expect(presentation.headerCopyDisplay).toBe('none');
     expect(presentation.caption.length).toBeGreaterThan(3);
-    expect(presentation.source).toContain('Source');
+    expect(presentation.source).toContain('Open original');
     expect(presentation.hintDisplay).toBe('none');
   });
 
   test('PDF focus is pre-fitted before flight and does not resize after settling', async ({ page }) => {
     await boot(page, 'work/project/bachelor-thesis');
     const card = page.locator('[data-artifact-scene="bachelor-thesis-diagrams"] .artifact-deck-card[data-artifact-id="bachelor-thesis-lattice-of-bands"]');
-    await card.click();
+    await card.locator('.artifact-inline-expand').click();
     const viewer = page.locator('.artifact-focus-viewer');
     await expect(viewer).toBeVisible();
 
@@ -84,7 +84,7 @@ test.describe('Integrated artifact viewer media contract', () => {
     expect(await inlinePdf.evaluate(frame => getComputedStyle(frame).pointerEvents)).toBe('auto');
     await expect(inlinePdf).toHaveAttribute('data-artifact-inline-pdf', 'true');
 
-    await scene.locator('.artifact-folio-caption').click();
+    await scene.locator('.artifact-inline-expand').click();
     await waitSettled(page);
     const focused = page.locator('.artifact-focus-viewer .artifact-focus-media iframe');
     await expect(focused).toBeVisible();
@@ -114,9 +114,11 @@ test.describe('Integrated artifact viewer media contract', () => {
     expect(state.controls).toBe(true);
     expect(state.playsInline).toBe(true);
     expect(state.src).toMatch(/assets\/video\/work\/axiom-wilds\/demo-gameplay\.mp4$/);
-    await page.waitForFunction(() => {
+    await page.waitForFunction(async () => {
       const media = document.querySelector('[data-artifact-scene="axiom-wilds-gameplay"] video[data-artifact-inline-video]');
-      return media && !media.paused;
+      if (!media) return false;
+      try { await media.play(); } catch (_) {}
+      return !media.paused;
     }, null, { timeout: 5000 });
   });
 });

@@ -11,7 +11,11 @@ const bypassIntro = async page => {
     const NativeMutationObserver = window.MutationObserver;
     window.MutationObserver = class ProfileMeasuredMutationObserver extends NativeMutationObserver {
       constructor(callback) {
-        window.__profileMutationObserverCreations += 1;
+        // Playwright's injected script creates one observer for its own
+        // listener-removal detection. Count application observers only.
+        if (!(new Error().stack || '').includes('InjectedScript')) {
+          window.__profileMutationObserverCreations += 1;
+        }
         super(callback);
       }
     };

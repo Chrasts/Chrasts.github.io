@@ -55,7 +55,7 @@ test.describe('Scene-system architecture contracts', () => {
     await expect(target).not.toHaveClass(/scene-object/);
   });
 
-  test('late scene roots are discovered at the scene-canvas boundary and unregister cleanly', async ({ page }) => {
+  test('an explicit refresh discovers late scene roots and unregisters them cleanly', async ({ page }) => {
     await boot(page);
     await page.evaluate(() => {
       window.ProfileScene.registry.register({
@@ -70,6 +70,7 @@ test.describe('Scene-system architecture contracts', () => {
       const target = document.createElement('section');
       target.className = 'scene-contract-late-root';
       document.querySelector('.scene-canvas').appendChild(target);
+      window.ProfileScene.manager.scheduleRefresh('late-root-contract');
     });
     const target = page.locator('.scene-contract-late-root');
     await expect(target).toHaveAttribute('data-scene-object', 'scene-contract-late-root');

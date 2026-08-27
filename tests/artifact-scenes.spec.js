@@ -74,7 +74,7 @@ test('Simulation Credence is a document object and opens in Object Focus', async
   await expect(folio.locator('.artifact-object-header')).toHaveCount(0);
   await expect(folio.locator('iframe')).toHaveAttribute('src', /simulation-credence-and-its-consequences\.pdf#page=1/);
 
-  await folio.locator('[data-artifact-focus="simulation-credence-coursework"]').click();
+  await folio.locator('.artifact-inline-expand').click();
   const viewer = page.locator('.artifact-focus-viewer');
   await waitSettled(page);
   await expect(viewer).toBeVisible();
@@ -145,14 +145,14 @@ test('thesis diagrams use their PDF page aspect and show the whole page', async 
 
   await second.hover();
   await expect(second).toHaveClass(/is-active/);
-  await second.click();
+  await second.locator('.artifact-inline-expand').click();
   await waitSettled(page);
   await expect(viewer).toHaveAttribute('data-shared-focus-artifact', 'bachelor-thesis-rol-non-a');
   await page.keyboard.press('Escape');
   await expect(viewer).toBeHidden({ timeout: 2000 });
 
   await first.hover();
-  await first.click();
+  await first.locator('.artifact-inline-expand').click();
   await waitSettled(page);
   await expect(viewer).toHaveAttribute('data-shared-focus-artifact', 'bachelor-thesis-lattice-of-bands');
   await page.keyboard.press('Escape');
@@ -193,10 +193,12 @@ test('Hedgehog House photo fan keeps every rotated photograph inside the viewpor
   await expect(cards).toHaveCount(3);
   await expect(gallery.locator('img')).toHaveCount(3);
 
-  const boxes = await cards.evaluateAll(elements => elements.map(element => {
+  const readBoxes = () => cards.evaluateAll(elements => elements.map(element => {
     const box = element.getBoundingClientRect();
     return { left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width };
   }));
+  await expect.poll(async () => Math.min(...(await readBoxes()).map(box => box.left))).toBeGreaterThanOrEqual(20);
+  const boxes = await readBoxes();
   boxes.forEach(box => {
     expect(box.left).toBeGreaterThanOrEqual(20);
     expect(box.right).toBeLessThanOrEqual(1260);

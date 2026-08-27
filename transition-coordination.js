@@ -178,18 +178,12 @@
     });
   };
 
+  // The renderer publishes its committed route explicitly. This listener loads
+  // before site-graph.js, so SceneManager cannot miss a project-route commit even
+  // when the later legacy bridge or artifact bundle is still loading.
   window.addEventListener('profile:graph-state-committed', event => {
     syncCommittedGraphState('transition-graph-commit', event.detail || null);
   });
-  if (document.body) {
-    const graphStateObserver = new MutationObserver(() => {
-      syncCommittedGraphState('transition-graph-attributes');
-    });
-    graphStateObserver.observe(document.body, {
-      attributes: true,
-      attributeFilter: ['data-graph-route', 'data-graph-mode']
-    });
-  }
 
   window.addEventListener('click', event => maybeInterruptNavigation(event, 'pointer'), true);
   window.addEventListener('keydown', event => {

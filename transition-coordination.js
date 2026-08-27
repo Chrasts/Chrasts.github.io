@@ -9,6 +9,7 @@
   const rootId = window.SITE_DATA?.graph?.rootId || 'stepan-chrast';
   const normaliseRoute = value =>
     (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
+  const isWorkProjectRoute = value => /^work\/project\/[^/]+$/.test(normaliseRoute(value));
 
   const graphRouteState = detail => {
     const route = normaliseRoute(detail?.route || document.body?.dataset.graphRoute || location.hash);
@@ -178,11 +179,14 @@
     });
   };
 
-  // The renderer publishes its committed route explicitly. This listener loads
-  // before site-graph.js, so SceneManager cannot miss a project-route commit even
-  // when the later legacy bridge or artifact bundle is still loading.
+  // Work project routes are more specific than the Work graph mode. The renderer
+  // publishes the exact committed project route before late artifact code loads,
+  // so mirror just that route into SceneManager here and leave every other scene
+  // transition to the established bridge/lifecycle owners.
   window.addEventListener('profile:graph-state-committed', event => {
-    syncCommittedGraphState('transition-graph-commit', event.detail || null);
+    const route = normaliseRoute(event.detail?.route || document.body?.dataset.graphRoute || location.hash);
+    if (!isWorkProjectRoute(route)) return;
+    syncCommittedGraphState('transition-work-project-commit', { ...(event.detail || {}), route });
   });
 
   window.addEventListener('click', event => maybeInterruptNavigation(event, 'pointer'), true);
@@ -211,6 +215,8 @@
     })
   });
 
-  syncCommittedGraphState('transition-coordination-boot');
+  if (isWorkProjectRoute(document.body?.dataset.graphRoute || location.hash)) {
+    syncCommittedGraphState('transition-work-project-boot');
+  }
   installParticipants();
 })();

@@ -9,6 +9,37 @@
   const rootId = window.SITE_DATA?.graph?.rootId || 'stepan-chrast';
   const normaliseRoute = value =>
     (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
+  const isWorkProjectRoute = value => /^work\/project\/[^/]+$/.test(normaliseRoute(value));
+
+  const graphRouteState = detail => {
+    const route = normaliseRoute(detail?.route || document.body?.dataset.graphRoute || location.hash);
+    const mode = detail?.mode || document.body?.dataset.graphMode || 'overview';
+    const routeNode = graphNodes.find(node => normaliseRoute(node.route) === route);
+    const activeNodeId = route === 'overview' || route === 'atlas'
+      ? rootId
+      : route === 'work' || route.startsWith('work/')
+        ? 'work'
+        : routeNode?.id || scene.manager.context().activeNodeId || rootId;
+    return {
+      route,
+      mode,
+      activeNodeId,
+      workProjectId: route.match(/^work\/project\/([^/]+)$/)?.[1] || null
+    };
+  };
+
+  const syncCommittedGraphState = (reason, detail = null) => {
+    const next = graphRouteState(detail);
+    const current = scene.manager.context();
+    if (
+      normaliseRoute(current.route) === next.route &&
+      current.mode === next.mode &&
+      current.activeNodeId === next.activeNodeId &&
+      (current.workProjectId || null) === next.workProjectId
+    ) return false;
+    scene.manager.setGraphState(next, { reason });
+    return true;
+  };
 
   let sequence = 0;
   let installFrame = 0;
@@ -148,6 +179,16 @@
     });
   };
 
+  // Work project routes are more specific than the Work graph mode. The renderer
+  // publishes the exact committed project route before late artifact code loads,
+  // so mirror just that route into SceneManager here and leave every other scene
+  // transition to the established bridge/lifecycle owners.
+  window.addEventListener('profile:graph-state-committed', event => {
+    const route = normaliseRoute(event.detail?.route || document.body?.dataset.graphRoute || location.hash);
+    if (!isWorkProjectRoute(route)) return;
+    syncCommittedGraphState('transition-work-project-commit', { ...(event.detail || {}), route });
+  });
+
   window.addEventListener('click', event => maybeInterruptNavigation(event, 'pointer'), true);
   window.addEventListener('keydown', event => {
     if (!['Enter', ' '].includes(event.key)) return;
@@ -162,6 +203,7 @@
     interrupt,
     installParticipants,
     navigationIntent,
+    syncCommittedGraphState,
     snapshot: () => ({
       sequence,
       locked: transitions.isLocked,
@@ -173,5 +215,8 @@
     })
   });
 
+  if (isWorkProjectRoute(document.body?.dataset.graphRoute || location.hash)) {
+    syncCommittedGraphState('transition-work-project-boot');
+  }
   installParticipants();
 })();

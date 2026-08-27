@@ -13,8 +13,8 @@
   const currentRoute = () => normaliseRoute(document.body.dataset.graphRoute || location.hash);
   const currentMode = () => document.body.dataset.graphMode || 'overview';
 
-  const activeNodeId = () => {
-    const route = currentRoute();
+  const activeNodeId = (routeValue = currentRoute()) => {
+    const route = normaliseRoute(routeValue);
     if (route === 'overview' || route === 'atlas') return rootId;
     if (route === 'work' || route.startsWith('work/')) return 'work';
     return routeNodeMap.get(route)?.id ||
@@ -22,14 +22,17 @@
       rootId;
   };
 
-  const workProjectId = () => currentRoute().match(/^work\/project\/([^/]+)$/)?.[1] || null;
+  const workProjectId = (routeValue = currentRoute()) =>
+    normaliseRoute(routeValue).match(/^work\/project\/([^/]+)$/)?.[1] || null;
 
-  const syncGraphState = reason => {
+  const syncGraphState = (reason, committed = null) => {
+    const route = normaliseRoute(committed?.route || currentRoute());
+    const mode = committed?.mode || currentMode();
     manager.setGraphState({
-      route: currentRoute(),
-      mode: currentMode(),
-      activeNodeId: activeNodeId(),
-      workProjectId: workProjectId()
+      route,
+      mode,
+      activeNodeId: activeNodeId(route),
+      workProjectId: workProjectId(route)
     }, { reason });
   };
 
@@ -146,8 +149,20 @@
     serialize: readViewBox
   });
 
-  window.addEventListener('profile:graph-state-committed', () => {
-    syncGraphState(document.body.classList.contains('is-v9-transitioning') ? 'transition-render' : 'renderer-state');
+  window.addEventListener('profile:graph-state-committed', event => {
+    syncGraphState(
+      document.body.classList.contains('is-v9-transitioning') ? 'transition-render' : 'renderer-state',
+      event.detail || null
+    );
+  });
+  window.addEventListener('profile:graph-render-settled', event => {
+    const committed = event.detail || null;
+    const route = normaliseRoute(committed?.route || currentRoute());
+    const mode = committed?.mode || currentMode();
+    const current = manager.context();
+    if (normaliseRoute(current.route) !== route || current.mode !== mode) {
+      syncGraphState('graph-render-settled', { route, mode });
+    }
   });
   window.addEventListener('profile:transition-finish', () => {
     syncGraphState('transition-finish');
@@ -395,6 +410,11 @@
   };
 
   const prewarmFromControl = event => {
+    const project = event.target.closest?.('.work-project-anchor-v5[data-project-id]');
+    if (project?.dataset.projectId) {
+      ensureRoute(`work/project/${project.dataset.projectId}`).catch(() => {});
+      return;
+    }
     const control = event.target.closest?.('[data-route], a[href^="#"]');
     if (!control) return;
     const route = control.dataset.route || control.getAttribute('href');

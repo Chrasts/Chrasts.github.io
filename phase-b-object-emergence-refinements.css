@@ -1,6 +1,10 @@
 /* Phase B object-emergence refinements.
    Focus has graduated to Phase C, while spatial composition remains the accepted
-   Phase B emergence grammar until Phase D consolidates scene composition. */
+   Phase B emergence grammar until Phase D consolidates scene composition.
+
+   IMPORTANT: SceneComposer owns desktop artifact geometry and artifact-viewer-v2
+   owns ambient semantic depth. This layer must not introduce route-specific
+   offsets, fixed desktop card widths, or ambient z-index overrides. */
 
 /* Object names are contextual hints, not standing captions. The active object
    can remain visually raised without keeping its label permanently visible. */
@@ -10,91 +14,10 @@
 }
 
 @media(min-width:901px){
-  /* The previous artifact foundation intentionally docked every contextual
-     object at the extreme lower-left. Frameless object clusters need breathing
-     room instead: place them deeper inside the available scene lane and make
-     the visual objects large enough to read as scene content, not thumbnails. */
-  .artifact-object[data-scene-placement="artifact-contextual"][data-artifact-recipe="media-deck"]{
-    top:clamp(92px,16vh,148px)!important;
-    bottom:auto!important;
-    max-height:none!important
-  }
-
-  .artifact-object[data-scene-placement="artifact-contextual"][data-artifact-recipe="media-deck"][data-artifact-side="left"]{
-    left:clamp(72px,11vw,168px)!important;
-    right:auto!important
-  }
-
-  .artifact-object[data-scene-placement="artifact-contextual"][data-artifact-recipe="media-deck"][data-artifact-side="right"]{
-    right:clamp(72px,11vw,168px)!important;
-    left:auto!important
-  }
-
-  /* Work deliberately shifts its canvas underneath the side rails. A left
-     value that is centred in ordinary routes can therefore still start outside
-     the browser viewport. Move media deeper into Work's real free lane, between
-     the left filters and the right project inspector. */
-  body[data-graph-mode="work"] .artifact-object[data-scene-placement="artifact-contextual"][data-artifact-recipe="media-deck"][data-artifact-side="left"]{
-    left:clamp(340px,31vw,450px)!important
-  }
-
-  /* Hedgehog House opens a right-side node inspector, which flips the preferred
-     right photo fan into the left lane. That lane is measured from the scene
-     canvas rather than the browser viewport. Give the fan an explicit safe
-     inset and extra internal breathing room so the rotated left photograph is
-     still fully visible at desktop widths. */
-  body[data-graph-route="about/woodworking/hedgehog-house"] .artifact-object[data-artifact-variant="fan"][data-artifact-side="left"]{
-    left:clamp(154px,16vw,232px)!important;
-    right:auto!important
-  }
-  body[data-graph-route="about/woodworking/hedgehog-house"] .artifact-object[data-artifact-variant="fan"][data-artifact-side="right"]{
-    right:clamp(92px,10vw,150px)!important;
-    left:auto!important
-  }
-
-  /* Work side rails are visually narrow but their scene object owns a larger
-     hit area. Keep ambient media above that hit plane. During Inspect the focus
-     layer must regain ownership, so this rule explicitly excludes that state. */
-  body[data-graph-mode="work"]:not(.has-artifact-focus) .artifact-scene-layer{
-    z-index:24!important
-  }
+  /* Inspect is intentionally above the graph, controls and ambient artifacts. */
   body.has-artifact-focus .artifact-scene-layer{
     z-index:90!important
   }
-
-  .artifact-object[data-artifact-variant="diagram"]{
-    width:min(620px,52vw)!important;
-    height:370px!important
-  }
-  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card{
-    width:258px!important;
-    height:244px!important
-  }
-  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(1){left:24px!important;top:18px!important}
-  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(2){right:24px!important;top:92px!important}
-
-  .artifact-object[data-artifact-variant="screens"]{
-    width:min(650px,54vw)!important;
-    height:360px!important
-  }
-  .artifact-object[data-artifact-variant="screens"] .artifact-deck-card{
-    width:342px!important;
-    height:218px!important
-  }
-  .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(1){left:18px!important;top:18px!important}
-  .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(2){right:18px!important;top:112px!important}
-
-  .artifact-object[data-artifact-variant="fan"]{
-    width:min(590px,50vw)!important;
-    height:350px!important
-  }
-  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card{
-    width:190px!important;
-    height:228px!important
-  }
-  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(1){left:34px!important;top:78px!important}
-  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(2){top:22px!important}
-  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(3){right:34px!important;top:80px!important}
 
   /* Descriptive inspectors should end with their content. Older rules pinned
      both their top and bottom edges, which manufactured a large blank tail. */
@@ -139,9 +62,7 @@
     z-index:96!important
   }
 
-  /* Route-specific artifact z-index rules are declared after the generic focus
-     lift in the focus stylesheet. Reassert focus ownership last so the graph
-     dock cannot sit on top of inspected media. */
+  /* Focus owns the interaction plane while inspected media is open. */
   body.has-artifact-focus .artifact-scene-layer{
     z-index:96!important
   }

@@ -82,7 +82,8 @@ html[data-profile-intro="running"] .entry-loading-shell{display:grid}
   animation:entry-loader-orbit 12s linear infinite
 }
 body.is-entry-loader-releasing .entry-loading-shell{
-  background:transparent
+  background:transparent;
+  pointer-events:none
 }
 body.is-entry-mask-finishing .entry-loading-shell{
   display:grid;
@@ -240,7 +241,7 @@ body.is-atlas-reveal #site-graph .site-graph-edges path[data-intro-edge-wave="cr
 body.is-atlas-reveal #site-graph .site-graph-node:not([data-node-id="stepan-chrast"]){
   pointer-events:none
 }
-body.is-atlas-reveal.is-atlas-reveal-late #site-graph .site-graph-node[data-intro-wave="primary"]{
+body.is-atlas-reveal.is-atlas-reveal-late #site-graph .site-graph-node:not([data-node-id="stepan-chrast"]){
   pointer-events:auto
 }
 body.is-atlas-reveal #site-graph .site-graph-node[data-node-id="stepan-chrast"]{

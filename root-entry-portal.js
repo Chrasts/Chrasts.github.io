@@ -33,6 +33,13 @@
     const state = introState();
     return !state || ['ATLAS_READY', 'BYPASSED'].includes(state);
   };
+  const introPreviewAvailable = () => Boolean(
+    mode() === 'atlas' &&
+    introState() === 'ATLAS_REVEAL' &&
+    document.body?.classList.contains('is-atlas-reveal') &&
+    document.body?.classList.contains('is-entry-loader-releasing')
+  );
+  const previewAvailable = () => available() || introPreviewAvailable();
   const emit = (type, detail = {}) => {
     sequence += 1;
     dispatchEvent(new CustomEvent('profile:root-entry-portal', {
@@ -122,10 +129,10 @@
 
   const syncOpenPresentation = () => {
     if (!rootNode?.isConnected || !action?.isConnected) return;
-    const visible = open && available();
+    const visible = open && previewAvailable();
     rootNode.classList.toggle('is-root-entry-open', visible);
     rootNode.classList.toggle('is-root-entry-entering', entering && visible);
-    const entryState = entering ? 'committing' : visible ? 'armed' : available() ? 'idle' : 'latent';
+    const entryState = entering ? 'committing' : visible ? 'armed' : previewAvailable() ? 'idle' : 'latent';
     const entryHero = ['preparing', 'ignition', 'reveal', 'ready']
       .includes(document.body?.dataset?.entryState || '');
     rootNode.dataset.rootEntryPortal = entryState;
@@ -139,7 +146,7 @@
   };
 
   const openPortal = (reason = 'api', { manual = false } = {}) => {
-    if (!available() || !rootNode?.isConnected || entering) return false;
+    if (!previewAvailable() || !rootNode?.isConnected || entering) return false;
     clearTimeout(closeTimer);
     const changed = !open;
     open = true;
@@ -167,7 +174,7 @@
     entering = false;
     manualOpen = false;
     lastReason = reason;
-    if (keepOpen && available()) {
+    if (keepOpen && previewAvailable()) {
       open = true;
       syncOpenPresentation();
       emit('entry-released', { reason, keepOpen: true });
@@ -235,6 +242,25 @@
       return true;
     }
     return fallbackEnterProfile(source);
+  };
+
+  const finishIntroAndEnter = source => {
+    if (introState() !== 'ATLAS_REVEAL' || entering) return false;
+    entering = true;
+    lastReason = 'intro-enter-request';
+    syncOpenPresentation();
+    const reason = source.includes('keyboard') ? 'keyboard' : 'pointer';
+    Promise.resolve(window.ProfileIntro?.complete?.(reason))
+      .then(() => {
+        entering = false;
+        syncOpenPresentation();
+        if (available()) enterProfile(source);
+      })
+      .catch(() => {
+        entering = false;
+        syncOpenPresentation();
+      });
+    return true;
   };
 
   const bindAction = element => {
@@ -333,10 +359,32 @@
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(() => requestAnimationFrame(() => {
       ensurePortal();
-      if (!available() && !entering) closePortal('context-change', { force: true });
+      if (!previewAvailable() && !entering) closePortal('context-change', { force: true });
       else syncOpenPresentation();
     }));
   };
+
+  /* Root activation during the live reveal is an interruption, not a dead
+     click. This listener is registered before the intro listener and promotes
+     the already-prepared Atlas to ATLAS_READY before delegating the same user
+     gesture to the normal Enter Profile path. */
+  addEventListener('click', event => {
+    if (event.button !== 0 || introState() !== 'ATLAS_REVEAL') return;
+    const root = event.target.closest?.(`#site-graph .site-graph-node[data-node-id="${CSS.escape(rootId)}"]`);
+    if (!root) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    finishIntroAndEnter(event.pointerType === 'touch' || coarsePointer.matches ? 'touch-root' : 'pointer-root');
+  }, true);
+
+  addEventListener('keydown', event => {
+    if (!['Enter', ' '].includes(event.key) || introState() !== 'ATLAS_REVEAL') return;
+    const root = event.target.closest?.(`#site-graph .site-graph-node[data-node-id="${CSS.escape(rootId)}"]`);
+    if (!root) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    finishIntroAndEnter('keyboard-root');
+  }, true);
 
   addEventListener('profile:atlas-ready', refresh);
   addEventListener('profile:intro-completed', refresh);
@@ -357,6 +405,7 @@
       route: route(),
       introState: introState(),
       available: available(),
+      previewAvailable: previewAvailable(),
       open,
       manualOpen,
       entering,

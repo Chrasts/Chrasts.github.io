@@ -144,7 +144,7 @@ body[data-entry-state="reveal"][data-graph-mode="atlas"] #site-graph .site-graph
   filter:drop-shadow(0 0 24px color-mix(in srgb,var(--brown) 48%,transparent));
   animation:entry-root-halo-brown 24s linear infinite
 }
-body[data-entry-state="ready"][data-graph-mode="atlas"]:not(.is-root-entry-committing) #site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(.is-root-entry-open,:hover,:focus-visible) > .root-entry-portrait{
+body:is([data-entry-state="ready"],[data-entry-state="reveal"])[data-graph-mode="atlas"]:not(.is-root-entry-committing) #site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(.is-root-entry-open,:hover,:focus-visible) > .root-entry-portrait{
   opacity:1;
   /* Entry-hero outer halo is r=228 and settles at scale(.94). The portrait
      clip is r=47, so 4.5 fills the inner edge while leaving the brown stroke
@@ -152,25 +152,25 @@ body[data-entry-state="ready"][data-graph-mode="atlas"]:not(.is-root-entry-commi
   transform:scale(4.5)!important;
   filter:saturate(1) contrast(1.04) brightness(1)
 }
-body[data-entry-state="ready"][data-graph-mode="atlas"]:not(.is-root-entry-committing) #site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(.is-root-entry-open,:hover,:focus-visible) > .site-graph-dot{
+body:is([data-entry-state="ready"],[data-entry-state="reveal"])[data-graph-mode="atlas"]:not(.is-root-entry-committing) #site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(.is-root-entry-open,:hover,:focus-visible) > .site-graph-dot{
   opacity:.035;
   transform:scale(2.7)!important
 }
-body[data-entry-state="ready"][data-graph-mode="atlas"]:not(.is-root-entry-committing) #site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(.is-root-entry-open,:hover,:focus-visible) > .site-graph-label{
+body:is([data-entry-state="ready"],[data-entry-state="reveal"])[data-graph-mode="atlas"]:not(.is-root-entry-committing) #site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(.is-root-entry-open,:hover,:focus-visible) > .site-graph-label{
   transform:translateY(-162px) scale(1.12)
 }
-body[data-entry-state="ready"][data-graph-mode="atlas"]:not(.is-root-entry-committing) #site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(.is-root-entry-open,:hover,:focus-visible) > .root-entry-action{
+body:is([data-entry-state="ready"],[data-entry-state="reveal"])[data-graph-mode="atlas"]:not(.is-root-entry-committing) #site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(.is-root-entry-open,:hover,:focus-visible) > .root-entry-action{
   opacity:1;
   transform:translateY(116px) scale(1.62)
 }
-body[data-entry-state="ready"][data-graph-mode="atlas"]:not(.is-root-entry-committing) #site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(.is-root-entry-open,:hover,:focus-visible) > .site-graph-halo--primary{
+body:is([data-entry-state="ready"],[data-entry-state="reveal"])[data-graph-mode="atlas"]:not(.is-root-entry-committing) #site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(.is-root-entry-open,:hover,:focus-visible) > .site-graph-halo--primary{
   opacity:.96!important;
   stroke-width:3.55!important;
   transform:scale(.9)!important;
   filter:drop-shadow(0 0 24px color-mix(in srgb,var(--teal) 62%,transparent));
   animation-duration:2.15s!important
 }
-body[data-entry-state="ready"][data-graph-mode="atlas"]:not(.is-root-entry-committing) #site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(.is-root-entry-open,:hover,:focus-visible) > .site-graph-halo--secondary{
+body:is([data-entry-state="ready"],[data-entry-state="reveal"])[data-graph-mode="atlas"]:not(.is-root-entry-committing) #site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(.is-root-entry-open,:hover,:focus-visible) > .site-graph-halo--secondary{
   opacity:.92!important;
   stroke-width:4.1!important;
   stroke-dasharray:none!important;
@@ -206,7 +206,7 @@ body.is-root-entry-committing #site-graph .site-graph-node[data-node-id="stepan-
 
 body:not([data-graph-mode="atlas"]) #site-graph .root-entry-portrait,
 body:not([data-graph-mode="atlas"]) #site-graph .root-entry-action,
-body.is-atlas-reveal #site-graph .root-entry-action{
+body.is-atlas-reveal #site-graph .site-graph-node[data-node-id="stepan-chrast"]:not(.is-root-entry-open) > .root-entry-action{
   opacity:0!important;
   pointer-events:none!important
 }

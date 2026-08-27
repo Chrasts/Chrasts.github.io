@@ -238,14 +238,11 @@ body.is-atlas-reveal #site-graph .site-graph-edges path[data-intro-edge-wave="cr
   opacity:.32!important
 }
 
-body.is-atlas-reveal #site-graph .site-graph-node:not([data-node-id="stepan-chrast"]){
-  pointer-events:none
-}
-body.is-atlas-reveal.is-atlas-reveal-late #site-graph .site-graph-node:not([data-node-id="stepan-chrast"]){
-  pointer-events:auto
-}
-body.is-atlas-reveal #site-graph .site-graph-node[data-node-id="stepan-chrast"]{
-  pointer-events:auto
+/* The reveal is presentation-only: graph interaction resumes only when the
+   prepared Atlas reaches ATLAS_READY, synchronized with visual completion of
+   the accelerated radial visibility field. */
+body.is-atlas-reveal #site-graph .site-graph-node{
+  pointer-events:none!important
 }
 
 body.is-atlas-reveal #atlas-controls{

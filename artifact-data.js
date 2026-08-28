@@ -48,7 +48,7 @@
       anchorNodeIds: ['project-modal-logic-lab', 'modal-logic'],
       source: {
         kind: 'external',
-        url: 'https://chrasts.github.io/Modal_Logic_Educational_Game/'
+        url: 'https://chrasts.github.io/Modal_Logic_Lab/'
       },
       availability: 'public',
       presentation: { preferredObject: 'interactive', openMode: 'new-tab' }
@@ -157,8 +157,8 @@
       title: 'Hedgehog House — exterior',
       description: 'Exterior view of the finished wooden hedgehog shelter.',
       anchorNodeIds: ['hedgehog-house'],
-        source: { kind: 'local', path: 'assets/images/about/woodworking/hedgehog-house/outside.webp' },
-        mediaType: 'image/webp',
+      source: { kind: 'local', path: 'assets/images/about/woodworking/hedgehog-house/outside.webp' },
+      mediaType: 'image/webp',
       availability: 'public',
       presentation: { preferredObject: 'image', role: 'project-photo', width: 1448, height: 1086, aspectRatio: 1.333333 }
     },
@@ -258,14 +258,6 @@
       mediaType: 'video/mp4',
       availability: 'public',
       presentation: { preferredObject: 'video', role: 'project-preview' }
-    },
-    {
-      id: 'esslli-2026-course-timetable',
-      type: 'document',
-      title: 'ESSLLI 2026 Course Timetable',
-      anchorNodeIds: ['esslli'],
-      availability: 'planned',
-      presentation: { preferredObject: 'document' }
     }
   ];
 

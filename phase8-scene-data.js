@@ -23,8 +23,8 @@
     },
     esslli: {
       nodeId: 'esslli',
-      label: 'Selected course plan',
-      note: 'A compact portfolio view of the selected timetable; it represents the course plan rather than a claim that every optional slot was attended.',
+      label: 'Selected ESSLLI 2026 programme',
+      note: 'Compact record of the selected programme. Sessions are education context, not automatic claims of standalone expertise; links point only to broader knowledge areas retained in the portfolio.',
       weeks: [
         {
           label: 'Week 1',
@@ -37,12 +37,12 @@
             {
               time: '11:00',
               title: 'The Logic Underlying Language Models',
-              links: ['language-models', 'logic-for-ai']
+              links: ['language-models', 'ai-methods']
             },
             {
               time: '17:00',
               title: 'Elective slot',
-              note: 'Final optional-course choice is not encoded in the portfolio data.',
+              note: 'The optional-course choice is not encoded as a separate knowledge claim.',
               links: []
             }
           ]
@@ -53,17 +53,17 @@
             {
               time: '09:00',
               title: 'Logic and Argumentation for New Generation AI',
-              links: ['logic-for-ai']
+              links: ['computational-logic', 'ai-methods']
             },
             {
               time: '11:00',
               title: 'Introduction to SAT and SMT Solving',
-              links: ['sat-smt', 'computational-logic']
+              links: ['computational-logic']
             },
             {
               time: '17:00',
               title: 'Experimenting with the LogiKEy Framework & Methodology',
-              links: ['logic-for-ai', 'automated-reasoning']
+              links: ['automated-reasoning', 'computational-logic']
             }
           ]
         }
@@ -74,7 +74,7 @@
       status: '2026/27',
       title: 'prg.ai Minor',
       subtitle: 'Inter-university AI minor',
-      note: 'Shown as current / upcoming study context. The scene does not treat planned coursework as already mastered.',
+      note: 'Shown as upcoming study context. Planned coursework is not treated as already mastered.',
       links: ['ai-methods', 'programming-automation', 'data-analysis']
     }
   };

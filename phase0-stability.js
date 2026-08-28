@@ -1,4 +1,66 @@
 (() => {
+  /* Content-integrity pass.
+     SITE_DATA deliberately keeps a richer ontology than the public graph needs
+     to expose as first-class destinations. Before the graph runtime boots,
+     collapse low-signal/course-only/tool-level nodes into their defensible
+     parent areas while preserving project technology metadata and evidence. */
+  const applyContentIntegrityPass = () => {
+    const site = window.SITE_DATA;
+    if (!site?.graph?.nodes?.length || !Array.isArray(site.graph.edges)) return;
+
+    const collapseInto = new Map([
+      ['dynamic-logic', 'modal-logic'],
+      ['sat-smt', 'computational-logic'],
+      ['logic-for-ai', 'computational-logic'],
+      ['data-qa', 'data-analysis'],
+      ['visualisation', 'data-analysis'],
+      ['data-cleaning', 'data-analysis'],
+      ['algorithms-data-structures', 'programming-automation'],
+      ['git', 'programming-automation']
+    ]);
+    const collapsedIds = new Set(collapseInto.keys());
+    const resolveId = id => collapseInto.get(id) || id;
+
+    site.graph.nodes = site.graph.nodes.filter(node => !collapsedIds.has(node.id));
+
+    const edgeKeys = new Set();
+    site.graph.edges = site.graph.edges.flatMap(edge => {
+      const source = resolveId(edge.source);
+      const target = resolveId(edge.target);
+      if (source === target) return [];
+      const normalized = { ...edge, source, target };
+      const key = `${source}|${target}|${normalized.type || ''}|${Boolean(normalized.secondary)}`;
+      if (edgeKeys.has(key)) return [];
+      edgeKeys.add(key);
+      return [normalized];
+    });
+
+    const thesis = site.work?.projects?.find(project => project.id === 'bachelor-thesis');
+    if (thesis) {
+      thesis.facets.status = 'submitted';
+      thesis.note = 'Bachelor thesis submitted; selected diagrams are available in the portfolio while the research repository remains private.';
+    }
+    const thesisNode = site.graph.nodes.find(node => node.id === 'project-bachelor-thesis');
+    if (thesisNode) {
+      thesisNode.status = 'submitted';
+      thesisNode.summary = 'Submitted bachelor thesis on quantum logic and associative residuated ortholattices, focused on algebraic structure and related varieties.';
+    }
+
+    const modalLogicLab = site.work?.projects?.find(project => project.id === 'modal-logic-lab');
+    if (modalLogicLab) {
+      modalLogicLab.links = [
+        { label: 'Play ↗', href: 'https://chrasts.github.io/Modal_Logic_Lab/' },
+        { label: 'GitHub ↗', href: 'https://github.com/Chrasts/Modal_Logic_Lab' }
+      ];
+    }
+
+    window.ProfileContentIntegrity = Object.freeze({
+      collapsedNodeIds: Object.freeze([...collapsedIds]),
+      collapseInto: Object.freeze(Object.fromEntries(collapseInto))
+    });
+  };
+  applyContentIntegrityPass();
+
   const mobileBreakpoint = window.matchMedia('(max-width: 900px)');
 
   const mobileRuntimePresent = () => Boolean(

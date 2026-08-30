@@ -28,8 +28,13 @@
     const marker = document.documentElement.dataset.profileIntro || '';
     return ['bypass', 'ready', 'complete'].includes(marker) || ['ATLAS_READY', 'BYPASSED'].includes(introState());
   };
+  const lateReveal = () =>
+    introState() === 'ATLAS_REVEAL' && document.body?.classList.contains('is-atlas-reveal-late');
   const overviewActive = () => mode() === 'overview' && rootLanding() === 'false';
-  const quickAvailable = () => introStable() && Boolean(mode()) && (mode() !== 'overview' || rootLanding() === 'false');
+  const quickAvailable = () => {
+    if (!mode() || !(introStable() || lateReveal())) return false;
+    return mode() !== 'overview' || rootLanding() === 'false' || lateReveal();
+  };
   const legacyRootNeedsRetirement = () => mode() === 'overview' && rootLanding() === 'true' && introStable();
   const track = name => { try { window.umami?.track?.(name); } catch (_) {} };
 
@@ -397,6 +402,7 @@
 
   addEventListener('profile:root-landing', () => sync('root-landing'));
   addEventListener('profile:atlas-ready', () => sync('atlas-ready'));
+  addEventListener('profile:intro-stage', event => sync(`intro-stage:${event.detail?.stage || 'unknown'}`));
   addEventListener('profile:intro-completed', () => sync('intro-completed'));
   addEventListener('profile:atlas-condensation-complete', () => sync('condensation-complete'));
   addEventListener('profile:scene-state', () => sync('scene-state'));
@@ -415,6 +421,7 @@
       mode: mode(),
       rootLanding: rootLanding(),
       introState: introState(),
+      lateReveal: lateReveal(),
       legacyRetiredByPhaseH,
       quickOpen: Boolean(quickDialog?.open),
       globalQuickVisible: Boolean(globalQuickTrigger?.isConnected && !globalQuickTrigger.hidden),

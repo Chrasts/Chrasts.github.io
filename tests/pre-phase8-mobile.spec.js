@@ -59,7 +59,9 @@ test.describe('Pre-Phase 8 mobile parity', () => {
       const label = node?.querySelector('.site-graph-label');
       return label ? [label.getAttribute('text-anchor'), label.getAttribute('x'), label.getAttribute('y')] : null;
     });
-    expect(rootPose).toEqual(['middle', '0', '-25']);
+    /* Current mobile collision policy gives the root label a 27-unit lift. The
+       contract is the centred, above-root pose; -25 was an older exact offset. */
+    expect(rootPose).toEqual(['middle', '0', '-27']);
   });
 
   test('Work exposes mobile filters and remains structurally healthy', async ({ page }) => {

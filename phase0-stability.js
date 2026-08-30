@@ -61,6 +61,134 @@
   };
   applyContentIntegrityPass();
 
+  /* P0 runtime guards. Scene declarations and the object runtime intentionally
+     share lifecycle state, but local visibility changes are not owned by the
+     global route-transition coordinator. Make those local enters settle on
+     their own, reconcile serialized selection back to DOM atomically, and keep
+     side-stage composition stable when an inspector changes the available lane. */
+  const installSceneRuntimeGuards = () => {
+    const scene = window.ProfileScene;
+    const manager = scene?.manager;
+    const objects = scene?.objects;
+    if (!manager || !objects || manager.__phase0RuntimeGuards) return;
+    manager.__phase0RuntimeGuards = true;
+
+    const originalApplyDefinition = manager.applyDefinition.bind(manager);
+    manager.applyDefinition = function phase0ApplyDefinition(definition, meta = {}) {
+      const result = originalApplyDefinition(definition, meta);
+      const instance = this.instances.get(definition.id);
+      const element = instance?.element;
+      if (element?.dataset.sceneLifecycle !== 'entering' || this.transitions.isLocked) return result;
+
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        const live = this.instances.get(definition.id);
+        if (!live?.visible || live.element !== element || this.transitions.isLocked) return;
+        if (element.dataset.sceneLifecycle === 'entering') delete element.dataset.sceneLifecycle;
+        this.objects.updateScene(definition.id, this.objectContext(
+          live.definition || definition,
+          element,
+          { reason: 'local-enter-settle' }
+        ));
+      }));
+      return result;
+    };
+
+    const originalRestore = objects.restore.bind(objects);
+    objects.restore = function phase0Restore(payload) {
+      const restored = originalRestore(payload);
+      if (!restored || !Array.isArray(payload?.objects)) return restored;
+      const ids = payload.objects.map(record => record?.id).filter(Boolean);
+      ids.forEach(id => this.apply(id));
+      requestAnimationFrame(() => ids.forEach(id => this.apply(id)));
+      return restored;
+    };
+  };
+
+  const installComposerGuards = () => {
+    const Composer = window.SceneComposer;
+    if (!Composer?.prototype || Composer.prototype.__phase0ComposerGuards) return;
+    Composer.prototype.__phase0ComposerGuards = true;
+    const stableOffsets = new Map();
+    const originalApplyAssignment = Composer.prototype.applyAssignment;
+    const originalContainAssignment = Composer.prototype.containAssignment;
+
+    Composer.prototype.applyAssignment = function phase0ApplyAssignment(assignment, context) {
+      const previous = stableOffsets.get(assignment.id);
+      const result = originalApplyAssignment.call(this, assignment, context);
+      if (
+        assignment.zone === 'side-stage' &&
+        context.variant !== 'mobile' &&
+        previous?.route === context.route &&
+        previous.side === assignment.side &&
+        Number.isFinite(previous.offset)
+      ) {
+        assignment.offset = Math.max(0, previous.offset);
+        const property = assignment.side === 'left' ? 'left' : 'right';
+        const oppositeProperty = assignment.side === 'left' ? 'right' : 'left';
+        assignment.element.style.setProperty(property, `${Math.round(assignment.offset)}px`, 'important');
+        assignment.element.style.setProperty(oppositeProperty, 'auto', 'important');
+      }
+      return result;
+    };
+
+    Composer.prototype.containAssignment = function phase0ContainAssignment(assignment, context) {
+      if (assignment.request?.containViewport && assignment.zone === 'side-stage' && context.variant !== 'mobile') {
+        for (let pass = 0; pass < 3; pass += 1) originalContainAssignment.call(this, assignment, context);
+
+        const margin = assignment.request.viewportMargin || 0;
+        const frame = {
+          left: context.canvas.left + margin,
+          right: context.canvas.right - margin,
+          top: context.canvas.top + margin,
+          bottom: context.canvas.bottom - margin
+        };
+        const bounds = this.visualBounds(assignment.request);
+        if (bounds) {
+          let shiftX = 0;
+          let shiftY = 0;
+          if (bounds.left < frame.left) shiftX = frame.left - bounds.left;
+          else if (bounds.right > frame.right) shiftX = frame.right - bounds.right;
+          if (bounds.top < frame.top) shiftY = frame.top - bounds.top;
+          else if (bounds.bottom > frame.bottom) shiftY = frame.bottom - bounds.bottom;
+
+          if (Math.abs(shiftX) > .5) {
+            assignment.offset = Math.max(0, assignment.side === 'left'
+              ? assignment.offset + shiftX
+              : assignment.offset - shiftX);
+            const property = assignment.side === 'left' ? 'left' : 'right';
+            assignment.element.style.setProperty(property, `${Math.round(assignment.offset)}px`, 'important');
+          }
+          if (Math.abs(shiftY) > .5) {
+            assignment.top += shiftY;
+            assignment.element.style.setProperty('top', `${Math.round(assignment.top)}px`, 'important');
+          }
+          if (Math.abs(shiftX) > .5 || Math.abs(shiftY) > .5) {
+            assignment.safeCorrection = {
+              x: Math.round((assignment.safeCorrection?.x || 0) + shiftX),
+              y: Math.round((assignment.safeCorrection?.y || 0) + shiftY)
+            };
+            assignment.element.dataset.sceneSafeAdjusted = 'true';
+          }
+        }
+      } else {
+        originalContainAssignment.call(this, assignment, context);
+      }
+
+      if (assignment.zone === 'side-stage' && Number.isFinite(assignment.offset)) {
+        stableOffsets.set(assignment.id, {
+          route: context.route,
+          side: assignment.side,
+          offset: assignment.offset
+        });
+      }
+    };
+  };
+
+  installSceneRuntimeGuards();
+  installComposerGuards();
+  addEventListener('profile:scene-system-ready', installSceneRuntimeGuards);
+  addEventListener('profile:scene-composer-ready', installComposerGuards);
+
   const mobileBreakpoint = window.matchMedia('(max-width: 900px)');
 
   const mobileRuntimePresent = () => Boolean(

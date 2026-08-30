@@ -59,8 +59,10 @@ test('artifact route mounts one scene, tears it down and remounts without multip
 
   await page.evaluate(() => { location.hash = '#work/project/bachelor-thesis'; });
   await page.waitForFunction(() => document.body.dataset.graphRoute === 'work/project/bachelor-thesis');
-  await expect(page.locator('[data-artifact-scene="bachelor-thesis-diagrams"]')).toHaveCount(1);
-  await expect(page.locator('[data-artifact-scene="bachelor-thesis-diagrams"] iframe')).toHaveCount(2);
+  const remounted = page.locator('[data-artifact-scene="bachelor-thesis-diagrams"]');
+  await expect(remounted).toHaveCount(1);
+  await expect(remounted.locator('iframe')).toHaveCount(0);
+  await expect(remounted.locator('.artifact-pdf-fallback')).toHaveCount(2);
 });
 
 test('Simulation Credence is a document object and opens in Object Focus', async ({ page }) => {
@@ -72,7 +74,8 @@ test('Simulation Credence is a document object and opens in Object Focus', async
   await expect(folio).toBeVisible();
   await expect(folio).toHaveAttribute('data-artifact-side', 'left');
   await expect(folio.locator('.artifact-object-header')).toHaveCount(0);
-  await expect(folio.locator('iframe')).toHaveAttribute('src', /simulation-credence-and-its-consequences\.pdf#page=1/);
+  await expect(folio.locator('iframe')).toHaveCount(0);
+  await expect(folio.locator('.artifact-pdf-fallback')).toContainText('Simulation Credence and Its Consequences');
 
   await folio.locator('.artifact-inline-expand').click();
   const viewer = page.locator('.artifact-focus-viewer');
@@ -102,12 +105,12 @@ test('thesis diagrams use their PDF page aspect and show the whole page', async 
   await expect(cluster.locator('.artifact-object-description')).toHaveCount(0);
   await expect(cluster.locator('.artifact-deck-footer')).toHaveCount(0);
   await expect(cluster.locator('.artifact-object-tag')).toHaveCount(2);
+  await expect(cluster.locator('iframe')).toHaveCount(0);
+  await expect(cluster.locator('.artifact-pdf-fallback')).toHaveCount(2);
 
   const previews = cluster.locator('.artifact-deck-preview');
   await expect(previews.nth(0)).toHaveAttribute('data-media-aspect-ready', 'true', { timeout: 5000 });
   await expect(previews.nth(1)).toHaveAttribute('data-media-aspect-ready', 'true', { timeout: 5000 });
-  await expect(previews.nth(0).locator('iframe')).toHaveAttribute('src', /view=Fit$/);
-  await expect(previews.nth(1).locator('iframe')).toHaveAttribute('src', /view=Fit$/);
 
   const mediaGeometry = await Promise.all([first, second].map(async card => card.evaluate(element => {
     const preview = element.querySelector('.artifact-deck-preview');
@@ -148,6 +151,7 @@ test('thesis diagrams use their PDF page aspect and show the whole page', async 
   await second.locator('.artifact-inline-expand').click();
   await waitSettled(page);
   await expect(viewer).toHaveAttribute('data-shared-focus-artifact', 'bachelor-thesis-rol-non-a');
+  await expect(viewer.locator('.artifact-focus-media iframe')).toHaveCount(1);
   await page.keyboard.press('Escape');
   await expect(viewer).toBeHidden({ timeout: 2000 });
 
@@ -155,6 +159,7 @@ test('thesis diagrams use their PDF page aspect and show the whole page', async 
   await first.locator('.artifact-inline-expand').click();
   await waitSettled(page);
   await expect(viewer).toHaveAttribute('data-shared-focus-artifact', 'bachelor-thesis-lattice-of-bands');
+  await expect(viewer.locator('.artifact-focus-media iframe')).toHaveCount(1);
   await page.keyboard.press('Escape');
 });
 

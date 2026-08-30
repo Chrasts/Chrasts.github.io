@@ -1,5 +1,8 @@
 const { test, expect } = require('@playwright/test');
 
+const COMPUTATIONAL_NODE = 'computational-logic';
+const COMPUTATIONAL_ROUTE = 'knowledge/logic-math/mathematical-logic/computational-logic';
+
 const prepare = async page => {
   await page.addInitScript(() => sessionStorage.setItem('profileIntroSeen', 'true'));
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
@@ -68,21 +71,21 @@ test.describe('Phase 6 cross-link travel — desktop', () => {
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'education/esslli');
     await page.waitForFunction(() => Boolean(window.ProfileCrossLinkTravel && window.ProfileGeometry));
 
-    const expected = await relationGeometry(page, 'esslli', 'sat-smt');
-    const relation = await relationFor(page, 'esslli', 'sat-smt');
+    const expected = await relationGeometry(page, 'esslli', COMPUTATIONAL_NODE);
+    const relation = await relationFor(page, 'esslli', COMPUTATIONAL_NODE);
     expect(relation).not.toBeNull();
     expect(relation.label).toBe('Studied topic');
     expect(relation.direction).toBe(expected.direction);
     await expect(page.locator('.profile-crosslinks')).toBeHidden();
 
-    await navigateCrossLink(page, 'sat-smt', 'studied-in');
-    await page.waitForFunction(() => document.body.dataset.graphRoute === 'knowledge/logic-math/mathematical-logic/computational-logic/sat-smt');
+    await navigateCrossLink(page, COMPUTATIONAL_NODE, 'studied-in');
+    await page.waitForFunction(route => document.body.dataset.graphRoute === route, COMPUTATIONAL_ROUTE);
     const snapshot = await waitTravelComplete(page);
 
     expect(snapshot.relationType).toBe('studied-in');
     expect(snapshot.direction).toBe(expected.direction);
     expectVectorClose(snapshot.vector, expected.vector);
-    await expect(page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]')).toBeVisible();
+    await expect(page.locator(`#site-graph .site-graph-node[data-node-id="${COMPUTATIONAL_NODE}"]`)).toBeVisible();
   });
 
   test('Experience -> Work project follows the exact cross-territory Atlas vector', async ({ page }) => {
@@ -132,13 +135,13 @@ test.describe('Phase 6 reduced motion', () => {
     await page.goto('/#education/esslli');
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'education/esslli');
     await page.waitForFunction(() => Boolean(window.ProfileCrossLinkTravel && window.ProfileGeometry));
-    const expected = await relationGeometry(page, 'esslli', 'sat-smt');
-    const relation = await relationFor(page, 'esslli', 'sat-smt');
+    const expected = await relationGeometry(page, 'esslli', COMPUTATIONAL_NODE);
+    const relation = await relationFor(page, 'esslli', COMPUTATIONAL_NODE);
     expect(relation).not.toBeNull();
     await expect(page.locator('.profile-crosslinks')).toBeHidden();
 
-    await navigateCrossLink(page, 'sat-smt', 'studied-in');
-    await page.waitForFunction(() => document.body.dataset.graphRoute === 'knowledge/logic-math/mathematical-logic/computational-logic/sat-smt');
+    await navigateCrossLink(page, COMPUTATIONAL_NODE, 'studied-in');
+    await page.waitForFunction(route => document.body.dataset.graphRoute === route, COMPUTATIONAL_ROUTE);
     const snapshot = await waitTravelComplete(page);
 
     expect(snapshot.reducedMotion).toBe(true);
@@ -160,15 +163,15 @@ test.describe('Phase 6 cross-link data — mobile portrait', () => {
     await page.waitForFunction(() => Boolean(window.ProfileCrossLinkTravel));
     await expect(page.locator('.profile-crosslinks')).toBeHidden();
 
-    const relation = await relationFor(page, 'esslli', 'logic-for-ai');
+    const relation = await relationFor(page, 'esslli', COMPUTATIONAL_NODE);
     expect(relation).not.toBeNull();
     expect(relation.type).toBe('studied-in');
 
-    await navigateCrossLink(page, 'logic-for-ai', 'studied-in');
-    await page.waitForFunction(() => document.body.dataset.graphRoute === 'knowledge/logic-math/mathematical-logic/computational-logic/logic-for-ai');
+    await navigateCrossLink(page, COMPUTATIONAL_NODE, 'studied-in');
+    await page.waitForFunction(route => document.body.dataset.graphRoute === route, COMPUTATIONAL_ROUTE);
     await waitTravelComplete(page);
 
-    await expect(page.locator('#site-graph .site-graph-node[data-node-id="logic-for-ai"]')).toBeVisible();
+    await expect(page.locator(`#site-graph .site-graph-node[data-node-id="${COMPUTATIONAL_NODE}"]`)).toBeVisible();
     expect(errors).toEqual([]);
   });
 });

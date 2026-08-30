@@ -1,5 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
+const DRAG_NODE = 'computational-logic';
+
 const prepareAtlas = async page => {
   await page.addInitScript(() => sessionStorage.setItem('profileIntroSeen', 'true'));
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
@@ -14,11 +16,11 @@ test.describe('Phase 7 Atlas drag semantics', () => {
     await prepareAtlas(page);
     await page.evaluate(() => window.ProfileAtlasLOD.setScale(1.5, { immediate: true }));
 
-    const node = page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]');
+    const node = page.locator(`#site-graph .site-graph-node[data-node-id="${DRAG_NODE}"]`);
     await node.click();
     await expect(page.locator('#site-detail-panel')).toBeVisible();
     const before = await page.evaluate(() => window.ProfileAtlasLOD.snapshot());
-    expect(before.selectedNodeId).toBe('sat-smt');
+    expect(before.selectedNodeId).toBe(DRAG_NODE);
 
     const box = await node.boundingBox();
     expect(box).not.toBeNull();
@@ -31,7 +33,7 @@ test.describe('Phase 7 Atlas drag semantics', () => {
     await page.waitForTimeout(320);
 
     const after = await page.evaluate(() => window.ProfileAtlasLOD.snapshot());
-    expect(after.selectedNodeId).toBe('sat-smt');
+    expect(after.selectedNodeId).toBe(DRAG_NODE);
     expect(after.camera.scale).toBeCloseTo(before.camera.scale, 2);
     expect(Math.abs(after.camera.x - before.camera.x) + Math.abs(after.camera.y - before.camera.y)).toBeGreaterThan(10);
     await expect(page.locator('#site-detail-panel')).toBeVisible();

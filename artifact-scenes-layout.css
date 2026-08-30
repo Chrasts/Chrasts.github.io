@@ -18,6 +18,14 @@
      hit area of a sibling in a compact lane. */
   .artifact-object .artifact-deck-card.is-active{z-index:0!important}
 
+  /* All compact decks share one geometric origin. Phase B's artistic recipes
+     use left/right absolute slots; the lane-aware layout below must reset those
+     slots before applying symmetric translateX spreads. */
+  .artifact-object:is([data-artifact-variant="diagram"],[data-artifact-variant="screens"],[data-artifact-variant="fan"]) .artifact-deck-card{
+    left:50%!important;
+    right:auto!important
+  }
+
   /* Two-card diagrams: keep each card in a stable slot, but compact the spread
      when the side lane is narrower than the ideal 340px footprint. */
   .artifact-object[data-artifact-variant="diagram"]{

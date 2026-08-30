@@ -21,6 +21,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
       - name: Check JavaScript syntax
         run: |
           set -euo pipefail
@@ -52,8 +55,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Install Playwright test runner
-        run: npm install --no-save @playwright/test@1.55.0
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Start static site
@@ -108,8 +112,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Install Playwright test runner
-        run: npm install --no-save @playwright/test@1.55.0
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
       - name: Install WebKit
         run: npx playwright install --with-deps webkit
       - name: Start static site
@@ -143,8 +148,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Install Playwright test runner
-        run: npm install --no-save @playwright/test@1.55.0
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Start static site

@@ -72,12 +72,18 @@
           window.__PROFILE_ENTRY_FAILOPEN__ = setTimeout(() => {
             if (!['pending', 'preparing', 'running'].includes(document.documentElement.dataset.profileIntro || '')) return;
             document.documentElement.dataset.profileIntro = 'bypass';
+            try { sessionStorage.setItem('profileIntroSeen', 'true'); } catch (_) {}
             if (document.body) {
               document.body.dataset.entryState = 'profile';
               document.body.classList.add('is-entry-loader-complete');
               document.body.classList.remove('is-entry-loader-releasing', 'is-entry-mask-finishing', 'is-atlas-reveal');
             }
-          }, 45000);
+            try {
+              dispatchEvent(new CustomEvent('profile:entry-fail-open', {
+                detail: { route: 'overview', ceilingMs: 5500 }
+              }));
+            } catch (_) {}
+          }, 5500);
         }
       } catch (_) {
         document.documentElement.dataset.profileIntro = 'bypass';

@@ -5,7 +5,8 @@ const bypassIntro = async page => {
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
 };
 
-const SAT_ROUTE = 'knowledge/logic-math/mathematical-logic/computational-logic/sat-smt';
+const COMPUTATIONAL_ROUTE = 'knowledge/logic-math/mathematical-logic/computational-logic';
+const COMPUTATIONAL_NODE = 'computational-logic';
 
 const waitReady = async page => {
   await page.waitForFunction(() => Boolean(
@@ -39,34 +40,34 @@ test.describe('V3.1 Phase I Atlas / Focus unification', () => {
     await waitReady(page);
     await page.waitForFunction(() => document.body.dataset.graphMode === 'atlas');
 
-    const node = page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]');
+    const node = page.locator(`#site-graph .site-graph-node[data-node-id="${COMPUTATIONAL_NODE}"]`);
     await node.click();
     await expect(page.locator('#site-detail-panel')).toBeVisible();
-    expect((await page.evaluate(() => window.ProfileAtlasLOD.snapshot())).selectedNodeId).toBe('sat-smt');
+    expect((await page.evaluate(() => window.ProfileAtlasLOD.snapshot())).selectedNodeId).toBe(COMPUTATIONAL_NODE);
 
     await node.click();
     await page.waitForFunction(() => document.body.classList.contains('is-atlas-focus-transitioning'));
     await expect(page.locator('.atlas-focus-bridge')).toHaveCount(1);
-    await page.waitForFunction(route => document.body.dataset.graphMode === 'focus' && document.body.dataset.graphRoute === route, SAT_ROUTE);
+    await page.waitForFunction(route => document.body.dataset.graphMode === 'focus' && document.body.dataset.graphRoute === route, COMPUTATIONAL_ROUTE);
     await waitSettled(page);
     await expect(page.locator('.atlas-focus-bridge')).toHaveCount(0);
-    await expect(page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]')).toHaveClass(/is-selected/);
+    await expect(page.locator(`#site-graph .site-graph-node[data-node-id="${COMPUTATIONAL_NODE}"]`)).toHaveClass(/is-selected/);
 
     const result = await page.evaluate(() => window.ProfileAtlasFocus.snapshot().lastResult);
     expect(result.result).toBe('completed');
     expect(result.direction).toBe('atlas-to-focus');
-    expect(result.anchorId).toBe('sat-smt');
-    expect(result.targetRoute).toBe(SAT_ROUTE);
+    expect(result.anchorId).toBe(COMPUTATIONAL_NODE);
+    expect(result.targetRoute).toBe(COMPUTATIONAL_ROUTE);
   });
 
   test('Atlas inspector and route controls keep the same semantic-scale owner', async ({ page }) => {
     await bypassIntro(page);
     await page.goto('/#atlas');
     await waitReady(page);
-    await page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]').click();
+    await page.locator(`#site-graph .site-graph-node[data-node-id="${COMPUTATIONAL_NODE}"]`).click();
     await expect(page.locator('#site-detail-panel .atlas-open-local')).toBeVisible();
     await page.locator('#site-detail-panel .atlas-open-local').click();
-    await page.waitForFunction(route => document.body.dataset.graphMode === 'focus' && document.body.dataset.graphRoute === route, SAT_ROUTE);
+    await page.waitForFunction(route => document.body.dataset.graphMode === 'focus' && document.body.dataset.graphRoute === route, COMPUTATIONAL_ROUTE);
     await waitSettled(page);
     expect((await page.evaluate(() => window.ProfileAtlasFocus.snapshot().lastResult)).direction).toBe('atlas-to-focus');
 
@@ -84,8 +85,8 @@ test.describe('V3.1 Phase I Atlas / Focus unification', () => {
 
   test('deep Focus to Atlas collapses into the centred root, then unfolds the complete Atlas from that root', async ({ page }) => {
     await bypassIntro(page);
-    await page.goto(`/#${SAT_ROUTE}`);
-    await waitRouteCore(page, SAT_ROUTE, 'focus');
+    await page.goto(`/#${COMPUTATIONAL_ROUTE}`);
+    await waitRouteCore(page, COMPUTATIONAL_ROUTE, 'focus');
     expect(await page.evaluate(() => Boolean(window.ProfileAtlasFocus))).toBe(false);
 
     await page.locator('.atlas-button[data-route="atlas"]').click();
@@ -126,8 +127,8 @@ test.describe('V3.1 Phase I Atlas / Focus unification', () => {
     expect(final.atlas.visibleNodeCount).toBe(final.graphCount);
     expect(final.hidden).toBe(0);
     expect(final.last.direction).toBe('focus-to-atlas');
-    expect(final.last.anchorId).toBe('sat-smt');
-    expect(final.last.sourceRoute).toBe(SAT_ROUTE);
+    expect(final.last.anchorId).toBe(COMPUTATIONAL_NODE);
+    expect(final.last.sourceRoute).toBe(COMPUTATIONAL_ROUTE);
     expect(final.last.targetRoute).toBe('atlas');
   });
 
@@ -166,10 +167,10 @@ test.describe('V3.1 Phase I Atlas / Focus unification', () => {
     await bypassIntro(page);
     await page.goto('/#atlas');
     await waitReady(page);
-    const node = page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]');
+    const node = page.locator(`#site-graph .site-graph-node[data-node-id="${COMPUTATIONAL_NODE}"]`);
     await node.click();
     await node.click();
-    await page.waitForFunction(route => document.body.dataset.graphRoute === route, SAT_ROUTE);
+    await page.waitForFunction(route => document.body.dataset.graphRoute === route, COMPUTATIONAL_ROUTE);
     await waitSettled(page);
 
     await page.locator('.atlas-button[data-route="atlas"]').click();
@@ -177,7 +178,7 @@ test.describe('V3.1 Phase I Atlas / Focus unification', () => {
     await waitSettled(page);
 
     await page.evaluate(() => history.back());
-    await page.waitForFunction(route => document.body.dataset.graphMode === 'focus' && document.body.dataset.graphRoute === route, SAT_ROUTE);
+    await page.waitForFunction(route => document.body.dataset.graphMode === 'focus' && document.body.dataset.graphRoute === route, COMPUTATIONAL_ROUTE);
     await waitSettled(page);
     expect((await page.evaluate(() => window.ProfileAtlasFocus.snapshot().lastResult)).direction).toBe('atlas-to-focus');
 
@@ -194,8 +195,8 @@ test.describe('V3.1 Phase I reduced motion', () => {
   test('keeps route semantics while suppressing bridge flight', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await bypassIntro(page);
-    await page.goto(`/#${SAT_ROUTE}`);
-    await waitRouteCore(page, SAT_ROUTE, 'focus');
+    await page.goto(`/#${COMPUTATIONAL_ROUTE}`);
+    await waitRouteCore(page, COMPUTATIONAL_ROUTE, 'focus');
     await page.locator('.atlas-button[data-route="atlas"]').click();
     await page.waitForFunction(() => Boolean(window.ProfileAtlasFocus?.snapshot?.().ready));
     await page.waitForFunction(() => document.body.dataset.graphMode === 'atlas');

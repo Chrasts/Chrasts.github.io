@@ -40,7 +40,8 @@
   .mobile-control-sheet .integrated-work-controls{gap:9px!important}
   .mobile-control-sheet .work-filter,
   .mobile-control-sheet .theme-filter-option,
-  .mobile-control-sheet .theme-match-button{min-height:44px!important;font-size:12px!important}
+  .mobile-control-sheet .theme-match-button,
+  .mobile-control-sheet .work-reset{min-height:44px!important;font-size:12px!important}
   .mobile-control-sheet .atlas-controls label,
   .mobile-control-sheet .atlas-controls button{min-height:44px!important;font-size:12px!important}
 

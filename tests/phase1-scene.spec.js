@@ -3,7 +3,10 @@ const { test, expect } = require('@playwright/test');
 const settle = async page => {
   await page.waitForFunction(() =>
     !document.body.classList.contains('is-v9-transitioning') &&
-    !document.body.classList.contains('is-atlas-handoff')
+    !document.body.classList.contains('is-atlas-handoff') &&
+    !document.body.classList.contains('is-atlas-focus-transitioning') &&
+    !document.body.classList.contains('is-profile-atlas-transitioning') &&
+    !window.ProfileScene?.transitions?.isLocked
   );
   await page.waitForTimeout(220);
 };
@@ -128,7 +131,6 @@ test.describe('Phase 1 scene architecture — desktop', () => {
       document.body.classList.contains('is-v9-transitioning')
     );
     await settle(page);
-    await page.waitForFunction(() => window.ProfileScene.transitions.isLocked === false);
 
     expect(phases[0]).toBe('begin');
     expect(phases).toContain('prepare');

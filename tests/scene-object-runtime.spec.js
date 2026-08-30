@@ -16,6 +16,19 @@ const waitRuntime = async page => {
   await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
 };
 
+const deterministicRecord = record => ({
+  id: record.id,
+  kind: record.kind,
+  layout: record.layout,
+  depth: record.depth,
+  composition: record.composition ? {
+    zone: record.composition.zone,
+    side: record.composition.side,
+    slot: record.composition.slot,
+    route: record.composition.route
+  } : null
+});
+
 test.describe('Phase L Scene Object Runtime 2.0', () => {
   test.beforeEach(async ({ page }) => {
     await bypassIntro(page);
@@ -44,15 +57,17 @@ test.describe('Phase L Scene Object Runtime 2.0', () => {
         .every(record => record.composition?.zone === 'side-stage');
     });
 
-    const before = await page.evaluate(() => window.ProfileScene.objects.snapshot().objects
-      .filter(record => record.sceneId === 'artifact-scene:hedgehog-house-gallery')
-      .map(record => ({ id: record.id, kind: record.kind, layout: record.layout, depth: record.depth, composition: record.composition })));
+    const before = (await page.evaluate(() => window.ProfileScene.objects.snapshot().objects
+      .filter(record => record.sceneId === 'artifact-scene:hedgehog-house-gallery')))
+      .map(deterministicRecord);
 
     await page.evaluate(() => window.ProfileScene.objects.layoutScene('artifact-scene:hedgehog-house-gallery'));
-    const after = await page.evaluate(() => window.ProfileScene.objects.snapshot().objects
-      .filter(record => record.sceneId === 'artifact-scene:hedgehog-house-gallery')
-      .map(record => ({ id: record.id, kind: record.kind, layout: record.layout, depth: record.depth, composition: record.composition })));
+    const after = (await page.evaluate(() => window.ProfileScene.objects.snapshot().objects
+      .filter(record => record.sceneId === 'artifact-scene:hedgehog-house-gallery')))
+      .map(deterministicRecord);
 
+    /* composition.sequence is a generation counter for recomposition, not part
+       of an object's deterministic placement contract. */
     expect(before).toEqual(after);
     expect(before).toHaveLength(3);
     before.forEach(record => {

@@ -285,8 +285,8 @@
       const text = document.createElement('span');
       text.textContent = attribute.label;
       input.addEventListener('change', () => {
-        if (input.checked) workFilterState.selectedThemes.add(attribute.id);
-        else workFilterState.selectedThemes.delete(attribute.id);
+        if (input.checked) workFilterState.selectedThemes.add(input.dataset.themeId);
+        else workFilterState.selectedThemes.delete(input.dataset.themeId);
         if (workFilterState.selectedThemes.size < 2) workFilterState.mode = 'any';
         syncWorkControls('theme');
       });
@@ -1874,6 +1874,60 @@
     });
     dispatchEvent(new CustomEvent('profile:work-controller-ready', {
       detail: window.ProfileWorkController.snapshot()
+    }));
+
+    /* Canonical geometry ownership. Consumers may ask the renderer to
+       invalidate/recompose the current route; they must not simulate unrelated
+       controls merely to force renderGraph(). */
+    const fitCurrentRoute = ({ immediate = true, recompute = true } = {}) => {
+      if (state.mode !== 'atlas') {
+        renderGraph();
+        return true;
+      }
+      const atlasOwner = window.ProfileAtlasLOD;
+      if (atlasOwner?.fit) {
+        return Boolean(atlasOwner.fit({ immediate, purpose: 'exploration', recompute }));
+      }
+      fitAtlas(immediate);
+      return true;
+    };
+
+    const recomposeCurrentRoute = ({ reason = 'api', fit = false, immediateFit = true } = {}) => {
+      const requestedRoute = state.route;
+      const requestedMode = state.mode;
+      let onSettled = null;
+      if (fit && requestedMode === 'atlas') {
+        onSettled = event => {
+          if (event.detail?.route !== requestedRoute || event.detail?.mode !== requestedMode) return;
+          removeEventListener('profile:graph-render-settled', onSettled);
+          fitCurrentRoute({ immediate: immediateFit, recompute: true });
+        };
+        addEventListener('profile:graph-render-settled', onSettled);
+      }
+      renderGraph();
+      dispatchEvent(new CustomEvent('profile:graph-geometry-invalidated', {
+        detail: { route: requestedRoute, mode: requestedMode, reason, fit }
+      }));
+      return true;
+    };
+
+    window.ProfileGraphGeometry = Object.freeze({
+      invalidateGeometry: options => recomposeCurrentRoute({ ...(options || {}), fit: false }),
+      recompose: recomposeCurrentRoute,
+      fitCurrentRoute,
+      snapshot: () => ({
+        route: state.route,
+        mode: state.mode,
+        nodeCount: renderer.nodeElements.size,
+        edgeCount: renderer.edgeElements.size,
+        layout: renderer.lastLayout ? {
+          width: renderer.lastLayout.width,
+          height: renderer.lastLayout.height
+        } : null
+      })
+    });
+    dispatchEvent(new CustomEvent('profile:graph-geometry-ready', {
+      detail: window.ProfileGraphGeometry.snapshot()
     }));
 
     window.addEventListener('hashchange', () => renderRoute(location.hash));

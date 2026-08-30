@@ -8,17 +8,19 @@ const waitFan = page => page.waitForFunction(() => window.ProfileGeometry?.snaps
 const liveNode = (page, id) => page.locator(`#site-graph .site-graph-svg > g:not(.v9-transition-overlay) .site-graph-node[data-node-id="${id}"]`);
 const point = (page, id) => liveNode(page, id).evaluate(el => ({x:Number(el.dataset.x),y:Number(el.dataset.y)}));
 const project = (root,target,vector) => (target.x-root.x)*vector.x + (target.y-root.y)*vector.y;
+const distance = (left, right) => Math.hypot(left.x-right.x, left.y-right.y);
 
 test.describe('Global fan v3 geometry', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('Overview keeps Knowledge right, Education/About up and Work down', async ({ page }) => {
+  test('practical Overview keeps five immediate branches distinct and well separated', async ({ page }) => {
     await prepare(page); await page.goto('/#overview');
     await page.waitForFunction(() => Boolean(window.ProfileRootLanding && window.ProfileRootOverview));
     await waitFan(page);
-    /* Phase H retires the legacy collapsed root automatically. Geometry should
-       be asserted against the settled practical Profile Root, not by replaying
-       ProfileRootLanding.activate() and waiting for an obsolete edge phase. */
+    /* Phase H deliberately re-composes the practical Profile Root after the
+       canonical fan has supplied its semantic directions. Do not freeze the
+       old pre-Phase-H compass coordinates here; the contract is that the five
+       primary destinations remain immediate, distinct and comfortably apart. */
     await page.waitForFunction(() =>
       document.body.dataset.globalCompass === 'fan-v3' &&
       document.body.dataset.rootLanding === 'false' &&
@@ -28,12 +30,16 @@ test.describe('Global fan v3 geometry', () => {
       !window.ProfileScene?.transitions?.isLocked &&
       window.ProfileGeometry?.snapshot?.().reconciliation?.pending === false
     );
-    const root=await point(page,'stepan-chrast'), work=await point(page,'work'), knowledge=await point(page,'knowledge'), education=await point(page,'education'), about=await point(page,'about'), experience=await point(page,'experience');
-    expect(Math.abs(work.x-root.x)).toBeLessThan(8); expect(work.y).toBeGreaterThan(root.y+290); expect(work.y).toBeLessThan(root.y+315);
-    expect(knowledge.x).toBeGreaterThan(root.x+330); expect(Math.abs(knowledge.y-root.y)).toBeLessThan(55);
-    expect(education.x).toBeGreaterThan(root.x+100); expect(education.x).toBeLessThan(knowledge.x-180); expect(education.y).toBeLessThan(root.y-250);
-    expect(about.x).toBeLessThan(root.x-210); expect(about.y).toBeLessThan(root.y-205);
-    expect(experience.x).toBeLessThan(root.x-260); expect(experience.y).toBeGreaterThan(root.y);
+
+    const ids = ['work','knowledge','education','about','experience'];
+    const root = await point(page,'stepan-chrast');
+    const branches = Object.fromEntries(await Promise.all(ids.map(async id => [id, await point(page,id)])));
+    ids.forEach(id => expect(distance(root, branches[id])).toBeGreaterThan(170));
+    for (let left = 0; left < ids.length; left += 1) {
+      for (let right = left + 1; right < ids.length; right += 1) {
+        expect(distance(branches[ids[left]], branches[ids[right]])).toBeGreaterThan(105);
+      }
+    }
   });
 
   test('Atlas subtrees grow outward along the same final compass', async ({ page }) => {

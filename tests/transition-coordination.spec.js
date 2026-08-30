@@ -118,10 +118,13 @@ test.describe('Phase G interruptible transition coordination', () => {
       return window.ProfileScene.transitions.diagnostics().participants.includes('camera-composition');
     });
 
-    const node = page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]');
+    /* Use a node that belongs to the canonical post-integrity graph. sat-smt is
+       intentionally collapsed into Computational Logic and is not a live Atlas
+       object, so it cannot be a valid camera-interruption target. */
+    const node = page.locator('#site-graph .site-graph-node[data-node-id="knowledge"]');
     await node.click();
     await expect(node).toHaveClass(/is-previewed/);
-    expect(await page.evaluate(() => window.ProfileCameraComposition.command('INSPECT', { nodeId: 'sat-smt' }))).toBe(true);
+    expect(await page.evaluate(() => window.ProfileCameraComposition.command('INSPECT', { nodeId: 'knowledge' }))).toBe(true);
     await page.waitForFunction(() => window.ProfileTransitionCoordination.snapshot().cameraActive === true);
     await page.locator('#main-nav [data-route="knowledge"]').click();
 

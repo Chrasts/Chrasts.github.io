@@ -13,10 +13,10 @@
     --artifact-lane-width:var(--scene-side-available-width,430px)
   }
 
-  /* Selection is a visual state, not hit-test ownership. In narrow side lanes an
-     active card can overlap a sibling's centre; keeping it below the remaining
-     cards lets every object stay directly selectable without synthetic clicks. */
-  .artifact-object .artifact-deck-card.is-active{z-index:0}
+  /* Selection is a visual state, not hit-test ownership. Phase B gives hover,
+     focus and active cards a raised stack; active alone must never cover the
+     hit area of a sibling in a compact lane. */
+  .artifact-object .artifact-deck-card.is-active{z-index:0!important}
 
   /* Two-card diagrams: keep each card in a stable slot, but compact the spread
      when the side lane is narrower than the ideal 340px footprint. */

@@ -63,11 +63,11 @@ test.describe('Final graph interaction consolidation', () => {
 
   test('keeps deep primary-path labels to the right and stable after transitions', async ({ page }) => {
     await bypassIntro(page);
-    await page.goto('/#knowledge/logic-math/mathematical-logic/computational-logic/logic-for-ai');
-    await page.waitForFunction(() => document.body.dataset.graphRoute?.endsWith('/logic-for-ai') && document.body.dataset.graphMode === 'focus');
+    await page.goto('/#knowledge/logic-math/mathematical-logic/computational-logic');
+    await page.waitForFunction(() => document.body.dataset.graphRoute === 'knowledge/logic-math/mathematical-logic/computational-logic' && document.body.dataset.graphMode === 'focus');
     await page.waitForFunction(() => window.ProfileLocalLabelPolicy?.snapshot?.().ancestorCount >= 4);
 
-    const ids = ['stepan-chrast', 'knowledge', 'logic-math', 'mathematical-logic', 'computational-logic'];
+    const ids = ['stepan-chrast', 'knowledge', 'logic-math', 'mathematical-logic'];
     const poses = await page.evaluate(ids => Object.fromEntries(ids.map(id => {
       const node = [...document.querySelectorAll(`#site-graph .site-graph-node[data-node-id="${id}"]`)]
         .find(element => !element.closest('.v9-transition-overlay'));

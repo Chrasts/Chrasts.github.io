@@ -1,5 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
+const INSPECT_NODE = 'computational-logic';
+
 const bootAtlas = async page => {
   await page.addInitScript(() => sessionStorage.setItem('profileIntroSeen', 'true'));
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
@@ -27,7 +29,7 @@ test.describe('Phase E camera composition', () => {
   test('selected Atlas node focuses into the composed safe frame instead of behind the inspector', async ({ page }) => {
     await bootAtlas(page);
     const svg = page.locator('#site-graph .site-graph-svg');
-    const node = page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]');
+    const node = page.locator(`#site-graph .site-graph-node[data-node-id="${INSPECT_NODE}"]`);
     const detail = page.locator('#site-detail-panel');
 
     await node.click();
@@ -42,13 +44,13 @@ test.describe('Phase E camera composition', () => {
 
     const camera = page.locator('#site-graph .site-graph-svg > g').first();
     const transformBefore = await camera.getAttribute('transform');
-    expect(await page.evaluate(() => window.ProfileCameraComposition.command('INSPECT', { nodeId: 'sat-smt' }))).toBe(true);
+    expect(await page.evaluate(id => window.ProfileCameraComposition.command('INSPECT', { nodeId: id }), INSPECT_NODE)).toBe(true);
     await waitAtlasCameraSettled(page);
     const transformAfter = await camera.getAttribute('transform');
     expect(transformAfter).not.toBe(transformBefore);
 
-    const result = await page.evaluate(() => {
-      const node = document.querySelector('#site-graph .site-graph-node[data-node-id="sat-smt"]');
+    const result = await page.evaluate(id => {
+      const node = document.querySelector(`#site-graph .site-graph-node[data-node-id="${id}"]`);
       const box = node.getBoundingClientRect();
       const frame = window.ProfileCameraComposition.safeFrame();
       return {
@@ -62,21 +64,21 @@ test.describe('Phase E camera composition', () => {
         frameBottom: frame.bottom,
         lastFocus: window.ProfileCameraComposition.snapshot().lastFocus
       };
-    });
+    }, INSPECT_NODE);
     expect(result.nodeLeft).toBeGreaterThanOrEqual(result.frameLeft - 12);
     expect(result.nodeRight).toBeLessThanOrEqual(result.frameRight + 12);
     expect(result.nodeTop).toBeGreaterThanOrEqual(result.frameTop - 12);
     expect(result.nodeBottom).toBeLessThanOrEqual(result.frameBottom + 12);
-    expect(result.lastFocus.id).toBe('sat-smt');
+    expect(result.lastFocus.id).toBe(INSPECT_NODE);
   });
 
   test('removing inspector occupancy expands the safe frame without moving the camera', async ({ page }) => {
     await bootAtlas(page);
-    const node = page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]');
+    const node = page.locator(`#site-graph .site-graph-node[data-node-id="${INSPECT_NODE}"]`);
     const detail = page.locator('#site-detail-panel');
     await node.click();
     await waitInspectorReservation(page);
-    expect(await page.evaluate(() => window.ProfileCameraComposition.command('INSPECT', { nodeId: 'sat-smt', immediate: true }))).toBe(true);
+    expect(await page.evaluate(id => window.ProfileCameraComposition.command('INSPECT', { nodeId: id, immediate: true }), INSPECT_NODE)).toBe(true);
 
     const camera = page.locator('#site-graph .site-graph-svg > g').first();
     const beforeTransform = await camera.getAttribute('transform');
@@ -98,11 +100,11 @@ test.describe('Phase E camera composition', () => {
     expect(api).toEqual({ MAKE_ROOM: 'MAKE_ROOM', INSPECT: 'INSPECT', PEEK: 'PEEK', RETURN: 'RETURN' });
 
     const origin = await page.evaluate(() => window.ProfileAtlasLOD.snapshot().targetCamera);
-    expect(await page.evaluate(() => window.ProfileCameraComposition.command('INSPECT', { nodeId: 'sat-smt' }))).toBe(true);
+    expect(await page.evaluate(id => window.ProfileCameraComposition.command('INSPECT', { nodeId: id }), INSPECT_NODE)).toBe(true);
     await page.waitForTimeout(90);
     let state = await page.evaluate(() => window.ProfileCameraComposition.snapshot());
     expect(state.activePreset).toBe('INSPECT');
-    expect(state.lastFocus.id).toBe('sat-smt');
+    expect(state.lastFocus.id).toBe(INSPECT_NODE);
     expect(state.memory.some(item => item.key.endsWith(':inspect-origin'))).toBe(true);
 
     expect(await page.evaluate(() => window.ProfileCameraComposition.command('PEEK', { nodeId: 'modal-logic' }))).toBe(true);

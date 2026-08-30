@@ -71,16 +71,17 @@ test('Modal Logic Lab double-click resolves to one stable Object Focus open', as
   expect(snapshot.supportedMediaKinds).toContain('pdf');
 });
 
-test('BSc PDF stays scroll-interactive and exposes a reliable expand affordance', async ({ page }) => {
+test('BSc PDF uses an inert ambient preview and a reliable focused reader affordance', async ({ page }) => {
   await boot(page, 'work/project/bachelor-thesis');
   const card = page.locator('[data-artifact-scene="bachelor-thesis-diagrams"] .artifact-deck-card[data-artifact-id="bachelor-thesis-lattice-of-bands"]');
-  const pdf = card.locator('.artifact-media-preview.is-pdf iframe');
+  const preview = card.locator('.artifact-media-preview.is-pdf');
   const expand = card.locator('.artifact-inline-expand');
 
-  await expect(pdf).toBeVisible();
-  expect(await pdf.evaluate(element => getComputedStyle(element).pointerEvents)).toBe('auto');
+  await expect(preview).toBeVisible();
+  await expect(preview.locator('iframe')).toHaveCount(0);
+  await expect(preview.locator('.artifact-pdf-mark')).toHaveText('PDF');
   await expect(expand).toBeVisible();
-  await expect(expand).toContainText('Expand');
+  await expect(expand).toContainText('Inspect');
 
   await expand.click();
   await waitSettled(page);
@@ -88,5 +89,7 @@ test('BSc PDF stays scroll-interactive and exposes a reliable expand affordance'
   const snapshot = await page.evaluate(() => window.ProfileObjectFocus.snapshot());
   expect(snapshot.activeArtifactId).toBe('bachelor-thesis-lattice-of-bands');
   expect(snapshot.pendingArtifactId).toBeNull();
-  await expect(page.locator('.artifact-focus-viewer .artifact-focus-media iframe')).toBeVisible();
+  const focused = page.locator('.artifact-focus-viewer .artifact-focus-media iframe');
+  await expect(focused).toBeVisible();
+  expect(await focused.evaluate(element => getComputedStyle(element).pointerEvents)).not.toBe('none');
 });

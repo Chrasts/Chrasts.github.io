@@ -35,6 +35,7 @@ test('Work uses one canonical controller without the retired hidden renderer', a
   });
   await page.evaluate(id => window.ProfileWorkController.setThemes([id], 'any'), themeId);
   await page.waitForFunction(() => window.ProfileWorkController.snapshot().visibleProjectCount < window.ProfileWorkController.snapshot().projectCount);
+  await page.waitForFunction(() => document.querySelectorAll('.work-project-anchor-v5.is-filtered-out').length > 0);
 
   const filtered = await page.evaluate(() => window.ProfileWorkController.snapshot());
   expect(filtered.selectedThemes).toEqual([themeId]);
@@ -42,5 +43,6 @@ test('Work uses one canonical controller without the retired hidden renderer', a
 
   await page.evaluate(() => window.ProfileWorkController.reset());
   await page.waitForFunction(() => window.ProfileWorkController.snapshot().visibleProjectCount === window.ProfileWorkController.snapshot().projectCount);
+  await page.waitForFunction(() => document.querySelectorAll('.work-project-anchor-v5.is-filtered-out').length === 0);
   expect((await page.evaluate(() => window.ProfileWorkController.snapshot())).selectedThemes).toEqual([]);
 });

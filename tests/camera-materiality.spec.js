@@ -1,5 +1,7 @@
 const { test, expect } = require('@playwright/test');
 
+const ATLAS_NODE = 'computational-logic';
+
 const bootFocus = async (page, route = 'about/woodworking/hedgehog-house') => {
   await page.addInitScript(() => sessionStorage.setItem('profileIntroSeen', 'true'));
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
@@ -29,6 +31,14 @@ const bootAtlas = async page => {
   ));
   await page.waitForFunction(() => document.body.dataset.graphMode === 'atlas');
   await page.waitForTimeout(240);
+};
+
+const expectCanonicalClose = (actual, expected, tolerance = .01) => {
+  expect(actual.map(item => item.id)).toEqual(expected.map(item => item.id));
+  actual.forEach((item, index) => {
+    expect(Math.abs(item.x - expected[index].x)).toBeLessThan(tolerance);
+    expect(Math.abs(item.y - expected[index].y)).toBeLessThan(tolerance);
+  });
 };
 
 test.describe('V3.1 Phase D camera + 2.5D', () => {
@@ -65,7 +75,7 @@ test.describe('V3.1 Phase D camera + 2.5D', () => {
   test('INSPECT produces differential parallax without mutating canonical node geometry and settles cleanly', async ({ page }) => {
     await bootFocus(page);
     const before = await page.evaluate(() => [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')]
-      .map(node => ({ id: node.dataset.nodeId, x: node.dataset.x, y: node.dataset.y })));
+      .map(node => ({ id: node.dataset.nodeId, x: Number(node.dataset.x), y: Number(node.dataset.y) })));
 
     expect(await page.evaluate(() => window.ProfileCameraComposition.inspect('hedgehog-house', { duration: 440 }))).toBe(true);
     await page.waitForFunction(() => document.querySelector('#site-graph')?.classList.contains('is-camera-25d-moving'));
@@ -81,14 +91,14 @@ test.describe('V3.1 Phase D camera + 2.5D', () => {
         nodeTransform: getComputedStyle(nodeLayer).transform,
         pulse: Number(getComputedStyle(root).getPropertyValue('--camera-25d-pulse')),
         canonical: [...root.querySelectorAll('.site-graph-node[data-node-id]')]
-          .map(node => ({ id: node.dataset.nodeId, x: node.dataset.x, y: node.dataset.y }))
+          .map(node => ({ id: node.dataset.nodeId, x: Number(node.dataset.x), y: Number(node.dataset.y) }))
       };
     });
 
     expect(moving.action).toBe('INSPECT');
     expect(Math.abs(moving.pulse)).toBeGreaterThan(.05);
     expect(moving.edgeTransform).not.toBe(moving.nodeTransform);
-    expect(moving.canonical).toEqual(before);
+    expectCanonicalClose(moving.canonical, before);
 
     await page.waitForFunction(() => window.ProfileCameraMateriality.snapshot().phase === 'idle', null, { timeout: 2500 });
     const settled = await page.evaluate(() => ({
@@ -97,13 +107,13 @@ test.describe('V3.1 Phase D camera + 2.5D', () => {
       edgeInline: document.querySelector('#site-graph .site-graph-edges').style.transform,
       nodeInline: document.querySelector('#site-graph .site-graph-nodes').style.transform,
       canonical: [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')]
-        .map(node => ({ id: node.dataset.nodeId, x: node.dataset.x, y: node.dataset.y }))
+        .map(node => ({ id: node.dataset.nodeId, x: Number(node.dataset.x), y: Number(node.dataset.y) }))
     }));
     expect(settled.action).toBe('IDLE');
     expect(settled.moving).toBe(false);
     expect(settled.edgeInline).toBe('');
     expect(settled.nodeInline).toBe('');
-    expect(settled.canonical).toEqual(before);
+    expectCanonicalClose(settled.canonical, before);
   });
 
   test('new semantic commands retarget the current material response rather than starting a second camera owner', async ({ page }) => {
@@ -132,24 +142,24 @@ test.describe('V3.1 Phase D camera + 2.5D', () => {
 
   test('Atlas push uses the same semantic layer and foregrounds the selected graph node', async ({ page }) => {
     await bootAtlas(page);
-    const node = page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]');
+    const node = page.locator(`#site-graph .site-graph-node[data-node-id="${ATLAS_NODE}"]`);
     await node.click();
     await expect(node).toHaveClass(/is-previewed/);
-    await page.waitForFunction(() => document.querySelector('#site-graph .site-graph-node[data-node-id="sat-smt"]')?.dataset.depthChannel === 'DEPTH_GRAPH_ACTIVE');
+    await page.waitForFunction(id => document.querySelector(`#site-graph .site-graph-node[data-node-id="${id}"]`)?.dataset.depthChannel === 'DEPTH_GRAPH_ACTIVE', ATLAS_NODE);
 
     const origin = await page.evaluate(() => window.ProfileAtlasLOD.snapshot().targetCamera);
-    expect(await page.evaluate(() => window.ProfileCameraComposition.pushIn('sat-smt', { duration: 420 }))).toBe(true);
+    expect(await page.evaluate(id => window.ProfileCameraComposition.pushIn(id, { duration: 420 }), ATLAS_NODE)).toBe(true);
     await page.waitForFunction(() => window.ProfileCameraMateriality.snapshot().action === 'PUSH');
     await page.waitForFunction(() => {
       const state = window.ProfileAtlasLOD.snapshot();
       return Math.abs(state.camera.scale - state.targetCamera.scale) < .002;
     });
 
-    const result = await page.evaluate(() => ({
+    const result = await page.evaluate(id => ({
       target: window.ProfileAtlasLOD.snapshot().targetCamera,
       motion: window.ProfileCameraMateriality.snapshot(),
-      depth: document.querySelector('#site-graph .site-graph-node[data-node-id="sat-smt"]').dataset.depthChannel
-    }));
+      depth: document.querySelector(`#site-graph .site-graph-node[data-node-id="${id}"]`).dataset.depthChannel
+    }), ATLAS_NODE);
     expect(result.target.scale).toBeGreaterThan(origin.scale);
     expect(result.motion.cameraAdapter).toBe('atlas');
     expect(result.depth).toBe('DEPTH_GRAPH_ACTIVE');

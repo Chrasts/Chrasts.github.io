@@ -1,5 +1,9 @@
 const { test, expect } = require('@playwright/test');
 
+const COMPUTATIONAL_ROUTE = 'knowledge/logic-math/mathematical-logic/computational-logic';
+const COMPUTATIONAL_NODE = 'computational-logic';
+const ANCESTOR_LABEL_POSE = ['end', '-15', '4'];
+
 const bypassIntro = async page => {
   await page.addInitScript(() => sessionStorage.setItem('profileIntroSeen', 'true'));
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
@@ -36,19 +40,19 @@ test.describe('Phase 7 label continuity and Overview emphasis', () => {
       if (delay) await page.waitForTimeout(delay);
       poses.push(await liveLabelPose(page, 'stepan-chrast'));
     }
-    poses.forEach(pose => expect(pose).toEqual(['start', '17', '4']));
+    poses.forEach(pose => expect(pose).toEqual(ANCESTOR_LABEL_POSE));
   });
 
-  test('every ancestor in a deep Logic for AI chain uses the stable side pose', async ({ page }) => {
+  test('every ancestor in the canonical Computational Logic chain uses the stable side pose', async ({ page }) => {
     await bypassIntro(page);
-    await page.goto('/#knowledge/logic-math/mathematical-logic/computational-logic/logic-for-ai');
+    await page.goto(`/#${COMPUTATIONAL_ROUTE}`);
     await page.waitForFunction(() => Boolean(window.ProfileLocalLabelPolicy) && document.body.dataset.graphMode === 'focus');
     await page.evaluate(() => window.ProfileLocalLabelPolicy.apply('phase7-contract'));
 
-    const ids = ['stepan-chrast', 'knowledge', 'logic-math', 'mathematical-logic', 'computational-logic'];
-    for (const id of ids) expect(await liveLabelPose(page, id)).toEqual(['start', '17', '4']);
+    const ids = ['stepan-chrast', 'knowledge', 'logic-math', 'mathematical-logic'];
+    for (const id of ids) expect(await liveLabelPose(page, id)).toEqual(ANCESTOR_LABEL_POSE);
     await page.waitForTimeout(500);
-    for (const id of ids) expect(await liveLabelPose(page, id)).toEqual(['start', '17', '4']);
+    for (const id of ids) expect(await liveLabelPose(page, id)).toEqual(ANCESTOR_LABEL_POSE);
   });
 
   test('the five Overview destinations read as large clickable choices', async ({ page }) => {
@@ -201,21 +205,21 @@ test.describe('Phase 7 Atlas selection and inspector', () => {
   });
 
   test('single click opens compact details; repeated activation enters the selected local graph', async ({ page }) => {
-    const node = page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]');
+    const node = page.locator(`#site-graph .site-graph-node[data-node-id="${COMPUTATIONAL_NODE}"]`);
     await node.click();
     await expect(page.locator('#site-detail-panel')).toBeVisible();
     await expect(page.locator('#site-detail-panel .atlas-open-local')).toHaveText('Explore this section');
-    expect((await page.evaluate(() => window.ProfileAtlasLOD.snapshot())).selectedNodeId).toBe('sat-smt');
+    expect((await page.evaluate(() => window.ProfileAtlasLOD.snapshot())).selectedNodeId).toBe(COMPUTATIONAL_NODE);
 
     await node.click();
     await page.waitForFunction(() => document.body.classList.contains('is-atlas-focus-transitioning'));
-    await page.waitForFunction(() => document.body.dataset.graphMode === 'focus' && document.body.dataset.graphRoute.endsWith('/sat-smt'));
+    await page.waitForFunction(route => document.body.dataset.graphMode === 'focus' && document.body.dataset.graphRoute === route, COMPUTATIONAL_ROUTE);
     await page.waitForFunction(() => !window.ProfileAtlasFocus.snapshot().active, null, { timeout: 6000 });
-    await expect(page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]')).toHaveClass(/is-selected/);
+    await expect(page.locator(`#site-graph .site-graph-node[data-node-id="${COMPUTATIONAL_NODE}"]`)).toHaveClass(/is-selected/);
   });
 
   test('clicking empty map clears both inspector and node focus without resetting camera', async ({ page }) => {
-    const node = page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]');
+    const node = page.locator(`#site-graph .site-graph-node[data-node-id="${COMPUTATIONAL_NODE}"]`);
     await node.click();
     await page.evaluate(() => window.ProfileAtlasLOD.setScale(1.45, { immediate: true }));
     const before = await page.evaluate(() => window.ProfileAtlasLOD.snapshot().camera);

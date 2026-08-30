@@ -14,15 +14,18 @@ test.describe('Global fan v3 geometry', () => {
 
   test('Overview keeps Knowledge right, Education/About up and Work down', async ({ page }) => {
     await prepare(page); await page.goto('/#overview');
-    await page.waitForFunction(() => Boolean(window.ProfileRootLanding)); await waitFan(page);
-    await page.evaluate(() => window.ProfileRootLanding.activate({ focusGraph:false }));
+    await page.waitForFunction(() => Boolean(window.ProfileRootLanding && window.ProfileRootOverview));
+    await waitFan(page);
+    /* Phase H retires the legacy collapsed root automatically. Geometry should
+       be asserted against the settled practical Profile Root, not by replaying
+       ProfileRootLanding.activate() and waiting for an obsolete edge phase. */
     await page.waitForFunction(() =>
       document.body.dataset.globalCompass === 'fan-v3' &&
       document.body.dataset.rootLanding === 'false' &&
       document.body.classList.contains('is-profile-root-ready') &&
       !document.body.classList.contains('is-profile-root-emerging') &&
-      document.body.dataset.profileBranchEdgePhase === 'settled' &&
       !document.body.classList.contains('is-v9-transitioning') &&
+      !window.ProfileScene?.transitions?.isLocked &&
       window.ProfileGeometry?.snapshot?.().reconciliation?.pending === false
     );
     const root=await point(page,'stepan-chrast'), work=await point(page,'work'), knowledge=await point(page,'knowledge'), education=await point(page,'education'), about=await point(page,'about'), experience=await point(page,'experience');

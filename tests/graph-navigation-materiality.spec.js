@@ -1,5 +1,8 @@
 const { test, expect } = require('@playwright/test');
 
+const COMPUTATIONAL_ROUTE = 'knowledge/logic-math/mathematical-logic/computational-logic';
+const COMPUTATIONAL_NODE = 'computational-logic';
+
 const bypassIntro = async page => {
   await page.addInitScript(() => sessionStorage.setItem('profileIntroSeen', 'true'));
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
@@ -88,18 +91,18 @@ test.describe('V3.1 Phase J ordinary graph navigation materiality', () => {
 
   test('moving to an ancestor resolves to PULL', async ({ page }) => {
     await bypassIntro(page);
-    const childRoute = 'knowledge/logic-math/mathematical-logic/computational-logic/sat-smt';
-    const parentRoute = 'knowledge/logic-math/mathematical-logic/computational-logic';
+    const childRoute = 'knowledge/logic-math/mathematical-logic/modal-logic';
+    const parentRoute = 'knowledge/logic-math/mathematical-logic';
     await page.goto(`/#${childRoute}`);
     await waitReady(page);
     await page.waitForFunction(expected => document.body.dataset.graphRoute === expected, childRoute);
 
     await page.evaluate(route => { location.hash = `#${route}`; }, parentRoute);
     await waitRoute(page, parentRoute);
-    await waitSettle(page, 'computational-logic');
+    await waitSettle(page, 'mathematical-logic');
     const state = await page.evaluate(() => window.ProfileGraphNavigation.snapshot());
-    expect(state.sourceId).toBe('sat-smt');
-    expect(state.targetId).toBe('computational-logic');
+    expect(state.sourceId).toBe('modal-logic');
+    expect(state.targetId).toBe('mathematical-logic');
     expect(state.direction).toBe('up');
     expect(state.cameraAction).toBe('PULL');
     await waitIdle(page);
@@ -162,10 +165,10 @@ test.describe('V3.1 Phase J ordinary graph navigation materiality', () => {
     await waitReady(page);
     await page.waitForFunction(() => Boolean(window.ProfileAtlasFocus) && document.body.dataset.graphMode === 'atlas');
 
-    const node = page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]');
+    const node = page.locator(`#site-graph .site-graph-node[data-node-id="${COMPUTATIONAL_NODE}"]`);
     await node.click();
     await node.click();
-    await page.waitForFunction(() => document.body.dataset.graphMode === 'focus' && document.body.dataset.graphRoute.endsWith('/sat-smt'));
+    await page.waitForFunction(route => document.body.dataset.graphMode === 'focus' && document.body.dataset.graphRoute === route, COMPUTATIONAL_ROUTE);
     await page.waitForFunction(() => !window.ProfileAtlasFocus.snapshot().active, null, { timeout: 6000 });
 
     const state = await page.evaluate(() => window.ProfileGraphNavigation.snapshot());

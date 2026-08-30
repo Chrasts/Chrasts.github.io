@@ -72,17 +72,18 @@ test.describe('Integrated artifact viewer media contract', () => {
     expect(settled.src).toBe(early.src);
   });
 
-  test('Congruence Lattice PDF is a valid live PDF and remains scroll-interactive before and after focus', async ({ page, request }) => {
+  test('Congruence Lattice PDF stays inert in the ambient card and becomes a live focused reader', async ({ page, request }) => {
     const response = await request.get('/assets/documents/work/clp-survey/congruence-lattice-problem.pdf');
     expect(response.ok()).toBe(true);
     expect((await response.body()).subarray(0, 4).toString()).toBe('%PDF');
 
     await boot(page, 'work/project/clp-survey');
     const scene = page.locator('[data-artifact-scene="clp-survey-paper"]');
-    const inlinePdf = scene.locator('.artifact-media-preview.is-pdf iframe');
-    await expect(inlinePdf).toBeVisible();
-    expect(await inlinePdf.evaluate(frame => getComputedStyle(frame).pointerEvents)).toBe('auto');
-    await expect(inlinePdf).toHaveAttribute('data-artifact-inline-pdf', 'true');
+    const preview = scene.locator('.artifact-media-preview.is-pdf');
+    await expect(preview).toBeVisible();
+    await expect(preview.locator('iframe')).toHaveCount(0);
+    await expect(preview.locator('.artifact-pdf-mark')).toHaveText('PDF');
+    await expect(scene.locator('.artifact-inline-expand')).toContainText('Inspect');
 
     await scene.locator('.artifact-inline-expand').click();
     await waitSettled(page);
@@ -90,6 +91,7 @@ test.describe('Integrated artifact viewer media contract', () => {
     await expect(focused).toBeVisible();
     await expect(focused).toHaveAttribute('src', /congruence-lattice-problem\.pdf#/);
     await expect(focused).toHaveAttribute('data-object-focus-fit', 'contain');
+    expect(await focused.evaluate(frame => getComputedStyle(frame).pointerEvents)).not.toBe('none');
     const bounds = await focused.boundingBox();
     expect(bounds.width).toBeGreaterThan(250);
     expect(bounds.height).toBeGreaterThan(300);

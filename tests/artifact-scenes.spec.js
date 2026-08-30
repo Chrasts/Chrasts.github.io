@@ -173,7 +173,7 @@ test('Modal Logic Lab screenshots preserve the full intrinsic image instead of c
   await expect(deck.locator('.artifact-object-header')).toHaveCount(0);
   await expect(deck.locator('.artifact-deck-card')).toHaveCount(2);
   await expect(deck.locator('img')).toHaveCount(2);
-  await expect(deck.locator('a[data-support-artifact-id="modal-logic-lab-live"]')).toHaveAttribute('href', 'https://chrasts.github.io/Modal_Logic_Educational_Game/');
+  await expect(deck.locator('a[data-support-artifact-id="modal-logic-lab-live"]')).toHaveAttribute('href', 'https://chrasts.github.io/Modal_Logic_Lab/');
 
   const preview = deck.locator('.artifact-deck-preview').first();
   await expect(preview).toHaveAttribute('data-media-aspect-ready', 'true', { timeout: 5000 });
@@ -238,7 +238,7 @@ test('desktop descriptive inspector ends with its content instead of filling the
   await page.goto('/#atlas');
   await page.waitForFunction(() => Boolean(window.ProfileAtlasLOD) && document.body.dataset.graphMode === 'atlas');
 
-  const node = page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]');
+  const node = page.locator('#site-graph .site-graph-node[data-node-id="computational-logic"]');
   await node.click();
   const detail = page.locator('#site-detail-panel');
   await expect(detail).toBeVisible();
@@ -265,7 +265,7 @@ test('clicking elsewhere on the node view dismisses the open inspector like its 
   await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
   await page.waitForFunction(() => Boolean(window.ProfileAtlasLOD) && document.body.dataset.graphMode === 'atlas');
 
-  const node = page.locator('#site-graph .site-graph-node[data-node-id="sat-smt"]');
+  const node = page.locator('#site-graph .site-graph-node[data-node-id="computational-logic"]');
   const detail = page.locator('#site-detail-panel');
   await node.click();
   await expect(detail).toBeVisible();

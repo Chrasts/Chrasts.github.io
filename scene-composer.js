@@ -186,6 +186,7 @@
     sideCorridor(side, request, context, graphBounds) {
       const margin = Math.max(request.viewportMargin, this.sideMargin(context));
       const laneCap = Math.min(470, context.canvas.width * .42);
+      const minimumUsableWidth = request.role === 'artifact' ? Math.min(190, laneCap) : 150;
       let left = context.canvas.left + margin;
       let right = context.canvas.right - margin;
 
@@ -193,12 +194,18 @@
         right = Math.min(right, left + laneCap);
         const controlRight = this.sideControlBoundary('left', context);
         if (Number.isFinite(controlRight)) left = Math.max(left, controlRight);
-        if (request.avoidGraph && graphBounds) right = Math.min(right, graphBounds.left - request.graphMargin);
+        if (request.avoidGraph && graphBounds) {
+          const graphRight = graphBounds.left - request.graphMargin;
+          if (graphRight - left >= minimumUsableWidth) right = Math.min(right, graphRight);
+        }
       } else {
         left = Math.max(left, right - laneCap);
         const controlLeft = this.sideControlBoundary('right', context);
         if (Number.isFinite(controlLeft)) right = Math.min(right, controlLeft);
-        if (request.avoidGraph && graphBounds) left = Math.max(left, graphBounds.right + request.graphMargin);
+        if (request.avoidGraph && graphBounds) {
+          const graphLeft = graphBounds.right + request.graphMargin;
+          if (right - graphLeft >= minimumUsableWidth) left = Math.max(left, graphLeft);
+        }
       }
 
       return { left, right, width: Math.max(0, right - left) };
@@ -330,13 +337,19 @@
       assignment.corridor = corridor;
       const topLimit = context.canvas.top + assignment.request.viewportMargin;
       const bottomLimit = context.canvas.bottom - assignment.request.viewportMargin;
+      const viewportFrame = {
+        left: context.canvas.left + assignment.request.viewportMargin,
+        right: context.canvas.right - assignment.request.viewportMargin
+      };
+      const boundsWidth = Math.max(0, bounds.right - bounds.left);
+      const horizontalFrame = boundsWidth <= corridor.width + .5 ? corridor : viewportFrame;
       let shiftX = 0;
       let shiftY = 0;
 
-      if (bounds.left < corridor.left) shiftX += corridor.left - bounds.left;
-      if (bounds.right > corridor.right) shiftX -= bounds.right - corridor.right;
-      if (bounds.top < topLimit) shiftY += topLimit - bounds.top;
-      if (bounds.bottom > bottomLimit) shiftY -= bounds.bottom - bottomLimit;
+      if (bounds.left < horizontalFrame.left) shiftX = horizontalFrame.left - bounds.left;
+      else if (bounds.right > horizontalFrame.right) shiftX = horizontalFrame.right - bounds.right;
+      if (bounds.top < topLimit) shiftY = topLimit - bounds.top;
+      else if (bounds.bottom > bottomLimit) shiftY = bottomLimit - bounds.bottom;
 
       if (Math.abs(shiftX) > .5) {
         const nextOffset = assignment.side === 'left'

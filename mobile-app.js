@@ -275,20 +275,28 @@
     if (modeNow() !== 'atlas' || atlasRepairing) return;
     unprojectBaseForAtlas();
     if (!atlasLooksCollapsed()) return;
-    const control = $('#atlas-crosslinks');
-    if (!control) return;
+    const geometry = window.ProfileGraphGeometry;
+    if (!geometry?.recompose) return;
+
     atlasRepairing = true;
-    const original = control.checked;
-    control.checked = !original;
-    control.dispatchEvent(new Event('change', { bubbles: true }));
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      control.checked = original;
-      control.dispatchEvent(new Event('change', { bubbles: true }));
-      setTimeout(() => {
-        $('#atlas-fit')?.click();
-        atlasRepairing = false;
-      }, 90);
-    }));
+    let fallbackTimer = 0;
+    const release = () => {
+      if (!atlasRepairing) return;
+      atlasRepairing = false;
+      clearTimeout(fallbackTimer);
+      removeEventListener('profile:graph-render-settled', onSettled);
+    };
+    const onSettled = event => {
+      if (event.detail?.mode !== 'atlas') return;
+      requestAnimationFrame(release);
+    };
+    addEventListener('profile:graph-render-settled', onSettled);
+    geometry.recompose({
+      reason: 'mobile-atlas-layout-recovery',
+      fit: true,
+      immediateFit: true
+    });
+    fallbackTimer = setTimeout(release, 1200);
   };
 
   const state = {

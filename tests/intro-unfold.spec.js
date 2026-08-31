@@ -12,6 +12,13 @@ const bypass = async page => {
 
 const waitReady = page => page.waitForFunction(() => window.ProfileIntro?.snapshot?.().state === 'ATLAS_READY', null, { timeout: 8_000 });
 
+const screenCenters = (page, ids) => page.evaluate(sectionIds => Object.fromEntries(sectionIds.map(id => {
+  const node = [...document.querySelectorAll(`#site-graph .site-graph-node[data-node-id="${id}"]`)]
+    .find(element => !element.closest('.v9-transition-overlay'));
+  const box = node.getBoundingClientRect();
+  return [id, { x: box.left + box.width / 2, y: box.top + box.height / 2 }];
+})), ids);
+
 test.describe('V3.1 entry retirement guards', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
@@ -50,12 +57,10 @@ test.describe('Phase H practical Overview preserves root inspector geometry', ()
     await page.waitForFunction(() => Boolean(window.ProfileRootLanding && window.ProfileIntroFixesV3 && window.ProfileRootOverview));
     await page.waitForFunction(() => window.ProfileRootOverview.snapshot().visible === true);
     await page.waitForFunction(() => document.body.dataset.globalCompass === 'fan-v3');
+    await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
 
     const ids = ['work', 'knowledge', 'education', 'about', 'experience'];
-    const before = await page.evaluate(sectionIds => Object.fromEntries(sectionIds.map(id => {
-      const node = document.querySelector(`#site-graph .site-graph-node[data-node-id="${id}"]`);
-      return [id, { x: Number(node.dataset.x), y: Number(node.dataset.y) }];
-    })), ids);
+    const before = await screenCenters(page, ids);
 
     await page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]').click();
     await expect(page.locator('.profile-root-inspector')).toHaveClass(/is-open/);
@@ -64,10 +69,7 @@ test.describe('Phase H practical Overview preserves root inspector geometry', ()
     expect(await page.evaluate(() => document.body.dataset.graphRoute)).toBe('overview');
 
     await page.waitForTimeout(350);
-    const after = await page.evaluate(sectionIds => Object.fromEntries(sectionIds.map(id => {
-      const node = document.querySelector(`#site-graph .site-graph-node[data-node-id="${id}"]`);
-      return [id, { x: Number(node.dataset.x), y: Number(node.dataset.y) }];
-    })), ids);
+    const after = await screenCenters(page, ids);
     for (const id of ids) expect(Math.hypot(after[id].x - before[id].x, after[id].y - before[id].y)).toBeLessThan(3);
   });
 });

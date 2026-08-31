@@ -9,8 +9,8 @@
        inspector opens or closes. That width may change, but an already resolved
        artifact lane should not slide horizontally on the same route merely
        because the corridor became less constrained. Preserve the last settled
-       offset when it is still viewport-safe; containment keeps priority if the
-       old position would clip. */
+       offset when it remains valid in the current horizontal safe frame;
+       ordinary containment keeps priority otherwise. */
     if (!Composer.prototype.__artifactLaneOffsetGuard) {
       Composer.prototype.__artifactLaneOffsetGuard = true;
       const originalContainAssignment = Composer.prototype.containAssignment;
@@ -37,14 +37,21 @@
           assignment.element.style.setProperty(property, `${Math.round(previous.offset)}px`, 'important');
 
           const bounds = this.visualBounds(assignment.request);
+          const corridor = assignment.corridor;
           const margin = assignment.request.viewportMargin || 0;
-          const viewportSafe = Boolean(bounds &&
-            bounds.left >= context.canvas.left + margin - .5 &&
-            bounds.right <= context.canvas.right - margin + .5 &&
-            bounds.top >= context.canvas.top + margin - .5 &&
-            bounds.bottom <= context.canvas.bottom - margin + .5);
+          const viewportFrame = {
+            left: context.canvas.left + margin,
+            right: context.canvas.right - margin
+          };
+          const boundsWidth = bounds ? Math.max(0, bounds.right - bounds.left) : Infinity;
+          const horizontalFrame = bounds && corridor && boundsWidth <= corridor.width + .5
+            ? corridor
+            : viewportFrame;
+          const horizontalSafe = Boolean(bounds &&
+            bounds.left >= horizontalFrame.left - .5 &&
+            bounds.right <= horizontalFrame.right + .5);
 
-          if (!viewportSafe) {
+          if (!horizontalSafe) {
             assignment.offset = currentOffset;
             assignment.element.style.setProperty(property, `${Math.round(currentOffset)}px`, 'important');
           }

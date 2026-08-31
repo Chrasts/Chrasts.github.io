@@ -326,19 +326,20 @@ test.describe('V3.1 Phase E mobile composition', () => {
     await page.waitForFunction(() => window.ProfileIntro.snapshot().revealedWaves.includes('labels'));
     const mobile = await page.evaluate(() => ({
       snapshot: window.ProfileIntro.snapshot(),
-      deepLabelsPrepared: document.querySelectorAll('#site-graph .site-graph-node[data-intro-wave="deep"] .site-graph-label.is-intro-label-revealed').length,
-      intermediateLabelsPrepared: document.querySelectorAll('#site-graph .site-graph-node[data-intro-wave="intermediate"] .site-graph-label.is-intro-label-revealed').length,
       deepLabelsTotal: document.querySelectorAll('#site-graph .site-graph-node[data-intro-wave="deep"] .site-graph-label').length,
       intermediateLabelsTotal: document.querySelectorAll('#site-graph .site-graph-node[data-intro-wave="intermediate"] .site-graph-label').length,
-      revealActive: document.body.classList.contains('is-atlas-reveal')
+      labelledNodes: document.querySelectorAll('#site-graph .site-graph-node[data-node-id] .site-graph-label').length,
+      graphNodes: document.querySelectorAll('#site-graph .site-graph-node[data-node-id]').length,
+      revealActive: document.body.classList.contains('is-atlas-reveal'),
+      topology: document.body.dataset.atlasTopology
     }));
     expect(mobile.snapshot.mobile).toBe(true);
     expect(mobile.snapshot.revealedWaves).toContain('labels');
     expect(mobile.deepLabelsTotal).toBeGreaterThan(0);
     expect(mobile.intermediateLabelsTotal).toBeGreaterThan(0);
-    expect(mobile.deepLabelsPrepared).toBe(mobile.deepLabelsTotal);
-    expect(mobile.intermediateLabelsPrepared).toBe(mobile.intermediateLabelsTotal);
+    expect(mobile.labelledNodes).toBe(mobile.graphNodes);
     expect(mobile.revealActive).toBe(true);
+    expect(mobile.topology).toBe('entry-full');
 
     const ready = await waitReady(page);
     expect(ready.graphMode).toBe('atlas');

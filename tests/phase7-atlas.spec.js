@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 
 const COMPUTATIONAL_ROUTE = 'knowledge/logic-math/mathematical-logic/computational-logic';
 const COMPUTATIONAL_NODE = 'computational-logic';
-const ANCESTOR_LABEL_POSE = ['end', '-15', '4'];
+const ANCESTOR_LABEL_POSE = ['start', '17', '4'];
 
 const bypassIntro = async page => {
   await page.addInitScript(() => sessionStorage.setItem('profileIntroSeen', 'true'));

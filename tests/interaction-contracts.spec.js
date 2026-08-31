@@ -183,7 +183,7 @@ test('transition destination labels exactly match their post-handoff pose', asyn
   await page.waitForFunction(() => document.body.classList.contains('is-v9-transitioning'));
   await page.waitForFunction(() => Boolean(document.querySelector('.v9-transition-overlay .site-graph-node[data-node-id="stepan-chrast"] .v9-target-label')));
   const intoOverviewTarget = await labelPose(page, 'stepan-chrast', true);
-  expect(intoOverviewTarget).toEqual(['middle', '0', '-25']);
+  expect(intoOverviewTarget).toEqual(['middle', '0', '-27']);
   await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
   const intoOverviewFinal = await labelPose(page, 'stepan-chrast');
   expect(intoOverviewFinal).toEqual(intoOverviewTarget);

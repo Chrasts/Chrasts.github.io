@@ -64,10 +64,14 @@ test.describe('Phase D scene composition', () => {
     });
     await page.mouse.click(point.x, point.y);
     await expect(detail).toBeHidden();
-    await page.waitForTimeout(120);
-    const after = await gallery.boundingBox();
-    expect(after).not.toBeNull();
-    expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(3);
+
+    // Dismissal triggers a SceneManager refresh and a subsequent composer
+    // reconcile. The invariant is the settled lane, not an arbitrary 120 ms
+    // sample between those two owners.
+    await expect.poll(async () => {
+      const after = await gallery.boundingBox();
+      return after ? Math.abs(after.x - before.x) : Number.POSITIVE_INFINITY;
+    }).toBeLessThanOrEqual(3);
     await expect(gallery).toHaveAttribute('data-scene-side', 'left');
   });
 

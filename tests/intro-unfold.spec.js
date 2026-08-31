@@ -18,6 +18,18 @@ const graphPoints = (page, ids) => page.evaluate(sectionIds => Object.fromEntrie
   return [id, { x: Number(node?.dataset.x), y: Number(node?.dataset.y) }];
 })), ids);
 
+const waitCanonicalOverview = (page, ids) => page.waitForFunction(sectionIds => {
+  if (!window.ProfileGeometry?.overviewPoint) return false;
+  return sectionIds.every(id => {
+    const node = [...document.querySelectorAll(`#site-graph .site-graph-node[data-node-id="${id}"]`)]
+      .find(element => !element.closest('.v9-transition-overlay'));
+    const canonical = window.ProfileGeometry.overviewPoint(id);
+    if (!node || !canonical) return false;
+    return Math.abs(Number(node.dataset.x) - canonical.x) < .05 &&
+      Math.abs(Number(node.dataset.y) - canonical.y) < .05;
+  });
+}, ids);
+
 test.describe('V3.1 entry retirement guards', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
@@ -59,6 +71,7 @@ test.describe('Phase H practical Overview preserves root inspector geometry', ()
     await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
 
     const ids = ['work', 'knowledge', 'education', 'about', 'experience'];
+    await waitCanonicalOverview(page, ids);
     const before = await graphPoints(page, ids);
 
     await page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]').click();

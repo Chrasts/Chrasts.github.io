@@ -85,6 +85,24 @@
     return true;
   }
 
+  // A double-click on an ambient artifact can deliver its second click after the
+  // first click has already materialised the shared viewer under the pointer.
+  // That second click must not be reinterpreted as an intentional backdrop
+  // dismissal while the same focus transition is still moving in. Explicit
+  // close controls remain available throughout the transition.
+  window.addEventListener('click', event => {
+    const current = window.ProfileArtifactScenes?.viewer || document.querySelector('.artifact-focus-viewer');
+    if (!current || current.hidden) return;
+    const phase = current.dataset.sharedFocusPhase || '';
+    if (!['preparing', 'moving-in'].includes(phase)) return;
+    if (event.target?.closest?.('[data-artifact-viewer-close="true"]')) return;
+    const emptyStage = event.target?.classList?.contains('artifact-focus-media') ||
+      event.target?.classList?.contains('artifact-focus-backdrop');
+    if (!emptyStage) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }, true);
+
   window.addEventListener('profile:artifact-scenes-ready', schedule);
   window.addEventListener('profile:object-focus-ready', schedule);
   window.addEventListener('resize', schedule);

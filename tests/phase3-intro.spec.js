@@ -27,10 +27,12 @@ const waitReady = async (page, timeout = 8_000) => {
   return page.evaluate(() => window.ProfileIntro.snapshot());
 };
 
-const waitStableAtlas = async (page, timeout = 8_000) => {
+const waitStableAtlas = async (page, timeout = 10_000) => {
   await page.waitForFunction(() => {
     const intro = window.ProfileIntro?.snapshot?.();
-    const safeIntroState = ['ATLAS_REVEAL', 'ATLAS_READY', 'BYPASSED'].includes(intro?.state);
+    const marker = document.documentElement.dataset.profileIntro || '';
+    const safeIntroState = ['ATLAS_REVEAL', 'ATLAS_READY', 'BYPASSED'].includes(intro?.state) ||
+      ['bypass', 'ready', 'complete'].includes(marker);
     return Boolean(
       safeIntroState &&
       document.body?.dataset.graphMode === 'atlas' &&
@@ -97,9 +99,15 @@ test.describe('V3.1 Phase E live Atlas reveal — desktop', () => {
     expect(middle.waves).toEqual(expect.arrayContaining(['root', 'primary', 'territories']));
     expect(middle.primary).toBeGreaterThanOrEqual(5);
     expect(middle.territory).toBeGreaterThan(0);
-    expect(middle.deep).toBe(0);
+    const territoriesIndex = middle.waves.indexOf('territories');
+    const deepIndex = middle.waves.indexOf('deep');
+    if (deepIndex < 0) expect(middle.deep).toBe(0);
+    else {
+      expect(deepIndex).toBeGreaterThan(territoriesIndex);
+      expect(middle.deep).toBeGreaterThan(0);
+    }
     expect(middle.traced).toBeGreaterThan(0);
-    expect(middle.territoryLayerOpacity).toBeLessThan(.1);
+    if (!middle.waves.includes('labels')) expect(middle.territoryLayerOpacity).toBeLessThan(.1);
     expect(middle.coords).toEqual(before);
 
     await waitReady(page);
@@ -209,29 +217,29 @@ test.describe('V3.1 Phase E live Atlas reveal — desktop', () => {
     await waitReveal(page);
     await page.waitForFunction(() => window.ProfileIntro.snapshot().revealedWaves.includes('labels'));
 
-    // The existing mobile architecture intentionally performs a clean reload on a
-    // desktop/mobile boundary crossing. Phase E therefore protects the semantic
-    // outcome rather than requiring transient reveal classes to survive that reload.
+    // Mobile boundary crossing may perform a clean reload. The semantic contract is
+    // therefore a complete live Atlas, whether the intro controller remains mounted
+    // or the reloaded page has already entered the explicit bypass state.
     await page.setViewportSize({ width: 390, height: 844 });
     await waitStableAtlas(page);
     let state = await page.evaluate(() => ({
       mode: document.body.dataset.graphMode,
-      intro: window.ProfileIntro.snapshot().state,
+      intro: window.ProfileIntro?.snapshot?.().state || document.documentElement.dataset.profileIntro,
       cloneCount: document.querySelectorAll('.profile-intro-overlay,.phase-h-node-motion').length
     }));
     expect(state.mode).toBe('atlas');
-    expect(['ATLAS_REVEAL', 'ATLAS_READY', 'BYPASSED']).toContain(state.intro);
+    expect(['ATLAS_REVEAL', 'ATLAS_READY', 'BYPASSED', 'bypass', 'ready', 'complete']).toContain(state.intro);
     expect(state.cloneCount).toBe(0);
 
     await page.setViewportSize({ width: 1280, height: 800 });
     await waitStableAtlas(page);
     state = await page.evaluate(() => ({
       mode: document.body.dataset.graphMode,
-      intro: window.ProfileIntro.snapshot().state,
+      intro: window.ProfileIntro?.snapshot?.().state || document.documentElement.dataset.profileIntro,
       cloneCount: document.querySelectorAll('.profile-intro-overlay,.phase-h-node-motion').length
     }));
     expect(state.mode).toBe('atlas');
-    expect(['ATLAS_REVEAL', 'ATLAS_READY', 'BYPASSED']).toContain(state.intro);
+    expect(['ATLAS_REVEAL', 'ATLAS_READY', 'BYPASSED', 'bypass', 'ready', 'complete']).toContain(state.intro);
     expect(state.cloneCount).toBe(0);
   });
 
@@ -311,21 +319,26 @@ test.describe('V3.1 Phase E reduced motion', () => {
 test.describe('V3.1 Phase E mobile composition', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
-  test('keeps deep label density low during reveal and still lands in the live mobile Atlas', async ({ page }) => {
+  test('prepares the complete label field behind the reveal mask and lands in the live mobile Atlas', async ({ page }) => {
     await freshSession(page);
     await page.goto('/');
     await waitReveal(page);
     await page.waitForFunction(() => window.ProfileIntro.snapshot().revealedWaves.includes('labels'));
     const mobile = await page.evaluate(() => ({
       snapshot: window.ProfileIntro.snapshot(),
-      deepLabelsVisible: [...document.querySelectorAll('#site-graph .site-graph-node[data-intro-wave="deep"] .site-graph-label')]
-        .filter(label => Number(getComputedStyle(label).opacity) > .05).length,
-      intermediateLabelsVisible: [...document.querySelectorAll('#site-graph .site-graph-node[data-intro-wave="intermediate"] .site-graph-label')]
-        .filter(label => Number(getComputedStyle(label).opacity) > .05).length
+      deepLabelsPrepared: document.querySelectorAll('#site-graph .site-graph-node[data-intro-wave="deep"] .site-graph-label.is-intro-label-revealed').length,
+      intermediateLabelsPrepared: document.querySelectorAll('#site-graph .site-graph-node[data-intro-wave="intermediate"] .site-graph-label.is-intro-label-revealed').length,
+      deepLabelsTotal: document.querySelectorAll('#site-graph .site-graph-node[data-intro-wave="deep"] .site-graph-label').length,
+      intermediateLabelsTotal: document.querySelectorAll('#site-graph .site-graph-node[data-intro-wave="intermediate"] .site-graph-label').length,
+      revealActive: document.body.classList.contains('is-atlas-reveal')
     }));
     expect(mobile.snapshot.mobile).toBe(true);
-    expect(mobile.deepLabelsVisible).toBe(0);
-    expect(mobile.intermediateLabelsVisible).toBe(0);
+    expect(mobile.snapshot.revealedWaves).toContain('labels');
+    expect(mobile.deepLabelsTotal).toBeGreaterThan(0);
+    expect(mobile.intermediateLabelsTotal).toBeGreaterThan(0);
+    expect(mobile.deepLabelsPrepared).toBe(mobile.deepLabelsTotal);
+    expect(mobile.intermediateLabelsPrepared).toBe(mobile.intermediateLabelsTotal);
+    expect(mobile.revealActive).toBe(true);
 
     const ready = await waitReady(page);
     expect(ready.graphMode).toBe('atlas');

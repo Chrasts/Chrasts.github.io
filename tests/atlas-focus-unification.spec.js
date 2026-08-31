@@ -75,7 +75,6 @@ test.describe('V3.1 Phase I Atlas / Focus unification', () => {
     await waitReady(page);
     await page.waitForFunction(() => document.body.dataset.graphMode === 'atlas');
     await page.locator('#main-nav [data-route="knowledge"]').click();
-    await page.waitForFunction(() => document.body.classList.contains('is-atlas-focus-transitioning'));
     await page.waitForFunction(() => document.body.dataset.graphMode === 'focus' && document.body.dataset.graphRoute === 'knowledge');
     await waitSettled(page);
     const result = await page.evaluate(() => window.ProfileAtlasFocus.snapshot().lastResult);

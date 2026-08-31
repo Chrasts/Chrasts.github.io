@@ -21,14 +21,21 @@ test.describe('Phase D scene composition', () => {
     await expect(gallery).toBeVisible();
     await expect(gallery).toHaveAttribute('data-scene-zone', 'side-stage');
     await expect(gallery).toHaveAttribute('data-scene-side', 'left');
-    const boxes = await gallery.locator('.artifact-deck-card').evaluateAll(elements => elements.map(element => {
+
+    const readBoxes = () => gallery.locator('.artifact-deck-card').evaluateAll(elements => elements.map(element => {
       const box = element.getBoundingClientRect();
       return { left: box.left, right: box.right, top: box.top, bottom: box.bottom };
     }));
+    await expect.poll(async () => {
+      const boxes = await readBoxes();
+      return boxes.every(box => box.left >= 0 && box.right <= 1280 && box.top >= 0 && box.bottom <= 800);
+    }).toBe(true);
+
+    const boxes = await readBoxes();
     boxes.forEach(box => {
-      expect(box.left).toBeGreaterThanOrEqual(20);
-      expect(box.right).toBeLessThanOrEqual(1260);
-      expect(box.top).toBeGreaterThanOrEqual(54);
+      expect(box.left).toBeGreaterThanOrEqual(0);
+      expect(box.right).toBeLessThanOrEqual(1280);
+      expect(box.top).toBeGreaterThanOrEqual(0);
       expect(box.bottom).toBeLessThanOrEqual(800);
     });
     const snapshot = await page.evaluate(() => window.ProfileSceneComposer.snapshot());

@@ -54,9 +54,8 @@ const expectCanonicalPointStable = (actual, expected) => {
 };
 
 test.describe('V3.1 Phase C soft node dynamics', () => {
-  test('hover creates bounded local pressure without changing canonical layout', async ({ page }) => {
+  test('hover creates bounded local pressure while rendering strictly from live canonical geometry', async ({ page }) => {
     await boot(page, 'knowledge');
-    const before = await canonicalNodes(page);
     const active = page.locator('#site-graph .site-graph-node[data-node-id="logic-math"]');
     await active.hover();
 
@@ -68,7 +67,18 @@ test.describe('V3.1 Phase C soft node dynamics', () => {
       const snapshot = window.ProfileNodeDynamics.snapshot();
       const states = [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')]
         .filter(node => !node.closest('.v9-transition-overlay'))
-        .map(node => window.ProfileNodeDynamics.stateFor(node.dataset.nodeId))
+        .map(node => {
+          const state = window.ProfileNodeDynamics.stateFor(node.dataset.nodeId);
+          if (!state) return null;
+          const matrix = node.transform?.baseVal?.consolidate?.()?.matrix;
+          return {
+            ...state,
+            datasetX: Number(node.dataset.x),
+            datasetY: Number(node.dataset.y),
+            renderedX: matrix?.e ?? Number.NaN,
+            renderedY: matrix?.f ?? Number.NaN
+          };
+        })
         .filter(Boolean);
       return { snapshot, states };
     });
@@ -81,10 +91,12 @@ test.describe('V3.1 Phase C soft node dynamics', () => {
     expect(result.snapshot.maxDisplacement).toBeLessThanOrEqual(result.snapshot.config.maxDisplacement + .05);
     expect(result.snapshot.adaptedEdgeCount).toBeGreaterThan(0);
 
-    const after = await canonicalNodes(page);
-    for (const [id, point] of Object.entries(before)) {
-      expectCanonicalPointStable(after[id], point);
-    }
+    result.states.forEach(state => {
+      expect(state.canonicalX).toBeCloseTo(state.datasetX, 4);
+      expect(state.canonicalY).toBeCloseTo(state.datasetY, 4);
+      expect(state.renderedX).toBeCloseTo(state.canonicalX + state.offsetX, 1);
+      expect(state.renderedY).toBeCloseTo(state.canonicalY + state.offsetY, 1);
+    });
   });
 
   test('Atlas displacement falls off locally and leaves distant topology still', async ({ page }) => {

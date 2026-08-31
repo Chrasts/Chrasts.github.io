@@ -148,7 +148,10 @@
     window.addEventListener('profile:transition-begin', schedule);
     window.addEventListener('profile:transition-finish', schedule);
     window.addEventListener('profile:transition-cancel', schedule);
-    window.addEventListener('profile:graph-navigation', schedule);
+    // Navigation handoff is a structural state boundary, not high-frequency input.
+    // Reconcile it synchronously so node/edge/halo materiality becomes atomic with
+    // the published settle phase; pointer-driven updates remain RAF-throttled.
+    window.addEventListener('profile:graph-navigation', syncNow);
     window.addEventListener('profile:graph-render-settled', schedule);
 
     schedule();

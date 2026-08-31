@@ -162,10 +162,11 @@ test.describe('Intro entry experience master contract', () => {
       const portrait = rootNode.querySelector(':scope > [data-root-entry-portrait]');
       const hit = rootNode.querySelector(':scope > .site-graph-hit');
       const rootMatrix = rootNode.getScreenCTM();
+      const profileButton = document.querySelector('.graph-routebar .atlas-button');
       return {
         viewport: { width: innerWidth, height: innerHeight },
         graph: graph.getBoundingClientRect().toJSON(),
-        profileButton: getComputedStyle(document.querySelector('.graph-routebar .atlas-button')).display,
+        profileButtonVisible: Boolean(profileButton?.getClientRects().length),
         routebar: getComputedStyle(document.querySelector('.graph-routebar')).display,
         quickOverview: getComputedStyle(document.querySelector('.quick-overview-global-trigger')).display,
         controls: getComputedStyle(document.querySelector('#atlas-controls')).display,
@@ -178,7 +179,7 @@ test.describe('Intro entry experience master contract', () => {
     });
     expect(settled.graph.width).toBeGreaterThanOrEqual(settled.viewport.width - 1);
     expect(settled.graph.height).toBeGreaterThanOrEqual(settled.viewport.height - 1);
-    expect(settled.profileButton).toBe('none');
+    expect(settled.profileButtonVisible).toBe(false);
     expect(settled.routebar).toBe('none');
     expect(settled.quickOverview).toBe('none');
     expect(settled.controls).toBe('none');

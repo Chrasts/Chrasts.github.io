@@ -32,7 +32,6 @@
   let applyCount = 0;
   let correctedWrites = 0;
   let lastReason = null;
-  let observer = null;
 
   const setTextPose = (element, anchor, x, y) => {
     if (!element) return 0;
@@ -56,10 +55,8 @@
     let changed = 0;
     transitionNodes().forEach(node => {
       if (!ancestorIds.has(node.dataset.nodeId)) return;
-      const targetLabel = node.querySelector('.v9-target-label');
-      const targetMeta = node.querySelector('.v9-target-meta');
-      changed += setTextPose(targetLabel, 'start', 17, 4);
-      changed += setTextPose(targetMeta, 'start', 17, 20);
+      changed += setTextPose(node.querySelector('.v9-target-label'), 'start', 17, 4);
+      changed += setTextPose(node.querySelector('.v9-target-meta'), 'start', 17, 20);
     });
     return changed;
   };
@@ -113,33 +110,7 @@
     return true;
   };
 
-  const installObserver = () => {
-    const root = document.querySelector('#site-graph');
-    if (!root || observer) return false;
-    observer = new MutationObserver(records => {
-      if (guard || document.body?.dataset.graphMode !== 'focus') return;
-      const relevant = records.some(record =>
-        record.type === 'childList' ||
-        record.target?.classList?.contains('site-graph-label') ||
-        record.target?.classList?.contains('site-graph-meta') ||
-        record.target?.classList?.contains('v9-target-label') ||
-        record.target?.classList?.contains('v9-target-meta')
-      );
-      if (relevant) schedule('label-mutation');
-    });
-    observer.observe(root, {
-      subtree: true,
-      childList: true,
-      attributes: true,
-      attributeFilter: ['text-anchor', 'x', 'y']
-    });
-    return true;
-  };
-
-  addEventListener('profile:graph-render-settled', () => {
-    installObserver();
-    schedule('graph-render-settled');
-  });
+  addEventListener('profile:graph-render-settled', () => schedule('graph-render-settled'));
   addEventListener('profile:geometry-applied', () => schedule('geometry-applied'));
   addEventListener('profile:scene-state', () => schedule('scene-state'));
   addEventListener('profile:transition-begin', () => schedule('transition-begin'));
@@ -155,13 +126,11 @@
       applyCount,
       correctedWrites,
       lastReason,
-      observerActive: Boolean(observer),
       ancestorCount: document.querySelectorAll(
         '#site-graph .site-graph-node[data-local-label-role="ancestor"]:not(.v9-transition-overlay *)'
       ).length
     })
   });
 
-  installObserver();
   schedule('boot');
 })();

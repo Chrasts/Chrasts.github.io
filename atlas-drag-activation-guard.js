@@ -3,6 +3,8 @@
 
   let gesture = null;
   let suppressUntil = 0;
+  let preservedCamera = null;
+  let preserveCameraUntil = 0;
   const inAtlas = () => document.body?.dataset.graphMode === 'atlas';
   const inGraph = target => Boolean(target?.closest?.('#site-graph .site-graph-svg'));
   const selectedNodeId = () =>
@@ -21,6 +23,30 @@
       });
     node.classList.add('is-previewed');
     window.ProfileAtlasLOD?.applyLOD?.();
+    return true;
+  };
+
+  const restoreCamera = () => {
+    if (!preservedCamera || !inAtlas() || performance.now() > preserveCameraUntil) return false;
+    const atlas = window.ProfileAtlasLOD;
+    if (!atlas?.snapshot || !atlas?.setScale || !atlas?.panTo) return false;
+    const current = atlas.snapshot().camera;
+    const changed = !current ||
+      Math.abs(current.x - preservedCamera.x) > .05 ||
+      Math.abs(current.y - preservedCamera.y) > .05 ||
+      Math.abs(current.scale - preservedCamera.scale) > .0005;
+    if (!changed) return true;
+    atlas.setScale(preservedCamera.scale, { immediate: true, preserveTopology: true });
+    atlas.panTo(preservedCamera.x, preservedCamera.y, { immediate: true, preserveTopology: true });
+    return true;
+  };
+
+  const captureCameraForControlRerender = () => {
+    const camera = window.ProfileAtlasLOD?.snapshot?.().camera;
+    if (!camera) return false;
+    preservedCamera = { ...camera };
+    preserveCameraUntil = performance.now() + 1600;
+    requestAnimationFrame(() => requestAnimationFrame(restoreCamera));
     return true;
   };
 
@@ -60,13 +86,24 @@
     event.stopImmediatePropagation();
   }, true);
 
+  document.addEventListener('change', event => {
+    if (!inAtlas() || !event.target.closest?.('#atlas-controls input')) return;
+    captureCameraForControlRerender();
+  }, true);
+  window.addEventListener('profile:graph-render-settled', () => {
+    if (!inAtlas() || !preservedCamera || performance.now() > preserveCameraUntil) return;
+    requestAnimationFrame(restoreCamera);
+  });
+
   window.ProfileAtlasDragActivationGuard = Object.freeze({
     isSuppressed: () => performance.now() < suppressUntil,
     snapshot: () => ({
       active: Boolean(gesture),
       selectedNodeId: gesture?.selectedNodeId || null,
       suppressUntil,
-      suppressed: performance.now() < suppressUntil
+      suppressed: performance.now() < suppressUntil,
+      preservedCamera: preservedCamera ? { ...preservedCamera } : null,
+      preservingCamera: Boolean(preservedCamera && performance.now() < preserveCameraUntil)
     })
   });
 })();

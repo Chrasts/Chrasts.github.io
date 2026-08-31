@@ -234,7 +234,7 @@ test.describe('V3.1 Phase F mobile / reduced motion', () => {
     const page = await context.newPage();
     await bootAtlas(page);
 
-    await rootHit(page).click({ force: true });
+    await rootHit(page).tap({ force: true });
     await page.waitForFunction(() =>
       document.body.dataset.graphMode === 'overview' &&
       document.body.dataset.rootLanding === 'false' &&

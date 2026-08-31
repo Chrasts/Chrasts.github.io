@@ -314,8 +314,8 @@
         });
         const label = elements.get(node.id)?.querySelector('.site-graph-label');
         if (label) {
-          label.setAttribute('text-anchor', 'end');
-          label.setAttribute('x', '-15');
+          label.setAttribute('text-anchor', 'start');
+          label.setAttribute('x', '17');
           label.setAttribute('y', '4');
         }
       });
@@ -453,7 +453,7 @@
     if (activeTransition === current) activeTransition = null;
     current?.overlay?.remove();
     const camera = graphCamera();
-    camera?.style.removeProperty('opacity');
+    camera?.style.removeProperty?.('opacity');
     current?.camera?.style?.removeProperty?.('opacity');
     document.body.classList.remove('is-v9-transitioning');
     window.ProfileMotionPolicy?.setForceSnap?.(false);
@@ -478,7 +478,7 @@
     pending = null;
     activeTransition = null;
     const camera = graphCamera();
-    camera?.style.removeProperty('opacity');
+    camera?.style.removeProperty?.('opacity');
     document.body.classList.remove('is-v9-transitioning');
     window.ProfileMotionPolicy?.setForceSnap?.(false);
     carriedSnapshot = snapshot;

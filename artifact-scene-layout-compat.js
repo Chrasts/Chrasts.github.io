@@ -2,7 +2,65 @@
   const boot = () => {
     const composer = window.ProfileSceneComposer;
     const runtime = window.ProfileArtifactScenes;
-    if (!composer || !runtime || window.ProfileArtifactSceneLayout) return false;
+    const Composer = window.SceneComposer;
+    if (!composer || !runtime || !Composer?.prototype || window.ProfileArtifactSceneLayout) return false;
+
+    /* SceneComposer correctly recomputes available side-stage width whenever an
+       inspector opens or closes. That width may change, but an already resolved
+       artifact lane should not slide horizontally on the same route merely
+       because the corridor became less constrained. Preserve the last settled
+       offset when it is still viewport-safe; containment keeps priority if the
+       old position would clip. */
+    if (!Composer.prototype.__artifactLaneOffsetGuard) {
+      Composer.prototype.__artifactLaneOffsetGuard = true;
+      const originalContainAssignment = Composer.prototype.containAssignment;
+      const settledOffsets = new Map();
+
+      Composer.prototype.containAssignment = function artifactLaneContainment(assignment, context) {
+        const previous = settledOffsets.get(assignment.id);
+        originalContainAssignment.call(this, assignment, context);
+
+        const eligible = Boolean(
+          assignment.request?.role === 'artifact' &&
+          assignment.zone === 'side-stage' &&
+          context.variant !== 'mobile' &&
+          previous?.route === context.route &&
+          previous?.side === assignment.side &&
+          Number.isFinite(previous?.offset) &&
+          Number.isFinite(assignment.offset)
+        );
+
+        if (eligible && Math.abs(assignment.offset - previous.offset) > .5) {
+          const property = assignment.side === 'left' ? 'left' : 'right';
+          const currentOffset = assignment.offset;
+          assignment.offset = previous.offset;
+          assignment.element.style.setProperty(property, `${Math.round(previous.offset)}px`, 'important');
+
+          const bounds = this.visualBounds(assignment.request);
+          const margin = assignment.request.viewportMargin || 0;
+          const viewportSafe = Boolean(bounds &&
+            bounds.left >= context.canvas.left + margin - .5 &&
+            bounds.right <= context.canvas.right - margin + .5 &&
+            bounds.top >= context.canvas.top + margin - .5 &&
+            bounds.bottom <= context.canvas.bottom - margin + .5);
+
+          if (!viewportSafe) {
+            assignment.offset = currentOffset;
+            assignment.element.style.setProperty(property, `${Math.round(currentOffset)}px`, 'important');
+          }
+        }
+
+        if (assignment.request?.role === 'artifact' && assignment.zone === 'side-stage' && Number.isFinite(assignment.offset)) {
+          settledOffsets.set(assignment.id, {
+            route: context.route,
+            side: assignment.side,
+            offset: assignment.offset
+          });
+        }
+      };
+
+      window.addEventListener('resize', () => settledOffsets.clear());
+    }
 
     const snapshot = () => {
       const composition = composer.snapshot();

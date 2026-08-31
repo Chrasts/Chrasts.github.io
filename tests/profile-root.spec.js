@@ -43,9 +43,7 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
       await expect(page.locator(`#site-graph .site-graph-node[data-node-id="${id}"][data-profile-root-branch="true"]`)).toBeVisible();
     }
 
-    const portraitOpacity = await page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .root-entry-portrait')
-      .evaluate(node => Number(getComputedStyle(node).opacity));
-    expect(portraitOpacity).toBeLessThan(.05);
+    await expect(page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .root-entry-portrait')).toHaveCount(0);
   });
 
   test('Quick overview preserves route and camera and restores focus after Escape', async ({ page }) => {

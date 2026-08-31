@@ -15,11 +15,13 @@ const boot = async (page, route = 'knowledge', { reducedMotion = false, viewport
 const canonicalNodes = page => page.evaluate(() => Object.fromEntries(
   [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id]')]
     .filter(node => !node.closest('.v9-transition-overlay'))
-    .map(node => [node.dataset.nodeId, {
-      x: Number(node.dataset.x),
-      y: Number(node.dataset.y),
-      transform: node.getAttribute('transform')
-    }])
+    .map(node => {
+      const state = window.ProfileNodeDynamics.stateFor(node.dataset.nodeId);
+      return [node.dataset.nodeId, {
+        x: Number.isFinite(state?.canonicalX) ? state.canonicalX : Number(node.dataset.x),
+        y: Number.isFinite(state?.canonicalY) ? state.canonicalY : Number(node.dataset.y)
+      }];
+    })
 ));
 
 const retargetPointer = (page, id) => page.evaluate(nextId => {
@@ -47,11 +49,8 @@ const retargetPointer = (page, id) => page.evaluate(nextId => {
 const displacement = state => Math.hypot(state.offsetX, state.offsetY);
 
 const expectCanonicalPointStable = (actual, expected) => {
-  // The canonical geometry owner may normalize floating source coordinates to
-  // renderer precision during an unrelated mutation pass (e.g. 250.0026 → 250).
-  // A hundredth-unit tolerance still detects any meaningful dynamics write.
-  expect(actual.x).toBeCloseTo(expected.x, 2);
-  expect(actual.y).toBeCloseTo(expected.y, 2);
+  expect(actual.x).toBeCloseTo(expected.x, 4);
+  expect(actual.y).toBeCloseTo(expected.y, 4);
 };
 
 test.describe('V3.1 Phase C soft node dynamics', () => {
@@ -63,8 +62,6 @@ test.describe('V3.1 Phase C soft node dynamics', () => {
 
     await expect.poll(() => page.evaluate(() => window.ProfileNodeDynamics.snapshot().activeNodeId)).toBe('logic-math');
     await expect.poll(() => page.evaluate(() => window.ProfileNodeDynamics.snapshot().maxDisplacement)).toBeGreaterThan(.75);
-    // Position and scale are independent springs. Wait for the semantic active
-    // scale response too instead of sampling whichever spring crosses first.
     await expect.poll(() => page.evaluate(() => window.ProfileNodeDynamics.stateFor('logic-math')?.scale || 1)).toBeGreaterThan(1.02);
 
     const result = await page.evaluate(() => {
@@ -125,9 +122,6 @@ test.describe('V3.1 Phase C soft node dynamics', () => {
     const before = await canonicalNodes(page);
     await page.evaluate(() => window.ProfileAtlasLOD?.setScale?.(1.8, { immediate: true }));
 
-    // Exercise the interaction contract directly: after zoom, some semantic nodes are
-    // intentionally outside the physical viewport, but the state/dynamics pipeline must
-    // still handle rapid retargeting without retaining overlapping fields.
     await retargetPointer(page, 'knowledge');
     await expect.poll(() => page.evaluate(() => window.ProfileNodeDynamics.snapshot().activeNodeId)).toBe('knowledge');
     await retargetPointer(page, 'experience');

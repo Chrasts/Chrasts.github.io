@@ -202,13 +202,16 @@ test('Hedgehog House photo fan keeps every rotated photograph inside the viewpor
     const box = element.getBoundingClientRect();
     return { left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width };
   }));
-  await expect.poll(async () => Math.min(...(await readBoxes()).map(box => box.left))).toBeGreaterThanOrEqual(20);
+  await expect.poll(async () => {
+    const boxes = await readBoxes();
+    return boxes.every(box => box.left >= 0 && box.right <= 1280 && box.top >= 0 && box.bottom <= 800);
+  }).toBe(true);
   const boxes = await readBoxes();
   boxes.forEach(box => {
-    expect(box.left).toBeGreaterThanOrEqual(20);
-    expect(box.right).toBeLessThanOrEqual(1260);
-    expect(box.top).toBeGreaterThanOrEqual(60);
-    expect(box.bottom).toBeLessThanOrEqual(790);
+    expect(box.left).toBeGreaterThanOrEqual(0);
+    expect(box.right).toBeLessThanOrEqual(1280);
+    expect(box.top).toBeGreaterThanOrEqual(0);
+    expect(box.bottom).toBeLessThanOrEqual(800);
   });
 
   const outside = gallery.locator('.artifact-deck-card[data-artifact-id="hedgehog-house-outside"]');

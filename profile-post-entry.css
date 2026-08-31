@@ -23,3 +23,11 @@ body[data-graph-mode="overview"][data-root-landing="false"] .root-entry-action{
   pointer-events:none!important;
   visibility:hidden!important
 }
+
+/* Entry Atlas intentionally has no ordinary navigation utilities. The routebar
+   already owns the rendered visibility boundary; make the utility itself
+   non-rendered as well so descendants cannot report a misleading display value
+   while their parent is hidden. Normal exploratory Atlas is unaffected. */
+body[data-entry-state="ready"][data-graph-mode="atlas"] .quick-overview-global-trigger{
+  display:none!important
+}

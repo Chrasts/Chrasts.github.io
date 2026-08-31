@@ -61,6 +61,32 @@
     return changed;
   };
 
+  const applyOverviewTransitionRoot = (reason = 'overview-transition') => {
+    if (document.body?.dataset.graphMode !== 'overview') return false;
+    if (normaliseRoute(document.body.dataset.graphRoute || location.hash) !== 'overview') return false;
+    let changed = 0;
+    transitionNodes().forEach(node => {
+      if (node.dataset.nodeId !== rootId) return;
+      changed += setTextPose(node.querySelector('.v9-target-label'), 'middle', 0, -27);
+    });
+    if (changed) {
+      correctedWrites += changed;
+      lastReason = reason;
+    }
+    return Boolean(changed);
+  };
+
+  const scheduleOverviewTransitionRoot = reason => {
+    // SceneTransitions announces prepare synchronously before GraphTransitions
+    // creates its label-morph nodes. A microtask therefore runs after that same
+    // transition task has materialised .v9-target-label, but before the next
+    // painted frame can expose the old generic -25 root pose.
+    queueMicrotask(() => {
+      applyOverviewTransitionRoot(`${reason}:microtask`);
+      requestAnimationFrame(() => applyOverviewTransitionRoot(`${reason}:frame`));
+    });
+  };
+
   const apply = (reason = 'api') => {
     if (guard || document.body?.dataset.graphMode !== 'focus') return false;
     const target = routeNode(normaliseRoute(document.body.dataset.graphRoute || location.hash));
@@ -114,6 +140,10 @@
   addEventListener('profile:geometry-applied', () => schedule('geometry-applied'));
   addEventListener('profile:scene-state', () => schedule('scene-state'));
   addEventListener('profile:transition-begin', () => schedule('transition-begin'));
+  addEventListener('profile:transition-prepare', () => {
+    schedule('transition-prepare');
+    scheduleOverviewTransitionRoot('transition-prepare');
+  });
   addEventListener('profile:transition-finish', () => schedule('transition-finish'));
   addEventListener('profile:transition-cancel', () => schedule('transition-cancel'));
   addEventListener('hashchange', () => schedule('hashchange'));

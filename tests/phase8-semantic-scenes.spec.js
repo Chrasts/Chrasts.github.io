@@ -81,7 +81,9 @@ test('Phase 8 ESSLLI scene renders the selected timetable and semantic topic lin
   await expect(timetable.locator('.phase8-timetable-week')).toHaveCount(2);
   await expect(timetable.locator('.phase8-course-cell')).toHaveCount(6);
   await expect(timetable).toContainText('Introduction to SAT and SMT Solving');
-  await expect(timetable.locator('[data-route="knowledge/logic-math/mathematical-logic/computational-logic"]')).toBeVisible();
+  const computationalLinks = timetable.locator('[data-route="knowledge/logic-math/mathematical-logic/computational-logic"]');
+  expect(await computationalLinks.count()).toBeGreaterThan(0);
+  await expect(computationalLinks.first()).toBeVisible();
 });
 
 test('Phase 8 mobile semantic tray stays inside the viewport without document scroll', async ({ page }) => {

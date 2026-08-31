@@ -25,7 +25,7 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
     await bootOverview(page);
     const state = await page.evaluate(() => window.ProfileRootOverview.snapshot());
     expect(state.branchCount).toBe(5);
-    expect(state.rootMaterial).toBe('shared-root');
+    expect(state.rootPresent).toBe(true);
     expect(state.cvState).toBe('request');
     expect(state.professionalLinkCount).toBeGreaterThanOrEqual(4);
 
@@ -97,46 +97,38 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
     expect(await page.evaluate(() => window.ProfileRootOverview.snapshot().visible)).toBe(false);
   });
 
-  test('ATLAS_READY exposes Quick overview without forcing Enter Profile or condensation', async ({ page }) => {
+  test('ATLAS_READY keeps recruiter chrome latent until Profile entry', async ({ page }) => {
     await page.addInitScript(() => sessionStorage.removeItem('profileIntroSeen'));
     await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
     await page.goto('/');
     await page.waitForFunction(() => window.ProfileIntro?.snapshot?.().state === 'ATLAS_READY', null, { timeout: 8_000 });
     await page.waitForFunction(() => window.ProfileRootOverview?.snapshot?.().quickAvailable === true);
 
-    const before = {
-      route: await page.evaluate(() => document.body.dataset.graphRoute),
-      mode: await page.evaluate(() => document.body.dataset.graphMode),
-      camera: await page.evaluate(() => window.ProfileAtlasLOD?.snapshot?.().camera || null),
-      condensation: await page.evaluate(() => window.ProfileAtlasCondensation?.snapshot?.().state || null)
-    };
+    const before = await page.evaluate(() => ({
+      route: document.body.dataset.graphRoute,
+      mode: document.body.dataset.graphMode,
+      camera: window.ProfileAtlasLOD?.snapshot?.().camera || null,
+      condensation: window.ProfileAtlasCondensation?.snapshot?.().state || null
+    }));
     expect(before.mode).toBe('atlas');
     await expect(page.locator('.profile-root-brief')).toBeHidden();
-    await expect(page.locator('.quick-overview-global-trigger')).toBeVisible();
+    await expect(page.locator('.quick-overview-global-trigger')).toBeHidden();
 
-    const trigger = page.locator('.quick-overview-global-trigger');
-    await trigger.focus();
-    await trigger.click();
-    await expect(page.locator('.quick-overview-dialog')).toBeVisible();
-
-    const during = {
-      route: await page.evaluate(() => document.body.dataset.graphRoute),
-      mode: await page.evaluate(() => document.body.dataset.graphMode),
-      camera: await page.evaluate(() => window.ProfileAtlasLOD?.snapshot?.().camera || null),
-      condensation: await page.evaluate(() => window.ProfileAtlasCondensation?.snapshot?.().state || null)
-    };
-    expect(during.route).toBe(before.route);
-    expect(during.mode).toBe('atlas');
-    expect(during.condensation).toBe(before.condensation);
-    if (before.camera && during.camera) {
-      expect(during.camera.x).toBeCloseTo(before.camera.x, 4);
-      expect(during.camera.y).toBeCloseTo(before.camera.y, 4);
-      expect(during.camera.scale).toBeCloseTo(before.camera.scale, 4);
+    await page.waitForTimeout(220);
+    const after = await page.evaluate(() => ({
+      route: document.body.dataset.graphRoute,
+      mode: document.body.dataset.graphMode,
+      camera: window.ProfileAtlasLOD?.snapshot?.().camera || null,
+      condensation: window.ProfileAtlasCondensation?.snapshot?.().state || null
+    }));
+    expect(after.route).toBe(before.route);
+    expect(after.mode).toBe('atlas');
+    expect(after.condensation).toBe(before.condensation);
+    if (before.camera && after.camera) {
+      expect(after.camera.x).toBeCloseTo(before.camera.x, 4);
+      expect(after.camera.y).toBeCloseTo(before.camera.y, 4);
+      expect(after.camera.scale).toBeCloseTo(before.camera.scale, 4);
     }
-
-    await page.keyboard.press('Escape');
-    await expect(trigger).toBeFocused();
-    expect(await page.evaluate(() => document.body.dataset.graphMode)).toBe('atlas');
   });
 });
 

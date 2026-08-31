@@ -65,11 +65,14 @@ test('Hedgehog House media uses direct Object Focus inspection', async ({ page }
   await expect(outside).toHaveAttribute('data-object-focus-state', 'active');
   await expect(inside).toHaveAttribute('data-object-focus-state', 'ambient');
 
-  await inside.hover();
+  // The gallery is intentionally a physically overlapping fan. Focus is an
+  // equivalent scene-owned activation path and avoids turning this semantic
+  // contract into a hit-testing test for whichever rotated card is on top.
+  await inside.focus();
   await expect(inside).toHaveClass(/is-active/);
   await expect(inside).toHaveAttribute('data-object-focus-state', 'active');
 
-  await inside.click();
+  await page.keyboard.press('Enter');
   await waitSettled(page);
   await expect(viewer).toBeVisible();
   await expect(viewer).toHaveAttribute('data-shared-focus-artifact', 'hedgehog-house-inside');

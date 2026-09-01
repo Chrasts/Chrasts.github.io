@@ -5,6 +5,8 @@ const bypassIntro = async page => {
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
 };
 
+const navigate = (page, route) => page.goto(`/#${route}`, { waitUntil: 'domcontentloaded' });
+
 const waitSettled = async page => {
   await page.waitForFunction(() => Boolean(window.ProfileScene && window.ProfileGeometry && window.MobileProfileScene));
   await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
@@ -22,7 +24,7 @@ test.describe('Pre-Phase 8 mobile parity', () => {
 
   test('boots the mobile runtime without changing graph invariants', async ({ page }) => {
     await bypassIntro(page);
-    await page.goto('/#overview');
+    await navigate(page, 'overview');
     await waitSettled(page);
 
     const state = await page.evaluate(() => ({
@@ -45,7 +47,7 @@ test.describe('Pre-Phase 8 mobile parity', () => {
 
   test('deep local routes keep the removed cross-link rail hidden and return cleanly to Overview', async ({ page }) => {
     await bypassIntro(page);
-    await page.goto('/#knowledge/logic-math/mathematical-logic/computational-logic/logic-for-ai');
+    await navigate(page, 'knowledge/logic-math/mathematical-logic/computational-logic/logic-for-ai');
     await waitSettled(page);
 
     await expect(page.locator('.profile-crosslinks')).toBeHidden();
@@ -59,14 +61,12 @@ test.describe('Pre-Phase 8 mobile parity', () => {
       const label = node?.querySelector('.site-graph-label');
       return label ? [label.getAttribute('text-anchor'), label.getAttribute('x'), label.getAttribute('y')] : null;
     });
-    /* Current mobile collision policy gives the root label a 27-unit lift. The
-       contract is the centred, above-root pose; -25 was an older exact offset. */
     expect(rootPose).toEqual(['middle', '0', '-27']);
   });
 
   test('Work exposes mobile filters and remains structurally healthy', async ({ page }) => {
     await bypassIntro(page);
-    await page.goto('/#work');
+    await navigate(page, 'work');
     await waitSettled(page);
 
     await expect(page.locator('.mobile-mode-button')).toHaveText('Filters');
@@ -81,7 +81,7 @@ test.describe('Pre-Phase 8 mobile parity', () => {
 
   test('Atlas has mobile layers, compact Profile return control and lattice-shaped Work territory', async ({ page }) => {
     await bypassIntro(page);
-    await page.goto('/#atlas');
+    await navigate(page, 'atlas');
     await waitSettled(page);
     await page.waitForFunction(() => document.body.dataset.globalGeometry === 'radial-atlas');
     await page.waitForFunction(hasMultipleLiveProjectRanks, null, { timeout: 3_000 });
@@ -119,7 +119,7 @@ test.describe('Pre-Phase 8 desktop regression guard', () => {
 
   test('does not boot mobile runtime on desktop', async ({ page }) => {
     await bypassIntro(page);
-    await page.goto('/#overview');
+    await navigate(page, 'overview');
     await page.waitForFunction(() => Boolean(window.ProfileScene && window.ProfileGeometry));
     await page.waitForTimeout(250);
     const state = await page.evaluate(() => ({

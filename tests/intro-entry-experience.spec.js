@@ -215,7 +215,9 @@ test.describe('Intro entry experience master contract', () => {
     });
     expect(expanded.scale).toBeGreaterThan(3.2);
     expect(expanded.opacity).toBeGreaterThan(.95);
-    expect(expanded.haloDurations.every(duration => duration > 0 && duration < 4)).toBe(true);
+    expect(expanded.haloDurations[0]).toBeGreaterThan(0);
+    expect(expanded.haloDurations[0]).toBeLessThan(4);
+    expect(expanded.haloDurations[1]).toBe(0);
     expect(expanded.haloScales).toHaveLength(2);
     expect(expanded.haloScales[0]).toBeLessThan(idleMaterial.haloScales[0]);
     expect(expanded.haloScales[1]).toBeLessThan(idleMaterial.haloScales[1]);

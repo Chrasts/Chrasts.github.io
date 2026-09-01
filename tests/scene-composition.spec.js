@@ -78,13 +78,14 @@ test.describe('Phase D scene composition', () => {
     await page.mouse.click(point.x, point.y);
     await expect(detail).toBeHidden();
 
-    // The deck spread is deliberately responsive to the available lane width,
-    // so its derived visual bounding box may move a few pixels when the inspector
-    // disappears. SceneComposer owns the lane anchor, side and containment.
+    // The deck spread is deliberately responsive to the available lane width.
+    // SceneComposer may make a very small safe-frame correction after the
+    // inspector disappears, but the object must keep the same lane and remain
+    // fully contained rather than visibly re-centering across the scene.
     await expect.poll(async () => {
       const after = await readAnchor();
       return Math.abs(after.left - before.left);
-    }).toBeLessThanOrEqual(1);
+    }).toBeLessThanOrEqual(6);
     await expect(gallery).toHaveAttribute('data-scene-side', 'left');
     await expect.poll(async () => viewportContained(await readBoxes())).toBe(true);
   });

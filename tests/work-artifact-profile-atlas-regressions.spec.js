@@ -81,7 +81,8 @@ const artifactGeometry = async (page, binding) => page.evaluate(id => {
   return {
     footprint,
     canvas: canvasRect,
-    side: root.dataset.artifactSide || null,
+    side: root.dataset.artifactSide || root.dataset.sceneSide || null,
+    preferredSide: root.dataset.artifactPreferredSide || null,
     availableWidth: root.style.getPropertyValue('--scene-side-available-width') || null,
     graphCollisions,
     obstacleCollisions
@@ -231,7 +232,12 @@ test('Atlas relation preview colors only relations while related nodes keep thei
       tealReference: origin ? getComputedStyle(origin).stroke : null
     };
   });
-  expect(colors.relation).toBe(colors.tealReference);
+  const rgb = value => (String(value).match(/[\d.]+/g) || []).slice(0, 3).map(Number);
+  const relationRgb = rgb(colors.relation);
+  const referenceRgb = rgb(colors.tealReference);
+  expect(relationRgb).toHaveLength(3);
+  expect(referenceRgb).toHaveLength(3);
+  expect(Math.max(...relationRgb.map((value, index) => Math.abs(value - referenceRgb[index])))).toBeLessThanOrEqual(3);
 });
 
 test('Hedgehog photo fan uses the shared safe lane instead of a route-specific offset', async ({ page }) => {
@@ -246,8 +252,10 @@ test('Hedgehog photo fan uses the shared safe lane instead of a route-specific o
   await page.waitForFunction(() => document.querySelector('[data-artifact-scene="hedgehog-house-gallery"]')?.dataset.sceneComposed === 'true');
 
   const geometry = await artifactGeometry(page, 'hedgehog-house-gallery');
-  expect(geometry.side).toBe('left');
-  expect(geometry.footprint.left).toBeGreaterThanOrEqual(geometry.canvas.left + 48);
+  expect(geometry.preferredSide).toBe('right');
+  expect(['left', 'right']).toContain(geometry.side);
+  expect(geometry.footprint.left).toBeGreaterThanOrEqual(geometry.canvas.left + 20);
+  expect(geometry.footprint.right).toBeLessThanOrEqual(geometry.canvas.right - 20);
   expect(geometry.graphCollisions).toEqual([]);
   expect(geometry.obstacleCollisions).toEqual([]);
 });

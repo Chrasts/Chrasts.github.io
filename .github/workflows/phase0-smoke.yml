@@ -138,7 +138,14 @@ jobs:
           retention-days: 7
 
   full-regression:
-    if: github.event_name != 'push'
+    needs: [static-validation, browser-smoke, mobile-webkit-smoke]
+    if: >-
+      ${{
+        always() &&
+        needs.static-validation.result == 'success' &&
+        needs.mobile-webkit-smoke.result == 'success' &&
+        (github.event_name != 'push' || needs.browser-smoke.result == 'success')
+      }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

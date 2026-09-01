@@ -3,18 +3,35 @@ const { test, expect } = require('@playwright/test');
 const boot = async (page, route) => {
   await page.addInitScript(() => sessionStorage.setItem('profileIntroSeen', 'true'));
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
-  await page.goto(`/#${route}`);
+  await page.goto(`/#${route}`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => Boolean(window.ProfileSceneComposer && window.ProfileScene?.manager));
   if (route === 'about/woodworking/hedgehog-house') {
     await page.waitForFunction(() => Boolean(window.ProfileArtifactScenes));
   }
   await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
-  await page.waitForTimeout(260);
 };
 
 const viewportContained = boxes => boxes.every(box =>
   box.left >= 0 && box.right <= 1280 && box.top >= 0 && box.bottom <= 800
 );
+
+const waitStableAnchor = async (page, readAnchor) => {
+  let previous = null;
+  let latest = null;
+  let stableSamples = 0;
+  for (let attempt = 0; attempt < 30 && stableSamples < 3; attempt += 1) {
+    await page.waitForTimeout(100);
+    latest = await readAnchor();
+    const stable = previous &&
+      latest.side === previous.side &&
+      Math.abs(latest.left - previous.left) <= .5 &&
+      Math.abs(latest.availableWidth - previous.availableWidth) <= 1;
+    stableSamples = stable ? stableSamples + 1 : 0;
+    previous = latest;
+  }
+  expect(stableSamples).toBeGreaterThanOrEqual(3);
+  return latest;
+};
 
 test.describe('Phase D scene composition', () => {
   test.use({ viewport: { width: 1280, height: 800 } });
@@ -44,7 +61,7 @@ test.describe('Phase D scene composition', () => {
     expect(snapshot.assignments.find(item => item.id === 'artifact-scene:hedgehog-house-gallery')).toMatchObject({ zone: 'side-stage', side: 'left', preferredSide: 'right', role: 'artifact' });
   });
 
-  test('resolved artifact lane keeps its composer anchor after inspector dismissal', async ({ page }) => {
+  test('resolved artifact lane keeps its settled composer anchor after inspector dismissal', async ({ page }) => {
     await boot(page, 'about/woodworking/hedgehog-house');
     const detail = page.locator('#site-detail-panel');
     const gallery = page.locator('[data-artifact-scene="hedgehog-house-gallery"]');
@@ -60,7 +77,7 @@ test.describe('Phase D scene composition', () => {
       return { left: box.left, right: box.right, top: box.top, bottom: box.bottom };
     }));
 
-    const before = await readAnchor();
+    const before = await waitStableAnchor(page, readAnchor);
     expect(before.side).toBe('left');
     expect(Number.isFinite(before.left)).toBe(true);
 
@@ -78,15 +95,9 @@ test.describe('Phase D scene composition', () => {
     await page.mouse.click(point.x, point.y);
     await expect(detail).toBeHidden();
 
-    // The deck spread is deliberately responsive to the available lane width.
-    // SceneComposer may make a very small safe-frame correction after the
-    // inspector disappears, but the object must keep the same lane and remain
-    // fully contained rather than visibly re-centering across the scene.
-    await expect.poll(async () => {
-      const after = await readAnchor();
-      return Math.abs(after.left - before.left);
-    }).toBeLessThanOrEqual(6);
-    await expect(gallery).toHaveAttribute('data-scene-side', 'left');
+    const after = await waitStableAnchor(page, readAnchor);
+    expect(Math.abs(after.left - before.left)).toBeLessThanOrEqual(6);
+    expect(after.side).toBe('left');
     await expect.poll(async () => viewportContained(await readBoxes())).toBe(true);
   });
 

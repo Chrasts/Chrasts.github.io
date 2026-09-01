@@ -27,13 +27,15 @@
   }
 
   /* Two-card diagrams: keep each card in a stable slot, but compact the spread
-     when the side lane is narrower than the ideal 340px footprint. */
+     when the side lane is narrower than the ideal 340px footprint. This layer
+     owns final scene geometry, so its responsive width must outrank the older
+     Phase-B fixed specimen size. */
   .artifact-object[data-artifact-variant="diagram"]{
     --artifact-diagram-card-width:min(210px,calc(var(--artifact-lane-width) - 28px));
     --artifact-diagram-spread:clamp(14px,calc((var(--artifact-lane-width) - var(--artifact-diagram-card-width))/2),65px)
   }
   .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card{
-    width:var(--artifact-diagram-card-width);
+    width:var(--artifact-diagram-card-width)!important;
     height:205px
   }
   .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(1){
@@ -55,7 +57,7 @@
     --artifact-screen-spread:clamp(14px,calc((var(--artifact-lane-width) - var(--artifact-screen-card-width))/2),73px)
   }
   .artifact-object[data-artifact-variant="screens"] .artifact-deck-card{
-    width:var(--artifact-screen-card-width);
+    width:var(--artifact-screen-card-width)!important;
     height:202px
   }
   .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(1){
@@ -78,7 +80,7 @@
     --artifact-fan-spread:clamp(18px,calc((var(--artifact-lane-width) - var(--artifact-fan-card-width))/2),102px)
   }
   .artifact-object[data-artifact-variant="fan"] .artifact-deck-card{
-    width:var(--artifact-fan-card-width);
+    width:var(--artifact-fan-card-width)!important;
     height:190px
   }
   .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(1){

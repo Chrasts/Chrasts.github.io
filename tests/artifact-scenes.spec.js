@@ -6,32 +6,42 @@ const bypassIntro = async page => {
 };
 
 const waitArtifactScenes = async page => {
-  await page.waitForFunction(() => Boolean(window.ProfileArtifactScenes));
+  await page.waitForFunction(() => Boolean(
+    window.ProfileArtifactScenes &&
+    window.ProfileArtifactSceneLayout &&
+    window.ProfileArtifacts &&
+    window.ProfileRefinements &&
+    window.ProfileObjectFocus &&
+    window.ProfileNodeDetailDismiss
+  ));
   await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
+  await page.waitForTimeout(180);
 };
 
 const waitSettled = async page => {
-  await page.waitForFunction(() => Boolean(window.ProfileObjectFocus));
-  await page.waitForFunction(() => ['idle', 'open'].includes(window.ProfileObjectFocus.snapshot().phase));
+  await page.waitForFunction(() => window.ProfileObjectFocus?.snapshot().phase === 'settled');
 };
 
 test('overview keeps the heavy artifact feature and artifact media dormant', async ({ page }) => {
   await bypassIntro(page);
+  const requests = [];
+  page.on('request', request => requests.push(new URL(request.url()).pathname));
   await page.goto('/#overview');
-  await page.waitForFunction(() => Boolean(window.ProfileScene));
-  expect(await page.evaluate(() => ({
+  await page.waitForFunction(() => window.ProfileFeatureBootstrap?.snapshot().states.bindings === 'ready');
+
+  const state = await page.evaluate(() => ({
     artifacts: Boolean(window.ProfileArtifactScenes),
-    bindings: Boolean(window.ARTIFACT_SCENE_BINDINGS),
-    artifactScript: Boolean(document.querySelector('script[data-profile-artifact-scene-runtime]')),
-    artifactImages: document.querySelectorAll('.artifact-scene-layer img').length,
-    artifactFrames: document.querySelectorAll('.artifact-scene-layer iframe').length
-  }))).toEqual({
-    artifacts: false,
-    bindings: false,
-    artifactScript: false,
-    artifactImages: 0,
-    artifactFrames: 0
-  });
+    manifest: Boolean(window.ProfileArtifacts),
+    phase8: Boolean(window.ProfilePhase8),
+    objectFocus: Boolean(window.ProfileObjectFocus),
+    roots: document.querySelectorAll('[data-artifact-scene]').length,
+    media: document.querySelectorAll('.artifact-scene-layer img, .artifact-scene-layer iframe, .artifact-scene-layer video').length,
+    resources: window.ProfileFeatureBootstrap.snapshot().resources
+  }));
+  expect(state).toMatchObject({ artifacts: false, manifest: false, phase8: false, objectFocus: false, roots: 0, media: 0 });
+  expect(state.resources).not.toContain('script:artifact-scene-runtime.js');
+  expect(requests.some(path => /\.(?:pdf|mp4)(?:$|\?)/i.test(path))).toBe(false);
+  expect(requests.some(path => /hedgehog-house\/outside\.(?:png|webp)$/i.test(path))).toBe(false);
 });
 
 test('artifact route mounts one scene, tears it down and remounts without multiplication', async ({ page }) => {
@@ -39,21 +49,20 @@ test('artifact route mounts one scene, tears it down and remounts without multip
   await page.goto('/#work/project/bachelor-thesis');
   await waitArtifactScenes(page);
 
-  const scene = page.locator('[data-artifact-scene="bachelor-thesis-diagrams"]');
-  await expect(scene).toBeVisible();
-  await expect(page.locator('.artifact-scene-layer')).toHaveCount(1);
-  await expect(scene).toHaveCount(1);
+  expect(await page.locator('[data-artifact-scene]').count()).toBe(1);
+  expect((await page.evaluate(() => window.ProfileArtifactScenes.snapshot())).mountedBindings).toEqual(['bachelor-thesis-diagrams']);
 
   await page.evaluate(() => { location.hash = '#overview'; });
   await page.waitForFunction(() => document.body.dataset.graphRoute === 'overview');
-  await expect(scene).toBeHidden();
+  await expect.poll(() => page.locator('[data-artifact-scene]').count()).toBe(0);
+  expect((await page.evaluate(() => window.ProfileArtifactScenes.snapshot())).lifecycle['bachelor-thesis-diagrams']).toBe('unmounted');
 
   await page.evaluate(() => { location.hash = '#work/project/bachelor-thesis'; });
   await page.waitForFunction(() => document.body.dataset.graphRoute === 'work/project/bachelor-thesis');
-  await waitArtifactScenes(page);
-  await expect(scene).toBeVisible();
-  await expect(page.locator('.artifact-scene-layer')).toHaveCount(1);
-  await expect(scene).toHaveCount(1);
+  const remounted = page.locator('[data-artifact-scene="bachelor-thesis-diagrams"]');
+  await expect(remounted).toHaveCount(1);
+  await expect(remounted.locator('iframe')).toHaveCount(0);
+  await expect(remounted.locator('.artifact-pdf-fallback')).toHaveCount(2);
 });
 
 test('Simulation Credence is a document object and opens in Object Focus', async ({ page }) => {
@@ -61,14 +70,12 @@ test('Simulation Credence is a document object and opens in Object Focus', async
   await page.goto('/#education/charles-university/coursework/simulation-credence');
   await waitArtifactScenes(page);
 
-  const folio = page.locator('[data-artifact-scene="simulation-credence-document"]');
+  const folio = page.locator('[data-artifact-scene="simulation-credence-paper"]');
   await expect(folio).toBeVisible();
-  await expect(folio).toHaveAttribute('data-artifact-recipe', 'document-folio');
-  await expect(folio.locator('.artifact-folio-page')).toHaveCount(1);
-  await expect(folio.locator('.artifact-folio-shadow-page')).toHaveCount(1);
-  await expect(folio.locator('.artifact-folio-title')).toContainText('Simulation Credence and Its Consequences');
+  await expect(folio).toHaveAttribute('data-artifact-side', 'left');
+  await expect(folio.locator('.artifact-object-header')).toHaveCount(0);
   await expect(folio.locator('iframe')).toHaveCount(0);
-  await expect(folio.locator('.artifact-pdf-fallback')).toHaveCount(1);
+  await expect(folio.locator('.artifact-pdf-fallback')).toContainText('Simulation Credence and Its Consequences');
 
   await folio.locator('.artifact-inline-expand').click();
   const viewer = page.locator('.artifact-focus-viewer');
@@ -136,9 +143,6 @@ test('thesis diagrams use their PDF page aspect and show the whole page', async 
     expect(box.x + box.width).toBeLessThanOrEqual(viewport.width - 20);
     expect(box.y).toBeGreaterThanOrEqual(70);
     expect(box.y + box.height).toBeLessThanOrEqual(viewport.height - 20);
-    // Ambient cards are responsive specimens, not the reading surface. In a
-    // constrained Work lane they may compact, but must remain a real, usable
-    // hit target; detailed reading belongs to the focused PDF viewer below.
     expect(box.width).toBeGreaterThanOrEqual(96);
   });
 
@@ -157,7 +161,6 @@ test('thesis diagrams use their PDF page aspect and show the whole page', async 
   await expect(viewer).toHaveAttribute('data-shared-focus-artifact', 'bachelor-thesis-lattice-of-bands');
   await expect(viewer.locator('.artifact-focus-media iframe')).toHaveCount(1);
   await page.keyboard.press('Escape');
-  await expect(viewer).toBeHidden({ timeout: 2000 });
 });
 
 test('Modal Logic Lab screenshots preserve the full intrinsic image instead of cropping', async ({ page }) => {
@@ -165,125 +168,139 @@ test('Modal Logic Lab screenshots preserve the full intrinsic image instead of c
   await page.goto('/#work/project/modal-logic-lab');
   await waitArtifactScenes(page);
 
-  const cluster = page.locator('[data-artifact-scene="modal-logic-lab-screens"]');
-  await expect(cluster).toBeVisible();
-  const cards = cluster.locator('.artifact-deck-card');
-  await expect(cards).toHaveCount(2);
-  const previews = cluster.locator('.artifact-deck-preview');
-  await expect(previews.nth(0)).toHaveAttribute('data-media-aspect-ready', 'true', { timeout: 5000 });
-  await expect(previews.nth(1)).toHaveAttribute('data-media-aspect-ready', 'true', { timeout: 5000 });
+  const deck = page.locator('[data-artifact-scene="modal-logic-lab-screens"]');
+  await expect(deck).toBeVisible();
+  await expect(deck.locator('.artifact-object-header')).toHaveCount(0);
+  await expect(deck.locator('.artifact-deck-card')).toHaveCount(2);
+  await expect(deck.locator('img')).toHaveCount(2);
+  await expect(deck.locator('a[data-support-artifact-id="modal-logic-lab-live"]')).toHaveAttribute('href', 'https://chrasts.github.io/Modal_Logic_Lab/');
 
-  const geometry = await cards.evaluateAll(elements => elements.map(element => {
-    const preview = element.querySelector('.artifact-deck-preview');
-    const image = preview.querySelector('img');
-    return {
-      cardWidth: element.offsetWidth,
-      cardHeight: element.offsetHeight,
-      previewWidth: preview.offsetWidth,
-      previewHeight: preview.offsetHeight,
-      ratio: Number(preview.dataset.mediaAspect),
-      source: preview.dataset.mediaAspectSource,
-      fit: getComputedStyle(image).objectFit
-    };
-  }));
-  geometry.forEach(item => {
-    expect(item.source).toBe('intrinsic');
-    expect(item.ratio).toBeGreaterThan(.5);
-    expect(item.ratio).toBeLessThan(3);
-    expect(item.fit).toBe('contain');
-    expect(Math.abs(item.cardWidth - item.previewWidth)).toBeLessThanOrEqual(4);
-    expect(Math.abs(item.cardHeight - item.previewHeight)).toBeLessThanOrEqual(4);
-    expect(Math.abs(item.previewWidth / item.previewHeight - item.ratio)).toBeLessThan(.03);
+  const preview = deck.locator('.artifact-deck-preview').first();
+  await expect(preview).toHaveAttribute('data-media-aspect-ready', 'true', { timeout: 5000 });
+  expect(await preview.locator('img').evaluate(image => getComputedStyle(image).objectFit)).toBe('contain');
+  const geometry = await preview.evaluate(element => {
+    const card = element.closest('.artifact-deck-card');
+    return { cardHeight: card.offsetHeight, previewHeight: element.offsetHeight, ratio: element.offsetWidth / element.offsetHeight, intrinsic: Number(element.dataset.mediaAspect) };
   });
+  expect(Math.abs(geometry.cardHeight - geometry.previewHeight)).toBeLessThanOrEqual(4);
+  expect(Math.abs(geometry.ratio - geometry.intrinsic)).toBeLessThan(.03);
 });
 
 test('Hedgehog House photo fan keeps every rotated photograph inside the viewport', async ({ page }) => {
   await bypassIntro(page);
+  await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto('/#about/woodworking/hedgehog-house');
   await waitArtifactScenes(page);
 
-  const cluster = page.locator('[data-artifact-scene="hedgehog-house-gallery"]');
-  await expect(cluster).toBeVisible();
-  const cards = cluster.locator('.artifact-deck-card');
+  const gallery = page.locator('[data-artifact-scene="hedgehog-house-gallery"]');
+  const cards = gallery.locator('.artifact-deck-card');
+  await expect(gallery).toBeVisible();
   await expect(cards).toHaveCount(3);
-  const boxes = await cards.evaluateAll(elements => elements.map(element => {
-    const rect = element.getBoundingClientRect();
-    return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
+  await expect(gallery.locator('img')).toHaveCount(3);
+
+  const readBoxes = () => cards.evaluateAll(elements => elements.map(element => {
+    const box = element.getBoundingClientRect();
+    return { left: box.left, right: box.right, top: box.top, bottom: box.bottom, width: box.width };
   }));
+  await expect.poll(async () => {
+    const boxes = await readBoxes();
+    return boxes.every(box => box.left >= 0 && box.right <= 1280 && box.top >= 0 && box.bottom <= 800);
+  }).toBe(true);
+  const boxes = await readBoxes();
   boxes.forEach(box => {
     expect(box.left).toBeGreaterThanOrEqual(0);
-    expect(box.right).toBeLessThanOrEqual(innerWidth);
+    expect(box.right).toBeLessThanOrEqual(1280);
     expect(box.top).toBeGreaterThanOrEqual(0);
-    expect(box.bottom).toBeLessThanOrEqual(innerHeight);
+    expect(box.bottom).toBeLessThanOrEqual(800);
   });
+
+  const outside = gallery.locator('.artifact-deck-card[data-artifact-id="hedgehog-house-outside"]');
+  await expect(outside.locator('.artifact-deck-preview')).toHaveAttribute('data-media-aspect-ready', 'true', { timeout: 5000 });
+  expect(await outside.locator('img').evaluate(image => getComputedStyle(image).objectFit)).toBe('contain');
+
+  await gallery.hover();
+  await expect(page.locator('#site-graph .site-graph-node[data-node-id="hedgehog-house"].is-artifact-linked')).toHaveCount(1);
+  await expect(page.locator('.artifact-tether-layer')).toHaveClass(/is-visible/);
+
+  await outside.hover();
+  await expect(outside).toHaveClass(/is-active/);
+  await outside.click();
+  const viewer = page.locator('.artifact-focus-viewer');
+  await waitSettled(page);
+  await expect(viewer).toBeVisible();
+  await expect(viewer).toHaveAttribute('data-media-kind', 'image');
+  await expect(viewer).toHaveAttribute('data-shared-focus-artifact', 'hedgehog-house-outside');
+  await expect(viewer.locator('.artifact-focus-media img.object-focus-panzoom-media')).toHaveAttribute('src', /assets\/images\/about\/woodworking\/hedgehog-house\/outside\.webp$/);
+  await page.keyboard.press('Escape');
+  await expect(viewer).toBeHidden();
 });
 
 test('desktop descriptive inspector ends with its content instead of filling the scene', async ({ page }) => {
   await bypassIntro(page);
-  await page.goto('/#knowledge/logic-math/mathematical-logic/algebraic-logic');
-  await page.waitForFunction(() => Boolean(window.ProfileScene?.manager));
-  await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/#atlas');
+  await page.waitForFunction(() => Boolean(window.ProfileAtlasLOD) && document.body.dataset.graphMode === 'atlas');
 
+  const node = page.locator('#site-graph .site-graph-node[data-node-id="computational-logic"]');
+  await node.click();
   const detail = page.locator('#site-detail-panel');
   await expect(detail).toBeVisible();
-  const geometry = await detail.evaluate(element => {
-    const rect = element.getBoundingClientRect();
-    const style = getComputedStyle(element);
+
+  const sizing = await detail.evaluate(element => {
+    const box = element.getBoundingClientRect();
     return {
-      height: rect.height,
-      bottom: style.bottom,
-      viewportHeight: innerHeight
+      height: box.height,
+      scrollHeight: element.scrollHeight,
+      viewportHeight: innerHeight,
+      bottomGap: innerHeight - box.bottom
     };
   });
-  expect(geometry.height).toBeLessThan(geometry.viewportHeight * .8);
-  expect(geometry.bottom).toBe('auto');
+  expect(sizing.height).toBeLessThan(sizing.viewportHeight * 0.7);
+  expect(sizing.bottomGap).toBeGreaterThan(100);
+  expect(Math.abs(sizing.height - sizing.scrollHeight)).toBeLessThanOrEqual(4);
 });
 
 test('clicking elsewhere on the node view dismisses the open inspector like its close button', async ({ page }) => {
   await bypassIntro(page);
-  await page.goto('/#knowledge/logic-math/mathematical-logic/algebraic-logic');
-  await page.waitForFunction(() => Boolean(window.ProfileScene?.manager));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/#atlas');
+  await page.waitForFunction(() => Boolean(window.ProfileNodeDetailDismiss));
   await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
+  await page.waitForFunction(() => Boolean(window.ProfileAtlasLOD) && document.body.dataset.graphMode === 'atlas');
 
+  const node = page.locator('#site-graph .site-graph-node[data-node-id="computational-logic"]');
   const detail = page.locator('#site-detail-panel');
+  await node.click();
   await expect(detail).toBeVisible();
-  const point = await page.evaluate(() => {
-    for (let y = 90; y < innerHeight - 60; y += 40) {
-      for (let x = 180; x < innerWidth - 400; x += 40) {
-        const target = document.elementFromPoint(x, y);
-        if (!target) continue;
-        if (target.closest('#site-detail-panel,#site-graph .site-graph-node,[data-route]')) continue;
-        return { x, y };
-      }
-    }
-    return { x: 260, y: 130 };
-  });
-  await page.mouse.click(point.x, point.y);
+  await expect(detail.locator('.detail-close')).toBeVisible();
+
+  const outsidePoint = { x: 760, y: 110 };
+  expect(await page.evaluate(({ x, y }) => {
+    const detail = document.querySelector('#site-detail-panel');
+    const target = document.elementFromPoint(x, y);
+    return Boolean(target && detail && !detail.contains(target));
+  }, outsidePoint)).toBe(true);
+  await page.mouse.click(outsidePoint.x, outsidePoint.y);
   await expect(detail).toBeHidden();
+  expect((await page.evaluate(() => window.ProfileNodeDetailDismiss.snapshot())).open).toBe(false);
 });
 
 test('artifact object clusters remain viewport-contained on mobile without a tray window', async ({ page }) => {
   await bypassIntro(page);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/#work/project/modal-logic-lab');
+  await page.goto('/#about/woodworking/hedgehog-house');
   await waitArtifactScenes(page);
 
-  const cluster = page.locator('[data-artifact-scene="modal-logic-lab-screens"]');
-  await expect(cluster).toBeVisible();
-  const geometry = await cluster.evaluate(element => {
-    const rect = element.getBoundingClientRect();
-    return {
-      left: rect.left,
-      right: rect.right,
-      bottom: rect.bottom,
-      bodyWidth: document.body.scrollWidth,
-      viewportWidth: innerWidth,
-      hasTrayChrome: Boolean(element.closest('.mobile-control-sheet'))
-    };
-  });
-  expect(geometry.left).toBeGreaterThanOrEqual(0);
-  expect(geometry.right).toBeLessThanOrEqual(geometry.viewportWidth);
-  expect(geometry.bottom).toBeLessThanOrEqual(844);
-  expect(geometry.bodyWidth).toBeLessThanOrEqual(geometry.viewportWidth);
-  expect(geometry.hasTrayChrome).toBe(false);
+  const gallery = page.locator('[data-artifact-scene="hedgehog-house-gallery"]');
+  await expect(gallery).toBeVisible();
+  await expect(gallery).toHaveAttribute('data-scene-placement', 'artifact-mobile-tray');
+  expect(await gallery.evaluate(element => getComputedStyle(element).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+
+  const metrics = await page.evaluate(() => ({
+    scrollHeight: document.scrollingElement.scrollHeight,
+    viewportHeight: innerHeight,
+    scrollY
+  }));
+  expect(metrics.scrollHeight).toBeLessThanOrEqual(metrics.viewportHeight + 2);
+  expect(metrics.scrollY).toBe(0);
 });

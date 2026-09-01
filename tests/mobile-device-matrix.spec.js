@@ -13,6 +13,8 @@ const bypassIntro = async page => {
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
 };
 
+const navigate = (page, route) => page.goto(`/#${route}`, { waitUntil: 'domcontentloaded' });
+
 const waitMobile = async page => {
   await page.waitForFunction(() => Boolean(window.ProfileScene && window.MobileProfileScene));
   await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
@@ -46,7 +48,7 @@ for (const device of devices) {
     test('keeps Overview, Work, Focus and Atlas structurally healthy', async ({ page }) => {
       await bypassIntro(page);
       for (const route of ['overview', 'work', 'knowledge', 'atlas']) {
-        await page.goto(`/#${route}`);
+        await navigate(page, route);
         await waitMobile(page);
         await expectHealthy(page);
       }
@@ -59,7 +61,7 @@ test.describe('mobile ergonomics contract', () => {
 
   test('primary mobile HTML controls expose practical touch targets', async ({ page }) => {
     await bypassIntro(page);
-    await page.goto('/#work');
+    await navigate(page, 'work');
     await waitMobile(page);
 
     await page.locator('.mobile-mode-button').click();
@@ -91,7 +93,7 @@ test.describe('mobile ergonomics contract', () => {
 
   test('Atlas inspector remains usable without horizontal document overflow', async ({ page }) => {
     await bypassIntro(page);
-    await page.goto('/#atlas');
+    await navigate(page, 'atlas');
     await waitMobile(page);
     const node = page.locator('#site-graph .site-graph-node[data-node-id="knowledge"]');
     await node.tap();
@@ -106,7 +108,7 @@ test.describe('desktop isolation guard', () => {
 
   test('mobile runtime and mobile stylesheet do not activate on desktop', async ({ page }) => {
     await bypassIntro(page);
-    await page.goto('/#overview');
+    await navigate(page, 'overview');
     await page.waitForFunction(() => Boolean(window.ProfileScene));
     await page.waitForTimeout(250);
     const state = await page.evaluate(() => ({

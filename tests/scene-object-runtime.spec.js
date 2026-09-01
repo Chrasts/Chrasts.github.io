@@ -32,7 +32,7 @@ const deterministicRecord = record => ({
 test.describe('Phase L Scene Object Runtime 2.0', () => {
   test.beforeEach(async ({ page }) => {
     await bypassIntro(page);
-    await page.goto('/#about/woodworking/hedgehog-house');
+    await page.goto('/#about/woodworking/hedgehog-house', { waitUntil: 'domcontentloaded' });
     await waitRuntime(page);
   });
 
@@ -66,8 +66,6 @@ test.describe('Phase L Scene Object Runtime 2.0', () => {
       .filter(record => record.sceneId === 'artifact-scene:hedgehog-house-gallery')))
       .map(deterministicRecord);
 
-    /* composition.sequence is a generation counter for recomposition, not part
-       of an object's deterministic placement contract. */
     expect(before).toEqual(after);
     expect(before).toHaveLength(3);
     before.forEach(record => {
@@ -134,7 +132,13 @@ test.describe('Phase L Scene Object Runtime 2.0', () => {
       status: 'playing', currentTime: 12.5, duration: 42, muted: false, volume: .4
     }), runtimeId);
     const payload = await page.evaluate(() => window.ProfileScene.objects.serialize());
+
+    // Establish a different state, then move the physical pointer off the deck
+    // before restore. Otherwise a layout reflow under a stationary pointer can
+    // legitimately emit a fresh pointerenter and overwrite the restored choice.
     await outside.hover();
+    await page.mouse.move(12, 12);
+    await page.waitForTimeout(80);
     await page.evaluate(serialized => window.ProfileScene.objects.restore(serialized), payload);
 
     const restored = await page.evaluate(id => window.ProfileScene.objects.getState(id), runtimeId);
@@ -147,6 +151,7 @@ test.describe('Phase L Scene Object Runtime 2.0', () => {
     expect(restored.media.status).toBe('paused');
     await expect(inside).toHaveClass(/is-active/);
     await expect(inside).toHaveAttribute('aria-current', 'true');
+    await expect(outside).toHaveAttribute('aria-current', 'false');
   });
 
   test('synthetic pilot objects share lifecycle and deterministic interruption rules', async ({ page }) => {

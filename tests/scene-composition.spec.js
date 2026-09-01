@@ -12,6 +12,10 @@ const boot = async (page, route) => {
   await page.waitForTimeout(260);
 };
 
+const viewportContained = boxes => boxes.every(box =>
+  box.left >= 0 && box.right <= 1280 && box.top >= 0 && box.bottom <= 800
+);
+
 test.describe('Phase D scene composition', () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
@@ -26,10 +30,7 @@ test.describe('Phase D scene composition', () => {
       const box = element.getBoundingClientRect();
       return { left: box.left, right: box.right, top: box.top, bottom: box.bottom };
     }));
-    await expect.poll(async () => {
-      const boxes = await readBoxes();
-      return boxes.every(box => box.left >= 0 && box.right <= 1280 && box.top >= 0 && box.bottom <= 800);
-    }).toBe(true);
+    await expect.poll(async () => viewportContained(await readBoxes())).toBe(true);
 
     const boxes = await readBoxes();
     boxes.forEach(box => {
@@ -43,13 +44,25 @@ test.describe('Phase D scene composition', () => {
     expect(snapshot.assignments.find(item => item.id === 'artifact-scene:hedgehog-house-gallery')).toMatchObject({ zone: 'side-stage', side: 'left', preferredSide: 'right', role: 'artifact' });
   });
 
-  test('resolved artifact lane stays stable after inspector dismissal', async ({ page }) => {
+  test('resolved artifact lane keeps its composer anchor after inspector dismissal', async ({ page }) => {
     await boot(page, 'about/woodworking/hedgehog-house');
     const detail = page.locator('#site-detail-panel');
     const gallery = page.locator('[data-artifact-scene="hedgehog-house-gallery"]');
     await expect(detail).toBeVisible();
-    const before = await gallery.boundingBox();
-    expect(before).not.toBeNull();
+
+    const readAnchor = () => gallery.evaluate(element => ({
+      side: element.dataset.sceneSide || null,
+      left: parseFloat(getComputedStyle(element).left),
+      availableWidth: parseFloat(getComputedStyle(element).getPropertyValue('--scene-side-available-width'))
+    }));
+    const readBoxes = () => gallery.locator('.artifact-deck-card').evaluateAll(elements => elements.map(element => {
+      const box = element.getBoundingClientRect();
+      return { left: box.left, right: box.right, top: box.top, bottom: box.bottom };
+    }));
+
+    const before = await readAnchor();
+    expect(before.side).toBe('left');
+    expect(Number.isFinite(before.left)).toBe(true);
 
     const point = await page.evaluate(() => {
       for (let y = 90; y < innerHeight - 80; y += 40) {
@@ -65,14 +78,15 @@ test.describe('Phase D scene composition', () => {
     await page.mouse.click(point.x, point.y);
     await expect(detail).toBeHidden();
 
-    // Dismissal triggers a SceneManager refresh and a subsequent composer
-    // reconcile. The invariant is the settled lane, not an arbitrary 120 ms
-    // sample between those two owners.
+    // The deck spread is deliberately responsive to the available lane width,
+    // so its derived visual bounding box may move a few pixels when the inspector
+    // disappears. SceneComposer owns the lane anchor, side and containment.
     await expect.poll(async () => {
-      const after = await gallery.boundingBox();
-      return after ? Math.abs(after.x - before.x) : Number.POSITIVE_INFINITY;
-    }).toBeLessThanOrEqual(3);
+      const after = await readAnchor();
+      return Math.abs(after.left - before.left);
+    }).toBeLessThanOrEqual(1);
     await expect(gallery).toHaveAttribute('data-scene-side', 'left');
+    await expect.poll(async () => viewportContained(await readBoxes())).toBe(true);
   });
 
   test('declarative composition requests can reserve and flip a generic side-stage object', async ({ page }) => {

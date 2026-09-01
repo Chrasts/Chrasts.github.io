@@ -9,8 +9,16 @@
 }
 
 @media (min-width:901px){
+  /* Work's graph and filter rails are both interactive planes. Ambient artefacts
+     must sit above those planes so their own explicit controls remain hittable,
+     while the descriptive inspector keeps final ownership at z=40. */
+  body[data-graph-mode="work"]:not(.has-artifact-focus) .artifact-scene-layer{
+    z-index:32!important
+  }
+
   .artifact-object[data-scene-zone="side-stage"]{
-    --artifact-lane-width:var(--scene-side-available-width,430px)
+    --artifact-lane-width:max(var(--scene-side-available-width,430px),132px);
+    min-width:min(132px,calc(100vw - 56px))
   }
 
   /* Selection is a visual state, not hit-test ownership. Phase B gives hover,
@@ -31,8 +39,8 @@
      owns final scene geometry, so its responsive width must outrank the older
      Phase-B fixed specimen size. */
   .artifact-object[data-artifact-variant="diagram"]{
-    --artifact-diagram-card-width:min(210px,calc(var(--artifact-lane-width) - 28px));
-    --artifact-diagram-spread:clamp(14px,calc((var(--artifact-lane-width) - var(--artifact-diagram-card-width))/2),65px)
+    --artifact-diagram-card-width:clamp(96px,calc(var(--artifact-lane-width) - 28px),210px);
+    --artifact-diagram-spread:clamp(10px,calc((var(--artifact-lane-width) - var(--artifact-diagram-card-width))/2),65px)
   }
   .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card{
     width:var(--artifact-diagram-card-width)!important;
@@ -53,8 +61,8 @@
 
   /* Screen pairs use the same lane-aware contract with a wider ideal spread. */
   .artifact-object[data-artifact-variant="screens"]{
-    --artifact-screen-card-width:min(250px,calc(var(--artifact-lane-width) - 28px));
-    --artifact-screen-spread:clamp(14px,calc((var(--artifact-lane-width) - var(--artifact-screen-card-width))/2),73px)
+    --artifact-screen-card-width:clamp(104px,calc(var(--artifact-lane-width) - 28px),250px);
+    --artifact-screen-spread:clamp(10px,calc((var(--artifact-lane-width) - var(--artifact-screen-card-width))/2),73px)
   }
   .artifact-object[data-artifact-variant="screens"] .artifact-deck-card{
     width:var(--artifact-screen-card-width)!important;
@@ -76,8 +84,8 @@
   /* Three-photo fans keep all three cards selectable while fitting the actual
      side corridor. This replaces route-specific Hedgehog positioning. */
   .artifact-object[data-artifact-variant="fan"]{
-    --artifact-fan-card-width:min(160px,calc(var(--artifact-lane-width) - 36px));
-    --artifact-fan-spread:clamp(18px,calc((var(--artifact-lane-width) - var(--artifact-fan-card-width))/2),102px)
+    --artifact-fan-card-width:clamp(92px,calc(var(--artifact-lane-width) - 36px),160px);
+    --artifact-fan-spread:clamp(12px,calc((var(--artifact-lane-width) - var(--artifact-fan-card-width))/2),102px)
   }
   .artifact-object[data-artifact-variant="fan"] .artifact-deck-card{
     width:var(--artifact-fan-card-width)!important;

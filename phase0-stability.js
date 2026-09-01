@@ -65,7 +65,7 @@
      share lifecycle state, but local visibility changes are not owned by the
      global route-transition coordinator. Make those local enters settle on
      their own, reconcile serialized selection back to DOM atomically, and keep
-     the SceneManager identity synchronized with the canonical graph DOM state. */
+     the SceneManager identity synchronized with explicit graph lifecycle events. */
   const installSceneRuntimeGuards = () => {
     const scene = window.ProfileScene;
     const manager = scene?.manager;
@@ -116,18 +116,20 @@
         route,
         mode,
         workProjectId: route.match(/^work\/project\/([^/]+)$/)?.[1] || null
-      }, { reason: 'phase0-graph-dom-sync' });
+      }, { reason: 'phase0-graph-event-sync' });
     };
     const scheduleGraphSync = () => {
       cancelAnimationFrame(graphSyncFrame);
       graphSyncFrame = requestAnimationFrame(syncManagerToGraphDom);
     };
-    new MutationObserver(scheduleGraphSync).observe(document.body, {
-      attributes: true,
-      attributeFilter: ['data-graph-route', 'data-graph-mode']
-    });
-    addEventListener('profile:transition-finish', scheduleGraphSync);
-    addEventListener('profile:transition-cancel', scheduleGraphSync);
+    [
+      'profile:graph-state-committed',
+      'profile:graph-render-settled',
+      'profile:detail-rendered',
+      'profile:detail-closed',
+      'profile:transition-finish',
+      'profile:transition-cancel'
+    ].forEach(type => addEventListener(type, scheduleGraphSync));
     scheduleGraphSync();
   };
 

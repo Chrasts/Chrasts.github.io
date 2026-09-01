@@ -65,7 +65,7 @@
      share lifecycle state, but local visibility changes are not owned by the
      global route-transition coordinator. Make those local enters settle on
      their own, reconcile serialized selection back to DOM atomically, and keep
-     side-stage composition stable when an inspector changes the available lane. */
+     the SceneManager identity synchronized with the canonical graph DOM state. */
   const installSceneRuntimeGuards = () => {
     const scene = window.ProfileScene;
     const manager = scene?.manager;
@@ -102,6 +102,33 @@
       requestAnimationFrame(() => ids.forEach(id => this.apply(id)));
       return restored;
     };
+
+    let graphSyncFrame = 0;
+    const syncManagerToGraphDom = () => {
+      graphSyncFrame = 0;
+      if (manager.transitions?.isLocked) return;
+      const route = (document.body?.dataset.graphRoute || 'overview')
+        .replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
+      const mode = document.body?.dataset.graphMode || 'overview';
+      const current = manager.context();
+      if (current.route === route && current.mode === mode) return;
+      manager.setGraphState({
+        route,
+        mode,
+        workProjectId: route.match(/^work\/project\/([^/]+)$/)?.[1] || null
+      }, { reason: 'phase0-graph-dom-sync' });
+    };
+    const scheduleGraphSync = () => {
+      cancelAnimationFrame(graphSyncFrame);
+      graphSyncFrame = requestAnimationFrame(syncManagerToGraphDom);
+    };
+    new MutationObserver(scheduleGraphSync).observe(document.body, {
+      attributes: true,
+      attributeFilter: ['data-graph-route', 'data-graph-mode']
+    });
+    addEventListener('profile:transition-finish', scheduleGraphSync);
+    addEventListener('profile:transition-cancel', scheduleGraphSync);
+    scheduleGraphSync();
   };
 
   const installComposerGuards = () => {
@@ -111,6 +138,27 @@
     const stableOffsets = new Map();
     const originalApplyAssignment = Composer.prototype.applyAssignment;
     const originalContainAssignment = Composer.prototype.containAssignment;
+    const originalSideCorridor = Composer.prototype.sideCorridor;
+
+    /* Graph avoidance is a hard scene constraint. The canonical composer used
+       to discard the graph boundary whenever the remaining lane fell below its
+       preferred minimum width, which let Work document folios overlap the FCA
+       lattice. Keep the hard boundary and let side choice / responsive media
+       sizing absorb the narrower corridor instead. */
+    Composer.prototype.sideCorridor = function phase0SideCorridor(side, request, context, graphBounds) {
+      const corridor = originalSideCorridor.call(this, side, request, context, graphBounds);
+      if (!request?.avoidGraph || !graphBounds || context.variant === 'mobile') return corridor;
+      const graphMargin = Number(request.graphMargin) || 0;
+      if (side === 'left') {
+        corridor.right = Math.min(corridor.right, graphBounds.left - graphMargin);
+        if (corridor.right < corridor.left) corridor.right = corridor.left;
+      } else {
+        corridor.left = Math.max(corridor.left, graphBounds.right + graphMargin);
+        if (corridor.left > corridor.right) corridor.left = corridor.right;
+      }
+      corridor.width = Math.max(0, corridor.right - corridor.left);
+      return corridor;
+    };
 
     Composer.prototype.applyAssignment = function phase0ApplyAssignment(assignment, context) {
       const previous = stableOffsets.get(assignment.id);
@@ -122,6 +170,19 @@
         previous.side === assignment.side &&
         Number.isFinite(previous.offset)
       ) {
+        /* Within one route, opening/closing a local inspector may enlarge the
+           free corridor. Expansion must not make an already settled object jump
+           or fan back out. Shrinks remain allowed and containment can still move
+           the object when a newly introduced hard boundary requires it. */
+        if (
+          Number.isFinite(previous.availableWidth) &&
+          Number.isFinite(assignment.availableWidth) &&
+          assignment.availableWidth >= previous.availableWidth
+        ) {
+          assignment.availableWidth = previous.availableWidth;
+          assignment.element.style.setProperty('--scene-side-available-width', `${Math.round(previous.availableWidth)}px`);
+          assignment.element.style.setProperty('max-width', `${Math.round(previous.availableWidth)}px`, 'important');
+        }
         assignment.offset = Math.max(0, previous.offset);
         const property = assignment.side === 'left' ? 'left' : 'right';
         const oppositeProperty = assignment.side === 'left' ? 'right' : 'left';
@@ -136,14 +197,25 @@
         for (let pass = 0; pass < 3; pass += 1) originalContainAssignment.call(this, assignment, context);
 
         const margin = assignment.request.viewportMargin || 0;
-        const frame = {
-          left: context.canvas.left + margin,
-          right: context.canvas.right - margin,
-          top: context.canvas.top + margin,
-          bottom: context.canvas.bottom - margin
-        };
         const bounds = this.visualBounds(assignment.request);
         if (bounds) {
+          const graphBounds = assignment.request.avoidGraph
+            ? this.graphSafeBounds(
+              context,
+              bounds.top - context.canvas.top,
+              bounds.bottom - bounds.top,
+              assignment.request.graphMargin
+            )
+            : null;
+          const corridor = this.sideCorridor(assignment.side, assignment.request, context, graphBounds);
+          const horizontalFrame = assignment.request.avoidGraph && corridor.width > 0
+            ? { left: corridor.left, right: corridor.right }
+            : { left: context.canvas.left + margin, right: context.canvas.right - margin };
+          const frame = {
+            ...horizontalFrame,
+            top: context.canvas.top + margin,
+            bottom: context.canvas.bottom - margin
+          };
           let shiftX = 0;
           let shiftY = 0;
           if (bounds.left < frame.left) shiftX = frame.left - bounds.left;
@@ -178,10 +250,21 @@
         stableOffsets.set(assignment.id, {
           route: context.route,
           side: assignment.side,
-          offset: assignment.offset
+          offset: assignment.offset,
+          availableWidth: Number.isFinite(assignment.availableWidth) ? assignment.availableWidth : null
         });
       }
     };
+
+    if (!window.__phase0ComposerSettleEvents) {
+      window.__phase0ComposerSettleEvents = true;
+      const scheduleArtifactSettle = event => {
+        if (!event.target?.closest?.('[data-artifact-scene]')) return;
+        window.ProfileSceneComposer?.schedule?.(`artifact-${event.type}-settled`);
+      };
+      document.addEventListener('animationend', scheduleArtifactSettle, true);
+      document.addEventListener('load', scheduleArtifactSettle, true);
+    }
   };
 
   installSceneRuntimeGuards();

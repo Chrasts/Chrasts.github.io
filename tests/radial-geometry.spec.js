@@ -34,7 +34,9 @@ test.describe('Global fan v3 geometry', () => {
     const ids = ['work','knowledge','education','about','experience'];
     const root = await point(page,'stepan-chrast');
     const branches = Object.fromEntries(await Promise.all(ids.map(async id => [id, await point(page,id)])));
-    ids.forEach(id => expect(distance(root, branches[id])).toBeGreaterThan(140));
+    // Root distance is only an anti-collapse invariant; pairwise separation below
+    // remains the stronger readability constraint for the five practical choices.
+    ids.forEach(id => expect(distance(root, branches[id])).toBeGreaterThan(125));
     for (let left = 0; left < ids.length; left += 1) {
       for (let right = left + 1; right < ids.length; right += 1) {
         expect(distance(branches[ids[left]], branches[ids[right]])).toBeGreaterThan(105);

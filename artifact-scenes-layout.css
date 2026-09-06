@@ -37,58 +37,6 @@
     display:none!important
   }
 
-  /* The two thesis figures are supporting objects now that the complete thesis
-     has its own primary folio. Keep them compact and slightly staggered on the
-     opposite side of the graph. Browser PDF viewers add their own dark surround,
-     so overscan each inert iframe heavily and clip that surround at the card. */
-  .artifact-object[data-artifact-variant="diagram"]{
-    --artifact-diagram-card-width:min(250px,19vw);
-    --artifact-diagram-spread:min(36px,2.8vw);
-    height:370px!important
-  }
-  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card{
-    width:var(--artifact-diagram-card-width)!important;
-    height:auto!important;
-    border:0!important;
-    border-radius:0!important;
-    background:transparent!important;
-    box-shadow:0 12px 30px color-mix(in srgb,var(--ink) 10%,transparent)!important
-  }
-  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-preview{
-    overflow:hidden!important;
-    border:0!important;
-    background:#fff!important
-  }
-  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-preview.is-pdf iframe{
-    position:absolute!important;
-    inset:-18%!important;
-    width:136%!important;
-    height:136%!important;
-    max-width:none!important;
-    max-height:none!important;
-    background:#fff!important;
-    transform:none!important;
-    transform-origin:center!important
-  }
-  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(1){
-    z-index:2!important;
-    transform:translateX(calc(-50% - var(--artifact-diagram-spread))) translateY(2px) rotate(-1.8deg)!important
-  }
-  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(2){
-    z-index:1!important;
-    transform:translateX(calc(-50% + var(--artifact-diagram-spread))) translateY(206px) rotate(1.8deg)!important
-  }
-  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(1):is(:hover,:focus-visible,.is-active),
-  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(2):is(:hover,:focus-visible,.is-active){
-    z-index:10!important
-  }
-  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(1):is(:hover,:focus-visible,.is-active){
-    transform:translateX(calc(-50% - var(--artifact-diagram-spread))) translateY(2px) rotate(-1.8deg)!important
-  }
-  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(2):is(:hover,:focus-visible,.is-active){
-    transform:translateX(calc(-50% + var(--artifact-diagram-spread))) translateY(206px) rotate(1.8deg)!important
-  }
-
   /* Modal Logic Lab keeps the approved medium-sized two-screen composition. */
   .artifact-object[data-artifact-variant="screens"]{
     --artifact-screen-card-width:min(475px,36vw);
@@ -211,5 +159,81 @@
   }
   .artifact-document-object[data-artifact-variant="pdf-only"] .artifact-folio-preview iframe{
     background:#fff!important
+  }
+
+  /* The full thesis is primary. Its two figure PDFs are deliberately small,
+     frameless supporting cards tucked against the lower-right edge of the folio.
+     Their browser PDF surfaces are overscanned and clipped so the viewer's dark
+     surround never becomes part of the visual artifact. */
+  .artifact-object[data-artifact-scene="bachelor-thesis-paper"] .artifact-folio-support-deck{
+    position:absolute;
+    z-index:5;
+    left:calc(50% + 145px);
+    top:132px;
+    width:205px;
+    height:505px;
+    pointer-events:none
+  }
+  .artifact-object[data-artifact-scene="bachelor-thesis-paper"] .artifact-folio-support-card{
+    position:absolute!important;
+    left:0!important;
+    right:auto!important;
+    width:190px!important;
+    height:auto!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:0!important;
+    overflow:visible!important;
+    background:transparent!important;
+    box-shadow:0 12px 30px color-mix(in srgb,var(--ink) 11%,transparent)!important;
+    pointer-events:auto
+  }
+  .artifact-object[data-artifact-scene="bachelor-thesis-paper"] .artifact-folio-support-card:nth-child(1){
+    top:0!important;
+    z-index:2!important;
+    transform:rotate(2deg)!important
+  }
+  .artifact-object[data-artifact-scene="bachelor-thesis-paper"] .artifact-folio-support-card:nth-child(2){
+    top:310px!important;
+    z-index:3!important;
+    transform:rotate(-2.5deg)!important
+  }
+  .artifact-object[data-artifact-scene="bachelor-thesis-paper"] .artifact-folio-support-card:is(:hover,:focus-visible){
+    z-index:12!important
+  }
+  .artifact-object[data-artifact-scene="bachelor-thesis-paper"] .artifact-folio-support-card:nth-child(1):is(:hover,:focus-visible){
+    transform:rotate(2deg)!important
+  }
+  .artifact-object[data-artifact-scene="bachelor-thesis-paper"] .artifact-folio-support-card:nth-child(2):is(:hover,:focus-visible){
+    transform:rotate(-2.5deg)!important
+  }
+  .artifact-object[data-artifact-scene="bachelor-thesis-paper"] .artifact-folio-support-card .artifact-deck-preview{
+    position:relative!important;
+    inset:auto!important;
+    display:block!important;
+    width:100%!important;
+    height:auto!important;
+    overflow:hidden!important;
+    border:0!important;
+    background:#fff!important
+  }
+  .artifact-object[data-artifact-scene="bachelor-thesis-paper"] .artifact-folio-support-card .artifact-deck-preview.is-pdf iframe{
+    position:absolute!important;
+    inset:-18%!important;
+    width:136%!important;
+    height:136%!important;
+    max-width:none!important;
+    max-height:none!important;
+    background:#fff!important;
+    transform:none!important
+  }
+}
+
+@media (max-width:900px){
+  /* On the compact tray the complete thesis remains the useful object. The two
+     supporting figures stay available through the desktop research scene rather
+     than competing for the limited mobile viewport. */
+  .artifact-object[data-artifact-scene="bachelor-thesis-paper"] .artifact-folio-support-deck{
+    display:none!important
   }
 }

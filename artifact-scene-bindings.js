@@ -32,7 +32,9 @@
       recipe: 'media-deck',
       variant: 'diagram',
       title: 'BSc thesis materials',
-      artifactIds: ['bachelor-thesis-lattice-of-bands', 'bachelor-thesis-rol-non-a', 'bachelor-thesis-pdf'],
+      artifactIds: ['bachelor-thesis-lattice-of-bands', 'bachelor-thesis-rol-non-a'],
+      actionArtifactIds: ['bachelor-thesis-pdf'],
+      actionLabels: { 'bachelor-thesis-pdf': 'Thesis PDF ↗' },
       targets: [
         { route: 'work/project/bachelor-thesis', anchorNodeId: 'project-bachelor-thesis', side: 'left' },
         { route: 'knowledge/logic-math/mathematical-logic/algebraic-logic/quantum-logic-arol', anchorNodeId: 'quantum-logic-arol', side: 'right' }

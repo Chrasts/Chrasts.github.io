@@ -21,115 +21,170 @@
     min-width:min(132px,calc(100vw - 56px))
   }
 
-  /* Selection is a visual state, not hit-test ownership. Phase B gives hover,
-     focus and active cards a raised stack; active alone must never cover the
-     hit area of a sibling in a compact lane. */
+  /* Selection changes stacking, never geometry. Keeping the hovered card in the
+     same physical place prevents pointer ownership from rapidly bouncing between
+     overlapping cards. */
   .artifact-object .artifact-deck-card.is-active{z-index:0!important}
 
-  /* All compact decks share one geometric origin. Phase B's artistic recipes
-     use left/right absolute slots; the lane-aware layout below must reset those
-     slots before applying symmetric translateX spreads. */
   .artifact-object:is([data-artifact-variant="diagram"],[data-artifact-variant="screens"],[data-artifact-variant="fan"]) .artifact-deck-card{
     left:50%!important;
     right:auto!important
   }
 
-  /* Two-card diagrams: keep each card in a stable slot, but compact the spread
-     when the side lane is narrower than the ideal 340px footprint. This layer
-     owns final scene geometry, so its responsive width must outrank the older
-     Phase-B fixed specimen size. */
+  /* Thesis PDFs: render at their actual large CSS size instead of magnifying a
+     small embedded PDF viewer. This keeps browser PDF rasterisation sharp. */
   .artifact-object[data-artifact-variant="diagram"]{
-    --artifact-diagram-card-width:clamp(96px,calc(var(--artifact-lane-width) - 28px),210px);
-    --artifact-diagram-spread:clamp(10px,calc((var(--artifact-lane-width) - var(--artifact-diagram-card-width))/2),65px)
+    --artifact-diagram-card-width:min(520px,38vw);
+    --artifact-diagram-spread:min(118px,9vw);
+    height:min(720px,calc(100vh - 96px))!important
   }
   .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card{
     width:var(--artifact-diagram-card-width)!important;
-    height:205px
+    height:auto!important
   }
   .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(1){
-    transform:translateX(calc(-50% - var(--artifact-diagram-spread))) translateY(8px) rotate(-3deg)
+    z-index:2!important;
+    transform:translateX(calc(-50% - var(--artifact-diagram-spread))) translateY(2px) rotate(-1.8deg)!important
   }
   .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(2){
-    transform:translateX(calc(-50% + var(--artifact-diagram-spread))) translateY(18px) rotate(3deg)
+    z-index:1!important;
+    transform:translateX(calc(-50% + var(--artifact-diagram-spread))) translateY(62px) rotate(1.8deg)!important
   }
-  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(1).is-active{
-    transform:translateX(calc(-50% - var(--artifact-diagram-spread))) translateY(-4px) rotate(0deg)
+  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(1):is(:hover,:focus-visible,.is-active),
+  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(2):is(:hover,:focus-visible,.is-active){
+    z-index:10!important
   }
-  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(2).is-active{
-    transform:translateX(calc(-50% + var(--artifact-diagram-spread))) translateY(-4px) rotate(0deg)
+  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(1):is(:hover,:focus-visible,.is-active){
+    transform:translateX(calc(-50% - var(--artifact-diagram-spread))) translateY(2px) rotate(-1.8deg)!important
+  }
+  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(2):is(:hover,:focus-visible,.is-active){
+    transform:translateX(calc(-50% + var(--artifact-diagram-spread))) translateY(62px) rotate(1.8deg)!important
   }
 
-  /* Screen pairs use the same lane-aware contract with a wider ideal spread. */
+  /* Modal Logic Lab is intentionally a large, dominant scene object. Each
+     screenshot is around twice the previous rendered width on normal desktops. */
   .artifact-object[data-artifact-variant="screens"]{
-    --artifact-screen-card-width:clamp(104px,calc(var(--artifact-lane-width) - 28px),250px);
-    --artifact-screen-spread:clamp(10px,calc((var(--artifact-lane-width) - var(--artifact-screen-card-width))/2),73px)
+    --artifact-screen-card-width:min(950px,72vw);
+    --artifact-screen-spread:min(92px,7vw);
+    height:min(670px,calc(100vh - 92px))!important
   }
   .artifact-object[data-artifact-variant="screens"] .artifact-deck-card{
     width:var(--artifact-screen-card-width)!important;
-    height:202px
+    height:auto!important
   }
   .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(1){
-    transform:translateX(calc(-50% - var(--artifact-screen-spread))) translateY(7px) rotate(-2.2deg)
+    z-index:2!important;
+    transform:translateX(calc(-50% - var(--artifact-screen-spread))) translateY(0) rotate(-1.2deg)!important
   }
   .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(2){
-    transform:translateX(calc(-50% + var(--artifact-screen-spread))) translateY(18px) rotate(2.2deg)
+    z-index:1!important;
+    transform:translateX(calc(-50% + var(--artifact-screen-spread))) translateY(86px) rotate(1.2deg)!important
   }
-  .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(1).is-active{
-    transform:translateX(calc(-50% - var(--artifact-screen-spread))) translateY(-4px) rotate(0deg)
+  .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(1):is(:hover,:focus-visible,.is-active),
+  .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(2):is(:hover,:focus-visible,.is-active){
+    z-index:10!important
   }
-  .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(2).is-active{
-    transform:translateX(calc(-50% + var(--artifact-screen-spread))) translateY(-4px) rotate(0deg)
+  .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(1):is(:hover,:focus-visible,.is-active){
+    transform:translateX(calc(-50% - var(--artifact-screen-spread))) translateY(0) rotate(-1.2deg)!important
+  }
+  .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(2):is(:hover,:focus-visible,.is-active){
+    transform:translateX(calc(-50% + var(--artifact-screen-spread))) translateY(86px) rotate(1.2deg)!important
   }
 
-  /* Three-photo fans keep all three cards selectable while fitting the actual
-     side corridor. This replaces route-specific Hedgehog positioning. */
+  /* Hedgehog photos retain the current visual size, but use real dimensions
+     rather than scaling the entire cluster. The compact spread keeps the left
+     photograph inside the viewport after the scene flips to the left lane. */
   .artifact-object[data-artifact-variant="fan"]{
-    --artifact-fan-card-width:clamp(92px,calc(var(--artifact-lane-width) - 36px),160px);
-    --artifact-fan-spread:clamp(12px,calc((var(--artifact-lane-width) - var(--artifact-fan-card-width))/2),102px)
+    --artifact-fan-card-width:min(305px,28vw);
+    --artifact-fan-spread:min(78px,6vw);
+    height:390px!important
   }
   .artifact-object[data-artifact-variant="fan"] .artifact-deck-card{
     width:var(--artifact-fan-card-width)!important;
-    height:190px
+    height:auto!important
   }
   .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(1){
-    transform:translateX(calc(-50% - var(--artifact-fan-spread))) translateY(22px) rotate(-8deg)
+    transform:translateX(calc(-50% - var(--artifact-fan-spread))) translateY(46px) rotate(-5deg)!important
   }
   .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(2){
-    transform:translateX(-50%) translateY(3px) rotate(0deg)
+    transform:translateX(-50%) translateY(0) rotate(0deg)!important
   }
   .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(3){
-    transform:translateX(calc(-50% + var(--artifact-fan-spread))) translateY(22px) rotate(8deg)
+    transform:translateX(calc(-50% + var(--artifact-fan-spread))) translateY(46px) rotate(5deg)!important
   }
-  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(1).is-active{
-    transform:translateX(calc(-50% - var(--artifact-fan-spread))) translateY(-7px) rotate(0deg)
+  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(1):is(:hover,:focus-visible,.is-active){
+    transform:translateX(calc(-50% - var(--artifact-fan-spread))) translateY(38px) rotate(-2deg)!important
   }
-  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(2).is-active{
-    transform:translateX(-50%) translateY(-7px) rotate(0deg)
+  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(2):is(:hover,:focus-visible,.is-active){
+    transform:translateX(-50%) translateY(-8px) rotate(0deg)!important
   }
-  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(3).is-active{
-    transform:translateX(calc(-50% + var(--artifact-fan-spread))) translateY(-7px) rotate(0deg)
+  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(3):is(:hover,:focus-visible,.is-active){
+    transform:translateX(calc(-50% + var(--artifact-fan-spread))) translateY(38px) rotate(2deg)!important
   }
 
-  /* The original side-stage objects were tuned as thumbnails. Promote every
-     contextual artifact to a genuinely inspectable scene object on desktop.
-     1.9x linear scale is roughly 3.6x the visible area while preserving the
-     existing internal layout and hit targets. */
-  .artifact-object[data-scene-placement="artifact-contextual"]{
+  /* Keep Axiom Wilds at the size that already works well. It is video rather
+     than a browser PDF surface, so CSS scaling does not create the same preview
+     quality problem. */
+  .artifact-object[data-scene-placement="artifact-contextual"][data-artifact-variant="video"]{
     scale:1.9
   }
-  .artifact-object[data-scene-placement="artifact-contextual"][data-artifact-side="left"]{
+  .artifact-object[data-scene-placement="artifact-contextual"][data-artifact-variant="video"][data-artifact-side="left"]{
     transform-origin:left top
   }
-  .artifact-object[data-scene-placement="artifact-contextual"][data-artifact-side="right"]{
+  .artifact-object[data-scene-placement="artifact-contextual"][data-artifact-variant="video"][data-artifact-side="right"]{
     transform-origin:right top
+  }
+
+  /* Preserve the previous large size for ordinary document folios using real
+     page dimensions instead of scaling the browser's embedded PDF renderer. */
+  .artifact-document-object:not([data-artifact-variant="pdf-only"]){
+    height:620px!important
+  }
+  .artifact-document-object:not([data-artifact-variant="pdf-only"]) .artifact-folio-shadow-page,
+  .artifact-document-object:not([data-artifact-variant="pdf-only"]) .artifact-folio-page{
+    width:min(555px,44vw)!important;
+    height:auto!important;
+    aspect-ratio:.707071
+  }
+
+  /* CLP Survey: the floating object is the PDF itself. Remove the extra faux
+     page, caption and source chip, and let the first page occupy the full object. */
+  .artifact-object[data-artifact-scene="clp-survey-paper"]{
+    height:min(690px,calc(100vh - 96px))!important
+  }
+  .artifact-object[data-artifact-scene="clp-survey-paper"] .artifact-folio-shadow-page,
+  .artifact-object[data-artifact-scene="clp-survey-paper"] .artifact-folio-caption,
+  .artifact-object[data-artifact-scene="clp-survey-paper"] .artifact-orbit-actions{
+    display:none!important
+  }
+  .artifact-object[data-artifact-scene="clp-survey-paper"] .artifact-folio-page{
+    left:50%!important;
+    top:0!important;
+    width:min(560px,44vw)!important;
+    height:auto!important;
+    aspect-ratio:.707071;
+    overflow:hidden!important;
+    transform:translateX(-50%) rotate(0deg)!important;
+    border:1px solid color-mix(in srgb,var(--line) 60%,transparent)!important;
+    border-radius:3px;
+    box-shadow:0 18px 46px color-mix(in srgb,var(--ink) 17%,transparent)!important
+  }
+  .artifact-object[data-artifact-scene="clp-survey-paper"] .artifact-folio-page:is(:hover,:focus-visible){
+    transform:translateX(-50%) translateY(-5px) rotate(0deg)!important
+  }
+  .artifact-object[data-artifact-scene="clp-survey-paper"] .artifact-folio-preview{
+    inset:0!important
+  }
+  .artifact-object[data-artifact-scene="clp-survey-paper"] .artifact-folio-preview iframe{
+    background:#fff!important
   }
 
   /* The full defended thesis is a primary action rather than a tertiary chip. */
   .artifact-orbit-action[data-support-artifact-id="bachelor-thesis-pdf"]{
-    min-height:38px;
-    padding:0 16px;
+    min-height:52px;
+    padding:0 22px;
     border-width:2px;
-    font-size:10px;
+    font-size:14px;
     font-weight:850;
     letter-spacing:.01em
   }

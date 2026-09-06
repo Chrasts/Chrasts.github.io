@@ -35,17 +35,6 @@
       return [normalized];
     });
 
-    const thesis = site.work?.projects?.find(project => project.id === 'bachelor-thesis');
-    if (thesis) {
-      thesis.facets.status = 'submitted';
-      thesis.note = 'Bachelor thesis submitted; selected diagrams are available in the portfolio while the research repository remains private.';
-    }
-    const thesisNode = site.graph.nodes.find(node => node.id === 'project-bachelor-thesis');
-    if (thesisNode) {
-      thesisNode.status = 'submitted';
-      thesisNode.summary = 'Submitted bachelor thesis on quantum logic and associative residuated ortholattices, focused on algebraic structure and related varieties.';
-    }
-
     const modalLogicLab = site.work?.projects?.find(project => project.id === 'modal-logic-lab');
     if (modalLogicLab) {
       modalLogicLab.links = [

@@ -162,8 +162,8 @@
   }
 
   /* The full thesis is primary. Its two figure PDFs are deliberately small,
-     frameless supporting cards tucked against the lower-right edge of the folio.
-     Their browser PDF surfaces are overscanned and clipped so the viewer's dark
+     supporting cards tucked against the lower-right edge of the folio. Their
+     browser PDF surfaces are overscanned and clipped so the viewer's dark
      surround never becomes part of the visual artifact. */
   .artifact-object[data-artifact-scene="bachelor-thesis-paper"] .artifact-folio-support-deck{
     position:absolute;
@@ -181,7 +181,7 @@
     width:190px!important;
     height:auto!important;
     padding:0!important;
-    border:0!important;
+    border:2px solid #000!important;
     border-radius:0!important;
     overflow:visible!important;
     background:transparent!important;

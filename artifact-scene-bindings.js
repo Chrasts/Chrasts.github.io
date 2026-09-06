@@ -18,6 +18,7 @@
     {
       id: 'clp-survey-paper',
       recipe: 'document-folio',
+      variant: 'pdf-only',
       eyebrow: 'Mathematical writing',
       title: 'CLP historical survey',
       description: 'A live folio preview connects the finished survey to both the project and its mathematical topic.',

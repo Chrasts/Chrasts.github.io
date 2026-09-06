@@ -145,18 +145,26 @@
     }
 
     if (artifact.mediaType === 'application/pdf') {
-      /* Ambient document objects stay inert. The interactive PDF iframe belongs
-         only to the focused reader state, so it cannot steal the first tap or
-         create a focusable control inside the surrounding artifact button. */
+      /* Keep the ambient PDF preview visually live while leaving all interaction
+         ownership on the surrounding artifact button. The embedded viewer is
+         removed from keyboard/accessibility navigation and cannot capture taps. */
       frame.classList.add('is-pdf', 'has-inline-expand');
       const label = element('div', 'artifact-pdf-fallback');
       label.append(
         element('span', 'artifact-pdf-mark', 'PDF'),
         element('strong', 'artifact-pdf-title', artifact.title)
       );
+      const preview = document.createElement('iframe');
+      const separator = href.includes('#') ? '&' : '#';
+      preview.src = `${href}${separator}toolbar=0&navpanes=0&scrollbar=0&view=Fit`;
+      preview.title = `${artifact.title || 'PDF'} preview`;
+      preview.loading = eager ? 'eager' : 'lazy';
+      preview.tabIndex = -1;
+      preview.setAttribute('aria-hidden', 'true');
+      preview.setAttribute('focusable', 'false');
       const expand = element('span', 'artifact-inline-expand', 'Inspect ↗');
       expand.setAttribute('aria-hidden', 'true');
-      frame.append(label, expand);
+      frame.append(label, preview, expand);
       hydratePreviewAspect(frame, artifact, href);
       return frame;
     }

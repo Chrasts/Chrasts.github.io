@@ -45,23 +45,35 @@ test.describe('portfolio content integrity', () => {
     expect(state.duplicateEdges).toEqual([]);
   });
 
-  test('publishes current thesis status and Modal Logic Lab destinations', async ({ page }) => {
+  test('publishes completed BSc status and Modal Logic Lab destinations', async ({ page }) => {
     await waitReady(page);
     const content = await page.evaluate(() => {
       const thesis = window.SITE_DATA.work.projects.find(project => project.id === 'bachelor-thesis');
       const thesisNode = window.SITE_DATA.graph.nodes.find(node => node.id === 'project-bachelor-thesis');
+      const degree = window.SITE_DATA.graph.nodes.find(node => node.id === 'charles-university');
       const lab = window.SITE_DATA.work.projects.find(project => project.id === 'modal-logic-lab');
       return {
         thesisStatus: thesis?.facets?.status,
+        thesisVisibility: thesis?.facets?.visibility,
         thesisNodeStatus: thesisNode?.status,
         thesisNote: thesis?.note,
+        thesisLinks: thesis?.links,
+        degreeStatus: degree?.status,
+        degreeProgramme: degree?.programme,
         labLinks: lab?.links
       };
     });
 
-    expect(content.thesisStatus).toBe('submitted');
-    expect(content.thesisNodeStatus).toBe('submitted');
-    expect(content.thesisNote).toContain('submitted');
+    expect(content.thesisStatus).toBe('finished');
+    expect(content.thesisVisibility).toBe('public');
+    expect(content.thesisNodeStatus).toBe('finished');
+    expect(content.thesisNote).toContain('Successfully defended');
+    expect(content.thesisLinks).toContainEqual({
+      label: 'Thesis PDF ↗',
+      href: 'assets/documents/education/coursework/thesis.pdf'
+    });
+    expect(content.degreeStatus).toBe('completed');
+    expect(content.degreeProgramme).toBe("Bachelor's degree in Logic");
     expect(content.labLinks).toEqual([
       { label: 'Play ↗', href: 'https://chrasts.github.io/Modal_Logic_Lab/' },
       { label: 'GitHub ↗', href: 'https://github.com/Chrasts/Modal_Logic_Lab' }

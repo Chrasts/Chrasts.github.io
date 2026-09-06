@@ -29,16 +29,27 @@
       ]
     },
     {
-      id: 'bachelor-thesis-diagrams',
-      recipe: 'media-deck',
-      variant: 'diagram',
-      title: 'BSc thesis materials',
-      artifactIds: ['bachelor-thesis-lattice-of-bands', 'bachelor-thesis-rol-non-a'],
-      actionArtifactIds: ['bachelor-thesis-pdf'],
-      actionLabels: { 'bachelor-thesis-pdf': 'Thesis PDF ↗' },
+      id: 'bachelor-thesis-paper',
+      recipe: 'document-folio',
+      variant: 'pdf-only',
+      eyebrow: 'Bachelor thesis',
+      title: 'BSc thesis',
+      description: 'The defended bachelor thesis is the primary document object for the research scene.',
+      artifactIds: ['bachelor-thesis-pdf'],
       targets: [
         { route: 'work/project/bachelor-thesis', anchorNodeId: 'project-bachelor-thesis', side: 'left' },
         { route: 'knowledge/logic-math/mathematical-logic/algebraic-logic/quantum-logic-arol', anchorNodeId: 'quantum-logic-arol', side: 'right' }
+      ]
+    },
+    {
+      id: 'bachelor-thesis-diagrams',
+      recipe: 'media-deck',
+      variant: 'diagram',
+      title: 'BSc thesis diagrams',
+      artifactIds: ['bachelor-thesis-lattice-of-bands', 'bachelor-thesis-rol-non-a'],
+      targets: [
+        { route: 'work/project/bachelor-thesis', anchorNodeId: 'project-bachelor-thesis', side: 'right' },
+        { route: 'knowledge/logic-math/mathematical-logic/algebraic-logic/quantum-logic-arol', anchorNodeId: 'quantum-logic-arol', side: 'left' }
       ]
     },
     {

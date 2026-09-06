@@ -205,7 +205,8 @@
       const support = env.artifactFor(id);
       const supportHref = env.hrefFor(id);
       if (!support || !supportHref) return;
-      const link = element('a', 'artifact-orbit-action artifact-live-action', 'Open live ↗');
+      const fallbackLabel = support.mediaType === 'application/pdf' ? 'Open PDF ↗' : 'Open live ↗';
+      const link = element('a', 'artifact-orbit-action artifact-live-action', binding.actionLabels?.[id] || fallbackLabel);
       link.href = supportHref;
       link.target = '_blank';
       link.rel = 'noreferrer';

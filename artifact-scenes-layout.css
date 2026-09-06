@@ -31,8 +31,15 @@
     right:auto!important
   }
 
+  /* Media titles belong to hover/focus bubbles. Never reserve a permanent title
+     strip around an otherwise visual floating artifact. */
+  .artifact-object[data-artifact-recipe="media-deck"] .artifact-deck-label{
+    display:none!important
+  }
+
   /* Thesis PDFs: render at their actual large CSS size instead of magnifying a
-     small embedded PDF viewer. This keeps browser PDF rasterisation sharp. */
+     small embedded PDF viewer. Slightly overscan the inert browser PDF surface
+     so the viewer's dark page surround is clipped away and only the paper shows. */
   .artifact-object[data-artifact-variant="diagram"]{
     --artifact-diagram-card-width:min(520px,38vw);
     --artifact-diagram-spread:min(118px,9vw);
@@ -40,7 +47,26 @@
   }
   .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card{
     width:var(--artifact-diagram-card-width)!important;
-    height:auto!important
+    height:auto!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important
+  }
+  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-preview{
+    overflow:hidden!important;
+    border:0!important;
+    background:#fff!important
+  }
+  .artifact-object[data-artifact-variant="diagram"] .artifact-deck-preview.is-pdf iframe{
+    position:absolute!important;
+    inset:-2.2%!important;
+    width:104.4%!important;
+    height:104.4%!important;
+    max-width:none!important;
+    max-height:none!important;
+    background:#fff!important;
+    transform:scale(1.012)!important;
+    transform-origin:center!important
   }
   .artifact-object[data-artifact-variant="diagram"] .artifact-deck-card:nth-child(1){
     z-index:2!important;
@@ -61,12 +87,12 @@
     transform:translateX(calc(-50% + var(--artifact-diagram-spread))) translateY(62px) rotate(1.8deg)!important
   }
 
-  /* Modal Logic Lab is intentionally a large, dominant scene object. Each
-     screenshot is around twice the previous rendered width on normal desktops. */
+  /* Modal Logic Lab: halve the previous oversized pass while preserving the
+     same two-screen composition and stable hover stacking. */
   .artifact-object[data-artifact-variant="screens"]{
-    --artifact-screen-card-width:min(950px,72vw);
-    --artifact-screen-spread:min(92px,7vw);
-    height:min(670px,calc(100vh - 92px))!important
+    --artifact-screen-card-width:min(475px,36vw);
+    --artifact-screen-spread:min(46px,3.5vw);
+    height:min(360px,calc(100vh - 92px))!important
   }
   .artifact-object[data-artifact-variant="screens"] .artifact-deck-card{
     width:var(--artifact-screen-card-width)!important;
@@ -78,7 +104,7 @@
   }
   .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(2){
     z-index:1!important;
-    transform:translateX(calc(-50% + var(--artifact-screen-spread))) translateY(86px) rotate(1.2deg)!important
+    transform:translateX(calc(-50% + var(--artifact-screen-spread))) translateY(43px) rotate(1.2deg)!important
   }
   .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(1):is(:hover,:focus-visible,.is-active),
   .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(2):is(:hover,:focus-visible,.is-active){
@@ -88,12 +114,12 @@
     transform:translateX(calc(-50% - var(--artifact-screen-spread))) translateY(0) rotate(-1.2deg)!important
   }
   .artifact-object[data-artifact-variant="screens"] .artifact-deck-card:nth-child(2):is(:hover,:focus-visible,.is-active){
-    transform:translateX(calc(-50% + var(--artifact-screen-spread))) translateY(86px) rotate(1.2deg)!important
+    transform:translateX(calc(-50% + var(--artifact-screen-spread))) translateY(43px) rotate(1.2deg)!important
   }
 
-  /* Hedgehog photos retain the current visual size, but use real dimensions
-     rather than scaling the entire cluster. The compact spread keeps the left
-     photograph inside the viewport after the scene flips to the left lane. */
+  /* Hedgehog photos retain the approved size and placement, but the old
+     Polaroid-style paper frame is removed. The existing object-tag bubble is the
+     sole title treatment and appears only on hover/focus. */
   .artifact-object[data-artifact-variant="fan"]{
     --artifact-fan-card-width:min(305px,28vw);
     --artifact-fan-spread:min(78px,6vw);
@@ -101,7 +127,16 @@
   }
   .artifact-object[data-artifact-variant="fan"] .artifact-deck-card{
     width:var(--artifact-fan-card-width)!important;
-    height:auto!important
+    height:auto!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:0 14px 34px color-mix(in srgb,var(--ink) 11%,transparent)!important
+  }
+  .artifact-object[data-artifact-variant="fan"] .artifact-deck-preview{
+    inset:auto!important;
+    border:0!important;
+    background:transparent!important
   }
   .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(1){
     transform:translateX(calc(-50% - var(--artifact-fan-spread))) translateY(46px) rotate(-5deg)!important

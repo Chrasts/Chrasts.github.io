@@ -87,6 +87,17 @@
       presentation: { preferredObject: 'document', openMode: 'new-tab', aspectRatio: 0.707071 }
     },
     {
+      id: 'bachelor-thesis-pdf',
+      type: 'document',
+      title: 'Residuated Ortholattices and their Associative Fragment in Quantum Logic',
+      description: 'Final defended BSc thesis, Charles University, 2026.',
+      anchorNodeIds: ['project-bachelor-thesis', 'quantum-logic-arol'],
+      source: { kind: 'local', path: 'assets/documents/education/coursework/thesis.pdf' },
+      mediaType: 'application/pdf',
+      availability: 'public',
+      presentation: { preferredObject: 'document', openMode: 'new-tab', aspectRatio: 0.707071 }
+    },
+    {
       id: 'bachelor-thesis-lattice-of-bands',
       type: 'diagram',
       title: 'Lower fragment of the lattice of varieties of bands',

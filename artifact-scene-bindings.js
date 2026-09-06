@@ -31,8 +31,8 @@
       id: 'bachelor-thesis-diagrams',
       recipe: 'media-deck',
       variant: 'diagram',
-      title: 'Structural diagrams',
-      artifactIds: ['bachelor-thesis-lattice-of-bands', 'bachelor-thesis-rol-non-a'],
+      title: 'BSc thesis materials',
+      artifactIds: ['bachelor-thesis-lattice-of-bands', 'bachelor-thesis-rol-non-a', 'bachelor-thesis-pdf'],
       targets: [
         { route: 'work/project/bachelor-thesis', anchorNodeId: 'project-bachelor-thesis', side: 'left' },
         { route: 'knowledge/logic-math/mathematical-logic/algebraic-logic/quantum-logic-arol', anchorNodeId: 'quantum-logic-arol', side: 'right' }

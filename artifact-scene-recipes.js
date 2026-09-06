@@ -232,6 +232,8 @@
     const artifact = env.artifactFor(binding.artifactIds[0]);
     if (!artifact) return root;
     const href = env.hrefFor(artifact.id);
+    const supportArtifacts = (binding.supportArtifactIds || []).map(env.artifactFor).filter(Boolean);
+    const objectCount = 1 + supportArtifacts.length;
 
     const stage = element('div', 'artifact-folio-stage');
     const shadowPage = element('div', 'artifact-folio-shadow-page');
@@ -249,7 +251,7 @@
     caption.appendChild(element('strong', 'artifact-folio-title', artifact.title));
     if (artifact.description) caption.appendChild(element('span', 'artifact-folio-summary', artifact.description));
     page.appendChild(caption);
-    registerRuntimeObject(page, binding, artifact, 0, 1);
+    registerRuntimeObject(page, binding, artifact, 0, objectCount);
     window.ProfileScene?.objects?.activate(runtimeIdFor(binding, artifact));
 
     page.addEventListener('click', event => {
@@ -258,6 +260,43 @@
     });
     stage.append(shadowPage, page);
     root.appendChild(stage);
+
+    if (supportArtifacts.length) {
+      const supportDeck = element('div', 'artifact-folio-support-deck');
+      supportDeck.setAttribute('role', 'group');
+      supportDeck.setAttribute('aria-label', `${binding.title || artifact.title} supporting media`);
+
+      supportArtifacts.forEach((supportArtifact, index) => {
+        const supportHref = env.hrefFor(supportArtifact.id);
+        if (!supportHref) return;
+        const card = element('button', 'artifact-deck-card artifact-folio-support-card artifact-emergent-object');
+        card.type = 'button';
+        card.dataset.artifactId = supportArtifact.id;
+        card.dataset.artifactFocus = supportArtifact.id;
+        card.dataset.objectFocusState = 'ambient';
+        card.style.setProperty('--artifact-card-index', String(index));
+        card.style.setProperty('--artifact-emerge-delay', `${155 + index * 85}ms`);
+        card.setAttribute('aria-label', `Inspect ${supportArtifact.title}`);
+        card.append(
+          mediaPreview(supportArtifact, supportHref, { className: 'artifact-deck-preview', eager: true }),
+          objectTag(supportArtifact)
+        );
+        registerRuntimeObject(card, binding, supportArtifact, index + 1, objectCount);
+        card.addEventListener('pointerenter', () => {
+          window.ProfileScene?.objects?.activate(runtimeIdFor(binding, supportArtifact));
+        });
+        card.addEventListener('focus', () => {
+          window.ProfileScene?.objects?.activate(runtimeIdFor(binding, supportArtifact));
+        });
+        card.addEventListener('click', event => {
+          event.stopPropagation();
+          openObjectFocus(root, card, binding, supportArtifact, env);
+        });
+        supportDeck.appendChild(card);
+      });
+      root.appendChild(supportDeck);
+    }
+
     appendOrbitActions(root, binding, env, { includePrimarySource: artifact });
     return root;
   };

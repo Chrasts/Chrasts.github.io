@@ -62,7 +62,7 @@ test('artifact route mounts one scene, tears it down and remounts without multip
   const remounted = page.locator('[data-artifact-scene="bachelor-thesis-diagrams"]');
   await expect(remounted).toHaveCount(1);
   await expect(remounted.locator('iframe')).toHaveCount(0);
-  await expect(remounted.locator('.artifact-pdf-fallback')).toHaveCount(2);
+  await expect(remounted.locator('.artifact-pdf-fallback')).toHaveCount(3);
 });
 
 test('Simulation Credence is a document object and opens in Object Focus', async ({ page }) => {
@@ -89,7 +89,7 @@ test('Simulation Credence is a document object and opens in Object Focus', async
   await expect(viewer).toBeHidden();
 });
 
-test('thesis diagrams use their PDF page aspect and show the whole page', async ({ page }) => {
+test('BSc thesis materials preserve PDF geometry and open the defended thesis in Object Focus', async ({ page }) => {
   await bypassIntro(page);
   await page.goto('/#work/project/bachelor-thesis');
   await waitArtifactScenes(page);
@@ -97,22 +97,24 @@ test('thesis diagrams use their PDF page aspect and show the whole page', async 
   const cluster = page.locator('[data-artifact-scene="bachelor-thesis-diagrams"]');
   const first = cluster.locator('.artifact-deck-card[data-artifact-id="bachelor-thesis-lattice-of-bands"]');
   const second = cluster.locator('.artifact-deck-card[data-artifact-id="bachelor-thesis-rol-non-a"]');
+  const thesis = cluster.locator('.artifact-deck-card[data-artifact-id="bachelor-thesis-pdf"]');
   const viewer = page.locator('.artifact-focus-viewer');
 
   await expect(cluster).toBeVisible();
-  await expect(cluster.locator('.artifact-deck-card')).toHaveCount(2);
+  await expect(cluster.locator('.artifact-deck-card')).toHaveCount(3);
   await expect(cluster.locator('.artifact-object-header')).toHaveCount(0);
   await expect(cluster.locator('.artifact-object-description')).toHaveCount(0);
   await expect(cluster.locator('.artifact-deck-footer')).toHaveCount(0);
-  await expect(cluster.locator('.artifact-object-tag')).toHaveCount(2);
+  await expect(cluster.locator('.artifact-object-tag')).toHaveCount(3);
   await expect(cluster.locator('iframe')).toHaveCount(0);
-  await expect(cluster.locator('.artifact-pdf-fallback')).toHaveCount(2);
+  await expect(cluster.locator('.artifact-pdf-fallback')).toHaveCount(3);
 
   const previews = cluster.locator('.artifact-deck-preview');
   await expect(previews.nth(0)).toHaveAttribute('data-media-aspect-ready', 'true', { timeout: 5000 });
   await expect(previews.nth(1)).toHaveAttribute('data-media-aspect-ready', 'true', { timeout: 5000 });
+  await expect(previews.nth(2)).toHaveAttribute('data-media-aspect-ready', 'true', { timeout: 5000 });
 
-  const mediaGeometry = await Promise.all([first, second].map(async card => card.evaluate(element => {
+  const mediaGeometry = await Promise.all([first, second, thesis].map(async card => card.evaluate(element => {
     const preview = element.querySelector('.artifact-deck-preview');
     return {
       cardWidth: element.offsetWidth,
@@ -132,11 +134,10 @@ test('thesis diagrams use their PDF page aspect and show the whole page', async 
     expect(Math.abs(item.previewWidth / item.previewHeight - item.ratio)).toBeLessThan(.03);
   });
 
-  const boxes = await Promise.all([first.boundingBox(), second.boundingBox()]);
+  const boxes = await Promise.all([first.boundingBox(), second.boundingBox(), thesis.boundingBox()]);
   const viewport = page.viewportSize();
   expect(viewport).not.toBeNull();
-  expect(boxes[0]).not.toBeNull();
-  expect(boxes[1]).not.toBeNull();
+  boxes.forEach(box => expect(box).not.toBeNull());
   expect(Math.abs(boxes[0].x - boxes[1].x) + Math.abs(boxes[0].y - boxes[1].y)).toBeGreaterThan(80);
   boxes.forEach(box => {
     expect(box.x).toBeGreaterThanOrEqual(20);
@@ -160,6 +161,16 @@ test('thesis diagrams use their PDF page aspect and show the whole page', async 
   await waitSettled(page);
   await expect(viewer).toHaveAttribute('data-shared-focus-artifact', 'bachelor-thesis-lattice-of-bands');
   await expect(viewer.locator('.artifact-focus-media iframe')).toHaveCount(1);
+  await page.keyboard.press('Escape');
+  await expect(viewer).toBeHidden({ timeout: 2000 });
+
+  await thesis.hover();
+  await expect(thesis).toHaveClass(/is-active/);
+  await thesis.locator('.artifact-inline-expand').click();
+  await waitSettled(page);
+  await expect(viewer).toHaveAttribute('data-shared-focus-artifact', 'bachelor-thesis-pdf');
+  await expect(viewer.locator('.artifact-focus-title')).toContainText('Residuated Ortholattices and their Associative Fragment in Quantum Logic');
+  await expect(viewer.locator('.artifact-focus-media iframe')).toHaveAttribute('src', /assets\/documents\/education\/coursework\/thesis\.pdf#toolbar=1&navpanes=0&scrollbar=0&view=Fit/);
   await page.keyboard.press('Escape');
 });
 

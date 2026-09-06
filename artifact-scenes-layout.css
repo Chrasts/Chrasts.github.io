@@ -109,4 +109,28 @@
   .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(3).is-active{
     transform:translateX(calc(-50% + var(--artifact-fan-spread))) translateY(-7px) rotate(0deg)
   }
+
+  /* The original side-stage objects were tuned as thumbnails. Promote every
+     contextual artifact to a genuinely inspectable scene object on desktop.
+     1.9x linear scale is roughly 3.6x the visible area while preserving the
+     existing internal layout and hit targets. */
+  .artifact-object[data-scene-placement="artifact-contextual"]{
+    scale:1.9
+  }
+  .artifact-object[data-scene-placement="artifact-contextual"][data-artifact-side="left"]{
+    transform-origin:left top
+  }
+  .artifact-object[data-scene-placement="artifact-contextual"][data-artifact-side="right"]{
+    transform-origin:right top
+  }
+
+  /* The full defended thesis is a primary action rather than a tertiary chip. */
+  .artifact-orbit-action[data-support-artifact-id="bachelor-thesis-pdf"]{
+    min-height:38px;
+    padding:0 16px;
+    border-width:2px;
+    font-size:10px;
+    font-weight:850;
+    letter-spacing:.01em
+  }
 }

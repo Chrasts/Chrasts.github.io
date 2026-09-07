@@ -7,15 +7,6 @@
 
   const bindings = [
     {
-      id: 'simulation-credence-paper',
-      recipe: 'document-folio',
-      eyebrow: 'Selected coursework',
-      title: 'Simulation Credence',
-      description: 'The paper is treated as a scene object: inspect the real PDF, then return to the graph without leaving the route.',
-      artifactIds: ['simulation-credence-coursework'],
-      targets: [{ route: 'education/charles-university/coursework/simulation-credence', anchorNodeId: 'simulation-credence', side: 'left' }]
-    },
-    {
       id: 'clp-survey-paper',
       recipe: 'document-folio',
       variant: 'pdf-only',
@@ -52,6 +43,21 @@
       targets: [
         { route: 'work/project/modal-logic-lab', anchorNodeId: 'project-modal-logic-lab', side: 'left' },
         { route: 'knowledge/logic-math/mathematical-logic/modal-logic', anchorNodeId: 'modal-logic', side: 'right' }
+      ]
+    },
+    {
+      id: 'sql-schema-er-diagrams',
+      recipe: 'media-deck',
+      variant: 'fan',
+      eyebrow: 'Data modelling · algebraic logic',
+      title: 'Algebraic Logic SQL Schema',
+      description: 'The entity-relationship diagram and subclass map are available as floating project artefacts wherever the schema connects to its SQL and algebraic-logic context.',
+      artifactIds: ['sql-schema-er-diagram', 'sql-schema-subclass-hierarchy'],
+      targets: [
+        { route: 'work/project/sql-schema', anchorNodeId: 'project-sql-schema', side: 'left' },
+        { route: 'knowledge/data-computing/data-management/sql', anchorNodeId: 'sql', side: 'right' },
+        { route: 'knowledge/data-computing/data-management/data-modelling', anchorNodeId: 'data-modelling', side: 'right' },
+        { route: 'knowledge/logic-math/mathematical-logic/algebraic-logic', anchorNodeId: 'algebraic-logic', side: 'right' }
       ]
     },
     {

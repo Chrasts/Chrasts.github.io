@@ -16,24 +16,26 @@
     return number >>> 0;
   };
 
-  // Canonical fan-v3. Education is deliberately steeper than in the previous
-  // pass so its Atlas territory does not drift into the long Knowledge wing.
+  // Canonical fan-v4. Experience is the compact upper-left territory; About
+  // owns the broad western lane so its larger family can breathe sideways.
   const compass = Object.freeze({
-    work: normalise({ x: 0, y: 1 }),
-    knowledge: normalise({ x: 1, y: -0.02 }),
-    experience: normalise({ x: -0.99, y: 0.12 }),
-    education: normalise({ x: 0.42, y: -0.91 }),
-    about: normalise({ x: -0.72, y: -0.69 })
+    work: normalise({ x: .12, y: 1 }),
+    knowledge: normalise({ x: 1, y: -.13 }),
+    experience: normalise({ x: -.42, y: -.91 }),
+    education: normalise({ x: .42, y: -.91 }),
+    about: normalise({ x: -1, y: .06 })
   });
 
   const OVERVIEW = Object.freeze({ width: 1200, height: 720, center: { x: 600, y: 350 } });
-  const ATLAS = Object.freeze({ width: 2520, height: 1580, center: { x: 1260, y: 790 }, sectionRadius: 350 });
-  const halfAngles = Object.freeze({ work: 0.66, knowledge: 0.76, experience: 0.58, education: 0.47, about: 0.58 });
+  // Leave a deliberate breathing ring around the root: the five section
+  // anchors must clear its halo in both the intro and the live Atlas.
+  const ATLAS = Object.freeze({ width: 2800, height: 1540, center: { x: 1400, y: 770 }, sectionRadius: 370 });
+  const halfAngles = Object.freeze({ work: 0.80, knowledge: 0.78, experience: 0.46, education: 0.62, about: 0.84 });
   const overviewRadius = id => {
     const mobile = window.matchMedia('(max-width: 900px)').matches;
     const values = mobile
-      ? { work: 225, knowledge: 250, education: 224, about: 222, experience: 218 }
-      : { work: 302, knowledge: 365, education: 314, about: 314, experience: 292 };
+      ? { work: 225, knowledge: 250, education: 224, about: 235, experience: 204 }
+      : { work: 302, knowledge: 365, education: 314, about: 334, experience: 278 };
     return values[id] || 230;
   };
 
@@ -137,10 +139,10 @@
       // radius. Give Work the available sector depth instead of collapsing it.
       const usableReserve = sectionId === 'work' ? 16 : 56;
       const usable = Math.max(ATLAS.sectionRadius + 120, limit - usableReserve);
-      const minimumLevelGap = sectionId === 'work' ? 56 : 76;
+      const minimumLevelGap = sectionId === 'work' ? 62 : 82;
       const levelGap = maxDepth > 0
-        ? Math.max(minimumLevelGap, Math.min(sectionId === 'knowledge' ? 150 : 142, (usable - ATLAS.sectionRadius) / maxDepth))
-        : 124;
+        ? Math.max(minimumLevelGap, Math.min(sectionId === 'knowledge' ? 158 : 150, (usable - ATLAS.sectionRadius) / maxDepth))
+        : 132;
       const sectionPoint = {
         x: ATLAS.center.x + vector.x * ATLAS.sectionRadius,
         y: ATLAS.center.y + vector.y * ATLAS.sectionRadius
@@ -165,10 +167,10 @@
         const baseRadius = ATLAS.sectionRadius + levelGap * depth;
         const tangentialCapacity = Math.max(160, baseRadius * Math.tan(halfAngles[sectionId]));
         const desiredGap = sectionId === 'knowledge'
-          ? 108
+          ? 126
           : sectionId === 'work'
-            ? 150
-            : sectionId === 'education' ? 110 : 120;
+            ? 162
+            : sectionId === 'education' ? 124 : 136;
         const span = Math.min(tangentialCapacity * 2, desiredGap * Math.max(0, level.length - 1));
 
         level.forEach((node, index) => {
@@ -178,20 +180,25 @@
           const tangentVariance = sectionId === 'work'
             ? 0
             : leaf
-              ? ((seed >>> 9) % (sectionId === 'knowledge' ? 55 : 35)) - (sectionId === 'knowledge' ? 27 : 17)
-              : ((seed >>> 12) % 15) - 7;
+              ? ((seed >>> 9) % (sectionId === 'knowledge' ? 31 : 23)) - (sectionId === 'knowledge' ? 15 : 11)
+              : ((seed >>> 12) % 11) - 5;
           const tangential = baseTangent + tangentVariance;
 
           let radialJitter = 0;
           if (sectionId === 'work') {
             radialJitter = ((stableNumber(`${node.id}:r`) % 11) - 5);
           } else if (leaf) {
-            radialJitter = sectionId === 'knowledge'
-              ? 28 + (seed % 116)
-              : 18 + (seed % 68);
-            if (depth === maxDepth) radialJitter += sectionId === 'knowledge' ? ((seed >>> 16) % 36) : ((seed >>> 16) % 18);
+            // Keep each non-Work territory as an organic field rather than
+            // a stack of ruler-straight generations. The bounded, stable
+            // ripple gives siblings distinct radial levels without reverting
+            // to the earlier satellite-like scatter. Work stays aligned above.
+            const ripple = ((seed >>> 7) % 5) - 2;
+            const amplitude = sectionId === 'knowledge' ? 34 : 27;
+            radialJitter = ripple * amplitude + ((seed % 17) - 8);
+            if (depth === maxDepth) radialJitter += ((seed >>> 16) % 19) - 9;
           } else {
-            radialJitter = (stableNumber(`${node.id}:r`) % 31) - 15;
+            const ripple = ((stableNumber(`${node.id}:r`) >>> 5) % 3) - 1;
+            radialJitter = ripple * 18 + ((stableNumber(`${node.id}:r`) % 15) - 7);
           }
 
           const radial = Math.min(usable, Math.max(baseRadius - 28, baseRadius + radialJitter));
@@ -213,7 +220,7 @@
     const availableX = Math.min(ATLAS.center.x - 150, ATLAS.width - 150 - ATLAS.center.x);
     const availableY = Math.min(ATLAS.center.y - 160, ATLAS.height - 160 - ATLAS.center.y);
     const scaleX = Math.min(1, availableX / maxDx);
-    const scaleY = Math.min(0.94, availableY / maxDy);
+    const scaleY = Math.min(.98, availableY / maxDy);
     positions.forEach((point, id) => {
       if (id === rootId) return;
       positions.set(id, {

@@ -31,23 +31,11 @@
     if (researchThemeNode) researchThemeNode.label = 'Research';
   }
 
-  const ensureStylesheet = (href, marker) => {
-    if (document.querySelector(`link[${marker}]`)) return;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = href;
-    link.setAttribute(marker, 'true');
-    document.head.appendChild(link);
-  };
-  ensureStylesheet('graph-v8.css', 'data-profile-graph-v8');
-  ensureStylesheet('graph-v9.css', 'data-profile-graph-v9');
-
   const mobileViewport = window.matchMedia('(max-width: 900px)');
   const ensureMobileLayer = () => {
     if (!mobileViewport.matches) return;
     setTimeout(() => setTimeout(() => {
       if (!mobileViewport.matches) return;
-      ensureStylesheet('mobile.css', 'data-profile-mobile');
       if (!document.querySelector('script[data-profile-mobile-app]')) {
         const script = document.createElement('script');
         script.src = 'mobile-app.js';
@@ -427,6 +415,7 @@
       if (interceptWorkInspection(event)) return;
     }
     if (event.key === 'Escape') {
+      if (event.defaultPrevented || event.target.closest?.('.mobile-control-sheet[aria-hidden="false"]')) return;
       if (closeLocalWorkProjectDetail()) {
         event.preventDefault();
         event.stopImmediatePropagation();

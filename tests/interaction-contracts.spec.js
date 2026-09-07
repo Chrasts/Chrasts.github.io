@@ -123,7 +123,7 @@ test('focus transitions crossfade persistent label geometry before handoff', asy
   expect(await page.evaluate(() => location.hash)).toBe('#education/charles-university');
 });
 
-test('Atlas entry control always reflects the current mode', async ({ page }) => {
+test('Atlas entry control is unavailable inside Atlas', async ({ page }) => {
   await activateOverview(page);
   const button = page.locator('.atlas-button');
 
@@ -133,14 +133,8 @@ test('Atlas entry control always reflects the current mode', async ({ page }) =>
   await page.waitForFunction(() => document.body.dataset.graphMode === 'atlas');
   await page.waitForFunction(() => !document.body.classList.contains('is-atlas-handoff'));
 
-  await expect(button).toHaveAttribute('data-route', 'overview');
-  await expect(button).toContainText('Profile');
-  await button.click();
-  await page.waitForFunction(() => document.body.dataset.graphMode === 'overview');
-  await page.waitForFunction(() => !document.body.classList.contains('is-atlas-handoff'));
-
-  await expect(button).toHaveAttribute('data-route', 'atlas');
-  await expect(button).toContainText('Atlas');
+  await expect(button).toBeHidden();
+  await expect(button).not.toContainText('Profile');
 });
 
 test('expanded graph routes are viewport-contained and cannot document-scroll', async ({ page }) => {

@@ -11,6 +11,8 @@
     min-height:100%;
     overflow:hidden!important;
     overscroll-behavior:none;
+    -webkit-text-size-adjust:100%;
+    text-size-adjust:100%;
   }
   body{
     position:fixed;
@@ -21,9 +23,9 @@
     position:relative!important;
     z-index:100!important;
     width:100%!important;
-    height:54px!important;
-    min-height:54px!important;
-    padding:0 max(12px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left))!important;
+    height:calc(54px + env(safe-area-inset-top))!important;
+    min-height:calc(54px + env(safe-area-inset-top))!important;
+    padding:env(safe-area-inset-top) max(12px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left))!important;
     margin:0!important;
     background:color-mix(in srgb,var(--paper) 96%,transparent)!important;
     backdrop-filter:blur(14px)!important;
@@ -44,10 +46,10 @@
     display:none!important;
     position:fixed!important;
     z-index:120!important;
-    top:54px!important;
+    top:calc(54px + env(safe-area-inset-top))!important;
     left:0!important;
     right:0!important;
-    max-height:calc(100dvh - 54px)!important;
+    max-height:calc(100dvh - 54px - env(safe-area-inset-top))!important;
     padding:12px max(16px,env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))!important;
     overflow:auto!important;
     flex-direction:column!important;
@@ -68,7 +70,7 @@
   .profile-app{
     position:relative!important;
     width:100%!important;
-    height:calc(100dvh - 54px)!important;
+    height:calc(100dvh - 54px - env(safe-area-inset-top))!important;
     min-height:0!important;
     overflow:hidden!important;
   }
@@ -131,7 +133,7 @@
   .site-graph-viewport{
     position:absolute!important;
     z-index:1!important;
-    inset:44px 0 52px 0!important;
+    inset:44px 0 62px 0!important;
     width:auto!important;
     height:auto!important;
     overflow:hidden!important;
@@ -156,7 +158,7 @@
   body[data-graph-mode="focus"] .site-graph-viewport{top:44px!important}
   body[data-graph-mode="atlas"] .site-graph-viewport{
     top:44px!important;
-    bottom:52px!important;
+    bottom:62px!important;
     touch-action:none!important;
   }
 
@@ -180,6 +182,19 @@
     margin:0!important;
     padding:0!important;
     pointer-events:none!important;
+  }
+  /* The route renderer intentionally retains [hidden] during its desktop
+     hand-off. On phone the hero is a stable overview layer, so restore its
+     incoming pose instead of exposing the desktop exit transform. */
+  body[data-graph-mode="overview"] .profile-app>.hero[hidden]{
+    display:block!important;
+    opacity:1!important;
+    visibility:visible!important;
+  }
+  body[data-graph-mode="overview"] .profile-app>.hero[hidden] .hero-copy,
+  body[data-graph-mode="overview"] .profile-app>.hero[hidden] .hero-visual.profile-identity{
+    opacity:1!important;
+    transform:none!important;
   }
   body:not([data-graph-mode="overview"]) .profile-app>.hero{
     opacity:0!important;
@@ -250,6 +265,7 @@
     padding:0 9px;
     font:720 10px/1 var(--sans);
     cursor:pointer;
+    touch-action:manipulation;
   }
   .mobile-graph-dock button:active,
   .mobile-graph-dock button:focus-visible{background:color-mix(in srgb,var(--teal) 10%,transparent);color:var(--teal)}
@@ -323,6 +339,8 @@
     overflow:auto;
     padding:12px 14px calc(12px + env(safe-area-inset-bottom));
     overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+    touch-action:pan-y;
   }
 
   .mobile-control-sheet .integrated-work-controls{

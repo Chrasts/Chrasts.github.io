@@ -132,6 +132,8 @@
   const layoutCache = new Map();
   const graphNodes = window.SITE_DATA?.graph?.nodes || [];
   const graphNodeMap = new Map(graphNodes.map(node => [node.id, node]));
+  const rootId = window.SITE_DATA?.graph?.rootId || 'stepan-chrast';
+  const atlasSections = graphNodes.filter(node => node.type === 'section');
   const childrenFor = id => graphNodes.filter(node => node.parentIds?.includes(id));
 
   const pointBounds = entries => {
@@ -318,21 +320,49 @@
     sheetBody: null,
     sheetTitle: null,
     sheetBackdrop: null,
+    branchPicker: null,
+    workPicker: null,
+    sheetClose: null,
+    sheetReturnFocus: null,
+    mobileAtlasCentered: false,
+    viewportFrame: 0,
+    orientationTimer: 0,
     registeredObjects: new Map()
   };
 
   const svg = () => $('#site-graph .site-graph-svg');
   const viewport = () => $('.site-graph-viewport');
 
-  const ensureStyle = href => {
-    if (document.querySelector(`link[href="${href}"]`)) return;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = href;
-    link.dataset.profileMobileV2 = 'true';
-    document.head.appendChild(link);
+  const introOwnsAtlas = () => ['pending', 'preparing', 'running']
+    .includes(document.documentElement.dataset.profileIntro || '') ||
+    document.body.classList.contains('is-atlas-reveal');
+
+  /* A phone never presents the full Atlas as a tiny, untappable thumbnail.
+     The root plus five sections form a real spatial branch chooser; local
+     routes carry the user into the rich graph behind each branch. */
+  const syncMobileAtlasBranches = () => {
+    if (modeNow() !== 'atlas') {
+      delete document.body.dataset.mobileAtlasView;
+      baseNodes().forEach(node => node.classList.remove('is-mobile-atlas-hidden'));
+      baseEdges().forEach(edge => edge.classList.remove('is-mobile-atlas-live'));
+      state.mobileAtlasCentered = false;
+      return;
+    }
+
+    document.body.dataset.mobileAtlasView = 'branches';
+    const visible = new Set([rootId, ...atlasSections.map(section => section.id)]);
+    baseNodes().forEach(node => node.classList.toggle('is-mobile-atlas-hidden', !visible.has(node.dataset.nodeId)));
+    baseEdges().forEach(edge => {
+      const structuralBranch = edge.dataset.source === rootId && visible.has(edge.dataset.target);
+      edge.classList.toggle('is-mobile-atlas-live', structuralBranch);
+    });
+
+    if (state.mobileAtlasCentered || introOwnsAtlas()) return;
+    const camera = window.ProfileAtlasLOD;
+    if (!camera?.focusNode) return;
+    camera.focusNode(rootId, { immediate: true });
+    state.mobileAtlasCentered = true;
   };
-  ensureStyle('mobile-v2.css');
 
   const visiblePoints = () => baseNodes().map(element => {
     const point = dataPoint(element);
@@ -486,7 +516,8 @@
     state.dragged = false;
     vp.setPointerCapture?.(event.pointerId);
     if (state.pointers.size === 1) {
-      state.gesture = { type: 'pan', last: { x: event.clientX, y: event.clientY } };
+      const point = { x: event.clientX, y: event.clientY };
+      state.gesture = { type: 'pan', start: point, last: point };
     } else if (state.pointers.size === 2) {
       const [a, b] = [...state.pointers.values()];
       state.gesture = { type: 'pinch', distance: distance(a, b), midpoint: midpoint(a, b) };
@@ -495,9 +526,9 @@
 
   const pointerMove = event => {
     if (!localMode() || !state.pointers.has(event.pointerId)) return;
-    const previous = state.pointers.get(event.pointerId);
     state.pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-    if (Math.hypot(event.clientX - previous.x, event.clientY - previous.y) > 2) state.dragged = true;
+    const panStart = state.gesture?.type === 'pan' ? state.gesture.start : null;
+    if (panStart && Math.hypot(event.clientX - panStart.x, event.clientY - panStart.y) > 8) state.dragged = true;
 
     if (state.pointers.size === 1 && state.gesture?.type === 'pan') {
       const current = { x: event.clientX, y: event.clientY };
@@ -533,7 +564,7 @@
     if (state.dragged) state.suppressClickUntil = performance.now() + 120;
     if (state.pointers.size === 1) {
       const point = [...state.pointers.values()][0];
-      state.gesture = { type: 'pan', last: point };
+      state.gesture = { type: 'pan', start: point, last: point };
     } else if (!state.pointers.size) {
       state.gesture = null;
     }
@@ -584,11 +615,13 @@
 
   const atlasEnd = event => {
     if (!state.atlasPointers.has(event.pointerId)) return;
+    const wasPinching = state.atlasPinching;
     state.atlasPointers.delete(event.pointerId);
     if (state.atlasPointers.size < 2) {
       state.atlasPinching = false;
       state.atlasPinchDistance = 0;
     }
+    if (wasPinching) state.suppressClickUntil = performance.now() + 180;
   };
 
   const createButton = (label, className, action, aria = label) => {
@@ -603,17 +636,28 @@
 
   const closeSheet = () => {
     if (!state.sheet) return;
+    const restoreFocus = state.sheet.contains(document.activeElement) ? state.sheetReturnFocus : null;
     state.sheet.classList.remove('is-open');
     state.sheetBackdrop?.classList.remove('is-open');
+    state.sheet.inert = true;
+    state.sheet.setAttribute('aria-hidden', 'true');
+    if (state.sheetBackdrop) state.sheetBackdrop.tabIndex = -1;
     state.modeButton?.setAttribute('aria-expanded', 'false');
+    state.sheetReturnFocus = null;
+    if (restoreFocus?.isConnected) requestAnimationFrame(() => restoreFocus.focus());
   };
 
   const openSheet = title => {
     if (!state.sheet) return;
+    state.sheetReturnFocus = document.activeElement;
     state.sheetTitle.textContent = title;
+    state.sheet.inert = false;
+    state.sheet.setAttribute('aria-hidden', 'false');
+    if (state.sheetBackdrop) state.sheetBackdrop.tabIndex = 0;
     state.sheet.classList.add('is-open');
     state.sheetBackdrop?.classList.add('is-open');
     state.modeButton?.setAttribute('aria-expanded', 'true');
+    requestAnimationFrame(() => state.sheetClose?.focus());
   };
 
   const toggleModeSheet = () => {
@@ -656,9 +700,64 @@
     head.append(title, close);
     const body = document.createElement('div');
     body.className = 'mobile-control-sheet-body';
+    const branchPicker = document.createElement('div');
+    branchPicker.className = 'mobile-atlas-branch-picker';
+    branchPicker.hidden = true;
+    const branchIntro = document.createElement('p');
+    branchIntro.textContent = 'Choose an area to open its focused map.';
+    branchPicker.appendChild(branchIntro);
+    atlasSections.forEach(section => {
+      const button = createButton(section.label, 'mobile-atlas-branch', () => {
+        closeSheet();
+        location.hash = `#${section.route || section.id}`;
+      }, `Explore ${section.label}`);
+      branchPicker.appendChild(button);
+    });
+    body.appendChild(branchPicker);
+
+    const workPicker = document.createElement('div');
+    workPicker.className = 'mobile-work-project-picker';
+    workPicker.hidden = true;
+    const workIntro = document.createElement('p');
+    workIntro.textContent = 'Open a project, then refine the map with filters below.';
+    workPicker.appendChild(workIntro);
+    (window.SITE_DATA?.work?.projects || []).forEach(project => {
+      const button = createButton(project.title, 'mobile-work-project', () => {
+        closeSheet();
+        if (window.ProfileWorkController?.openProject?.(project.id)) return;
+        location.hash = `#work/project/${project.id}`;
+      }, `Open ${project.title}`);
+      workPicker.appendChild(button);
+    });
+    body.appendChild(workPicker);
     sheet.append(head, body);
     scene.append(backdrop, sheet, dock);
-    Object.assign(state, { dock, modeButton, sheet, sheetBody: body, sheetTitle: title, sheetBackdrop: backdrop });
+    sheet.setAttribute('role', 'dialog');
+    sheet.setAttribute('aria-modal', 'true');
+    sheet.setAttribute('aria-hidden', 'true');
+    sheet.inert = true;
+    backdrop.tabIndex = -1;
+    sheet.addEventListener('keydown', event => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        closeSheet();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const items = [...sheet.querySelectorAll('button:not([disabled]),input:not([disabled]),a[href]')]
+        .filter(item => item.getClientRects().length && !item.closest('[hidden]'));
+      if (!items.length) return;
+      const first = items[0], last = items.at(-1);
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    });
+    Object.assign(state, { dock, modeButton, sheet, sheetBody: body, sheetTitle: title, sheetBackdrop: backdrop, branchPicker, workPicker, sheetClose: close });
   };
 
   const adoptModeControls = () => {
@@ -698,14 +797,17 @@
   const syncMode = () => {
     document.body.classList.add('mobile-app-mode');
     document.body.dataset.mobileSceneMode = modeNow();
+    syncMobileAtlasBranches();
     adoptModeControls();
     registerExistingObjects();
     closeSheet();
     if (state.modeButton) {
       const hasSheet = modeNow() === 'work' || modeNow() === 'atlas';
       state.modeButton.hidden = !hasSheet;
-      state.modeButton.textContent = modeNow() === 'atlas' ? 'Layers' : 'Filters';
+      state.modeButton.textContent = 'Browse';
     }
+    if (state.branchPicker) state.branchPicker.hidden = modeNow() !== 'atlas';
+    if (state.workPicker) state.workPicker.hidden = modeNow() !== 'work';
     state.dock?.classList.toggle('is-atlas', modeNow() === 'atlas');
     settleScene({ instant: true });
   };
@@ -762,20 +864,33 @@
     });
     window.addEventListener('profile:graph-render-settled', () => {
       refreshRuntimeBindings();
+      syncMobileAtlasBranches();
       settleScene({ instant: true });
     });
     ['profile:transition-finish', 'profile:transition-cancel', 'profile:graph-transition-interrupted']
       .forEach(type => window.addEventListener(type, () => {
         refreshRuntimeBindings();
+        syncMobileAtlasBranches();
         settleScene();
       }));
 
-    window.addEventListener('hashchange', () => settleScene());
-    window.addEventListener('orientationchange', () => setTimeout(() => settleScene({ instant: true }), 140));
-    window.addEventListener('resize', () => {
-      if (!mq.matches) return;
-      settleScene({ instant: true });
+    window.addEventListener('profile:intro-completed', () => {
+      state.mobileAtlasCentered = false;
+      syncMobileAtlasBranches();
     });
+
+    window.addEventListener('hashchange', () => settleScene());
+    const scheduleViewportSettle = () => {
+      if (!mq.matches) return;
+      cancelAnimationFrame(state.viewportFrame);
+      state.viewportFrame = requestAnimationFrame(() => settleScene({ instant: true }));
+    };
+    window.addEventListener('orientationchange', () => {
+      clearTimeout(state.orientationTimer);
+      state.orientationTimer = setTimeout(scheduleViewportSettle, 140);
+    });
+    window.addEventListener('resize', scheduleViewportSettle, { passive: true });
+    window.visualViewport?.addEventListener('resize', scheduleViewportSettle, { passive: true });
 
     window.MobileProfileScene = {
       registerSceneObject,

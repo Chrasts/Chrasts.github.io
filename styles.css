@@ -24,8 +24,6 @@ html[data-theme="dark"]{
   --on-color:#fff8ec;
   --line:#3d4d52
 }
-html[data-theme="dark"] .contact-section{background:#342725}
-
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{
@@ -136,7 +134,6 @@ button:focus-visible{
 }
 .inline-links{display:flex;gap:24px;flex-wrap:wrap;margin-top:32px}
 .inline-links a,
-.record-list a,
 .work-project-links a{
   color:var(--teal);
   text-decoration:none;
@@ -146,7 +143,6 @@ button:focus-visible{
   padding-bottom:2px
 }
 .inline-links a:hover,
-.record-list a:hover,
 .work-project-links a:hover{color:var(--brown)}
 
 .hero-visual{height:480px;position:relative}
@@ -704,107 +700,6 @@ button:focus-visible{
   line-height:1.35
 }
 
-/* --------------------------------------------------------------------------
-   REMAINING CURRENT SITE
-   -------------------------------------------------------------------------- */
-
-.background-section{background:var(--cream)}
-.background-grid{display:grid;grid-template-columns:1fr 1fr;gap:70px}
-.column-title{font-size:17px;margin:22px 0 8px;font-weight:650}
-.record-list article{
-  display:grid;
-  grid-template-columns:145px 1fr;
-  gap:22px;
-  padding:22px 0;
-  border-top:1px solid var(--line)
-}
-.record-meta{
-  font-size:11px;
-  text-transform:uppercase;
-  letter-spacing:.07em;
-  color:var(--brown);
-  padding-top:4px
-}
-.record-list h4{
-  font-size:18px;
-  line-height:1.2;
-  letter-spacing:-.02em;
-  margin:0
-}
-.record-org{
-  font-size:11px!important;
-  font-weight:650;
-  color:var(--muted)!important;
-  margin:4px 0 9px!important
-}
-.record-list article p{font-size:14px;color:var(--text-soft);margin:0}
-.record-list a{display:inline-block;margin-top:9px}
-
-.methods-section{padding-bottom:96px}
-.methods-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 56px}
-.methods-item{padding:24px 0;border-bottom:1px solid var(--line)}
-.methods-item h3{font-size:13px;margin:0 0 8px}
-.methods-item p{font-size:13px;color:var(--text-soft);margin:0;max-width:760px}
-.credentials-item{grid-column:1/-1}
-
-.contact-section{
-  padding:76px 0;
-  background:var(--brown);
-  color:var(--on-color)
-}
-.contact-grid{
-  display:grid;
-  grid-template-columns:1.25fr .75fr;
-  gap:80px;
-  align-items:end
-}
-.contact-title{
-  border-color:rgba(255,248,236,.5);
-  margin:0 0 20px;
-  padding-bottom:16px
-}
-.contact-section p{
-  font-size:16px;
-  margin:0;
-  color:rgba(255,248,236,.9)
-}
-.contact-links{display:flex;flex-direction:column}
-.contact-links>a,
-.contact-email{
-  color:var(--on-color);
-  text-decoration:none;
-  font-size:13px;
-  padding:10px 0;
-  border-bottom:1px solid rgba(255,248,236,.45)
-}
-.contact-email{display:flex;align-items:center;justify-content:space-between;gap:16px}
-.contact-email a{color:inherit;text-decoration:none}
-.copy-email{
-  flex:0 0 auto;
-  border:1px solid rgba(255,248,236,.5);
-  border-radius:4px;
-  background:transparent;
-  color:var(--on-color);
-  padding:5px 8px;
-  font:700 9px var(--sans);
-  cursor:pointer
-}
-.copy-email:hover{background:rgba(255,248,236,.1)}
-.contact-links a:hover{opacity:.75}
-.contact-section a:focus-visible,
-.contact-section button:focus-visible{outline-color:var(--on-color)}
-
-footer{
-  height:78px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  font-size:10px;
-  text-transform:uppercase;
-  letter-spacing:.08em
-}
-footer a{text-decoration:none}
-
 @media(max-width:900px){
   .wrap{width:min(var(--max),calc(100% - 36px))}
   .site-header{height:68px}
@@ -837,9 +732,6 @@ footer a{text-decoration:none}
   .work-detail-panel{border-left:0;border-top:1px solid var(--line)}
   .work-project-tabs{grid-template-columns:repeat(3,1fr)}
   .work-project-detail{min-height:210px}
-  .background-grid{grid-template-columns:1fr;gap:42px}
-  .record-list article{grid-template-columns:130px 1fr}
-  .contact-grid{grid-template-columns:1fr;gap:34px}
 }
 
 @media(max-width:560px){
@@ -857,11 +749,6 @@ footer a{text-decoration:none}
   #work-lattice{min-width:610px}
   .work-project-tabs{grid-template-columns:1fr 1fr}
   .work-project-detail h3{font-size:22px}
-  .background-grid{gap:28px}
-  .record-list article{grid-template-columns:1fr;gap:7px}
-  .methods-grid{grid-template-columns:1fr}
-  .credentials-item{grid-column:auto}
-  .contact-grid{gap:28px}
 }
 
 @media(prefers-reduced-motion:reduce){
@@ -1637,10 +1524,6 @@ body[data-graph-mode="atlas"] .site-graph-viewport{touch-action:none}
   to{opacity:1;transform:scale(1)}
 }
 body[data-graph-mode="work"] #site-explorer{display:block}
-body[data-graph-mode="work"] .legacy-section,
-body[data-graph-mode="overview"] .legacy-section,
-body[data-graph-mode="focus"] .legacy-section,
-body[data-graph-mode="atlas"] .legacy-section{display:none!important}
 
 @media(max-width:900px){
   .app-header{width:calc(100% - 28px)}

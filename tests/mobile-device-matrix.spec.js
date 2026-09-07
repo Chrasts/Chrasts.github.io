@@ -91,6 +91,32 @@ test.describe('mobile ergonomics contract', () => {
     expect(undersized).toEqual([]);
   });
 
+  test('keeps the control sheet keyboard-safe and survives a live rotation', async ({ page }) => {
+    await bypassIntro(page);
+    await navigate(page, 'work');
+    await waitMobile(page);
+    await page.waitForFunction(() => document.body.dataset.graphMode === 'work');
+
+    const browse = page.locator('.mobile-mode-button');
+    await browse.focus();
+    await browse.press('Enter');
+    await expect(page.locator('.mobile-control-sheet')).toHaveAttribute('aria-hidden', 'false');
+    await expect(page.locator('.mobile-sheet-close')).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.mobile-control-sheet')).toHaveAttribute('aria-hidden', 'true');
+    await expect(browse).toBeFocused();
+
+    await page.setViewportSize({ width: 844, height: 390 });
+    await page.waitForTimeout(260);
+    await expectHealthy(page);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.waitForTimeout(260);
+    await expectHealthy(page);
+
+    const viewportMeta = await page.locator('meta[name="viewport"]').getAttribute('content');
+    expect(viewportMeta).toContain('viewport-fit=cover');
+  });
+
   test('Atlas inspector remains usable without horizontal document overflow', async ({ page }) => {
     await bypassIntro(page);
     await navigate(page, 'atlas');
@@ -100,6 +126,60 @@ test.describe('mobile ergonomics contract', () => {
     await expect(page.locator('#site-detail-panel')).toBeVisible();
     await expect(page.locator('#site-detail-panel .atlas-open-local')).toBeVisible();
     await expectHealthy(page);
+  });
+
+  test('keeps the overview, local graph and Atlas physically readable', async ({ page }) => {
+    await bypassIntro(page);
+
+    await navigate(page, 'overview');
+    await waitMobile(page);
+    const overview = await page.evaluate(() => {
+      const rect = selector => document.querySelector(selector)?.getBoundingClientRect();
+      const copy = rect('.hero-copy');
+      const portrait = rect('.hero-visual.profile-identity');
+      const viewport = rect('.site-graph-viewport');
+      const dock = rect('.mobile-graph-dock');
+      return { copy, portrait, viewport, dock, width: innerWidth };
+    });
+    expect(overview.copy.left).toBeGreaterThanOrEqual(0);
+    expect(overview.copy.right).toBeLessThanOrEqual(overview.width);
+    expect(overview.portrait.left).toBeGreaterThanOrEqual(0);
+    expect(overview.portrait.right).toBeLessThanOrEqual(overview.width);
+    expect(overview.dock.top).toBeGreaterThanOrEqual(overview.viewport.bottom);
+
+    await navigate(page, 'knowledge');
+    await waitMobile(page);
+    const local = await page.evaluate(() => {
+      const visible = selector => [...document.querySelectorAll(selector)].filter(element => {
+        const rect = element.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0 && !element.closest('.v9-transition-overlay');
+      });
+      return {
+        labelHeight: Math.min(...visible('#site-graph .site-graph-label').map(element => element.getBoundingClientRect().height)),
+        hitHeight: Math.min(...visible('#site-graph .site-graph-hit').map(element => element.getBoundingClientRect().height))
+      };
+    });
+    expect(local.labelHeight).toBeGreaterThanOrEqual(13);
+    expect(local.hitHeight).toBeGreaterThanOrEqual(42);
+
+    await navigate(page, 'atlas');
+    await waitMobile(page);
+    const atlas = await page.evaluate(() => {
+      const visible = selector => [...document.querySelectorAll(selector)].filter(element => {
+        const rect = element.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0 && !element.closest('.v9-transition-overlay');
+      });
+      return {
+        view: document.body.dataset.mobileAtlasView,
+        labelCount: visible('#site-graph .site-graph-label').length,
+        labelHeight: Math.min(...visible('#site-graph .site-graph-label').map(element => element.getBoundingClientRect().height)),
+        hitHeight: Math.min(...visible('#site-graph .site-graph-hit').map(element => element.getBoundingClientRect().height))
+      };
+    });
+    expect(atlas.view).toBe('branches');
+    expect(atlas.labelCount).toBe(6);
+    expect(atlas.labelHeight).toBeGreaterThanOrEqual(16);
+    expect(atlas.hitHeight).toBeGreaterThanOrEqual(42);
   });
 });
 
@@ -114,13 +194,13 @@ test.describe('desktop isolation guard', () => {
     const state = await page.evaluate(() => ({
       runtime: Boolean(window.MobileProfileScene),
       mobileClass: document.documentElement.classList.contains('mobile-profile-app'),
-      mobileStylesheet: Boolean(document.querySelector('link[data-profile-mobile]')),
+      mobileStylesheetActive: Boolean(document.querySelector('link[data-profile-mobile]')?.sheet?.media?.matches),
       variant: window.ProfileScene.manager.variant,
       camera: window.ProfileScene.camera.read().adapter
     }));
     expect(state.runtime).toBe(false);
     expect(state.mobileClass).toBe(false);
-    expect(state.mobileStylesheet).toBe(false);
+    expect(state.mobileStylesheetActive).toBe(false);
     expect(state.variant).toBe('desktop');
     expect(state.camera).toBe('desktop-local');
   });

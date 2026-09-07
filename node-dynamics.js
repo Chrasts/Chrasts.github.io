@@ -11,7 +11,7 @@
     overview: Object.freeze({ influenceRadius: 260, maxDisplacement: 22, activeScale: 1.055, relatedScale: .014 }),
     focus: Object.freeze({ influenceRadius: 220, maxDisplacement: 18, activeScale: 1.052, relatedScale: .012 }),
     work: Object.freeze({ influenceRadius: 175, maxDisplacement: 13, activeScale: 1.045, relatedScale: .010 }),
-    atlas: Object.freeze({ influenceRadius: 210, maxDisplacement: 10, activeScale: 1.038, relatedScale: .008 })
+    atlas: Object.freeze({ influenceRadius: 360, maxDisplacement: 38, activeScale: 1.34, relatedScale: .12 })
   });
   const SPRING = Object.freeze({ stiffness: 70, damping: 16.5, maxVelocity: 110 });
   const SCALE_SPRING = Object.freeze({ stiffness: 92, damping: 19, maxVelocity: 1.1 });
@@ -42,7 +42,12 @@
   const currentConfig = () => {
     const mode = normaliseMode();
     const source = MODE_CONFIG[mode];
-    const factor = mobileFactor();
+    // The strong Atlas reading field is intentionally desktop-only. On a
+    // touch viewport it would consume the limited label space, so retain the
+    // previous small physical footprint there.
+    const factor = mode === 'atlas' && (coarsePointer.matches || innerWidth <= 900)
+      ? .14
+      : mobileFactor();
     return {
       mode,
       influenceRadius: source.influenceRadius * (factor < 1 ? .86 : 1),
@@ -207,7 +212,11 @@
       const proximity = clamp(1 - distance / config.influenceRadius, 0, 1);
       const falloff = proximity * proximity * (3 - 2 * proximity);
       const relation = interaction.stateFor(record.id)?.relation || 'none';
-      const relationWeight = relation === 'none' ? 1 : 1.08;
+      // In Atlas, unrelated context moves aside while the reading path grows
+      // in place. This keeps parents and children prominent and connected.
+      const relationWeight = relation === 'none'
+        ? 1
+        : config.mode === 'atlas' ? .30 : 1.08;
       const strength = Math.min(config.maxDisplacement, config.maxDisplacement * falloff * relationWeight);
       record.targetX = dx / distance * strength;
       record.targetY = dy / distance * strength;
@@ -281,6 +290,8 @@
     if (!path) return null;
     const quadratic = path.match(/^\s*M\s*(-?\d*\.?\d+)\s+(-?\d*\.?\d+)\s+Q\s*(-?\d*\.?\d+)\s+(-?\d*\.?\d+)\s+(-?\d*\.?\d+)\s+(-?\d*\.?\d+)\s*$/i);
     if (quadratic) return { kind: 'Q', values: quadratic.slice(1).map(Number) };
+    const cubic = path.match(/^\s*M\s*(-?\d*\.?\d+)\s+(-?\d*\.?\d+)\s+C\s*(-?\d*\.?\d+)\s+(-?\d*\.?\d+)\s+(-?\d*\.?\d+)\s+(-?\d*\.?\d+)\s+(-?\d*\.?\d+)\s+(-?\d*\.?\d+)\s*$/i);
+    if (cubic) return { kind: 'C', values: cubic.slice(1).map(Number) };
     const line = path.match(/^\s*M\s*(-?\d*\.?\d+)\s+(-?\d*\.?\d+)\s+L\s*(-?\d*\.?\d+)\s+(-?\d*\.?\d+)\s*$/i);
     if (line) return { kind: 'L', values: line.slice(1).map(Number) };
     return null;
@@ -314,6 +325,9 @@
       if (parsed.kind === 'Q') {
         const [x1, y1, cx, cy, x2, y2] = parsed.values;
         edge.setAttribute('d', `M ${(x1 + sx).toFixed(1)} ${(y1 + sy).toFixed(1)} Q ${(cx + (sx + tx) / 2).toFixed(1)} ${(cy + (sy + ty) / 2).toFixed(1)} ${(x2 + tx).toFixed(1)} ${(y2 + ty).toFixed(1)}`);
+      } else if (parsed.kind === 'C') {
+        const [x1, y1, c1x, c1y, c2x, c2y, x2, y2] = parsed.values;
+        edge.setAttribute('d', `M ${(x1 + sx).toFixed(1)} ${(y1 + sy).toFixed(1)} C ${(c1x + sx * .68 + tx * .32).toFixed(1)} ${(c1y + sy * .68 + ty * .32).toFixed(1)} ${(c2x + sx * .32 + tx * .68).toFixed(1)} ${(c2y + sy * .32 + ty * .68).toFixed(1)} ${(x2 + tx).toFixed(1)} ${(y2 + ty).toFixed(1)}`);
       } else {
         const [x1, y1, x2, y2] = parsed.values;
         edge.setAttribute('d', `M ${(x1 + sx).toFixed(1)} ${(y1 + sy).toFixed(1)} L ${(x2 + tx).toFixed(1)} ${(y2 + ty).toFixed(1)}`);
@@ -349,7 +363,10 @@
     const interactionState = interaction.snapshot();
     const requestedActiveId = now >= activationHoldUntil ? interactionState.primaryNodeId : null;
     const entryRootHover = requestedActiveId === rootId && document.body?.dataset.entryState === 'ready';
-    const activeId = entryRootHover ? null : requestedActiveId;
+    const passiveAtlasRoot = requestedActiveId === rootId &&
+      document.body?.dataset.graphMode === 'atlas' &&
+      !root.querySelector(`.site-graph-node[data-node-id="${CSS.escape(rootId)}"].is-previewed`);
+    const activeId = entryRootHover || passiveAtlasRoot ? null : requestedActiveId;
     lastActiveNodeId = activeId || null;
     const config = computeTargets(activeId);
 

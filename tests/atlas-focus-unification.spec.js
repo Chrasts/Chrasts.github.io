@@ -102,6 +102,13 @@ test.describe('V3.1 Phase I Atlas / Focus unification', () => {
       return {
         nodeCount: bridge?.querySelectorAll('[data-bridge-node-id]').length || 0,
         graphCount: window.SITE_DATA.graph.nodes.length,
+        bridgeEdges: [...(bridge?.querySelectorAll('.atlas-focus-bridge-edge') || [])]
+          .map(edge => `${edge.dataset.source}|${edge.dataset.target}|${edge.dataset.type}`).sort(),
+        bridgeSecondaryCount: [...(bridge?.querySelectorAll('.atlas-focus-bridge-edge') || [])]
+          .filter(edge => !['hierarchy', 'work-lattice'].includes(edge.dataset.type || 'hierarchy')).length,
+        visibleStructuralAtlasEdges: [...document.querySelectorAll('#site-graph .site-graph-edges path[data-source][data-target]')]
+          .filter(edge => !edge.classList.contains('is-atlas-lod-hidden') && !edge.classList.contains('is-secondary') && !edge.classList.contains('is-cross-link'))
+          .map(edge => `${edge.dataset.source}|${edge.dataset.target}|${edge.dataset.type}`).sort(),
         rootX: matrix?.e ?? NaN,
         rootY: matrix?.f ?? NaN,
         centerX: frame?.centerX ?? innerWidth / 2,
@@ -110,6 +117,8 @@ test.describe('V3.1 Phase I Atlas / Focus unification', () => {
       };
     });
     expect(unfolding.nodeCount).toBe(unfolding.graphCount);
+    expect(unfolding.bridgeEdges).toEqual(unfolding.visibleStructuralAtlasEdges);
+    expect(unfolding.bridgeSecondaryCount).toBe(0);
     expect(Math.abs(unfolding.rootX - unfolding.centerX)).toBeLessThan(36);
     expect(Math.abs(unfolding.rootY - unfolding.centerY)).toBeLessThan(36);
     expect(unfolding.phase).toBe('unfold');

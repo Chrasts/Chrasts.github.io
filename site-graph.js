@@ -5,14 +5,6 @@
     const work = site?.work;
     if (!site?.profile || !graph?.nodes?.length || !work?.projects?.length) return;
 
-    if (!document.querySelector('link[data-profile-graph-v5]')) {
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = 'graph-v5.css';
-      link.dataset.profileGraphV5 = 'true';
-      document.head.appendChild(link);
-    }
-
     const root = document.querySelector('#site-graph');
     const graphPanel = root?.closest('.site-graph-panel');
     const explorer = document.querySelector('#site-explorer');
@@ -34,7 +26,6 @@
     const atlasZoomOut = document.querySelector('#atlas-zoom-out');
     const atlasReset = document.querySelector('#atlas-reset');
     const hero = document.querySelector('.hero');
-    const footer = document.querySelector('footer');
     const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
     if (!root || !graphPanel || !explorer || !scene || !breadcrumb || !detail || !hero) return;
@@ -619,90 +610,42 @@
       return { width, height, positions: resolveCollisions(nodes, positions, width, height, safe) };
     };
 
-    const relativeDepth = (node, sectionId, memo = new Map()) => {
-      const key = `${sectionId}:${node.id}`;
-      if (memo.has(key)) return memo.get(key);
-      if (node.id === sectionId) return 0;
-      const parents = (node.parentIds || []).map(id => nodeMap.get(id)).filter(Boolean);
-      const values = parents.map(parent => relativeDepth(parent, sectionId, memo)).filter(Number.isFinite);
-      const depth = values.length ? 1 + Math.min(...values) : Infinity;
-      memo.set(key, depth);
-      return depth;
-    };
-
     const layoutAtlas = nodes => {
-      const width = 2520, height = 1580;
-      const positions = new Map([[profileRoot.id, { x: 1260, y: 100 }]]);
-      const anchors = {
-        work: { x: 390, y: 320 },
-        knowledge: { x: 1120, y: 265 },
-        experience: { x: 1990, y: 355 },
-        education: { x: 1710, y: 965 },
-        about: { x: 660, y: 1010 }
-      };
-      Object.entries(anchors).forEach(([id, point]) => nodeMap.has(id) && positions.set(id, { ...point }));
-
-      const regions = {
-        work: { left: 80, right: 835, top: 430, bottom: 930 },
-        knowledge: { left: 760, right: 1515, top: 375, bottom: 1125 },
-        experience: { left: 1650, right: 2420, top: 470, bottom: 850 },
-        education: { left: 1450, right: 2390, top: 1050, bottom: 1480 },
-        about: { left: 120, right: 1040, top: 1070, bottom: 1490 }
-      };
-
-      const ownerFor = node => {
-        if (node.type === 'project' || node.type === 'work-theme') return 'work';
-        return primaryPath(node).find(item => item.parentIds?.includes(profileRoot.id))?.id || 'knowledge';
-      };
-
-      const groups = new Map(Object.keys(regions).map(id => [id, []]));
+      const geometry = window.ProfileGeometry;
+      const atlas = geometry?.snapshot?.().atlasSize || { width: 2520, height: 1580 };
+      const positions = new Map();
       nodes.forEach(node => {
-        if (node.id === profileRoot.id || anchors[node.id]) return;
-        const owner = ownerFor(node);
-        groups.get(owner)?.push(node);
+        const point = geometry?.atlasPoint?.(node.id);
+        if (point) positions.set(node.id, { ...point });
       });
 
-      const memo = new Map();
-      groups.forEach((group, sectionId) => {
-        const region = regions[sectionId];
-        const levels = new Map();
-        group.forEach(node => {
-          let depth = relativeDepth(node, sectionId, memo);
-          if (!Number.isFinite(depth)) depth = 2;
-          if (node.type === 'work-theme') depth = 1;
-          if (node.type === 'project') depth = 2;
-          if (!levels.has(depth)) levels.set(depth, []);
-          levels.get(depth).push(node);
-        });
-
-        const depths = [...levels.keys()].sort((a, b) => a - b);
-        const local = new Map();
-        depths.forEach((depth, levelIndex) => {
-          const level = levels.get(depth);
-          level.sort((a, b) => {
-            const bary = node => {
-              const xs = (node.parentIds || []).map(id => local.get(id)?.x).filter(Number.isFinite);
-              return xs.length ? xs.reduce((sum, x) => sum + x, 0) / xs.length : stableNumber(node.id) % 1000;
-            };
-            return bary(a) - bary(b) || a.label.localeCompare(b.label);
-          });
-          const y = region.top + ((region.bottom - region.top) * (levelIndex + .72)) / Math.max(depths.length + .25, 1);
-          level.forEach((node, index) => {
-            const t = level.length <= 1 ? .5 : (index + .5) / level.length;
-            const point = {
-              x: region.left + t * (region.right - region.left) + ((stableNumber(node.id) % 41) - 20),
-              y: y + (index % 2 ? 18 : -14) + ((stableNumber(`${node.id}:y`) % 29) - 14) * .45
-            };
-            local.set(node.id, point);
-            positions.set(node.id, point);
+      // The canonical radial geometry normally exists before the renderer
+      // boots. Keep this non-hierarchical fallback only for an interrupted
+      // bootstrap; it cannot create a temporary top-down tree.
+      if (positions.size !== nodes.length) {
+        const center = { x: atlas.width / 2, y: atlas.height / 2 };
+        const vectors = {
+          work: { x: 0, y: 1 }, knowledge: { x: 1, y: 0 },
+          experience: { x: -.42, y: -.91 }, education: { x: .42, y: -.91 }, about: { x: -1, y: .06 }
+        };
+        const sectionFor = node => geometry?.sectionFor?.(node.id) ||
+          primaryPath(node).find(item => item.parentIds?.includes(profileRoot.id))?.id || 'knowledge';
+        nodes.forEach(node => {
+          if (positions.has(node.id)) return;
+          if (node.id === profileRoot.id) {
+            positions.set(node.id, center);
+            return;
+          }
+          const vector = vectors[sectionFor(node)] || vectors.knowledge;
+          const tangent = ((stableNumber(`${node.id}:tangent`) % 241) - 120) * .9;
+          const radius = 330 + stableNumber(`${node.id}:radius`) % 620;
+          positions.set(node.id, {
+            x: center.x + vector.x * radius - vector.y * tangent,
+            y: center.y + vector.y * radius + vector.x * tangent
           });
         });
-      });
-
-      return {
-        width, height,
-        positions: resolveCollisions(nodes, positions, width, height, { top: 50, right: 42, bottom: 42, left: 42 })
-      };
+      }
+      return { width: atlas.width, height: atlas.height, positions };
     };
 
     const layoutGraph = nodes =>
@@ -822,7 +765,10 @@
         if (state.mode === 'work') {
           workPreviewNode(node.id);
         } else if (state.mode === 'atlas') {
-          if (node.id === profileRoot.id && document.body?.dataset.entryState === 'ready') {
+          // The root is focused programmatically after profile → Atlas motion.
+          // Unless it was explicitly pinned, that focus should not make every
+          // Atlas descendant look selected.
+          if (node.id === profileRoot.id && atlasPinnedId !== profileRoot.id) {
             clearAtlasHighlight();
             return;
           }
@@ -834,7 +780,7 @@
       const clear = () => {
         if (state.mode === 'work') clearWorkPreview();
         else if (state.mode === 'atlas') {
-          if (node.id === profileRoot.id && document.body?.dataset.entryState === 'ready') clearAtlasHighlight();
+          if (node.id === profileRoot.id && atlasPinnedId !== profileRoot.id) clearAtlasHighlight();
           else restoreAtlasHighlight();
         }
         else clearLocalPreview();
@@ -1425,7 +1371,7 @@
     };
 
     const clearAtlasHighlight = () => {
-      renderer.nodeElements.forEach(element => element.classList.remove('is-atlas-origin', 'is-upstream', 'is-downstream', 'is-lateral', 'is-muted-soft'));
+      renderer.nodeElements.forEach(element => element.classList.remove('is-atlas-origin', 'is-atlas-predecessor', 'is-upstream', 'is-downstream', 'is-atlas-successor-primary', 'is-atlas-successor-secondary', 'is-lateral', 'is-muted-soft'));
       renderer.edgeElements.forEach(element => element.classList.remove('is-upstream', 'is-downstream', 'is-lateral', 'is-muted-soft'));
     };
 
@@ -1433,6 +1379,12 @@
       if (state.mode !== 'atlas') return;
       clearAtlasHighlight();
       const up = ancestorIds(nodeId), down = descendantIds(nodeId), lateral = new Set();
+      // Keep the semantic root calm. Every other ancestor, including the
+      // section anchor, is part of the focused reading path.
+      const emphasizedPredecessors = new Set([...up].filter(id => id !== profileRoot.id));
+      const immediateSuccessors = new Set(graph.nodes
+        .filter(node => (node.parentIds || []).includes(nodeId))
+        .map(node => node.id));
       graph.edges.forEach(edge => {
         if (edge.source === nodeId) lateral.add(edge.target);
         if (edge.target === nodeId) lateral.add(edge.source);
@@ -1440,8 +1392,11 @@
       const relevant = new Set([nodeId, ...up, ...down, ...lateral]);
       renderer.nodeElements.forEach((element, id) => {
         element.classList.toggle('is-atlas-origin', id === nodeId);
+        element.classList.toggle('is-atlas-predecessor', emphasizedPredecessors.has(id));
         element.classList.toggle('is-upstream', up.has(id));
         element.classList.toggle('is-downstream', down.has(id));
+        element.classList.toggle('is-atlas-successor-primary', immediateSuccessors.has(id));
+        element.classList.toggle('is-atlas-successor-secondary', down.has(id) && !immediateSuccessors.has(id));
         element.classList.toggle('is-lateral', lateral.has(id));
         element.classList.toggle('is-muted-soft', !relevant.has(id));
         element.classList.toggle('is-previewed', pinned && id === nodeId);
@@ -1746,11 +1701,6 @@
             : 'Select a connected node to move deeper. Ancestors remain in the graph.';
     };
 
-    const hideLegacy = () => {
-      document.querySelectorAll('.legacy-section').forEach(element => element.hidden = true);
-      if (footer) footer.hidden = true;
-    };
-
     const updateNavigation = () => {
       document.querySelectorAll('#main-nav [data-route]').forEach(item => {
         const route = item.dataset.route;
@@ -1764,8 +1714,6 @@
     const renderRoute = rawRoute => {
       ++routeToken;
       const route = normaliseRoute(rawRoute);
-      hideLegacy();
-
       const projectMatch = route.match(/^work\/project\/([^/]+)$/);
       const themeMatch = route.match(/^work\/theme\/([^/]+)$/);
 
@@ -1943,6 +1891,7 @@
 
     document.addEventListener('keydown', event => {
       if (event.key !== 'Escape') return;
+      if (event.defaultPrevented || event.target.closest?.('.mobile-control-sheet[aria-hidden="false"]')) return;
       if (!detail.hidden) {
         event.preventDefault();
         if (state.mode === 'atlas' && atlasPinnedId) {
@@ -1964,7 +1913,6 @@
     });
 
     controls.hidden = true;
-    hideLegacy();
     renderRoute(location.hash || '#overview');
     window.addEventListener('load', () => {
       if (state.mode === 'work') renderGraph();

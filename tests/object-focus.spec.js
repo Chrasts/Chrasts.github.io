@@ -123,11 +123,11 @@ test('BSc thesis diagram opens directly into Object Focus PDF inspection', async
   await page.goto('/#work/project/bachelor-thesis');
   await waitObjectFocus(page);
 
-  const cluster = page.locator('[data-artifact-scene="bachelor-thesis-diagrams"]');
-  const first = cluster.locator('.artifact-deck-card[data-artifact-id="bachelor-thesis-lattice-of-bands"]');
+  const cluster = page.locator('[data-artifact-scene="bachelor-thesis-paper"]');
+  const first = cluster.locator('.artifact-folio-support-card[data-artifact-id="bachelor-thesis-lattice-of-bands"]');
   const viewer = page.locator('.artifact-focus-viewer');
 
-  await first.locator('.artifact-inline-expand').click();
+  await first.click();
   await waitSettled(page);
   await expect(viewer).toHaveAttribute('data-shared-focus-artifact', 'bachelor-thesis-lattice-of-bands');
   await expect(viewer).toHaveAttribute('data-media-kind', 'pdf');

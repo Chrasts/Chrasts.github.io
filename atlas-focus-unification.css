@@ -57,6 +57,19 @@ body.is-profile-atlas-transitioning .graph-routebar{
   stroke-linecap:round
 }
 
+/* The structural tree establishes the Atlas first. Alternate parents and
+   cross-domain relations join only after that motion has settled, rather than
+   competing with the initial root-outward read. */
+body.is-atlas-secondary-reveal #site-graph .site-graph-edges path:is(.is-secondary,.is-cross-link):not(.is-atlas-lod-hidden){
+  opacity:0;
+  stroke-dashoffset:12;
+  animation:atlas-secondary-relation-reveal .68s cubic-bezier(.16,.84,.24,1) forwards
+}
+
+@keyframes atlas-secondary-relation-reveal{
+  to{opacity:var(--atlas-secondary-reveal-opacity,.62);stroke-dashoffset:0}
+}
+
 .atlas-focus-bridge [data-bridge-node-id]{will-change:transform,opacity}
 .atlas-focus-bridge [data-bridge-node-id] .site-graph-hit{opacity:0!important}
 

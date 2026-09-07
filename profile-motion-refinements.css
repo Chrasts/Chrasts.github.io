@@ -74,48 +74,6 @@ body[data-profile-branch-edge-phase="drawing"] #site-graph .site-graph-edges pat
   pointer-events:none
 }
 
-/* Hierarchical Profile -> Atlas bridge. Keep the canonical renderer mounted for
-   geometry measurement but let one overlay own the visible motion. */
-.profile-hierarchy-atlas-bridge{
-  position:fixed;
-  inset:0;
-  width:100vw;
-  height:100dvh;
-  z-index:74;
-  overflow:visible;
-  pointer-events:none;
-  background:transparent;
-  opacity:1;
-  transition:opacity 70ms linear
-}
-.profile-hierarchy-atlas-bridge.is-finishing{opacity:0}
-.profile-hierarchy-atlas-bridge .profile-hierarchy-edge{
-  fill:none;
-  stroke:var(--line-strong,var(--line));
-  stroke-width:1.18;
-  vector-effect:non-scaling-stroke;
-  stroke-linecap:round;
-  opacity:.62
-}
-.profile-hierarchy-atlas-bridge .profile-hierarchy-edge[data-edge-role="cross"]{
-  stroke-dasharray:4 5;
-  opacity:.46
-}
-.profile-hierarchy-atlas-bridge [data-hierarchy-node-id]{pointer-events:none!important}
-.profile-hierarchy-atlas-bridge [data-hierarchy-node-id] .site-graph-hit{opacity:0!important}
-
-body.is-profile-hierarchy-atlas-transitioning #site-graph .site-graph-svg{
-  visibility:hidden!important
-}
-body.is-profile-hierarchy-atlas-transitioning #site-detail-panel{
-  opacity:0!important;
-  pointer-events:none!important
-}
-body.is-profile-hierarchy-atlas-transitioning .atlas-controls,
-body.is-profile-hierarchy-atlas-transitioning .graph-routebar{
-  pointer-events:none!important
-}
-
 @media(max-width:900px){
   body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready .site-graph-heading{
     width:auto!important;
@@ -132,8 +90,4 @@ body.is-profile-hierarchy-atlas-transitioning .graph-routebar{
   body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready .profile-root-summary{
     margin-top:2px
   }
-}
-
-@media(prefers-reduced-motion:reduce){
-  .profile-hierarchy-atlas-bridge{transition:none!important}
 }

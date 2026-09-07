@@ -2,6 +2,7 @@
   "name": "stepan-chrast-portfolio",
   "private": true,
   "scripts": {
+    "start": "node scripts/serve.mjs",
     "validate": "node scripts/validate-portfolio-model.mjs && node scripts/validate-artifacts.mjs && node scripts/validate-artifact-scenes.mjs && node scripts/validate-performance-contracts.mjs",
     "test": "playwright test",
     "test:performance": "playwright test tests/performance-bootstrap.spec.js",

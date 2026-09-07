@@ -85,13 +85,12 @@ test.describe('Profile motion refinements', () => {
     await page.waitForFunction(() => document.body.dataset.profileBranchEdgePhase === 'settled');
   });
 
-  test('Profile to Atlas delegates to the shared root-collapse/full-unfold owner', async ({ page }) => {
+  test('Profile to Atlas uses the shared root-collapse/radial-unfold owner', async ({ page }) => {
     await boot(page, 'overview');
     await page.waitForFunction(() => document.body.classList.contains('is-profile-root-ready'));
     await page.locator('[data-route="atlas"]').first().click();
     await page.waitForFunction(() => document.body.dataset.profileAtlasPhase === 'collapse');
     await expect(page.locator('.profile-atlas-unfold-bridge')).toHaveCount(1);
-    await expect(page.locator('.profile-hierarchy-atlas-bridge')).toHaveCount(0);
     await page.waitForFunction(() => document.body.dataset.profileAtlasPhase === 'unfold', null, { timeout: 5_000 });
     await page.waitForFunction(() => document.body.dataset.graphMode === 'atlas' && !window.ProfileAtlasFocus?.snapshot?.().active, null, { timeout: 12_000 });
 

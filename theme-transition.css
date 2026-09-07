@@ -1,0 +1,22 @@
+/* Theme changes are colour-only: graph geometry, camera movement and existing
+   interaction transforms remain untouched. The class exists for one short
+   toggle, rather than making every hover state slower all the time. */
+html.is-theme-transitioning,
+html.is-theme-transitioning body,
+html.is-theme-transitioning body *,
+html.is-theme-transitioning body *::before,
+html.is-theme-transitioning body *::after{
+  transition-property:background-color,border-color,color,fill,stroke,outline-color,box-shadow,text-decoration-color!important;
+  transition-duration:240ms!important;
+  transition-timing-function:cubic-bezier(.2,.7,.2,1)!important;
+}
+
+@media (prefers-reduced-motion:reduce){
+  html.is-theme-transitioning,
+  html.is-theme-transitioning body,
+  html.is-theme-transitioning body *,
+  html.is-theme-transitioning body *::before,
+  html.is-theme-transitioning body *::after{
+    transition-duration:0ms!important;
+  }
+}

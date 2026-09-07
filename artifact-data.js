@@ -76,6 +76,28 @@
       presentation: { preferredObject: 'image', role: 'project-preview', width: 1918, height: 1078, aspectRatio: 1.779221 }
     },
     {
+      id: 'sql-schema-er-diagram',
+      type: 'diagram',
+      title: 'Algebraic Logic SQL Schema — entity relationship diagram',
+      description: 'Entity relationship diagram for the MySQL schema modelling logics, algebraic classes, properties, axioms and subclass relations.',
+      anchorNodeIds: ['project-sql-schema', 'sql', 'data-modelling', 'algebraic-logic'],
+      source: { kind: 'local', path: 'assets/diagrams/11_ER_diagram.png' },
+      mediaType: 'image/png',
+      availability: 'public',
+      presentation: { preferredObject: 'diagram', width: 1282, height: 841, aspectRatio: 1.524376 }
+    },
+    {
+      id: 'sql-schema-subclass-hierarchy',
+      type: 'diagram',
+      title: 'Algebraic Logic SQL Schema — subclass hierarchy',
+      description: 'Diagram of the algebraic subclass hierarchy represented by the SQL schema, including the A-ROL branch.',
+      anchorNodeIds: ['project-sql-schema', 'sql', 'data-modelling', 'algebraic-logic'],
+      source: { kind: 'local', path: 'assets/diagrams/diagram of subclasses.png' },
+      mediaType: 'image/png',
+      availability: 'public',
+      presentation: { preferredObject: 'diagram', width: 771, height: 1031, aspectRatio: 0.747818 }
+    },
+    {
       id: 'clp-survey-pdf',
       type: 'document',
       title: 'The Congruence Lattice Problem — Historical Survey',
@@ -118,17 +140,6 @@
       mediaType: 'application/pdf',
       availability: 'public',
       presentation: { preferredObject: 'diagram', aspectRatio: 1.844688 }
-    },
-    {
-      id: 'simulation-credence-coursework',
-      type: 'document',
-      title: 'Simulation Credence and Its Consequences',
-      description: 'Short coursework formalisation and analysis of credence in the simulation hypothesis.',
-      anchorNodeIds: ['simulation-credence'],
-      source: { kind: 'local', path: 'assets/documents/education/coursework/simulation-credence-and-its-consequences.pdf' },
-      mediaType: 'application/pdf',
-      availability: 'public',
-      presentation: { preferredObject: 'document', openMode: 'new-tab', aspectRatio: 0.707071 }
     },
     {
       id: 'cambridge-b2-certificate',

@@ -88,38 +88,6 @@
     });
   };
 
-  const coursework = shell('coursework', 'Charles University · selected coursework', 'Document shelf');
-  coursework.dataset.phase8Object = 'coursework-documents';
-  const courseworkShelf = element('div', 'phase8-document-shelf');
-
-  data.coursework.artifactIds.forEach(id => {
-    const artifact = artifactFor(id);
-    if (!artifact) return;
-    const card = element('article', 'phase8-document');
-    card.dataset.artifactId = id;
-    const page = element('div', 'phase8-document-page');
-    page.append(
-      element('span', 'phase8-document-kind', 'PDF'),
-      element('strong', 'phase8-document-title', artifact.title),
-      element('span', 'phase8-document-summary', artifact.description || '')
-    );
-    const actions = element('div', 'phase8-actions');
-    const open = externalLink('Open paper ↗', artifactHref(id));
-    if (open) actions.appendChild(open);
-    const nodeId = artifact.anchorNodeIds.find(anchor => nodeMap.get(anchor)?.type === 'education') || artifact.anchorNodeIds[0];
-    const inspect = routeControl('Open in graph', nodeId);
-    if (inspect.dataset.route) actions.appendChild(inspect);
-    card.append(page, actions);
-    courseworkShelf.appendChild(card);
-  });
-  coursework.appendChild(courseworkShelf);
-  layer.appendChild(coursework);
-
-  const syncCoursework = context => {
-    const route = normaliseRoute(context?.route || location.hash);
-    coursework.classList.toggle('is-document-focus', route.endsWith('/simulation-credence'));
-  };
-
   const credentials = shell('credentials', 'Education · credentials', 'Certificate stack');
   credentials.dataset.phase8Object = 'certificate-stack';
   const stack = element('div', 'phase8-certificate-stack');
@@ -268,21 +236,6 @@
       visible: context => routeMatches(normaliseRoute(context.route), ['experience']),
       mount: syncExperience,
       update: syncExperience,
-      variants: { mobile: { placement: 'semantic-mobile-tray' } }
-    },
-    {
-      id: 'phase8-coursework-documents',
-      selector: '[data-phase8-object="coursework-documents"]',
-      anchorNodeId: 'selected-coursework',
-      placement: 'semantic-right-document',
-      enter: 'document-lift',
-      exit: 'semantic-fade',
-      visible: context => routeMatches(normaliseRoute(context.route), [
-        'education/charles-university/coursework',
-        'education/charles-university/coursework/simulation-credence'
-      ]),
-      mount: syncCoursework,
-      update: syncCoursework,
       variants: { mobile: { placement: 'semantic-mobile-tray' } }
     },
     {

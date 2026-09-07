@@ -66,7 +66,7 @@ const scenarios = [
     ready: () => Boolean(
       window.ProfileArtifactScenes &&
       window.ProfileObjectFocus &&
-      document.querySelector('[data-artifact-scene="bachelor-thesis-diagrams"]') &&
+      document.querySelector('[data-artifact-scene="bachelor-thesis-paper"]') &&
       !document.body.classList.contains('is-v9-transitioning')
     ),
     interact: async page => {

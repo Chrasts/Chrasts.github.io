@@ -69,27 +69,35 @@ test.describe('Pre-Phase 8 mobile parity', () => {
     await navigate(page, 'work');
     await waitSettled(page);
 
-    await expect(page.locator('.mobile-mode-button')).toHaveText('Filters');
+    await expect(page.locator('.mobile-mode-button')).toHaveText('Browse');
     await page.locator('.mobile-mode-button').click();
     await expect(page.locator('.mobile-control-sheet')).toHaveClass(/is-open/);
+    await expect(page.locator('.mobile-work-project-picker button')).toHaveCount(10);
     await expect(page.locator('.mobile-control-sheet .integrated-work-controls')).toBeVisible();
+
+    await page.locator('.mobile-work-project-picker button').first().click();
+    await expect(page.locator('#site-detail-panel')).toBeVisible();
+    await expect(page.locator('#site-detail-panel .detail-close')).toBeVisible();
 
     const invariants = await page.evaluate(() => window.ProfilePhase0.checkGraphInvariants());
     expect(invariants.duplicateNodeIds).toEqual([]);
     expect(invariants.orphanEdgeCount).toBe(0);
   });
 
-  test('Atlas has mobile layers, compact Profile return control and lattice-shaped Work territory', async ({ page }) => {
+  test('Atlas has mobile layers, no Profile return control and lattice-shaped Work territory', async ({ page }) => {
     await bypassIntro(page);
     await navigate(page, 'atlas');
     await waitSettled(page);
     await page.waitForFunction(() => document.body.dataset.globalGeometry === 'radial-atlas');
     await page.waitForFunction(hasMultipleLiveProjectRanks, null, { timeout: 3_000 });
 
-    await expect(page.locator('.mobile-mode-button')).toHaveText('Layers');
+    await expect(page.locator('.mobile-mode-button')).toHaveText('Browse');
+    await page.locator('.mobile-mode-button').click();
+    await expect(page.locator('.mobile-atlas-branch-picker')).toBeVisible();
+    await expect(page.locator('.mobile-atlas-branch-picker button')).toHaveCount(5);
     const atlasButton = page.locator('.graph-routebar .atlas-button');
-    await expect(atlasButton).toContainText('Profile');
-    await expect(atlasButton).toHaveAttribute('data-route', 'overview');
+    await expect(atlasButton).toBeHidden();
+    await expect(atlasButton).not.toContainText('Profile');
     await expect(page.locator('#site-graph-help')).toBeHidden();
 
     const workShape = await page.evaluate(() => {
@@ -109,8 +117,6 @@ test.describe('Pre-Phase 8 mobile parity', () => {
     expect(workShape.projectRanks).toBeGreaterThanOrEqual(2);
     expect(workShape.visibleProjectMeta).toBe(0);
 
-    await atlasButton.click();
-    await page.waitForFunction(() => document.body.dataset.graphMode === 'overview');
   });
 });
 

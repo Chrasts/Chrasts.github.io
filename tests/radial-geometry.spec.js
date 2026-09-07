@@ -114,6 +114,6 @@ test.describe('Intro source geometry', () => {
       expect(Math.hypot(value.x - value.expectedX, value.y - value.expectedY)).toBeLessThan(2);
     });
     const r=positions['stepan-chrast'], k=positions.knowledge, e=positions.education, a=positions.about, x=positions.experience, w=positions.work;
-    expect(k.x).toBeGreaterThan(r.x); expect(e.y).toBeLessThan(r.y); expect(a.y).toBeLessThan(r.y); expect(x.x).toBeLessThan(r.x); expect(w.y).toBeGreaterThan(r.y);
+    expect(k.x).toBeGreaterThan(r.x); expect(e.y).toBeLessThan(r.y); expect(a.x).toBeLessThan(r.x); expect(x.y).toBeLessThan(r.y); expect(w.y).toBeGreaterThan(r.y);
   });
 });

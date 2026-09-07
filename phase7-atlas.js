@@ -6,6 +6,7 @@
   const nodeMap = new Map(graph.nodes.map(node => [node.id, node]));
   const rootId = graph.rootId || 'stepan-chrast';
   const sections = ['work', 'knowledge', 'experience', 'education', 'about'];
+  const parentIds = new Set(graph.nodes.flatMap(node => node.parentIds || []));
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const desktop = matchMedia('(min-width: 901px)');
   const mobileQuery = matchMedia('(max-width: 900px)');
@@ -77,6 +78,7 @@
   let currentScale = 1;
   let topologyMode = TOPOLOGY_MODES.EXPLORATION_LOD;
   let appliedTopologyMode = null;
+  let appliedVisibilitySignature = '';
   let entryFit = null;
   let visibleNodeCount = 0;
   let hiddenNodeCount = 0;
@@ -134,7 +136,8 @@
     layer.querySelectorAll('.atlas-territory-label').forEach(group => {
       const x = Number(group.dataset.baseX);
       const y = Number(group.dataset.baseY);
-      group.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${inverse.toFixed(4)})`);
+      const transform = `translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${inverse.toFixed(4)})`;
+      if (group.getAttribute('transform') !== transform) group.setAttribute('transform', transform);
     });
   };
 
@@ -142,6 +145,16 @@
     if (document.body?.dataset.graphMode !== 'atlas' || document.querySelector('.profile-intro-overlay')) return false;
     currentScale = Number.isFinite(scale) ? scale : currentScale;
     const lod = lodForScale(currentScale);
+    const selectedId = document.querySelector('#site-graph .site-graph-node.is-previewed[data-node-id]')?.dataset.nodeId || '';
+    const visibilitySignature = `${topologyMode}|${lod}|${selectedId}`;
+    if (visibilitySignature === appliedVisibilitySignature) {
+      currentLOD = lod;
+      appliedTopologyMode = topologyMode;
+      document.body.dataset.atlasLod = lod;
+      document.body.dataset.atlasTopology = topologyMode;
+      syncTerritoryLabels(currentScale);
+      return true;
+    }
     const preserved = preservedSelectionIds();
     const visibility = new Map();
 
@@ -170,6 +183,7 @@
     const previous = currentLOD;
     currentLOD = lod;
     appliedTopologyMode = topologyMode;
+    appliedVisibilitySignature = visibilitySignature;
     document.body.dataset.atlasLod = lod;
     document.body.dataset.atlasTopology = topologyMode;
     syncTerritoryLabels(currentScale);
@@ -562,12 +576,13 @@
   };
   const resolveAtlasLabelCollisions = () => {
     collisionFrame = 0;
-    if (document.body?.dataset.graphMode !== 'atlas' || !['near', 'detail'].includes(document.body.dataset.atlasLod)) {
+    const fullEntry = topologyMode === TOPOLOGY_MODES.ENTRY_FULL;
+    if (document.body?.dataset.graphMode !== 'atlas' || (!fullEntry && !['near', 'detail'].includes(document.body.dataset.atlasLod))) {
       clearAtlasLabelOffsets();
       return;
     }
     clearAtlasLabelOffsets();
-    const priority = item => item.node.classList.contains('is-previewed') ? -2 : item.node.dataset.nodeId === rootId ? -1 : sections.includes(item.node.dataset.nodeId) ? 0 : (depth.get(item.node.dataset.nodeId) ?? 99);
+    const priority = item => item.node.classList.contains('is-atlas-origin') ? -7 : item.node.classList.contains('is-atlas-predecessor') ? -6 : item.node.classList.contains('is-atlas-successor-primary') ? -5 : item.node.classList.contains('is-previewed') ? -4 : item.node.classList.contains('is-atlas-successor-secondary') ? -3 : item.node.dataset.nodeId === rootId ? -2 : sections.includes(item.node.dataset.nodeId) ? -1 : (depth.get(item.node.dataset.nodeId) ?? 99);
     const candidates = liveNodes()
       .filter(node => !node.classList.contains('is-atlas-lod-hidden'))
       .map(node => ({ node, label: node.querySelector('.site-graph-label') }))
@@ -584,13 +599,17 @@
       const section = geometry.sectionFor(node.dataset.nodeId);
       const vector = geometry.compass[section] || { x: 1, y: 0 };
       const perpendicular = { x: -vector.y, y: vector.x };
-      const offsets = [16, -16, 30, -30, 44, -44]
+      const leaf = !parentIds.has(node.dataset.nodeId);
+      const lateralSteps = leaf ? [22, -22, 42, -42, 64, -64, 88, -88] : [16, -16, 30, -30, 44, -44];
+      const offsets = lateralSteps
         .map(amount => ({ x: perpendicular.x * amount, y: perpendicular.y * amount }))
         .concat([
-          { x: vector.x * 18, y: vector.y * 18 },
-          { x: -vector.x * 18, y: -vector.y * 18 },
-          { x: perpendicular.x * 54 + vector.x * 12, y: perpendicular.y * 54 + vector.y * 12 },
-          { x: -perpendicular.x * 54 + vector.x * 12, y: -perpendicular.y * 54 + vector.y * 12 }
+          { x: vector.x * (leaf ? 30 : 18), y: vector.y * (leaf ? 30 : 18) },
+          { x: -vector.x * (leaf ? 30 : 18), y: -vector.y * (leaf ? 30 : 18) },
+          { x: perpendicular.x * (leaf ? 78 : 54) + vector.x * (leaf ? 24 : 12), y: perpendicular.y * (leaf ? 78 : 54) + vector.y * (leaf ? 24 : 12) },
+          { x: -perpendicular.x * (leaf ? 78 : 54) + vector.x * (leaf ? 24 : 12), y: -perpendicular.y * (leaf ? 78 : 54) + vector.y * (leaf ? 24 : 12) },
+          { x: perpendicular.x * (leaf ? 96 : 0) - vector.x * (leaf ? 26 : 0), y: perpendicular.y * (leaf ? 96 : 0) - vector.y * (leaf ? 26 : 0) },
+          { x: -perpendicular.x * (leaf ? 96 : 0) - vector.x * (leaf ? 26 : 0), y: -perpendicular.y * (leaf ? 96 : 0) - vector.y * (leaf ? 26 : 0) }
         ]);
       let best = { score: conflicts(rect), offset: null, rect };
       offsets.forEach(offset => {
@@ -627,9 +646,11 @@
       delete document.body.dataset.atlasLod;
       delete document.body.dataset.atlasTopology;
       clearAtlasLabelOffsets();
+      appliedVisibilitySignature = '';
       previousGraphMode = mode;
       return;
     }
+    if (reason === 'graph-render-settled' || previousGraphMode !== mode) appliedVisibilitySignature = '';
     const introMarker = document.documentElement.dataset.profileIntro || '';
     if (previousGraphMode !== 'atlas' && !['pending', 'preparing', 'running'].includes(introMarker)) {
       setTopologyMode(TOPOLOGY_MODES.EXPLORATION_LOD, { reason: 'atlas-route-entry', apply: false });
@@ -648,7 +669,6 @@
       applyLOD(camera.scale);
       scrubLateralHighlight();
       decorateInspector();
-      scheduleLabelCollisionPass();
     });
   };
   addEventListener('profile:scene-state', () => syncAtlasLifecycle('scene-state'));
@@ -658,6 +678,7 @@
     if (document.body?.dataset.graphMode !== 'atlas') return;
     scrubLateralHighlight();
     applyLOD(camera.scale);
+    scheduleLabelCollisionPass();
   });
   requestAnimationFrame(() => syncAtlasLifecycle('boot'));
 

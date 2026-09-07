@@ -5,6 +5,8 @@
   const themeIcon = themeButton?.querySelector('span');
   const themeMeta = document.querySelector('meta[name="theme-color"]');
   const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let themeTransitionTimer = 0;
   const savedTheme = () => {
     try { return localStorage.getItem('theme'); } catch (_) { return null; }
   };
@@ -19,16 +21,36 @@
     themeMeta?.setAttribute('content', dark ? '#11191c' : '#f7f3eb');
   };
 
+  const applyTheme = (theme, { animate = true } = {}) => {
+    const root = document.documentElement;
+    const shouldAnimate = animate && !reducedMotion.matches;
+    clearTimeout(themeTransitionTimer);
+    root.classList.remove('is-theme-transitioning');
+
+    if (shouldAnimate) {
+      root.classList.add('is-theme-transitioning');
+      // Commit the transition rule before changing token-backed colors.
+      void root.offsetWidth;
+    }
+
+    root.dataset.theme = theme;
+    updateThemeControl();
+
+    if (shouldAnimate) {
+      themeTransitionTimer = window.setTimeout(() => {
+        root.classList.remove('is-theme-transitioning');
+      }, 300);
+    }
+  };
+
   themeButton?.addEventListener('click', () => {
     const theme = currentTheme() === 'dark' ? 'light' : 'dark';
-    document.documentElement.dataset.theme = theme;
+    applyTheme(theme);
     try { localStorage.setItem('theme', theme); } catch (_) {}
-    updateThemeControl();
   });
   systemTheme.addEventListener('change', event => {
     if (savedTheme()) return;
-    document.documentElement.dataset.theme = event.matches ? 'dark' : 'light';
-    updateThemeControl();
+    applyTheme(event.matches ? 'dark' : 'light');
   });
   updateThemeControl();
 
@@ -51,25 +73,4 @@
     menuButton?.focus();
   });
 
-  const year = document.querySelector('#year');
-  if (year) year.textContent = new Date().getFullYear();
-  const copyEmailButton = document.querySelector('.copy-email');
-  copyEmailButton?.addEventListener('click', async () => {
-    const email = copyEmailButton.dataset.email;
-    try {
-      await navigator.clipboard.writeText(email);
-    } catch (_) {
-      const input = document.createElement('textarea');
-      input.value = email;
-      input.setAttribute('readonly', '');
-      input.style.position = 'fixed';
-      input.style.opacity = '0';
-      document.body.appendChild(input);
-      input.select();
-      document.execCommand('copy');
-      input.remove();
-    }
-    copyEmailButton.textContent = 'Copied';
-    setTimeout(() => { copyEmailButton.textContent = 'Copy'; }, 1600);
-  });
 })();

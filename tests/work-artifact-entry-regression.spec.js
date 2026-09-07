@@ -105,7 +105,7 @@ test('Work project clicks reveal Thesis, Modal Logic Lab and Axiom Wilds artifac
   await waitForWork(page);
 
   const cases = [
-    ['bachelor-thesis', 'bachelor-thesis-diagrams'],
+    ['bachelor-thesis', 'bachelor-thesis-paper'],
     ['modal-logic-lab', 'modal-logic-lab-screens'],
     ['axiom-wilds', 'axiom-wilds-gameplay']
   ];

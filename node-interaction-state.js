@@ -197,7 +197,12 @@
   }
 
   function snapshot() {
-    const primaryNodeId = pressedNodeId || focusedNodeId || hoveredNodeId || null;
+    // Route hand-offs can leave a node focused while the pointer is already
+    // exploring the freshly rendered Atlas. In pointer modality the live
+    // hover must own the reading field immediately; otherwise that stale
+    // focus suppresses the dynamics until a click moves focus elsewhere.
+    const primaryNodeId = pressedNodeId ||
+      (input === 'pointer' && hoveredNodeId ? hoveredNodeId : focusedNodeId || hoveredNodeId || null);
     const counts = {};
     records.forEach(record => {
       counts[record.state] = (counts[record.state] || 0) + 1;

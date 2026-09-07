@@ -74,39 +74,45 @@
   body[data-graph-mode="overview"] .hero-visual.profile-identity{width:86px!important;height:86px!important}
   body[data-graph-mode="overview"] .profile-identity .portrait{width:76px!important;height:76px!important}
 
-  /* Pre-Phase 8 parity: the desktop Atlas card becomes a compact, explicit
-     return control on phones. It still keeps a full touch target. */
-  body[data-graph-mode="atlas"] .graph-routebar .atlas-button.atlas-entry-v7{
-    min-width:100px!important;
-    min-height:44px!important;
-    display:flex!important;
-    grid-template-columns:none!important;
-    justify-content:center!important;
-    align-items:center!important;
-    gap:6px!important;
-    padding:0 10px!important;
-    border-radius:22px!important;
-  }
-  body[data-graph-mode="atlas"] .graph-routebar .atlas-button.atlas-entry-v7 .atlas-entry-glyph{
-    display:grid!important;
-    width:20px!important;
-    height:20px!important;
-    place-items:center!important;
-    font-size:17px!important;
-    line-height:1!important;
-  }
-  body[data-graph-mode="atlas"] .graph-routebar .atlas-button.atlas-entry-v7 .atlas-entry-copy{
-    display:flex!important;
-    width:auto!important;
-    height:auto!important;
-  }
-  body[data-graph-mode="atlas"] .graph-routebar .atlas-button.atlas-entry-v7 .atlas-entry-copy strong{
-    display:inline!important;
-    font-size:12px!important;
-    letter-spacing:0!important;
-  }
-
   .profile-crosslinks{display:none!important}
+
+  /* A phone map is read at a very different physical scale to a desktop SVG.
+     Local fragments keep labels and hit regions usable without touching their
+     canonical geometry. */
+  body[data-graph-mode="focus"] #site-graph .site-graph-label{font-size:28px!important;stroke-width:8px!important}
+  body[data-graph-mode="focus"] #site-graph .site-graph-node.is-section .site-graph-label{font-size:31px!important}
+  body[data-graph-mode="focus"] #site-graph .site-graph-hit{r:56px!important}
+  body[data-graph-mode="focus"] #site-graph .site-graph-node.is-section .site-graph-hit{r:64px!important}
+  body[data-graph-mode="overview"] #site-graph .site-graph-label{font-size:18px!important;stroke-width:6px!important}
+  body[data-graph-mode="overview"] #site-graph .site-graph-hit{r:48px!important}
+
+  /* Atlas starts as a five-branch mobile navigator, never a 94-node
+     thumbnail. The runtime marks only the semantic root and sections live. */
+  body[data-graph-mode="atlas"][data-mobile-atlas-view="branches"] #site-graph .is-mobile-atlas-hidden{display:none!important;pointer-events:none!important}
+  body[data-graph-mode="atlas"][data-mobile-atlas-view="branches"] #site-graph .site-graph-node:not(.is-mobile-atlas-hidden) > .site-graph-dot{r:24px!important;stroke-width:3px!important}
+  body[data-graph-mode="atlas"][data-mobile-atlas-view="branches"] #site-graph .site-graph-node:not(.is-mobile-atlas-hidden) > .site-graph-hit{r:120px!important}
+  body[data-graph-mode="atlas"][data-mobile-atlas-view="branches"] #site-graph .site-graph-node:not(.is-mobile-atlas-hidden) > .site-graph-label{font-size:82px!important;font-weight:820!important;stroke-width:16px!important}
+  body[data-graph-mode="atlas"][data-mobile-atlas-view="branches"] #site-graph .site-graph-meta,
+  body[data-graph-mode="atlas"][data-mobile-atlas-view="branches"] #site-graph .atlas-territory-label-layer{display:none!important}
+  body[data-graph-mode="atlas"][data-mobile-atlas-view="branches"] #site-graph .site-graph-edges path:not(.is-mobile-atlas-live){display:none!important}
+  body[data-graph-mode="atlas"][data-mobile-atlas-view="branches"] #site-graph .site-graph-edges path.is-mobile-atlas-live{stroke-width:7px!important;opacity:.78!important}
+
+  .mobile-atlas-branch-picker{display:grid;gap:8px}
+  .mobile-atlas-branch-picker p{margin:0 0 3px;color:var(--muted);font-size:12px;line-height:1.4}
+  .mobile-atlas-branch-picker button{min-height:48px;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:transparent;color:var(--ink);font:760 13px/1.15 var(--sans);text-align:left}
+  .mobile-atlas-branch-picker button:active,.mobile-atlas-branch-picker button:focus-visible{border-color:var(--teal);color:var(--teal);background:color-mix(in srgb,var(--teal) 8%,transparent)}
+  .mobile-work-project-picker{display:grid;gap:8px;margin-bottom:14px;padding-bottom:13px;border-bottom:1px solid var(--line)}
+  .mobile-work-project-picker p{margin:0 0 3px;color:var(--muted);font-size:12px;line-height:1.4}
+  .mobile-work-project-picker button{min-height:48px;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:transparent;color:var(--ink);font:760 13px/1.15 var(--sans);text-align:left}
+  .mobile-atlas-branch-picker button,
+  .mobile-work-project-picker button,
+  .scene-detail button{touch-action:manipulation}
+  .mobile-work-project-picker button:active,.mobile-work-project-picker button:focus-visible{border-color:var(--teal);color:var(--teal);background:color-mix(in srgb,var(--teal) 8%,transparent)}
+  /* The lattice remains a quiet relationship texture on phone; project cards
+     in Browse are the readable, tappable entry point. */
+  body[data-graph-mode="work"] .work-theme-label-v5 text,
+  body[data-graph-mode="work"] .work-project-anchor-v5 text{display:none!important}
+  body[data-mobile-atlas-view="branches"] .mobile-control-sheet .atlas-controls{display:none!important}
 }
 
 @media (max-width:520px){

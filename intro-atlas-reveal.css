@@ -141,8 +141,7 @@ html[data-profile-intro="running"] body > .site-header{
   pointer-events:auto!important
 }
 
-html[data-profile-intro="preparing"] body > .site-header,
-html[data-profile-intro="preparing"] body > footer{
+html[data-profile-intro="preparing"] body > .site-header{
   opacity:0!important;
   visibility:hidden!important;
   pointer-events:none!important

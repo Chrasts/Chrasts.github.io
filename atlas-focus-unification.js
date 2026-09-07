@@ -18,6 +18,7 @@
   let active = null;
   let frame = 0;
   let copyFrame = 0;
+  let secondaryRevealTimer = 0;
   let lastResult = null;
 
   const normaliseRoute = value =>
@@ -77,6 +78,7 @@
   const liveNode = id => liveNodes().find(element => element.dataset.nodeId === id) || null;
   const liveEdges = () => [...document.querySelectorAll('#site-graph .site-graph-edges path[data-source][data-target]')]
     .filter(element => !element.closest('.v9-transition-overlay'));
+  const isSecondaryRelation = edge => edge.classList.contains('is-secondary') || edge.classList.contains('is-cross-link');
   const selectedAtlasNode = () => document.querySelector('#site-graph .site-graph-node.is-previewed[data-node-id]');
 
   const primaryPath = node => {
@@ -218,10 +220,15 @@
     result.forEach(edge => unique.set(`${edge.source}|${edge.target}|${edge.type}`, edge));
     return [...unique.values()];
   };
-  const renderedEdges = ids => {
+  const renderedEdges = (ids, { visibleOnly = false, includeSecondary = true } = {}) => {
     const set = new Set(ids);
     const result = liveEdges()
-      .filter(edge => set.has(edge.dataset.source) && set.has(edge.dataset.target))
+      .filter(edge =>
+        set.has(edge.dataset.source) &&
+        set.has(edge.dataset.target) &&
+        (!visibleOnly || !edge.classList.contains('is-atlas-lod-hidden')) &&
+        (includeSecondary || !isSecondaryRelation(edge))
+      )
       .map(edge => ({ source: edge.dataset.source, target: edge.dataset.target, type: edge.dataset.type || 'hierarchy' }));
     return result.length ? result : modelEdges(ids);
   };
@@ -254,7 +261,7 @@
       edgeLayer.appendChild(path);
     });
     document.body.appendChild(overlay);
-    return { overlay, edges: edgeLayer, nodes: nodeLayer };
+    return { overlay, edges: edgeLayer, nodes: nodeLayer, edgePaths: [...edgeLayer.children] };
   };
 
   const edgePath = (from, to) => {
@@ -268,8 +275,11 @@
     const cy = (from.f + to.f) / 2 + ny * bend;
     return `M ${from.e.toFixed(2)} ${from.f.toFixed(2)} Q ${cx.toFixed(2)} ${cy.toFixed(2)} ${to.e.toFixed(2)} ${to.f.toFixed(2)}`;
   };
-  const paintEdges = (edgeLayer, matrices, progressForEdge) => {
-    edgeLayer.querySelectorAll('.atlas-focus-bridge-edge').forEach(path => {
+  const paintEdges = (edgeLayerOrPaths, matrices, progressForEdge) => {
+    const paths = Array.isArray(edgeLayerOrPaths)
+      ? edgeLayerOrPaths
+      : edgeLayerOrPaths.querySelectorAll('.atlas-focus-bridge-edge');
+    paths.forEach(path => {
       const from = matrices.get(path.dataset.source);
       const to = matrices.get(path.dataset.target);
       if (!from || !to) {
@@ -364,6 +374,11 @@
     const current = active;
     active = null;
     current?.overlay?.remove();
+    clearTimeout(secondaryRevealTimer);
+    secondaryRevealTimer = 0;
+    document.body?.classList.remove('is-atlas-secondary-reveal');
+    liveEdges().forEach(edge => edge.style.removeProperty('--atlas-secondary-reveal-opacity'));
+    window.ProfileMotionPolicy?.setForceSnap?.(false);
     document.body?.classList.remove('is-atlas-focus-transitioning', 'is-profile-atlas-transitioning', 'is-profile-atlas-collapsing', 'is-profile-atlas-unfolding');
     if (document.body) {
       delete document.body.dataset.atlasFocusDirection;
@@ -429,6 +444,7 @@
 
   const rebuildOverlayForAtlas = (current, target, rootStart) => {
     current.nodes.replaceChildren();
+    current.nodeClones = new Map();
     target.nodes.forEach(item => {
       const clone = item.clone;
       clone.dataset.bridgeNodeId = item.id;
@@ -438,9 +454,10 @@
       setMatrix(clone, initial);
       clone.style.opacity = item.id === rootId ? '1' : '0';
       current.nodes.appendChild(clone);
+      current.nodeClones.set(item.id, clone);
     });
     current.edges.replaceChildren();
-    modelEdges([...target.nodes.keys()]).forEach(edge => {
+    renderedEdges([...target.nodes.keys()], { visibleOnly: true, includeSecondary: false }).forEach(edge => {
       const path = document.createElementNS(svgNS, 'path');
       path.dataset.source = edge.source;
       path.dataset.target = edge.target;
@@ -451,6 +468,7 @@
       path.style.opacity = '0';
       current.edges.appendChild(path);
     });
+    current.edgePaths = [...current.edges.children];
   };
 
   const unfoldAtlasFromRoot = async (current, target, expectedGeneration) => {
@@ -466,7 +484,7 @@
     return animate(ATLAS_UNFOLD_DURATION, expectedGeneration, raw => {
       const matrices = new Map();
       target.nodes.forEach((item, id) => {
-        const clone = current.nodes.querySelector(`[data-bridge-node-id="${CSS.escape(id)}"]`);
+        const clone = current.nodeClones.get(id);
         if (!clone) return;
         if (id === rootId) {
           const p = ease(clamp01(raw / .28));
@@ -489,7 +507,7 @@
         matrices.set(id, matrix);
         progressById.set(id, local);
       });
-      paintEdges(current.edges, matrices, path => {
+      paintEdges(current.edgePaths, matrices, path => {
         const childProgress = progressById.get(path.dataset.target) ?? 0;
         const sourceProgress = progressById.get(path.dataset.source) ?? 0;
         return ease(clamp01((Math.min(childProgress, sourceProgress || childProgress) - .08) / .92));
@@ -503,6 +521,24 @@
       await wait(reducedMotion.matches ? 0 : 70);
     }
     active?.overlay?.remove();
+    window.ProfileMotionPolicy?.setForceSnap?.(false);
+    if (targetRoute === 'atlas' && mode() === 'atlas') {
+      const secondaryRelations = liveEdges().filter(edge =>
+        isSecondaryRelation(edge) && !edge.classList.contains('is-atlas-lod-hidden')
+      );
+      if (secondaryRelations.length) {
+        secondaryRelations.forEach(edge => {
+          edge.style.setProperty('--atlas-secondary-reveal-opacity', getComputedStyle(edge).opacity || '1');
+        });
+        document.body?.classList.add('is-atlas-secondary-reveal');
+        clearTimeout(secondaryRevealTimer);
+        secondaryRevealTimer = setTimeout(() => {
+          document.body?.classList.remove('is-atlas-secondary-reveal');
+          liveEdges().forEach(edge => edge.style.removeProperty('--atlas-secondary-reveal-opacity'));
+          secondaryRevealTimer = 0;
+        }, 720);
+      }
+    }
     document.body?.classList.remove('is-atlas-focus-transitioning', 'is-profile-atlas-transitioning', 'is-profile-atlas-collapsing', 'is-profile-atlas-unfolding');
     if (document.body) {
       delete document.body.dataset.atlasFocusDirection;
@@ -547,7 +583,7 @@
     const operation = ++generation;
     const direction = 'atlas-to-focus';
     const token = scene()?.transitions?.begin?.({ type: 'ATLAS_FOCUS', owner: 'atlas-focus-unification', direction, anchorId, sourceRoute: source.route, targetRoute: resolvedRoute }, { reason: 'atlas-focus-unification' });
-    const bridge = reducedMotion.matches ? null : makeOverlay({ source, direction, edges: modelEdges(ids) });
+    const bridge = reducedMotion.matches ? null : makeOverlay({ source, direction, edges: renderedEdges(ids, { visibleOnly: true }) });
     active = { ...(bridge || {}), token, operation, direction, anchorId, sourceRoute: source.route, targetRoute: resolvedRoute, ids };
     document.body?.classList.add('is-atlas-focus-transitioning');
     if (document.body) {
@@ -558,6 +594,9 @@
     window.ProfileRootOverview?.closeQuickOverview?.('route');
     document.querySelector('#site-detail-panel .detail-close')?.click?.();
 
+    // The live renderer snaps underneath the bridge. Its own delayed layout
+    // interpolation would otherwise become visible as a second handoff.
+    window.ProfileMotionPolicy?.setForceSnap?.(true);
     if (!history) setRoute(resolvedRoute);
     const ready = await prepareFocusTarget({ targetRoute: resolvedRoute, anchorId, expectedGeneration: operation });
     if (!ready || operation !== generation) {
@@ -609,6 +648,9 @@
   const transitionProfileToAtlas = async ({ anchorId = currentAnchorId(), history = false } = {}) => {
     const sourceMode = mode();
     if (sourceMode === 'atlas') return false;
+    // A replayed lazy-load click or a history notification can arrive while
+    // the same collapse is running.  It must not interrupt and restart it.
+    if (active?.targetRoute === 'atlas') return true;
     if (active) scene()?.transitions?.interrupt?.({ reason: 'profile-atlas-retarget', targetRoute: 'atlas', targetNodeId: rootId });
 
     tuneProfileRootGeometry();
@@ -639,6 +681,9 @@
       if (!collapsed || operation !== generation) return false;
     }
 
+    // Build the canonical radial Atlas in one frame behind the overlay. This
+    // prevents a provisional secondary-edge topology from flashing on entry.
+    window.ProfileMotionPolicy?.setForceSnap?.(true);
     if (!history) setRoute('atlas');
     const ready = await prepareAtlasTarget(operation);
     if (!ready || operation !== generation) {

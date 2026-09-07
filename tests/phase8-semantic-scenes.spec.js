@@ -32,18 +32,6 @@ test('Phase 8 turns Experience into a stable chronological timeline object', asy
   expect(labels[2][1]).toContain('present');
 });
 
-test('Phase 8 exposes coursework as a real document object backed by the artifact registry', async ({ page }) => {
-  await bypassIntro(page);
-  await page.goto('/#education/charles-university/coursework/simulation-credence');
-  await waitPhase8(page);
-
-  const shelf = page.locator('[data-phase8-object="coursework-documents"]');
-  await expect(shelf).toBeVisible();
-  await expect(shelf).toHaveClass(/is-document-focus/);
-  await expect(shelf.locator('.phase8-document-title')).toContainText('Simulation Credence and Its Consequences');
-  await expect(shelf.locator('a[href="assets/documents/education/coursework/simulation-credence-and-its-consequences.pdf"]')).toBeVisible();
-});
-
 test('Phase 8 certificate stack keeps every credential directly selectable', async ({ page }) => {
   await bypassIntro(page);
   await page.goto('/#education/credentials');

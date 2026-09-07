@@ -21,7 +21,9 @@
   const childrenFor = id => graph.nodes.filter(node => node.parentIds?.includes(id));
   const externalTransitionOwnsRoute = () =>
     document.body?.classList.contains('is-atlas-handoff') ||
-    document.body?.classList.contains('is-crosslink-travelling');
+    document.body?.classList.contains('is-crosslink-travelling') ||
+    document.body?.classList.contains('is-atlas-focus-transitioning') ||
+    document.body?.classList.contains('is-profile-atlas-transitioning');
 
   const primaryPath = node => {
     const path = [];
@@ -367,6 +369,25 @@
     }
   };
 
+  // Overview owns a directional compass label layout.  Do not replace that
+  // target with the compact local-label default before creating the overlay:
+  // doing so made section labels animate below their nodes and then jump to
+  // their compass positions after the overlay was removed.
+  const prepareTargetGeometry = () => {
+    if (document.body.dataset.graphMode === 'overview' && window.ProfileGeometry?.apply?.()) return;
+    resetLabelGeometry();
+    reflowFocus();
+  };
+
+  const settleTargetGeometry = () => {
+    if (document.body.dataset.graphMode === 'focus') {
+      reflowFocus();
+      return;
+    }
+    if (document.body.dataset.graphMode === 'overview') window.ProfileGeometry?.apply?.();
+    syncUnderlyingEdges();
+  };
+
   const syncUnderlyingEdges = (positions = null, targetNode = null) => {
     const elements = new Map(nodeElements().map(element => [element.dataset.nodeId, element]));
     const points = positions || new Map([...elements].map(([id, element]) => [id, pointOf(element)]));
@@ -664,9 +685,7 @@
 
   const finishTransition = current => {
     if (!current || current.operation !== transitionOperation || activeTransition !== current) return false;
-    const mode = document.body.dataset.graphMode;
-    if (mode === 'focus') reflowFocus();
-    else syncUnderlyingEdges();
+    settleTargetGeometry();
 
     const camera = graphCamera();
     if (camera) camera.style.opacity = '';
@@ -686,8 +705,7 @@
     requestAnimationFrame(() => requestAnimationFrame(() => {
       if (current.operation !== transitionOperation) return;
       if (document.body.classList.contains('is-v9-transitioning')) return;
-      if (document.body.dataset.graphMode === 'focus') reflowFocus();
-      else syncUnderlyingEdges();
+      settleTargetGeometry();
     }));
     return true;
   };
@@ -708,8 +726,7 @@
       return;
     }
 
-    resetLabelGeometry();
-    reflowFocus();
+    prepareTargetGeometry();
 
     const camera = graphCamera();
     if (!camera) {
@@ -945,6 +962,7 @@
     }
 
     if (event.key === 'Escape') {
+      if (event.defaultPrevented || event.target.closest?.('.mobile-control-sheet[aria-hidden="false"]')) return;
       const panel = document.querySelector('#site-detail-panel');
       if (panel && !panel.hidden) return;
       const mode = document.body.dataset.graphMode;

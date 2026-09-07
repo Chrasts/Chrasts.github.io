@@ -10,8 +10,15 @@
   const nodeMap = new Map(graph.nodes.map(node => [node.id, node]));
   const reducedMotion = Boolean(bootstrap.reducedMotion) || matchMedia('(prefers-reduced-motion: reduce)').matches;
   const mobileQuery = matchMedia('(max-width: 900px)');
-  const REVEAL_IGNITION_LEAD = reducedMotion ? 0 : 620;
-  const REVEAL_ACCELERATION_AFTER_START = 1000;
+  const mobile = mobileQuery.matches;
+  // The desktop opening is a cinematic full-graph reveal. On a phone the
+  // destination is the concise branch navigator, so do not spend six seconds
+  // animating topology that cannot be read at that physical scale.
+  const REVEAL_IGNITION_LEAD = reducedMotion ? 0 : mobile ? 160 : 620;
+  const VISIBILITY_FIELD_DELAY = mobile ? 70 : 160;
+  const VISIBILITY_GENTLE_PHASE = mobile ? 260 : 900;
+  const VISIBILITY_FAST_PHASE = mobile ? 520 : 1450;
+  const VISIBILITY_GENTLE_PROGRESS = mobile ? .34 : .30;
   const STATES = Object.freeze({
     PREPARING: 'PREPARING',
     ATLAS_REVEAL: 'ATLAS_REVEAL',
@@ -27,6 +34,15 @@
     cross: 420,
     settle: 480,
     ready: 560
+  } : mobile ? {
+    primary: 180,
+    territories: 300,
+    structure: 410,
+    deep: 500,
+    labels: 575,
+    cross: 650,
+    settle: 720,
+    ready: 800
   } : {
     primary: 675,
     territories: 1350,
@@ -52,7 +68,7 @@
     realGraph: true,
     persistentRoot: true,
     reducedMotion,
-    mobile: mobileQuery.matches,
+    mobile,
     criticalReady: false,
     readiness: {},
     revealedWaves: [],
@@ -208,25 +224,18 @@
       resolve(true);
       return;
     }
-    const delay = 160;
-    const duration = 4760;
-    /* The field starts during ignition, before ATLAS_REVEAL. Deriving this
-       threshold from that lead keeps the visible first second deliberately
-       calm even if the ignition handoff is tuned later. */
-    const accelerationStart = Math.max(0, Math.min(1,
-      (REVEAL_IGNITION_LEAD + REVEAL_ACCELERATION_AFTER_START - delay) / duration
-    ));
-    const acceleratedCompleteAt = .55;
-    const accelerationWindow = acceleratedCompleteAt - accelerationStart;
-    const acceleration = (1 - acceleratedCompleteAt) / (accelerationWindow * accelerationWindow);
+    /* Preserve a short, legible ignition around the root, then let the field
+       decisively carry the eye across the full graph. The former acceleration
+       began well after one second and made the opening feel sluggish. */
+    const delay = VISIBILITY_FIELD_DELAY;
+    const duration = VISIBILITY_GENTLE_PHASE + VISIBILITY_FAST_PHASE;
     const started = performance.now();
     const tick = now => {
-      const elapsed = now - started - delay;
-      const linearProgress = Math.max(0, Math.min(1, elapsed / duration));
-      const tailProgress = Math.max(0, linearProgress - accelerationStart);
-      const progress = linearProgress <= accelerationStart
-        ? linearProgress
-        : Math.min(1, linearProgress + acceleration * tailProgress * tailProgress);
+      const elapsed = Math.max(0, now - started - delay);
+      const progress = elapsed <= VISIBILITY_GENTLE_PHASE
+        ? VISIBILITY_GENTLE_PROGRESS * (elapsed / VISIBILITY_GENTLE_PHASE)
+        : VISIBILITY_GENTLE_PROGRESS + (1 - VISIBILITY_GENTLE_PROGRESS) *
+          (1 - Math.pow(1 - Math.min(1, (elapsed - VISIBILITY_GENTLE_PHASE) / VISIBILITY_FAST_PHASE), 4));
       visibilityMetrics(progress);
       if (progress >= .76 && visibilityInteractiveResolve) {
         const resolveInteractive = visibilityInteractiveResolve;

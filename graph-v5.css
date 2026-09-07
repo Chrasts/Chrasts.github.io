@@ -166,6 +166,88 @@
   vector-effect:non-scaling-stroke
 }
 
+/* Atlas is a reading surface: the hovered path gains typographic weight while
+   nearby unrelated nodes make room through node-dynamics. */
+body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-muted-soft{opacity:.18!important}
+body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-muted-soft .site-graph-label{opacity:.34}
+body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-atlas-origin > .site-graph-dot{
+  fill:color-mix(in srgb,var(--teal) 18%,var(--paper));
+  stroke:var(--teal);
+  stroke-width:3.2;
+  transform:scale(1.34);
+  filter:drop-shadow(0 0 7px color-mix(in srgb,var(--teal) 46%,transparent));
+}
+body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-atlas-origin > .site-graph-label{
+  fill:var(--teal);
+  font-size:16px;
+  font-weight:850;
+  stroke-width:6px;
+  letter-spacing:.012em;
+}
+body[data-graph-mode="atlas"] #site-graph .site-graph-node:is(.is-upstream,.is-downstream) > .site-graph-dot{
+  stroke-width:2.7;
+  transform:scale(1.22);
+}
+body[data-graph-mode="atlas"] #site-graph .site-graph-node:is(.is-upstream,.is-downstream) > .site-graph-label{
+  font-size:13px;
+  font-weight:800;
+  stroke-width:5px;
+}
+body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-lateral > .site-graph-dot{stroke-width:2.3;transform:scale(1.15)}
+body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-lateral > .site-graph-label{font-size:12px;font-weight:760;stroke-width:4.5px}
+body[data-graph-mode="atlas"] #site-graph .site-graph-edges path:is(.is-upstream,.is-downstream){stroke-width:2.7!important}
+body[data-graph-mode="atlas"] #site-graph .site-graph-edges path.is-lateral{stroke-width:2.2!important;opacity:1!important}
+body[data-graph-mode="atlas"] #site-graph .site-graph-edges path.is-muted-soft{opacity:.10!important}
+
+/* The focused reading path has three clearly distinct typographic levels:
+   focus plus its ancestors, direct successors, then the remaining descendants.
+   Focus uses the node itself rather than an added halo ring. */
+body[data-graph-mode="atlas"] #site-graph .site-graph-node:is(.is-atlas-origin,.is-atlas-predecessor) > .site-graph-dot{
+  stroke-width:3.65;
+  transform:scale(1.68);
+  filter:none;
+}
+body[data-graph-mode="atlas"] #site-graph .site-graph-node:is(.is-atlas-origin,.is-atlas-predecessor) > .site-graph-label{
+  font-size:28px;
+  font-weight:890;
+  stroke-width:8px;
+  letter-spacing:.016em;
+}
+body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-atlas-successor-primary > .site-graph-dot{
+  stroke-width:3.25;
+  transform:scale(1.46);
+}
+body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-atlas-successor-primary > .site-graph-label{
+  font-size:21px;
+  font-weight:850;
+  stroke-width:6.6px;
+}
+body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-atlas-successor-secondary > .site-graph-dot{
+  stroke-width:3;
+  transform:scale(1.32);
+}
+body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-atlas-successor-secondary > .site-graph-label{
+  font-size:17px;
+  font-weight:820;
+  stroke-width:5.8px;
+}
+body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-feel-origin > .site-graph-halo{
+  opacity:0!important;
+  animation:none!important;
+}
+/* The root remains the quiet reference point even when it belongs to the
+   ancestor chain of the focused node. */
+body[data-graph-mode="atlas"] #site-graph .site-graph-node[data-node-id="stepan-chrast"].is-upstream > .site-graph-dot{
+  stroke-width:1.8;
+  transform:none;
+}
+body[data-graph-mode="atlas"] #site-graph .site-graph-node[data-node-id="stepan-chrast"].is-upstream > .site-graph-label{
+  fill:var(--ink);
+  font-size:11px;
+  font-weight:670;
+  stroke-width:4px;
+}
+
 /* Work becomes a real graph mode, not a second scene. */
 body[data-graph-mode="work"] .site-graph-heading{top:76px!important}
 body[data-graph-mode="work"] .site-graph-help{

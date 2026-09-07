@@ -78,7 +78,7 @@ test('closing focused media keeps the artifact lane stable and node detail activ
 
 test('thesis and Modal Lab artifacts open Object Focus without dismissing their node detail', async ({ page }) => {
   for (const sample of [
-    { route: 'work/project/bachelor-thesis', scene: 'bachelor-thesis-diagrams', artifact: 'bachelor-thesis-rol-non-a', kind: 'pdf' },
+    { route: 'work/project/bachelor-thesis', scene: 'bachelor-thesis-paper', artifact: 'bachelor-thesis-rol-non-a', kind: 'pdf' },
     { route: 'work/project/modal-logic-lab', scene: 'modal-logic-lab-screens', artifact: 'modal-logic-lab-screenshot-lab', kind: 'image' }
   ]) {
     await boot(page, sample.route);
@@ -99,7 +99,7 @@ test('thesis and Modal Lab artifacts open Object Focus without dismissing their 
 test('focused PDF uses whole-page fit with user zoom controls available', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await boot(page, 'work/project/bachelor-thesis');
-  await openArtifact(artifactControl(page, 'bachelor-thesis-diagrams', 'bachelor-thesis-lattice-of-bands'));
+  await openArtifact(artifactControl(page, 'bachelor-thesis-paper', 'bachelor-thesis-lattice-of-bands'));
   await waitSettled(page);
   const frame = page.locator('.artifact-focus-media iframe.object-focus-primary');
   await expect(frame).toHaveAttribute('data-object-focus-fit', 'contain');

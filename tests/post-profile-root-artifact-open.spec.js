@@ -73,17 +73,13 @@ test('Modal Logic Lab double-click resolves to one stable Object Focus open', as
 
 test('BSc PDF uses an inert ambient preview and a reliable focused reader affordance', async ({ page }) => {
   await boot(page, 'work/project/bachelor-thesis');
-  const card = page.locator('[data-artifact-scene="bachelor-thesis-diagrams"] .artifact-deck-card[data-artifact-id="bachelor-thesis-lattice-of-bands"]');
+  const card = page.locator('[data-artifact-scene="bachelor-thesis-paper"] .artifact-folio-support-card[data-artifact-id="bachelor-thesis-lattice-of-bands"]');
   const preview = card.locator('.artifact-media-preview.is-pdf');
-  const expand = card.locator('.artifact-inline-expand');
 
   await expect(preview).toBeVisible();
   await expect(preview.locator('iframe')).toHaveCount(0);
   await expect(preview.locator('.artifact-pdf-mark')).toHaveText('PDF');
-  await expect(expand).toBeVisible();
-  await expect(expand).toContainText('Inspect');
-
-  await expand.click();
+  await card.click();
   await waitSettled(page);
 
   const snapshot = await page.evaluate(() => window.ProfileObjectFocus.snapshot());

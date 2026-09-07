@@ -50,43 +50,19 @@ test('artifact route mounts one scene, tears it down and remounts without multip
   await waitArtifactScenes(page);
 
   expect(await page.locator('[data-artifact-scene]').count()).toBe(1);
-  expect((await page.evaluate(() => window.ProfileArtifactScenes.snapshot())).mountedBindings).toEqual(['bachelor-thesis-diagrams']);
+  expect((await page.evaluate(() => window.ProfileArtifactScenes.snapshot())).mountedBindings).toEqual(['bachelor-thesis-paper']);
 
   await page.evaluate(() => { location.hash = '#overview'; });
   await page.waitForFunction(() => document.body.dataset.graphRoute === 'overview');
   await expect.poll(() => page.locator('[data-artifact-scene]').count()).toBe(0);
-  expect((await page.evaluate(() => window.ProfileArtifactScenes.snapshot())).lifecycle['bachelor-thesis-diagrams']).toBe('unmounted');
+  expect((await page.evaluate(() => window.ProfileArtifactScenes.snapshot())).lifecycle['bachelor-thesis-paper']).toBe('unmounted');
 
   await page.evaluate(() => { location.hash = '#work/project/bachelor-thesis'; });
   await page.waitForFunction(() => document.body.dataset.graphRoute === 'work/project/bachelor-thesis');
-  const remounted = page.locator('[data-artifact-scene="bachelor-thesis-diagrams"]');
+  const remounted = page.locator('[data-artifact-scene="bachelor-thesis-paper"]');
   await expect(remounted).toHaveCount(1);
   await expect(remounted.locator('iframe')).toHaveCount(0);
   await expect(remounted.locator('.artifact-pdf-fallback')).toHaveCount(3);
-});
-
-test('Simulation Credence is a document object and opens in Object Focus', async ({ page }) => {
-  await bypassIntro(page);
-  await page.goto('/#education/charles-university/coursework/simulation-credence');
-  await waitArtifactScenes(page);
-
-  const folio = page.locator('[data-artifact-scene="simulation-credence-paper"]');
-  await expect(folio).toBeVisible();
-  await expect(folio).toHaveAttribute('data-artifact-side', 'left');
-  await expect(folio.locator('.artifact-object-header')).toHaveCount(0);
-  await expect(folio.locator('iframe')).toHaveCount(0);
-  await expect(folio.locator('.artifact-pdf-fallback')).toContainText('Simulation Credence and Its Consequences');
-
-  await folio.locator('.artifact-inline-expand').click();
-  const viewer = page.locator('.artifact-focus-viewer');
-  await waitSettled(page);
-  await expect(viewer).toBeVisible();
-  await expect(viewer).toHaveAttribute('data-media-stage', 'object-focus');
-  await expect(viewer).toHaveAttribute('data-media-kind', 'pdf');
-  await expect(viewer.locator('.artifact-focus-title')).toContainText('Simulation Credence and Its Consequences');
-  await expect(viewer.locator('.artifact-focus-media iframe')).toHaveAttribute('src', /simulation-credence-and-its-consequences\.pdf#toolbar=1&navpanes=0&scrollbar=0&view=Fit/);
-  await page.keyboard.press('Escape');
-  await expect(viewer).toBeHidden();
 });
 
 test('BSc thesis materials preserve PDF geometry and open the defended thesis in Object Focus', async ({ page }) => {
@@ -94,28 +70,28 @@ test('BSc thesis materials preserve PDF geometry and open the defended thesis in
   await page.goto('/#work/project/bachelor-thesis');
   await waitArtifactScenes(page);
 
-  const cluster = page.locator('[data-artifact-scene="bachelor-thesis-diagrams"]');
-  const first = cluster.locator('.artifact-deck-card[data-artifact-id="bachelor-thesis-lattice-of-bands"]');
-  const second = cluster.locator('.artifact-deck-card[data-artifact-id="bachelor-thesis-rol-non-a"]');
-  const thesis = cluster.locator('.artifact-deck-card[data-artifact-id="bachelor-thesis-pdf"]');
+  const cluster = page.locator('[data-artifact-scene="bachelor-thesis-paper"]');
+  const first = cluster.locator('.artifact-folio-support-card[data-artifact-id="bachelor-thesis-lattice-of-bands"]');
+  const second = cluster.locator('.artifact-folio-support-card[data-artifact-id="bachelor-thesis-rol-non-a"]');
+  const thesis = cluster.locator('.artifact-folio-page[data-artifact-id="bachelor-thesis-pdf"]');
   const viewer = page.locator('.artifact-focus-viewer');
 
   await expect(cluster).toBeVisible();
-  await expect(cluster.locator('.artifact-deck-card')).toHaveCount(3);
+  await expect(cluster.locator('.artifact-folio-support-card')).toHaveCount(2);
   await expect(cluster.locator('.artifact-object-header')).toHaveCount(0);
   await expect(cluster.locator('.artifact-object-description')).toHaveCount(0);
   await expect(cluster.locator('.artifact-deck-footer')).toHaveCount(0);
-  await expect(cluster.locator('.artifact-object-tag')).toHaveCount(3);
+  await expect(cluster.locator('.artifact-object-tag')).toHaveCount(2);
   await expect(cluster.locator('iframe')).toHaveCount(0);
   await expect(cluster.locator('.artifact-pdf-fallback')).toHaveCount(3);
 
-  const previews = cluster.locator('.artifact-deck-preview');
+  const previews = cluster.locator('.artifact-folio-preview, .artifact-deck-preview');
   await expect(previews.nth(0)).toHaveAttribute('data-media-aspect-ready', 'true', { timeout: 5000 });
   await expect(previews.nth(1)).toHaveAttribute('data-media-aspect-ready', 'true', { timeout: 5000 });
   await expect(previews.nth(2)).toHaveAttribute('data-media-aspect-ready', 'true', { timeout: 5000 });
 
   const mediaGeometry = await Promise.all([first, second, thesis].map(async card => card.evaluate(element => {
-    const preview = element.querySelector('.artifact-deck-preview');
+    const preview = element.querySelector('.artifact-folio-preview, .artifact-deck-preview');
     return {
       cardWidth: element.offsetWidth,
       cardHeight: element.offsetHeight,
@@ -129,8 +105,6 @@ test('BSc thesis materials preserve PDF geometry and open the defended thesis in
     expect(item.source).toBe('metadata');
     expect(item.ratio).toBeGreaterThan(.28);
     expect(item.ratio).toBeLessThan(5);
-    expect(Math.abs(item.cardWidth - item.previewWidth)).toBeLessThanOrEqual(4);
-    expect(Math.abs(item.cardHeight - item.previewHeight)).toBeLessThanOrEqual(4);
     expect(Math.abs(item.previewWidth / item.previewHeight - item.ratio)).toBeLessThan(.03);
   });
 
@@ -149,7 +123,7 @@ test('BSc thesis materials preserve PDF geometry and open the defended thesis in
 
   await second.hover();
   await expect(second).toHaveClass(/is-active/);
-  await second.locator('.artifact-inline-expand').click();
+  await second.click();
   await waitSettled(page);
   await expect(viewer).toHaveAttribute('data-shared-focus-artifact', 'bachelor-thesis-rol-non-a');
   await expect(viewer.locator('.artifact-focus-media iframe')).toHaveCount(1);
@@ -157,16 +131,14 @@ test('BSc thesis materials preserve PDF geometry and open the defended thesis in
   await expect(viewer).toBeHidden({ timeout: 2000 });
 
   await first.hover();
-  await first.locator('.artifact-inline-expand').click();
+  await first.click();
   await waitSettled(page);
   await expect(viewer).toHaveAttribute('data-shared-focus-artifact', 'bachelor-thesis-lattice-of-bands');
   await expect(viewer.locator('.artifact-focus-media iframe')).toHaveCount(1);
   await page.keyboard.press('Escape');
   await expect(viewer).toBeHidden({ timeout: 2000 });
 
-  await thesis.hover();
-  await expect(thesis).toHaveClass(/is-active/);
-  await thesis.locator('.artifact-inline-expand').click();
+  await thesis.click();
   await waitSettled(page);
   await expect(viewer).toHaveAttribute('data-shared-focus-artifact', 'bachelor-thesis-pdf');
   await expect(viewer.locator('.artifact-focus-title')).toContainText('Residuated Ortholattices and their Associative Fragment in Quantum Logic');
@@ -195,6 +167,20 @@ test('Modal Logic Lab screenshots preserve the full intrinsic image instead of c
   });
   expect(Math.abs(geometry.cardHeight - geometry.previewHeight)).toBeLessThanOrEqual(4);
   expect(Math.abs(geometry.ratio - geometry.intrinsic)).toBeLessThan(.03);
+});
+
+test('Algebraic Logic SQL Schema exposes both ER diagrams as a floating media scene', async ({ page }) => {
+  await bypassIntro(page);
+  await page.goto('/#work/project/sql-schema');
+  await waitArtifactScenes(page);
+
+  const deck = page.locator('[data-artifact-scene="sql-schema-er-diagrams"]');
+  await expect(deck).toBeVisible();
+  await expect(deck).toHaveAttribute('data-artifact-side', 'left');
+  await expect(deck.locator('.artifact-deck-card')).toHaveCount(2);
+  await expect(deck.locator('img')).toHaveCount(2);
+  await expect(deck.locator('[data-artifact-id="sql-schema-er-diagram"] img')).toHaveAttribute('src', /assets\/diagrams\/11_ER_diagram\.png$/);
+  await expect(deck.locator('[data-artifact-id="sql-schema-subclass-hierarchy"] img')).toHaveAttribute('src', /assets\/diagrams\/diagram of subclasses\.png$/);
 });
 
 test('Hedgehog House photo fan keeps every rotated photograph inside the viewport', async ({ page }) => {

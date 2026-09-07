@@ -9,10 +9,6 @@
     experience: {
       nodeIds: ['escape-room', 'student-ball', 'ceske-priority']
     },
-    coursework: {
-      anchorNodeIds: ['charles-university', 'selected-coursework', 'simulation-credence'],
-      artifactIds: ['simulation-credence-coursework']
-    },
     certifications: {
       nodeId: 'credentials',
       items: [

@@ -50,8 +50,8 @@ test.describe('Integrated artifact viewer media contract', () => {
 
   test('PDF focus is pre-fitted before flight and does not resize after settling', async ({ page }) => {
     await boot(page, 'work/project/bachelor-thesis');
-    const card = page.locator('[data-artifact-scene="bachelor-thesis-diagrams"] .artifact-deck-card[data-artifact-id="bachelor-thesis-lattice-of-bands"]');
-    await card.locator('.artifact-inline-expand').click();
+    const card = page.locator('[data-artifact-scene="bachelor-thesis-paper"] .artifact-folio-support-card[data-artifact-id="bachelor-thesis-lattice-of-bands"]');
+    await card.click();
     const viewer = page.locator('.artifact-focus-viewer');
     await expect(viewer).toBeVisible();
 

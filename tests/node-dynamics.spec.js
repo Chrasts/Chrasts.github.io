@@ -129,6 +129,19 @@ test.describe('V3.1 Phase C soft node dynamics', () => {
     expect(Math.max(...far.map(item => item.displacement))).toBeLessThan(.08);
   });
 
+  test('first Atlas hover takes over from a route-held focus without requiring a click', async ({ page }) => {
+    await boot(page, 'atlas');
+    const root = page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]');
+    const active = page.locator('#site-graph .site-graph-node[data-node-id="knowledge"]');
+
+    await root.focus();
+    await expect.poll(() => page.evaluate(() => window.ProfileNodeInteraction.snapshot().primaryNodeId)).toBe('stepan-chrast');
+
+    await active.hover();
+    await expect.poll(() => page.evaluate(() => window.ProfileNodeDynamics.snapshot().activeNodeId)).toBe('knowledge');
+    await expect.poll(() => page.evaluate(() => window.ProfileNodeDynamics.snapshot().maxDisplacement)).toBeGreaterThan(.35);
+  });
+
   test('rapid Atlas retargeting at zoom does not accumulate overlapping fields or violate the clamp', async ({ page }) => {
     await boot(page, 'atlas');
     const before = await canonicalNodes(page);

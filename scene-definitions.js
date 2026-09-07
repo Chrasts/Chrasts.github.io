@@ -177,6 +177,5 @@
   ensureScript('portfolio-refinements.js', 'data-profile-refinements');
   ensureScript('profile-post-entry.js', 'data-profile-post-entry');
   ensureScript('profile-motion-refinements.js', 'data-profile-motion-refinements');
-  ensureScript('profile-motion-compat.js', 'data-profile-motion-compat');
   ensureScript('node-detail-dismiss.js', 'data-profile-node-detail-dismiss');
 })();

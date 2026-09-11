@@ -83,4 +83,12 @@
     document.body.appendChild(earlyRootEntry);
   }
 
+  /* Keep public copy consistent across static and dynamically rendered scenes. */
+  if (!document.querySelector('script[data-content-copy-policy]')) {
+    const contentCopyPolicy = document.createElement('script');
+    contentCopyPolicy.src = 'content-copy-policy.js';
+    contentCopyPolicy.dataset.contentCopyPolicy = 'true';
+    document.body.appendChild(contentCopyPolicy);
+  }
+
 })();

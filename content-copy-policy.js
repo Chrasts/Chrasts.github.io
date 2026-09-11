@@ -47,6 +47,26 @@
     if (next !== node.nodeValue) node.nodeValue = next;
   };
 
+  const dedupeConnectedItems = root => {
+    const scope = root?.querySelectorAll ? root : document;
+    scope.querySelectorAll('#site-detail-panel .detail-node-list.is-secondary').forEach(list => {
+      const heading = list.previousElementSibling;
+      if (copyText(heading?.textContent || '').trim() !== 'Connected in the profile') return;
+      const seen = new Set();
+      list.querySelectorAll('button').forEach(button => {
+        const key = copyText(button.textContent || '')
+          .toLowerCase()
+          .replace(/[^a-z0-9\p{L}\p{N}]+/gu, ' ')
+          .trim();
+        if (!key || !seen.has(key)) {
+          if (key) seen.add(key);
+          return;
+        }
+        button.remove();
+      });
+    });
+  };
+
   const normaliseElement = element => {
     if (!(element instanceof Element)) return;
     if (element.matches('.phase8-course-time')) {
@@ -76,6 +96,7 @@
       if (current.nodeType === Node.TEXT_NODE) normaliseTextNode(current);
       else normaliseElement(current);
     }
+    dedupeConnectedItems(root);
   };
 
   normaliseSubtree(document.body);
@@ -86,6 +107,7 @@
       if (mutation.type === 'attributes') normaliseElement(mutation.target);
       mutation.addedNodes?.forEach(normaliseSubtree);
     });
+    dedupeConnectedItems(document);
   });
   observer.observe(document.body, {
     subtree: true,

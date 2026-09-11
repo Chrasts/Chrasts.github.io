@@ -77,6 +77,13 @@
       title: 'Hedgehog house photographs',
       artifactIds: ['hedgehog-house-outside', 'hedgehog-house-inside', 'hedgehog-house-visitor'],
       targets: [{ route: 'about/woodworking/hedgehog-house', anchorNodeId: 'hedgehog-house', side: 'right' }]
+    },
+    {
+      id: 'entrance-terrace-photo',
+      recipe: 'media-deck',
+      title: 'Entrance terrace',
+      artifactIds: ['entrance-terrace-photo'],
+      targets: [{ route: 'about/woodworking/entrance-terrace', anchorNodeId: 'entrance-terrace', side: 'right' }]
     }
   ];
 

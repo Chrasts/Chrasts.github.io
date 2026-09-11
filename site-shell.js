@@ -73,4 +73,14 @@
     menuButton?.focus();
   });
 
+  /* The intro keeps the Atlas inert while it is revealing. A narrowly scoped
+     companion module exposes only the root entry target for the final 500 ms,
+     then delegates the actual transition to the canonical intro/root APIs. */
+  if (!document.querySelector('script[data-intro-root-early-entry]')) {
+    const earlyRootEntry = document.createElement('script');
+    earlyRootEntry.src = 'intro-root-early-entry.js';
+    earlyRootEntry.dataset.introRootEarlyEntry = 'true';
+    document.body.appendChild(earlyRootEntry);
+  }
+
 })();

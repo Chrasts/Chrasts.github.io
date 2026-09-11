@@ -34,6 +34,17 @@
       ]
     },
     {
+      id: 'metalogic-amalgamation-interpolation-note',
+      recipe: 'document-folio',
+      variant: 'pdf-only',
+      eyebrow: 'Selected coursework',
+      title: 'Amalgamation & Interpolation',
+      artifactIds: ['metalogic-amalgamation-interpolation-note'],
+      targets: [
+        { route: 'education/charles-university/coursework/amalgamation-interpolation', anchorNodeId: 'metalogic-amalgamation-interpolation', side: 'right' }
+      ]
+    },
+    {
       id: 'modal-logic-lab-screens',
       recipe: 'media-deck',
       variant: 'screens',

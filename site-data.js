@@ -97,7 +97,7 @@ window.SITE_DATA={
   N("ai-math-reasoning-interest","interest","AI-assisted Mathematics","research-interests","about/research-interests/ai-math-reasoning","interest","AI systems working with formal tools, proof assistants and automated reasoning in mathematics.",{"detailLabel":"AI-assisted Mathematics & Automated Reasoning"}),
   N("algebraic-nonclassical-interest","interest","Algebraic & Non-classical Logic","research-interests","about/research-interests/algebraic-nonclassical","interest","Algebraic, modal and quantum-logical structures beyond classical propositional logic.",null),
   N("ai-science-workflows-interest","interest","AI for Scientific Workflows","research-interests","about/research-interests/ai-science-workflows","interest","AI-supported hypothesis generation, analysis, programming and research workflows.",null),
-  N("science-evidence","interest","Science & Evidence","research-interests","about/research-interests/science-evidence",null,"How scientific claims are assessed, communicated and made reliable.",null),
+  N("science-evidence","interest","Science & Evidence","research-interests","about/research-interests/science-evidence","interest","How scientific claims are assessed, communicated and made reliable.",null),
   N("philosophy-ai","interest","Philosophy of AI","philosophy","about/philosophy/ai","interest","Conceptual questions around intelligence, agency and AI systems.",null),
   N("philosophy-mind","interest","Philosophy of Mind","philosophy","about/philosophy/mind","interest","Questions about mind, cognition and explanation.",null),
   N("philosophy-science","interest","Philosophy of Science","philosophy","about/philosophy/science","interest","How scientific knowledge, explanation and evidence work.",null),

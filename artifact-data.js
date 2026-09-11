@@ -207,6 +207,17 @@
       presentation: { preferredObject: 'image', role: 'project-photo', width: 1500, height: 2000, aspectRatio: 0.75 }
     },
     {
+      id: 'entrance-terrace-photo',
+      type: 'image',
+      title: 'Entrance Terrace — finished build',
+      description: 'Finished small wooden entrance terrace built for a family house.',
+      anchorNodeIds: ['entrance-terrace'],
+      source: { kind: 'local', path: 'assets/images/about/woodworking/terasa.jpg' },
+      mediaType: 'image/jpeg',
+      availability: 'public',
+      presentation: { preferredObject: 'image', role: 'project-photo' }
+    },
+    {
       id: 'mtg-norin-rocco-deck',
       type: 'external',
       title: 'Norin the Wary — “Norin not brave, but alive”',

@@ -20,26 +20,18 @@
     esslli: {
       nodeId: 'esslli',
       label: 'Selected ESSLLI 2026 programme',
-      note: 'Compact record of the selected programme. Sessions are education context, not automatic claims of standalone expertise; links point only to broader knowledge areas retained in the portfolio.',
+      note: 'Compact record of the selected programme. Sessions are education context, not automatic claims of standalone expertise. Links point only to broader knowledge areas retained in the portfolio.',
       weeks: [
         {
           label: 'Week 1',
           sessions: [
             {
-              time: '09:00',
               title: 'Stone Duality: Connecting Algebra and Topology via Logic',
               links: ['algebraic-logic', 'lattice-theory']
             },
             {
-              time: '11:00',
               title: 'The Logic Underlying Language Models',
               links: ['language-models', 'ai-methods']
-            },
-            {
-              time: '17:00',
-              title: 'Elective slot',
-              note: 'The optional-course choice is not encoded as a separate knowledge claim.',
-              links: []
             }
           ]
         },
@@ -47,17 +39,14 @@
           label: 'Week 2',
           sessions: [
             {
-              time: '09:00',
               title: 'Logic and Argumentation for New Generation AI',
               links: ['computational-logic', 'ai-methods']
             },
             {
-              time: '11:00',
               title: 'Introduction to SAT and SMT Solving',
               links: ['computational-logic']
             },
             {
-              time: '17:00',
               title: 'Experimenting with the LogiKEy Framework & Methodology',
               links: ['automated-reasoning', 'computational-logic']
             }

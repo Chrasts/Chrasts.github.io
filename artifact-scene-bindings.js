@@ -16,7 +16,8 @@
       artifactIds: ['clp-survey-pdf'],
       targets: [
         { route: 'work/project/clp-survey', anchorNodeId: 'project-clp-survey', side: 'left' },
-        { route: 'knowledge/logic-math/lattice-theory/congruence-lattice-problem', anchorNodeId: 'congruence-lattice-problem', side: 'right' }
+        { route: 'knowledge/logic-math/lattice-theory/congruence-lattice-problem', anchorNodeId: 'congruence-lattice-problem', side: 'right' },
+        { route: 'education/charles-university/coursework/clp-historical-survey', anchorNodeId: 'clp-historical-survey-coursework', side: 'right' }
       ]
     },
     {

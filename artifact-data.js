@@ -102,7 +102,7 @@
       type: 'document',
       title: 'The Congruence Lattice Problem — Historical Survey',
       description: 'Local portfolio copy of the historical survey PDF.',
-      anchorNodeIds: ['project-clp-survey', 'congruence-lattice-problem'],
+      anchorNodeIds: ['project-clp-survey', 'congruence-lattice-problem', 'clp-historical-survey-coursework'],
       source: { kind: 'local', path: 'assets/documents/work/clp-survey/congruence-lattice-problem.pdf' },
       mediaType: 'application/pdf',
       availability: 'public',

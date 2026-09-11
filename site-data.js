@@ -91,6 +91,7 @@ window.SITE_DATA={
   N("music","interest","Music","about","about/music",null,"Piano and music creation.",null),
   N("woodworking","interest","Woodworking","about","about/woodworking",null,"Small practical woodworking projects and making physical objects.",null),
   N("hedgehog-house","interest","Hedgehog House","woodworking","about/woodworking/hedgehog-house",null,"A small wooden hedgehog house documented from construction and use.",null),
+  N("entrance-terrace","interest","Entrance Terrace","woodworking","about/woodworking/entrance-terrace",null,"A small wooden entrance terrace built for a family house.",null),
   N("logic-ai-interest","interest","Logic & AI","research-interests","about/research-interests/logic-ai","interest","How formal reasoning, symbolic methods and statistical AI can interact.",null),
   N("ai-math-reasoning-interest","interest","AI-assisted Mathematics","research-interests","about/research-interests/ai-math-reasoning","interest","AI systems working with formal tools, proof assistants and automated reasoning in mathematics.",{"detailLabel":"AI-assisted Mathematics & Automated Reasoning"}),
   N("algebraic-nonclassical-interest","interest","Algebraic & Non-classical Logic","research-interests","about/research-interests/algebraic-nonclassical","interest","Algebraic, modal and quantum-logical structures beyond classical propositional logic.",null),

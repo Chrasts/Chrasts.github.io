@@ -142,6 +142,17 @@
       presentation: { preferredObject: 'diagram', aspectRatio: 1.844688 }
     },
     {
+      id: 'metalogic-amalgamation-interpolation-note',
+      type: 'document',
+      title: 'Amalgamation & Interpolation in Equational Theories',
+      description: 'Short metalogic note on the relationship between amalgamation and interpolation in equational theories.',
+      anchorNodeIds: ['metalogic-amalgamation-interpolation'],
+      source: { kind: 'local', path: 'assets/documents/education/coursework/Metalogic_note.pdf' },
+      mediaType: 'application/pdf',
+      availability: 'public',
+      presentation: { preferredObject: 'document', openMode: 'new-tab', aspectRatio: 0.707071 }
+    },
+    {
       id: 'cambridge-b2-certificate',
       type: 'certificate',
       title: 'Cambridge English B2 First — Score 170',

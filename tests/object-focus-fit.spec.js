@@ -96,6 +96,23 @@ test('thesis and Modal Lab artifacts open Object Focus without dismissing their 
   }
 });
 
+test('main thesis PDF opens as a large page-width reading view', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await boot(page, 'work/project/bachelor-thesis');
+  await openArtifact(artifactControl(page, 'bachelor-thesis-paper', 'bachelor-thesis-pdf'));
+  await waitSettled(page);
+  const frame = page.locator('.artifact-focus-media iframe.object-focus-primary');
+  await expect(frame).toHaveAttribute('data-object-focus-fit', 'reading');
+  await expect(frame).toHaveAttribute('src', /toolbar=1.*zoom=page-width$/);
+  const sizing = await frame.evaluate(element => {
+    const frame = element.getBoundingClientRect();
+    const surface = element.closest('.artifact-focus-media').getBoundingClientRect();
+    return { width: frame.width, height: frame.height, surfaceWidth: surface.width, surfaceHeight: surface.height };
+  });
+  expect(sizing.width).toBeGreaterThan(sizing.surfaceWidth * .9);
+  expect(sizing.height).toBeGreaterThan(sizing.surfaceHeight * .9);
+});
+
 test('focused PDF uses whole-page fit with user zoom controls available', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await boot(page, 'work/project/bachelor-thesis');

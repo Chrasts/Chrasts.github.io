@@ -16,8 +16,8 @@
   // animating topology that cannot be read at that physical scale.
   const REVEAL_IGNITION_LEAD = reducedMotion ? 0 : mobile ? 160 : 620;
   const VISIBILITY_FIELD_DELAY = mobile ? 70 : 160;
-  const VISIBILITY_GENTLE_PHASE = mobile ? 260 : 900;
-  const VISIBILITY_FAST_PHASE = mobile ? 520 : 1450;
+  const VISIBILITY_GENTLE_PHASE = mobile ? 260 : 1100;
+  const VISIBILITY_FAST_PHASE = mobile ? 520 : 1750;
   const VISIBILITY_GENTLE_PROGRESS = mobile ? .34 : .30;
   const STATES = Object.freeze({
     PREPARING: 'PREPARING',

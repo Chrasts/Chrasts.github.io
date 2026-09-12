@@ -2,8 +2,26 @@
   if (window.ProfileObjectFocusFit) return;
 
   const mobile = matchMedia('(max-width: 900px)');
+  const thesisReadingArtifactId = 'bachelor-thesis-pdf';
   let viewer = null;
   let frame = 0;
+
+  const installReadingPdfSourcePolicy = () => {
+    const Controller = window.ObjectFocusController;
+    if (!Controller?.prototype || Controller.prototype.__profileReadingPdfSourcePolicy) return;
+    const originalMakeMedia = Controller.prototype.makeMedia;
+    if (typeof originalMakeMedia !== 'function') return;
+    Controller.prototype.makeMedia = function profileReadingPdfMedia(artifact, href) {
+      const media = originalMakeMedia.call(this, artifact, href);
+      if (artifact?.id === thesisReadingArtifactId && media instanceof HTMLIFrameElement) {
+        media.src = `${href}#toolbar=1&navpanes=0&scrollbar=1&zoom=page-width`;
+        media.dataset.objectFocusLayout = 'reading';
+      }
+      return media;
+    };
+    Controller.prototype.__profileReadingPdfSourcePolicy = true;
+  };
+  installReadingPdfSourcePolicy();
 
   const schedule = () => {
     cancelAnimationFrame(frame);
@@ -54,9 +72,19 @@
   };
 
   const fitPdf = (surface, iframe, artifactId) => {
-    // Do not rewrite iframe.src here. Reassigning only the PDF fragment starts
-    // a second native PDF load during Object Focus and is the source of both a
-    // visible sizing jump and intermittent blank PDF surfaces on larger files.
+    if (artifactId === thesisReadingArtifactId) {
+      const horizontal = mobile.matches ? .97 : .94;
+      const vertical = mobile.matches ? .92 : .94;
+      iframe.style.setProperty('width', `${Math.max(1, surface.clientWidth * horizontal).toFixed(1)}px`, 'important');
+      iframe.style.setProperty('height', `${Math.max(1, surface.clientHeight * vertical).toFixed(1)}px`, 'important');
+      iframe.style.setProperty('max-width', 'none', 'important');
+      iframe.style.setProperty('max-height', 'none', 'important');
+      iframe.dataset.objectFocusFit = 'reading';
+      return;
+    }
+
+    // Keep ordinary PDF artifacts on the stable whole-page contain fit. The
+    // bachelor thesis above opts into a larger reading viewport before load.
     const ratio = sourceAspect(artifactId) || .7071;
     const box = fitBox(surface, ratio, mobile.matches
       ? { horizontal: .94, vertical: .88 }

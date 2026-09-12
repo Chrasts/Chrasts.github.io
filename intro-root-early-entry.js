@@ -2,7 +2,7 @@
   if (window.ProfileIntroEarlyRootEntry) return;
 
   const ROOT_ID = window.SITE_DATA?.graph?.rootId || 'stepan-chrast';
-  const EARLY_ENTRY_LEAD_MS = 500;
+  const ENTRY_DELAY_MS = Object.freeze({ desktop: 350, mobile: 140, reduced: 0 });
   let activationTimer = 0;
   let positionFrame = 0;
   let button = null;
@@ -97,12 +97,13 @@
     disarm();
     const intro = snapshot || introSnapshot();
     if (intro?.state !== 'ATLAS_REVEAL') return false;
-    const ready = Number(intro.timing?.ready);
     const startedAt = Number(intro.startedAt);
-    if (!Number.isFinite(ready) || !Number.isFinite(startedAt)) return false;
-    targetAt = startedAt + Math.max(0, ready - EARLY_ENTRY_LEAD_MS);
-    const delay = Math.max(0, targetAt - performance.now());
-    activationTimer = setTimeout(activate, delay);
+    if (!Number.isFinite(startedAt)) return false;
+    const delay = intro.reducedMotion
+      ? ENTRY_DELAY_MS.reduced
+      : intro.mobile ? ENTRY_DELAY_MS.mobile : ENTRY_DELAY_MS.desktop;
+    targetAt = startedAt + delay;
+    activationTimer = setTimeout(activate, Math.max(0, targetAt - performance.now()));
     return true;
   };
 
@@ -113,7 +114,7 @@
   addEventListener('profile:entry-fail-open', disarm);
 
   window.ProfileIntroEarlyRootEntry = Object.freeze({
-    leadMs: EARLY_ENTRY_LEAD_MS,
+    delayMs: ENTRY_DELAY_MS,
     arm: () => arm(),
     snapshot: () => ({ active, entering, targetAt, buttonPresent: Boolean(button?.isConnected) })
   });

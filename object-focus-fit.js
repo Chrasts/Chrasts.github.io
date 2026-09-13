@@ -2,7 +2,6 @@
   if (window.ProfileObjectFocusFit) return;
 
   const mobile = matchMedia('(max-width: 900px)');
-  const thesisReadingArtifactId = 'bachelor-thesis-pdf';
   let viewer = null;
   let frame = 0;
 
@@ -13,7 +12,7 @@
     if (typeof originalMakeMedia !== 'function') return;
     Controller.prototype.makeMedia = function profileReadingPdfMedia(artifact, href) {
       const media = originalMakeMedia.call(this, artifact, href);
-      if (artifact?.id === thesisReadingArtifactId && media instanceof HTMLIFrameElement) {
+      if (media instanceof HTMLIFrameElement) {
         media.src = `${href}#toolbar=1&navpanes=0&scrollbar=1&zoom=page-width`;
         media.dataset.objectFocusLayout = 'reading';
       }
@@ -31,14 +30,6 @@
     });
   };
 
-  const sourceAspect = artifactId => {
-    if (!artifactId) return null;
-    const source = document.querySelector(`[data-artifact-focus="${CSS.escape(artifactId)}"]`);
-    const preview = source?.querySelector?.('[data-media-aspect]') || source?.closest?.('[data-media-aspect]');
-    const ratio = Number(preview?.dataset.mediaAspect);
-    return Number.isFinite(ratio) && ratio > .2 && ratio < 6 ? ratio : null;
-  };
-
   const fitBox = (surface, ratio, { horizontal = .88, vertical = .82 } = {}) => {
     if (!surface || !ratio) return null;
     const availableWidth = Math.max(1, surface.clientWidth * horizontal);
@@ -52,7 +43,12 @@
     return { width: Math.max(1, width), height: Math.max(1, height) };
   };
 
+  const resetSurfaceFrame = surface => {
+    surface?.style.removeProperty('inset');
+  };
+
   const fitImage = (surface, image) => {
+    resetSurfaceFrame(surface);
     const apply = () => {
       const naturalWidth = image.naturalWidth || 0;
       const naturalHeight = image.naturalHeight || 0;
@@ -71,30 +67,15 @@
     else image.addEventListener('load', apply, { once: true });
   };
 
-  const fitPdf = (surface, iframe, artifactId) => {
-    if (artifactId === thesisReadingArtifactId) {
-      const horizontal = mobile.matches ? .97 : .94;
-      const vertical = mobile.matches ? .92 : .94;
-      iframe.style.setProperty('width', `${Math.max(1, surface.clientWidth * horizontal).toFixed(1)}px`, 'important');
-      iframe.style.setProperty('height', `${Math.max(1, surface.clientHeight * vertical).toFixed(1)}px`, 'important');
-      iframe.style.setProperty('max-width', 'none', 'important');
-      iframe.style.setProperty('max-height', 'none', 'important');
-      iframe.dataset.objectFocusFit = 'reading';
-      return;
-    }
-
-    // Keep ordinary PDF artifacts on the stable whole-page contain fit. The
-    // bachelor thesis above opts into a larger reading viewport before load.
-    const ratio = sourceAspect(artifactId) || .7071;
-    const box = fitBox(surface, ratio, mobile.matches
-      ? { horizontal: .94, vertical: .88 }
-      : { horizontal: .82, vertical: .84 });
-    if (!box) return;
-    iframe.style.setProperty('width', `${box.width.toFixed(1)}px`, 'important');
-    iframe.style.setProperty('height', `${box.height.toFixed(1)}px`, 'important');
+  const fitPdf = (surface, iframe) => {
+    surface.style.setProperty('inset', mobile.matches ? '34px 8px 38px' : '30px 18px 30px', 'important');
+    const horizontal = mobile.matches ? .97 : .94;
+    const vertical = mobile.matches ? .94 : .96;
+    iframe.style.setProperty('width', `${Math.max(1, surface.clientWidth * horizontal).toFixed(1)}px`, 'important');
+    iframe.style.setProperty('height', `${Math.max(1, surface.clientHeight * vertical).toFixed(1)}px`, 'important');
     iframe.style.setProperty('max-width', 'none', 'important');
     iframe.style.setProperty('max-height', 'none', 'important');
-    iframe.dataset.objectFocusFit = 'contain';
+    iframe.dataset.objectFocusFit = 'reading';
   };
 
   function sync() {
@@ -106,10 +87,10 @@
     const surface = viewer.querySelector('.artifact-focus-media');
     const primary = surface?.querySelector('.object-focus-primary') || surface?.firstElementChild;
     if (!surface || !primary) return true;
-    const artifactId = viewer.dataset.sharedFocusArtifact || null;
     const kind = viewer.dataset.mediaKind || surface.dataset.mediaKind || '';
     if (kind === 'image' && primary instanceof HTMLImageElement) fitImage(surface, primary);
-    else if (kind === 'pdf' && primary instanceof HTMLIFrameElement) fitPdf(surface, primary, artifactId);
+    else if (kind === 'pdf' && primary instanceof HTMLIFrameElement) fitPdf(surface, primary);
+    else resetSurfaceFrame(surface);
     return true;
   }
 

@@ -153,6 +153,17 @@
       presentation: { preferredObject: 'document', openMode: 'new-tab', aspectRatio: 0.707071 }
     },
     {
+      id: 'simulation-credence-paper',
+      type: 'document',
+      title: 'Simulation Credence and Its Consequences',
+      description: 'Course paper formalising credence in the simulation hypothesis and examining its consequences.',
+      anchorNodeIds: ['simulation-credence-coursework'],
+      source: { kind: 'local', path: 'assets/documents/education/coursework/simulation-credence-and-its-consequences.pdf' },
+      mediaType: 'application/pdf',
+      availability: 'public',
+      presentation: { preferredObject: 'document', openMode: 'new-tab', aspectRatio: 0.707071 }
+    },
+    {
       id: 'cambridge-b2-certificate',
       type: 'certificate',
       title: 'Cambridge English B2 First — Score 170',

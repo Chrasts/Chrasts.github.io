@@ -47,6 +47,18 @@
       ]
     },
     {
+      id: 'simulation-credence-paper',
+      recipe: 'document-folio',
+      variant: 'pdf-only',
+      eyebrow: 'Selected coursework',
+      title: 'Simulation Credence',
+      description: 'A formal treatment of credence in the simulation hypothesis and its consequences.',
+      artifactIds: ['simulation-credence-paper'],
+      targets: [
+        { route: 'education/charles-university/coursework/simulation-credence', anchorNodeId: 'simulation-credence-coursework', side: 'right' }
+      ]
+    },
+    {
       id: 'modal-logic-lab-screens',
       recipe: 'media-deck',
       variant: 'screens',

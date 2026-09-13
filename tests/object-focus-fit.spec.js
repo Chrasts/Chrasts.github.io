@@ -96,36 +96,31 @@ test('thesis and Modal Lab artifacts open Object Focus without dismissing their 
   }
 });
 
-test('main thesis PDF opens as a large page-width reading view', async ({ page }) => {
+test('all focused PDFs open as large page-width reading views', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await boot(page, 'work/project/bachelor-thesis');
-  await openArtifact(artifactControl(page, 'bachelor-thesis-paper', 'bachelor-thesis-pdf'));
-  await waitSettled(page);
-  const frame = page.locator('.artifact-focus-media iframe.object-focus-primary');
-  await expect(frame).toHaveAttribute('data-object-focus-fit', 'reading');
-  await expect(frame).toHaveAttribute('src', /toolbar=1.*zoom=page-width$/);
-  const sizing = await frame.evaluate(element => {
-    const frame = element.getBoundingClientRect();
-    const surface = element.closest('.artifact-focus-media').getBoundingClientRect();
-    return { width: frame.width, height: frame.height, surfaceWidth: surface.width, surfaceHeight: surface.height };
-  });
-  expect(sizing.width).toBeGreaterThan(sizing.surfaceWidth * .9);
-  expect(sizing.height).toBeGreaterThan(sizing.surfaceHeight * .9);
-});
 
-test('focused PDF uses whole-page fit with user zoom controls available', async ({ page }) => {
-  await page.setViewportSize({ width: 1280, height: 800 });
-  await boot(page, 'work/project/bachelor-thesis');
-  await openArtifact(artifactControl(page, 'bachelor-thesis-paper', 'bachelor-thesis-lattice-of-bands'));
-  await waitSettled(page);
-  const frame = page.locator('.artifact-focus-media iframe.object-focus-primary');
-  await expect(frame).toHaveAttribute('data-object-focus-fit', 'contain');
-  await expect(frame).toHaveAttribute('src', /toolbar=1.*view=Fit$/);
-  const sizing = await frame.evaluate(element => {
-    const frame = element.getBoundingClientRect();
-    const surface = element.closest('.artifact-focus-media').getBoundingClientRect();
-    return { width: frame.width, height: frame.height, surfaceWidth: surface.width, surfaceHeight: surface.height };
-  });
-  expect(sizing.width).toBeLessThan(sizing.surfaceWidth * .9);
-  expect(sizing.height).toBeLessThan(sizing.surfaceHeight * .9);
+  for (const artifact of ['bachelor-thesis-pdf', 'bachelor-thesis-lattice-of-bands']) {
+    await openArtifact(artifactControl(page, 'bachelor-thesis-paper', artifact));
+    await waitSettled(page);
+    const frame = page.locator('.artifact-focus-media iframe.object-focus-primary');
+    await expect(frame).toHaveAttribute('data-object-focus-fit', 'reading');
+    await expect(frame).toHaveAttribute('src', /toolbar=1.*scrollbar=1.*zoom=page-width$/);
+    const sizing = await frame.evaluate(element => {
+      const frame = element.getBoundingClientRect();
+      const surface = element.closest('.artifact-focus-media').getBoundingClientRect();
+      return {
+        width: frame.width,
+        height: frame.height,
+        surfaceWidth: surface.width,
+        surfaceHeight: surface.height,
+        viewportHeight: window.innerHeight
+      };
+    });
+    expect(sizing.width).toBeGreaterThan(sizing.surfaceWidth * .9);
+    expect(sizing.height).toBeGreaterThan(sizing.surfaceHeight * .93);
+    expect(sizing.surfaceHeight).toBeGreaterThan(sizing.viewportHeight * .9);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.artifact-focus-viewer')).toBeHidden();
+  }
 });

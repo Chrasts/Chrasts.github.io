@@ -24,6 +24,7 @@
   let lastTime = 0;
   let suspended = false;
   let suspensionReason = null;
+  const suspensionReasons = new Set();
   let activationHoldUntil = 0;
   let adaptedEdgeCount = 0;
   let lastActiveNodeId = null;
@@ -31,6 +32,8 @@
   let lastTransitionSettle = null;
   const records = new Map();
   const canonicalEdgePaths = new WeakMap();
+  const edgeRecords = new Set();
+  let recordsNeedSync = true;
 
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const magnitude = (x, y) => Math.hypot(x, y);
@@ -123,6 +126,18 @@
       records.delete(id);
       record.node?.style?.removeProperty('--node-dynamics-scale');
     });
+    edgeRecords.clear();
+    root?.querySelectorAll('.site-graph-edges path[data-source][data-target]').forEach(edge => {
+      if (edge.closest('.v9-transition-overlay')) return;
+      edgeRecords.add({
+        edge,
+        sourceId: edge.dataset.source,
+        targetId: edge.dataset.target,
+        canonical: edge.getAttribute('d') || '',
+        parsed: null
+      });
+    });
+    recordsNeedSync = false;
   };
 
   const restoreNode = record => {
@@ -138,9 +153,8 @@
   };
 
   const restoreEdges = () => {
-    if (!root) return;
-    root.querySelectorAll('.site-graph-edges path[data-node-dynamics-adapted="true"]').forEach(edge => {
-      const canonical = canonicalEdgePaths.get(edge);
+    edgeRecords.forEach(({ edge, canonical }) => {
+      if (!edge.isConnected || edge.dataset.nodeDynamicsAdapted !== 'true') return;
       if (canonical) edge.setAttribute('d', canonical);
       delete edge.dataset.nodeDynamicsAdapted;
     });
@@ -169,14 +183,19 @@
   };
 
   const suspend = reason => {
+    const nextReason = reason || 'external';
     if (!suspended) hardReset();
+    suspensionReasons.add(nextReason);
     suspended = true;
-    suspensionReason = reason || 'external';
+    suspensionReason = nextReason;
   };
 
-  const resume = () => {
-    suspended = false;
-    suspensionReason = null;
+  const resume = reason => {
+    if (reason) suspensionReasons.delete(reason);
+    else suspensionReasons.clear();
+    suspended = suspensionReasons.size > 0;
+    suspensionReason = suspended ? [...suspensionReasons].at(-1) : null;
+    if (suspended) return;
     wake();
   };
 
@@ -298,12 +317,12 @@
   };
 
   const adaptEdges = () => {
-    if (!root) return 0;
     let count = 0;
-    root.querySelectorAll('.site-graph-edges path[data-source][data-target]').forEach(edge => {
-      if (edge.closest('.v9-transition-overlay')) return;
-      const source = records.get(edge.dataset.source);
-      const target = records.get(edge.dataset.target);
+    edgeRecords.forEach(record => {
+      const { edge } = record;
+      if (!edge.isConnected) return;
+      const source = records.get(record.sourceId);
+      const target = records.get(record.targetId);
       const sx = source?.x || 0;
       const sy = source?.y || 0;
       const tx = target?.x || 0;
@@ -311,17 +330,20 @@
       const moving = magnitude(sx, sy) > EPSILON || magnitude(tx, ty) > EPSILON;
 
       if (edge.dataset.nodeDynamicsAdapted !== 'true') {
-        canonicalEdgePaths.set(edge, edge.getAttribute('d') || '');
+        record.canonical = edge.getAttribute('d') || record.canonical;
+        record.parsed = null;
+        canonicalEdgePaths.set(edge, record.canonical);
       }
-      const canonical = canonicalEdgePaths.get(edge);
+      const canonical = record.canonical || canonicalEdgePaths.get(edge);
       if (!moving) {
         if (edge.dataset.nodeDynamicsAdapted === 'true' && canonical) edge.setAttribute('d', canonical);
         delete edge.dataset.nodeDynamicsAdapted;
         return;
       }
 
-      const parsed = parseEdgePath(canonical);
+      const parsed = record.parsed || parseEdgePath(canonical);
       if (!parsed) return;
+      record.parsed = parsed;
       if (parsed.kind === 'Q') {
         const [x1, y1, cx, cy, x2, y2] = parsed.values;
         edge.setAttribute('d', `M ${(x1 + sx).toFixed(1)} ${(y1 + sy).toFixed(1)} Q ${(cx + (sx + tx) / 2).toFixed(1)} ${(cy + (sy + ty) / 2).toFixed(1)} ${(x2 + tx).toFixed(1)} ${(y2 + ty).toFixed(1)}`);
@@ -357,7 +379,7 @@
       return;
     }
 
-    syncRecords();
+    if (recordsNeedSync) syncRecords();
     const dt = lastTime ? clamp((now - lastTime) / 1000, 1 / 120, .033) : 1 / 60;
     lastTime = now;
     const interactionState = interaction.snapshot();
@@ -404,6 +426,7 @@
 
   const settleFromTransition = (anchorId, options = {}) => {
     if (!root?.isConnected) bind();
+    recordsNeedSync = true;
     syncRecords();
     const anchor = records.get(anchorId);
     const direction = options.direction || 'lateral';
@@ -430,6 +453,7 @@
     hardReset();
     suspended = false;
     suspensionReason = null;
+    suspensionReasons.clear();
     syncRecords();
     const active = records.get(anchorId);
     if (!active) return false;
@@ -493,21 +517,26 @@
     window.addEventListener('profile:scene-state', () => requestAnimationFrame(wake));
     window.addEventListener('profile:atlas-lod-change', wake);
     window.addEventListener('profile:transition-begin', () => suspend('transition'));
-    window.addEventListener('profile:transition-finish', resume);
-    window.addEventListener('profile:transition-cancel', resume);
+    window.addEventListener('profile:transition-finish', () => resume('transition'));
+    window.addEventListener('profile:transition-cancel', () => resume('transition'));
+    window.addEventListener('profile:atlas-camera-moving', () => suspend('atlas-camera'));
+    window.addEventListener('profile:atlas-camera-settled', () => resume('atlas-camera'));
 
     window.addEventListener('profile:graph-render-settled', () => {
       if (introOwned()) return;
       hardReset({ restore: false });
+      recordsNeedSync = true;
       syncRecords();
       requestAnimationFrame(wake);
     });
 
     const environmentChanged = () => {
-      if (introOwned() || document.body.classList.contains('is-v9-transitioning')) {
-        if (!suspended) suspend(introOwned() ? 'intro' : 'transition');
-      } else if (suspended && suspensionReason === 'intro') {
-        resume();
+      if (introOwned()) {
+        suspend('intro');
+      } else if (document.body.classList.contains('is-v9-transitioning')) {
+        suspend('transition');
+      } else if (suspensionReasons.has('intro')) {
+        resume('intro');
       }
     };
     ['profile:intro-stage', 'profile:intro-completed', 'profile:intro-interrupted', 'profile:profile-root-emergence']

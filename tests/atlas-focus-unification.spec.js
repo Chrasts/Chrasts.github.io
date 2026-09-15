@@ -53,6 +53,31 @@ test.describe('V3.1 Phase I Atlas / Focus unification', () => {
     await expect(page.locator('.atlas-focus-bridge')).toHaveCount(0);
     await expect(page.locator(`#site-graph .site-graph-node[data-node-id="${COMPUTATIONAL_NODE}"]`)).toHaveClass(/is-selected/);
 
+    const localEdges = await page.evaluate(() => [...document.querySelectorAll('#site-graph .site-graph-edges path[data-source][data-target]')]
+      .map(edge => ({
+        source: edge.dataset.source,
+        target: edge.dataset.target,
+        opacity: Number(getComputedStyle(edge).opacity),
+        visibility: getComputedStyle(edge).visibility
+      }))
+      .filter(edge => edge.visibility !== 'hidden' && edge.opacity > .01));
+    // A second Atlas activation must hand over a fully rendered local graph,
+    // not leave its pre-bridge dashed/transparent edge state behind.
+    expect(localEdges.length).toBeGreaterThan(3);
+    expect(localEdges.some(edge => edge.source === 'stepan-chrast' && edge.target === 'knowledge')).toBe(true);
+
+    await page.locator('#main-nav [data-route="overview"]').click();
+    await page.waitForFunction(() => document.body.dataset.graphMode === 'overview' &&
+      document.body.dataset.rootLanding === 'false' && !document.body.classList.contains('is-v9-transitioning'));
+    const rootEdges = await page.evaluate(() => [...document.querySelectorAll(
+      '#site-graph .site-graph-edges path[data-source="stepan-chrast"][data-target]'
+    )].filter(edge => {
+      const style = getComputedStyle(edge);
+      return ['work', 'knowledge', 'experience', 'education', 'about'].includes(edge.dataset.target) &&
+        style.visibility !== 'hidden' && Number(style.opacity) > .01;
+    }).map(edge => edge.dataset.target).sort());
+    expect(rootEdges).toEqual(['about', 'education', 'experience', 'knowledge', 'work']);
+
     const result = await page.evaluate(() => window.ProfileAtlasFocus.snapshot().lastResult);
     expect(result.result).toBe('completed');
     expect(result.direction).toBe('atlas-to-focus');
@@ -138,6 +163,24 @@ test.describe('V3.1 Phase I Atlas / Focus unification', () => {
     expect(final.last.anchorId).toBe(COMPUTATIONAL_NODE);
     expect(final.last.sourceRoute).toBe(COMPUTATIONAL_ROUTE);
     expect(final.last.targetRoute).toBe('atlas');
+
+    const postUnfoldFrames = await page.evaluate(() => new Promise(resolve => {
+      const frames = [];
+      const sample = remaining => {
+        const graph = document.querySelector('#site-graph .site-graph-svg');
+        const style = graph ? getComputedStyle(graph) : null;
+        frames.push({
+          overlay: document.querySelectorAll('.atlas-focus-bridge').length,
+          visibility: style?.visibility || 'missing',
+          opacity: Number(style?.opacity || 0)
+        });
+        if (remaining <= 0) return resolve(frames);
+        requestAnimationFrame(() => sample(remaining - 1));
+      };
+      sample(18);
+    }));
+    expect(postUnfoldFrames.some(frame => frame.overlay === 0 &&
+      (frame.visibility === 'hidden' || frame.opacity < .01))).toBe(false);
   });
 
   for (const source of [

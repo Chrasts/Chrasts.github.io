@@ -22,13 +22,6 @@
   normaliseModelCopy(window.SITE_DATA);
   normaliseModelCopy(window.PORTFOLIO_DATA);
 
-  if (Array.isArray(window.SITE_DATA?.graph?.edges)) {
-    window.SITE_DATA.graph.edges = window.SITE_DATA.graph.edges.filter(edge => {
-      const pair = new Set([edge.source, edge.target]);
-      return !(pair.has('scientific-writing') && pair.has('clp-historical-survey-coursework'));
-    });
-  }
-
   const policyStyle = document.createElement('style');
   policyStyle.dataset.contentCopyPolicy = 'true';
   policyStyle.textContent = `
@@ -101,21 +94,17 @@
 
   normaliseSubtree(document.body);
 
-  const observer = new MutationObserver(mutations => {
-    mutations.forEach(mutation => {
-      if (mutation.type === 'characterData') normaliseTextNode(mutation.target);
-      if (mutation.type === 'attributes') normaliseElement(mutation.target);
-      mutation.addedNodes?.forEach(normaliseSubtree);
-    });
-    dedupeConnectedItems(document);
-  });
-  observer.observe(document.body, {
-    subtree: true,
-    childList: true,
-    characterData: true,
-    attributes: true,
-    attributeFilter: COPY_ATTRIBUTES
-  });
+  // Runtime owners announce their committed output. This replaces a document-
+  // wide observer that re-walked arbitrary mutations, including animation and
+  // layout work unrelated to copy. Each event is emitted only after a route,
+  // detail or scene commit, so the policy has a bounded, explicit lifecycle.
+  const refreshAfterCommit = () => normaliseSubtree(document.body);
+  [
+    'profile:graph-state-committed',
+    'profile:graph-render-settled',
+    'profile:detail-rendered',
+    'profile:scene-state'
+  ].forEach(eventName => addEventListener(eventName, refreshAfterCommit));
 
   window.ProfileContentCopyPolicy = Object.freeze({
     normalise: copyText,

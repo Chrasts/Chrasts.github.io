@@ -243,6 +243,7 @@
   };
   const captureNavigation = event => {
     if (event.defaultPrevented) return;
+    if (event.target.closest?.('[data-crosslink-target]')) return;
     const route = routeFromControl(event.target);
     if (!route) return;
     const fromRoute = currentRoute();

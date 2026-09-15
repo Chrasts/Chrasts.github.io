@@ -12,6 +12,8 @@ body.has-artifact-focus .artifact-scene-layer{
 }
 
 .artifact-focus-viewer{
+  position:fixed!important;
+  inset:0!important;
   padding:0!important;
   overflow:hidden;
   place-items:stretch!important;
@@ -333,7 +335,7 @@ body.has-object-focus .artifact-tether-layer{opacity:0!important}
 @media(max-width:900px){
   body[data-graph-route="about/woodworking/hedgehog-house"] .artifact-scene-layer,
   body[data-graph-route="work/project/bachelor-thesis"] .artifact-scene-layer,
-  body[data-graph-route="knowledge/logic-math/mathematical-logic/algebraic-logic/quantum-logic-arol"] .artifact-scene-layer{
+  body[data-graph-route="knowledge/logic-math/mathematical-logic/algebraic-logic/quantum-logic/residuated-ortholattices-arol"] .artifact-scene-layer{
     z-index:44!important
   }
 

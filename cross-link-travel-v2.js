@@ -25,6 +25,10 @@
     'studied-in': { forward: 'Studied in', reverse: 'Studied topic', family: 'study' },
     'planned-study': { forward: 'Planned study', reverse: 'Planned topic', family: 'study' },
     'credential-link': { forward: 'Related area', reverse: 'Credential', family: 'study' },
+    'role-project': { forward: 'Related Work', reverse: 'Produced during role', family: 'experience' },
+    'professional-evidence': { forward: 'Professional evidence', reverse: 'Role evidence', family: 'experience' },
+    'developed-through': { forward: 'Developed through role', reverse: 'Professional context', family: 'experience' },
+    'thesis-of': { forward: 'Thesis', reverse: 'Degree programme', family: 'study' },
     'experience-link': { forward: 'Experience', reverse: 'Project', family: 'experience' },
     'education-link': { forward: 'Education', reverse: 'Project', family: 'study' }
   };
@@ -37,15 +41,18 @@
     direction: null,
     vector: null,
     result: null,
-    reducedMotion: reducedMotion.matches
+    reducedMotion: reducedMotion.matches,
+    history: []
   };
 
   let overlay = null;
   let sequence = 0;
   let activeTransitionToken = null;
 
-  const normaliseRoute = value =>
-    (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
+  const normaliseRoute = value => {
+    const route = (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
+    return graph.routeAliases?.[route] || route;
+  };
   const routeForNode = node => node?.route || 'overview';
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   const waitFor = (predicate, timeout = 3500) => new Promise(resolve => {
@@ -154,10 +161,29 @@
     if (state.travelling) return;
     const sourceId = currentSourceId();
     const relations = relationsFor(sourceId);
+    const returnEntry = state.history.at(-1);
+    const canReturn = Boolean(returnEntry && returnEntry.targetId === sourceId && nodeMap.has(returnEntry.sourceId));
     railList.replaceChildren();
-    const hide = !sourceId || !relations.length || document.body?.dataset.graphMode === 'atlas' || introOwnsScreen();
+    const hide = !sourceId || (!relations.length && !canReturn) || document.body?.dataset.graphMode === 'atlas' || introOwnsScreen();
     rail.hidden = hide;
     if (hide) return;
+
+    if (canReturn) {
+      const origin = nodeMap.get(returnEntry.sourceId);
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'profile-crosslink is-return';
+      button.dataset.crosslinkReturn = 'true';
+      button.setAttribute('aria-label', `Return to ${origin.detailLabel || origin.label}`);
+      const relationText = document.createElement('span');
+      relationText.className = 'profile-crosslink-relation';
+      relationText.textContent = 'Return';
+      const targetText = document.createElement('span');
+      targetText.className = 'profile-crosslink-target';
+      targetText.textContent = origin.detailLabel || origin.label;
+      button.append(relationText, targetText);
+      railList.appendChild(button);
+    }
 
     relations.forEach(relation => {
       const anchor = document.createElement('a');
@@ -406,6 +432,7 @@
     const relation = relationsFor(sourceId).find(item =>
       item.targetId === targetId && (!relationInput?.type || item.type === relationInput.type));
     if (!relation) return false;
+    const returnEntry = relationInput?.returnEntry || null;
 
     const transitionToken = scene?.transitions?.begin?.({
       kind: 'cross-link', sourceId: relation.sourceId, targetId: relation.targetId,
@@ -466,6 +493,22 @@
     if (id !== sequence || !state.travelling) return false;
 
     targetElement?.focus?.({ preventScroll: true });
+    if (returnEntry) {
+      const current = state.history.at(-1);
+      if (current === returnEntry) state.history.pop();
+      emit('return', { originId: relation.targetId, depth: state.history.length });
+    } else {
+      state.history.push({
+        sourceId: relation.sourceId,
+        targetId: relation.targetId,
+        relationType: relation.type,
+        sourceRoute: routeForNode(nodeMap.get(relation.sourceId)),
+        targetRoute: routeForNode(relation.target)
+      });
+      // Spatial history is intentionally short and semantic, never a general
+      // browser-history replacement.
+      if (state.history.length > 8) state.history.splice(0, state.history.length - 8);
+    }
     if (status) status.textContent = `${relation.target.detailLabel || relation.target.label} local context open via ${relation.label.toLowerCase()} cross-link.`;
     finishTravel(relation, transitionToken, 'completed');
     return true;
@@ -479,6 +522,15 @@
   };
 
   rail.addEventListener('click', event => {
+    const returnButton = event.target.closest?.('[data-crosslink-return="true"]');
+    if (returnButton) {
+      event.preventDefault();
+      const entry = state.history.at(-1);
+      const sourceId = currentSourceId();
+      const relation = entry && relationsFor(sourceId).find(item => item.targetId === entry.sourceId);
+      if (relation) navigate({ sourceId, targetId: relation.targetId, type: relation.type, returnEntry: entry });
+      return;
+    }
     const anchor = event.target.closest?.('.profile-crosslink[data-target-id]');
     if (!anchor || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
@@ -490,7 +542,7 @@
     const button = event.target.closest?.('.detail-node-list.is-secondary button');
     if (!button) return;
     const heading = button.closest('.detail-node-list')?.previousElementSibling;
-    if (!heading?.classList.contains('detail-list-title') || heading.textContent.trim() !== 'Connected in the profile') return;
+    if (!heading?.classList.contains('detail-list-title') || !['Connected in the profile', 'Related Work'].includes(heading.textContent.trim())) return;
     const sourceId = currentSourceId();
     const targetLabel = button.textContent.trim();
     const relation = relationsFor(sourceId).find(item =>
@@ -518,6 +570,8 @@
     })),
     snapshot: () => ({
       ...state,
+      history: state.history.map(entry => ({ ...entry })),
+      canReturn: Boolean(state.history.at(-1)?.targetId === currentSourceId()),
       vector: state.vector ? { ...state.vector } : null,
       currentSourceId: currentSourceId(),
       railVisible: !rail.hidden,
@@ -525,7 +579,13 @@
       overlayPresent: Boolean(overlay?.shell),
       sequence,
       transitionToken: activeTransitionToken
-    })
+    }),
+    returnToOrigin: () => {
+      const entry = state.history.at(-1);
+      const sourceId = currentSourceId();
+      const relation = entry && relationsFor(sourceId).find(item => item.targetId === entry.sourceId);
+      return relation ? navigate({ sourceId, targetId: relation.targetId, type: relation.type, returnEntry: entry }) : false;
+    }
   });
 
   scheduleRender();

@@ -41,6 +41,27 @@
       return window.ProfileArtifacts?.hrefFor?.(id) || null;
     }
 
+    attachImageFallback(image, artifact) {
+      const fallback = artifact?.source?.kind === 'local' ? artifact.source.fallbackPath : null;
+      if (!fallback) return;
+      image.addEventListener('error', () => {
+        if (image.dataset.objectFocusFallbackApplied === 'true') return;
+        image.dataset.objectFocusFallbackApplied = 'true';
+        image.src = fallback;
+      });
+    }
+
+    attachVideoFallback(video, artifact) {
+      const fallback = artifact?.source?.kind === 'local' ? artifact.source.fallbackPath : null;
+      if (!fallback) return;
+      video.addEventListener('error', () => {
+        if (video.dataset.objectFocusFallbackApplied === 'true') return;
+        video.dataset.objectFocusFallbackApplied = 'true';
+        video.src = fallback;
+        video.load();
+      });
+    }
+
     runtime() {
       return window.ProfileScene?.objects || null;
     }
@@ -481,6 +502,7 @@
         image.src = href;
         image.alt = artifact.title || '';
         image.decoding = 'async';
+        this.attachImageFallback(image, artifact);
         return image;
       }
       if (kind === 'pdf') {
@@ -492,6 +514,7 @@
       if (kind === 'video') {
         const video = document.createElement('video');
         video.src = href;
+        this.attachVideoFallback(video, artifact);
         video.controls = true;
         video.playsInline = true;
         video.preload = 'metadata';
@@ -657,7 +680,10 @@
 
       if (wasActive && !interrupted) {
         if (closing.runtimeId) this.runtime()?.beginReturn(closing.runtimeId);
-        await this.mediaController?.reset?.({ animate: !reducedMotion.matches });
+        // Resetting the stage with its own animation temporarily lays the
+        // source out at its uncomposed origin. Do it synchronously, then let
+        // the shared-element flight own the visible return.
+        await this.mediaController?.reset?.({ animate: false });
         if (operation !== this.operation) return false;
         viewer?.classList.add('is-shared-focus-closing');
         if (viewer) viewer.dataset.sharedFocusPhase = 'returning';
@@ -679,12 +705,18 @@
       const viewer = this.viewer();
       this.clearAnimation();
       this.clearMediaController();
-      this.restoreSource(record?.source, restoreFocus);
       if (record?.runtimeId && !immediate) this.runtime()?.completeReturn(record.runtimeId);
+      // Apply the scene's final composed coordinates before exposing its
+      // source again. Otherwise a single frame can flash at the uncomposed
+      // left edge of the scene.
+      this.restoreSource(record?.source, restoreFocus);
       document.body.classList.remove('has-artifact-focus', 'has-object-focus');
       if (!viewer) return;
 
-      viewer.classList.remove('is-open', 'is-shared-focus-pending', 'is-shared-focus-closing');
+      // Keep the focused media hidden during the viewer's fade-out. Removing
+      // this class here exposed the full-size stage for one frame after the
+      // return flight had ended, which is the upper-left flash on close.
+      viewer.classList.remove('is-open', 'is-shared-focus-pending');
       const finalize = () => {
         if (viewer.classList.contains('is-open')) return;
         viewer.hidden = true;

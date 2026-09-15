@@ -84,6 +84,37 @@ if (!site?.graph?.nodes?.length) {
     edgeKeys.add(key);
   }
 
+  const requireParent = (id, parentId) => {
+    const node = nodeById.get(id);
+    if (!node) issues.push(`Required semantic node is missing: ${id}`);
+    else if (!node.parentIds?.includes(parentId)) issues.push(`Semantic parent mismatch: ${id} must be below ${parentId}`);
+  };
+  [
+    ['set-theory', 'mathematical-logic'],
+    ['number-theory', 'mathematical-logic'],
+    ['residuated-ortholattices-arol', 'quantum-logic-arol'],
+    ['qualitative-coding', 'data-analysis'],
+    ['ai-research-workflows', 'research-practice'],
+    ['hedgehog-house', 'woodworking'],
+    ['entrance-terrace', 'woodworking'],
+    ['mtg', 'games-rpg']
+  ].forEach(([id, parentId]) => requireParent(id, parentId));
+
+  ['python', 'git', 'sql', 'science-evidence', 'bachelor-thesis-education', 'clp-historical-survey-coursework']
+    .forEach(id => {
+      if (nodeById.has(id)) issues.push(`Demoted or merged entity remains a graph node: ${id}`);
+    });
+
+  const expectedAliases = {
+    'education/charles-university/thesis': 'work/project/bachelor-thesis',
+    'education/charles-university/coursework/clp-historical-survey': 'work/project/clp-survey'
+  };
+  for (const [legacyRoute, canonicalRoute] of Object.entries(expectedAliases)) {
+    if (site.graph.routeAliases?.[legacyRoute] !== canonicalRoute) {
+      issues.push(`Missing compatibility route alias: ${legacyRoute} -> ${canonicalRoute}`);
+    }
+  }
+
   const work = site.work;
   if (!work?.projects?.length) {
     issues.push('SITE_DATA.work.projects is missing or empty.');
@@ -113,18 +144,15 @@ if (!site?.graph?.nodes?.length) {
       } else {
         const expectedRoute = `work/project/${project.id}`;
         if (node.route !== expectedRoute) issues.push(`Work project graph route mismatch for ${project.id}: ${node.route}`);
-        for (const attributeId of project.lattice || []) {
-          if (!node.parentIds?.includes(`work-theme-${attributeId}`)) {
-            issues.push(`Work project ${project.id} is missing graph parent work-theme-${attributeId}`);
-          }
+        if (node.parentIds?.length !== 1 || node.parentIds[0] !== 'work') {
+          issues.push(`Work project ${project.id} must have Work as its only semantic parent.`);
         }
       }
     }
 
-    for (const attributeId of attributes.keys()) {
-      const node = nodeById.get(`work-theme-${attributeId}`);
-      if (!node) issues.push(`Work attribute ${attributeId} has no generated graph node.`);
-      else if (node.route !== `work/theme/${attributeId}`) issues.push(`Work theme graph route mismatch for ${attributeId}: ${node.route}`);
+    const leakedThemeNodes = nodes.filter(node => node.type === 'work-theme' || node.id.startsWith('work-theme-'));
+    if (leakedThemeNodes.length) {
+      issues.push(`Work FCA attributes must not be global graph nodes: ${leakedThemeNodes.map(node => node.id).join(', ')}`);
     }
 
     for (const node of nodes.filter(item => item.type === 'project')) {
@@ -140,6 +168,51 @@ if (!site?.graph?.nodes?.length) {
   const requireArtifact = (id, owner) => {
     if (!artifactIds.has(id)) issues.push(`${owner} references unknown artifact: ${id}`);
   };
+
+  // Education and Experience are semantic layouts, not coordinate-backed
+  // trees. Validate the small canonical inventory before a renderer gets a
+  // chance to make a misleading claim from partial metadata.
+  const semantic = site.semantics;
+  if (!semantic?.experience?.entityIds?.length || !semantic?.education?.programmeIds?.length) {
+    issues.push('Education/Experience semantic inventory is missing.');
+  } else {
+    semantic.experience.entityIds.forEach(id => {
+      const node = nodeById.get(id);
+      if (!node || node.type !== 'experience') {
+        issues.push(`Semantic Experience entity is invalid: ${id}`);
+        return;
+      }
+      if (!node.startDate || typeof node.ongoing !== 'boolean' || !node.role || !node.organisation) {
+        issues.push(`Experience metadata is incomplete: ${id}`);
+      }
+      if (!node.ongoing && !node.endDate) issues.push(`Completed Experience entity needs an end date: ${id}`);
+      (node.relatedWorkIds || []).forEach(projectId => {
+        const projectNodeId = `project-${projectId}`;
+        if (!nodeById.has(projectNodeId)) issues.push(`Experience ${id} references missing Work project: ${projectId}`);
+        if (!site.graph.edges.some(edge => edge.source === id && edge.target === projectNodeId && edge.type === 'role-project')) {
+          issues.push(`Experience ${id} is missing role-project relation for ${projectId}`);
+        }
+      });
+    });
+    nodes.filter(node => node.type === 'project' && node.parentIds?.includes('experience')).forEach(node => {
+      issues.push(`Work project was duplicated below Experience: ${node.id}`);
+    });
+
+    semantic.education.programmeIds.forEach(id => {
+      if (!nodeById.has(id)) issues.push(`Education programme is missing: ${id}`);
+    });
+    const thesis = nodeById.get('project-bachelor-thesis');
+    if (!thesis || !site.graph.edges.some(edge => edge.source === 'charles-university' && edge.target === thesis.id && edge.type === 'thesis-of')) {
+      issues.push('BSc thesis must remain one canonical Work project with a thesis-of relation.');
+    }
+    (semantic.education.courseEvidence || []).forEach(course => {
+      if (!['completed', 'recognized'].includes(course.status)) {
+        issues.push(`Course evidence is not completed/recognized: ${course.id || course.title}`);
+      }
+      if (!nodeById.has(course.programmeId)) issues.push(`Course evidence has unknown programme: ${course.id || course.title}`);
+      (course.supportsKnowledgeIds || []).forEach(id => requireNode(id, `Course evidence ${course.id || course.title}`));
+    });
+  }
 
   if (!phase8) {
     issues.push('PHASE8_SCENE_DATA did not initialize.');
@@ -163,6 +236,9 @@ if (!site?.graph?.nodes?.length) {
 
     if (phase8.prgAi?.nodeId) requireNode(phase8.prgAi.nodeId, 'Phase 8 prg.ai');
     (phase8.prgAi?.links || []).forEach(id => requireNode(id, 'Phase 8 prg.ai'));
+    if (phase8.education?.bsc?.nodeId) requireNode(phase8.education.bsc.nodeId, 'Phase 8 BSc evidence');
+    if (phase8.education?.bsc?.thesisNodeId) requireNode(phase8.education.bsc.thesisNodeId, 'Phase 8 BSc thesis');
+    if (phase8.education?.msc?.nodeId) requireNode(phase8.education.msc.nodeId, 'Phase 8 MSc programme context');
   }
 }
 

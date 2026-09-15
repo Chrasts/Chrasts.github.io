@@ -71,16 +71,23 @@
   const edgeElements = () => [...document.querySelectorAll('#site-graph .site-graph-edges path[data-source][data-target]')]
     .filter(element => !element.closest('.v9-transition-overlay'));
 
-  const pointOf = element => ({
-    x: Number(element?.dataset.x || 0),
-    y: Number(element?.dataset.y || 0)
-  });
+  const pointOf = element => {
+    const transform = element?.getAttribute?.('transform') || '';
+    const match = transform.match(/translate\(\s*(-?[\d.]+)[,\s]+(-?[\d.]+)\s*\)/i);
+    return match
+      ? { x: Number(match[1]), y: Number(match[2]) }
+      : { x: Number(element?.dataset.x || 0), y: Number(element?.dataset.y || 0) };
+  };
 
-  const setPoint = (element, point) => {
+  const setPoint = (element, point, { syncDataset = true } = {}) => {
     if (!element || !point) return;
     element.setAttribute('transform', `translate(${point.x.toFixed(1)} ${point.y.toFixed(1)})`);
-    element.dataset.x = point.x;
-    element.dataset.y = point.y;
+    // Overlay nodes are disposable visual copies. Updating their dataset on
+    // every animation frame doubled DOM writes without affecting rendering.
+    if (syncDataset) {
+      element.dataset.x = point.x;
+      element.dataset.y = point.y;
+    }
   };
 
   const setTransitionOpacity = (element, value) => {
@@ -290,6 +297,19 @@
     const route = normaliseRoute(document.body.dataset.graphRoute || location.hash);
     const target = routeNode(route);
     if (!target) return;
+
+    // Experience and Education own deterministic semantic layouts in the
+    // shared renderer. Reapplying this generic rank reflow after their route
+    // transition would silently turn a timeline/trajectory back into a tree,
+    // most visibly on mobile where the transition settles a frame later.
+    const semantic = window.ProfileSemanticLayouts?.compute?.({
+      nodes: [...nodeElements()].map(element => nodeMap.get(element.dataset.nodeId)).filter(Boolean),
+      selectedNode: target,
+      viewport: { width: 1200, height: 720 },
+      lod: 1,
+      metadata: window.SITE_DATA?.semantics
+    });
+    if (semantic) return;
 
     const elements = new Map(nodeElements().map(element => [element.dataset.nodeId, element]));
     const visibleIds = new Set(elements.keys());
@@ -829,6 +849,8 @@
 
     const duration = current.direction === 'up' ? 1160 : current.direction === 'down' ? 1080 : 980;
     const started = performance.now();
+    const pathIds = activeNode ? new Set(primaryPath(activeNode).map(node => node.id)) : new Set();
+    const overlayDecorations = [...current.overlayDecorations.children];
 
     const frame = now => {
       if (current.operation !== transitionOperation || activeTransition !== current) return;
@@ -838,7 +860,7 @@
 
       persistent.forEach(item => {
         const point = lerpPoint(item.from, item.to, moveP);
-        setPoint(item.element, point);
+        setPoint(item.element, point, { syncDataset: false });
         setTransitionOpacity(item.element, item.fromOpacity + (1 - item.fromOpacity) * moveP);
         paintLabelMorph(item.labelMorph, raw);
         currentPoints.set(item.id, point);
@@ -853,7 +875,7 @@
         const collapseP = ease(collapseRaw);
         leaving.forEach(item => {
           const point = lerpPoint(item.from, movingTarget, collapseP);
-          setPoint(item.element, point);
+          setPoint(item.element, point, { syncDataset: false });
           const fade = clamp01((collapseRaw - .58) / .42);
           setTransitionOpacity(item.element, item.fromOpacity * (1 - ease(fade)));
         });
@@ -861,13 +883,13 @@
         const fadeRaw = clamp01(raw / .12);
         leaving.forEach(item => {
           const away = outwardPoint(item.from, targetBefore || targetAfter, item.id);
-          setPoint(item.element, lerpPoint(item.from, away, ease(fadeRaw)));
+          setPoint(item.element, lerpPoint(item.from, away, ease(fadeRaw)), { syncDataset: false });
           setTransitionOpacity(item.element, item.fromOpacity * (1 - ease(fadeRaw)));
         });
       } else {
         const fadeRaw = clamp01(raw / .48);
         leaving.forEach(item => {
-          setPoint(item.element, item.from);
+          setPoint(item.element, item.from, { syncDataset: false });
           setTransitionOpacity(item.element, item.fromOpacity * (1 - ease(fadeRaw)));
         });
       }
@@ -879,7 +901,7 @@
       entering.forEach(item => {
         const origin = current.direction === 'down' ? movingTarget : targetAfter;
         const point = lerpPoint(origin, item.to, enterP);
-        setPoint(item.element, point);
+        setPoint(item.element, point, { syncDataset: false });
         setTransitionOpacity(item.element, clamp01(enterRaw * 1.35));
         currentPoints.set(item.id, point);
       });
@@ -890,9 +912,8 @@
 
       const edgeStart = current.direction === 'up' ? .62 : current.direction === 'down' ? .36 : .48;
       const edgeRaw = clamp01((raw - edgeStart) / (1 - edgeStart));
-      const pathIds = activeNode ? new Set(primaryPath(activeNode).map(node => node.id)) : new Set();
 
-      transitionEdges.forEach(edge => {
+      if (edgeRaw > 0) transitionEdges.forEach(edge => {
         const source = currentPoints.get(edge.dataset.source);
         const target = currentPoints.get(edge.dataset.target);
         if (!source || !target) return;
@@ -907,7 +928,7 @@
 
       const decorationStart = .60;
       const decorationRaw = clamp01((raw - decorationStart) / (1 - decorationStart));
-      [...current.overlayDecorations.children].forEach(element => {
+      overlayDecorations.forEach(element => {
         setTransitionOpacity(element, ease(decorationRaw));
       });
 
@@ -932,6 +953,7 @@
      ---------------------------------------------------------------------- */
   document.addEventListener('click', event => {
     if (event.button !== 0 || event.defaultPrevented || externalTransitionOwnsRoute()) return;
+    if (event.target.closest?.('[data-crosslink-target]')) return;
     const route = routeFromControl(event.target);
     if (!route || route === 'atlas') return;
     const currentRoute = normaliseRoute(document.body.dataset.graphRoute || location.hash);
@@ -948,6 +970,7 @@
   document.addEventListener('keydown', event => {
     if (event.key === 'Enter' || event.key === ' ') {
       if (event.defaultPrevented || externalTransitionOwnsRoute()) return;
+      if (event.target.closest?.('[data-crosslink-target]')) return;
       const route = routeFromControl(event.target);
       if (!route || route === 'atlas') return;
       const currentRoute = normaliseRoute(document.body.dataset.graphRoute || location.hash);

@@ -30,16 +30,7 @@ test.describe('portfolio content integrity', () => {
       };
     });
 
-    expect(state.collapsed.sort()).toEqual([
-      'algorithms-data-structures',
-      'data-cleaning',
-      'data-qa',
-      'dynamic-logic',
-      'git',
-      'logic-for-ai',
-      'sat-smt',
-      'visualisation'
-    ]);
+    expect(state.collapsed).toEqual([]);
     expect(state.presentCollapsed).toEqual([]);
     expect(state.orphanEdges).toEqual([]);
     expect(state.duplicateEdges).toEqual([]);

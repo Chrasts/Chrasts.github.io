@@ -39,7 +39,7 @@
 .phase8-experience-role{font-size:11px;line-height:1.25;color:var(--ink)}
 .phase8-experience-org{font-size:9px;line-height:1.25;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-.phase8-coursework[data-scene-placement="semantic-right-document"],.phase8-credentials[data-scene-placement="semantic-right-stack"],.phase8-esslli[data-scene-placement="semantic-right-timetable"],.phase8-prg-ai[data-scene-placement="semantic-right-route"]{right:18px;top:74px;width:min(410px,36%);padding:17px}
+.phase8-coursework[data-scene-placement="semantic-right-document"],.phase8-credentials[data-scene-placement="semantic-right-stack"],.phase8-esslli[data-scene-placement="semantic-right-timetable"],.phase8-prg-ai[data-scene-placement="semantic-right-route"],.phase8-bsc-evidence[data-scene-placement="semantic-right-evidence"],.phase8-current-role[data-scene-placement="semantic-right-role"],.phase8-msc-progress[data-scene-placement="semantic-right-msc"]{right:18px;top:74px;width:min(410px,36%);padding:17px}
 
 .phase8-document-shelf{display:grid;gap:10px}
 .phase8-document{display:grid;grid-template-columns:minmax(0,1fr);gap:7px}
@@ -75,12 +75,31 @@
 .phase8-course-links{display:flex;flex-wrap:wrap;gap:4px 7px;margin-top:2px}
 .phase8-topic-link{font-size:7.5px;font-weight:700;color:var(--muted)}
 
+.phase8-bsc-evidence[data-scene-placement="semantic-right-evidence"]{width:min(470px,41%)}
+.phase8-bsc-clusters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.phase8-bsc-cluster{min-width:0;border-top:1px solid color-mix(in srgb,var(--line) 76%,transparent);padding:7px 0}
+.phase8-bsc-cluster-title{margin:0;color:var(--brown);font-size:8px;letter-spacing:.08em;text-transform:uppercase}
+.phase8-bsc-course-list{margin:5px 0 6px;color:var(--text-soft);font-size:8px;line-height:1.42}
+
+.phase8-current-role[data-scene-placement="semantic-right-role"]{width:min(390px,33%)}
+.phase8-msc-progress[data-scene-placement="semantic-right-msc"]{width:min(390px,33%)}
+.phase8-role-facts{display:grid;grid-template-columns:75px minmax(0,1fr);gap:5px 9px;margin:0 0 12px;font-size:9px;line-height:1.35}
+.phase8-role-facts dt{color:var(--brown);font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.phase8-role-facts dd{margin:0;color:var(--text-soft)}
+.phase8-role-contributions{display:grid;gap:3px;margin:6px 0 12px;padding-left:15px;color:var(--text-soft);font-size:9px;line-height:1.35}
+
 .phase8-prg-subtitle{margin:0;color:var(--text-soft);font-size:11px;font-weight:650}
 .phase8-prg-route{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:20px;padding-top:16px}
 .phase8-prg-route::before{content:"";position:absolute;left:7%;right:7%;top:7px;height:1px;background:var(--line)}
 .phase8-prg-stop{position:relative;border:0;border-top:1px solid var(--line);padding:8px 3px 0;background:transparent;color:var(--text-soft);font:700 8px/1.3 var(--sans);cursor:pointer}
 .phase8-prg-stop::before{content:"";position:absolute;top:-13px;left:50%;width:6px;height:6px;border:1px solid var(--teal);border-radius:50%;background:var(--paper);transform:translateX(-50%)}
 .phase8-prg-stop:hover{color:var(--teal)}
+.phase8-prg-blocks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:15px 0 0;padding:0;list-style:none;counter-reset:prg}
+.phase8-prg-block{position:relative;min-width:0;padding:16px 4px 0;border-top:1px solid var(--line);color:var(--muted);font:700 7.5px/1.3 var(--sans);text-align:center}
+.phase8-prg-block::before{counter-increment:prg;content:counter(prg);position:absolute;top:-10px;left:50%;display:grid;width:17px;height:17px;border:1px solid var(--line);border-radius:50%;background:var(--paper);place-items:center;transform:translateX(-50%);font-size:7px}
+.phase8-prg-block.is-current{color:var(--teal)}
+.phase8-prg-block.is-current::before{border-color:var(--teal);box-shadow:0 0 0 3px color-mix(in srgb,var(--teal) 14%,transparent)}
+.phase8-prg-block.is-planned{border-top-style:dashed;opacity:.7}
 
 .phase8-object[data-scene-lifecycle="entering"]{animation:phase8-rise .32s cubic-bezier(.2,.8,.2,1) both}
 .phase8-object[data-scene-lifecycle="exiting"]{opacity:0;transform:translateY(8px)}
@@ -111,6 +130,11 @@
   .phase8-course-title{font-size:7.6px}
   .phase8-course-time,.phase8-course-note,.phase8-topic-link{font-size:6.8px}
   .phase8-object-note{font-size:7.5px;margin-top:6px}
+  .phase8-bsc-clusters{grid-template-columns:1fr 1fr;gap:5px}
+  .phase8-bsc-course-list{font-size:7px}
+  .phase8-prg-block{font-size:6.6px}
+  .phase8-role-facts{font-size:8px}
+  .phase8-role-contributions{font-size:8px;margin-bottom:8px}
 }
 
 @media (max-width:540px){

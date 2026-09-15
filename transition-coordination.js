@@ -177,6 +177,15 @@
       targetNodeId: intent.nodeId || null,
       source: intent.source
     });
+    // A focused artifact owns a temporary full-screen layer. Some browsers
+    // can discard the original anchor default after that layer is removed in
+    // capture phase, leaving navigation visually clicked but route-stale.
+    // Preserve ordinary navigation first, then commit only as a fallback.
+    requestAnimationFrame(() => {
+      const route = normaliseRoute(document.body?.dataset.graphRoute || location.hash);
+      if (route === intent.route || normaliseRoute(location.hash) === intent.route) return;
+      location.hash = intent.route;
+    });
   };
 
   // Work project routes are more specific than the Work graph mode. The renderer

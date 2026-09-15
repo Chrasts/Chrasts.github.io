@@ -16,8 +16,7 @@
       artifactIds: ['clp-survey-pdf'],
       targets: [
         { route: 'work/project/clp-survey', anchorNodeId: 'project-clp-survey', side: 'left' },
-        { route: 'knowledge/logic-math/lattice-theory/congruence-lattice-problem', anchorNodeId: 'congruence-lattice-problem', side: 'right' },
-        { route: 'education/charles-university/coursework/clp-historical-survey', anchorNodeId: 'clp-historical-survey-coursework', side: 'right' }
+        { route: 'knowledge/logic-math/lattice-theory/congruence-lattice-problem', anchorNodeId: 'congruence-lattice-problem', side: 'right' }
       ]
     },
     {
@@ -31,31 +30,30 @@
       supportArtifactIds: ['bachelor-thesis-lattice-of-bands', 'bachelor-thesis-rol-non-a'],
       targets: [
         { route: 'work/project/bachelor-thesis', anchorNodeId: 'project-bachelor-thesis', side: 'left' },
-        { route: 'knowledge/logic-math/mathematical-logic/algebraic-logic/quantum-logic-arol', anchorNodeId: 'quantum-logic-arol', side: 'right' },
-        { route: 'education/charles-university/thesis', anchorNodeId: 'bachelor-thesis-education', side: 'right' }
+        { route: 'knowledge/logic-math/mathematical-logic/algebraic-logic/quantum-logic/residuated-ortholattices-arol', anchorNodeId: 'residuated-ortholattices-arol', side: 'right' }
       ]
     },
     {
       id: 'metalogic-amalgamation-interpolation-note',
       recipe: 'document-folio',
       variant: 'pdf-only',
-      eyebrow: 'Selected coursework',
+      eyebrow: 'Academic work',
       title: 'Amalgamation & Interpolation',
       artifactIds: ['metalogic-amalgamation-interpolation-note'],
       targets: [
-        { route: 'education/charles-university/coursework/amalgamation-interpolation', anchorNodeId: 'metalogic-amalgamation-interpolation', side: 'right' }
+        { route: 'education/charles-university/academic-work/amalgamation-interpolation', anchorNodeId: 'metalogic-amalgamation-interpolation', side: 'right' }
       ]
     },
     {
       id: 'simulation-credence-paper',
       recipe: 'document-folio',
       variant: 'pdf-only',
-      eyebrow: 'Selected coursework',
+      eyebrow: 'Academic work',
       title: 'Simulation Credence',
       description: 'A formal treatment of credence in the simulation hypothesis and its consequences.',
       artifactIds: ['simulation-credence-paper'],
       targets: [
-        { route: 'education/charles-university/coursework/simulation-credence', anchorNodeId: 'simulation-credence-coursework', side: 'right' }
+        { route: 'education/charles-university/academic-work/simulation-credence', anchorNodeId: 'simulation-credence-coursework', side: 'right' }
       ]
     },
     {
@@ -80,7 +78,6 @@
       artifactIds: ['sql-schema-er-diagram', 'sql-schema-subclass-hierarchy'],
       targets: [
         { route: 'work/project/sql-schema', anchorNodeId: 'project-sql-schema', side: 'left' },
-        { route: 'knowledge/data-computing/data-management/sql', anchorNodeId: 'sql', side: 'right' },
         { route: 'knowledge/data-computing/data-management/data-modelling', anchorNodeId: 'data-modelling', side: 'right' },
         { route: 'knowledge/logic-math/mathematical-logic/algebraic-logic', anchorNodeId: 'algebraic-logic', side: 'right' }
       ]

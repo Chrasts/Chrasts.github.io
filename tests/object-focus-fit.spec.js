@@ -64,16 +64,44 @@ test('closing focused media keeps the artifact lane stable and node detail activ
   const gallery = page.locator('[data-artifact-scene="hedgehog-house-gallery"]');
   const card = artifactControl(page, 'hedgehog-house-gallery', 'hedgehog-house-inside');
   const before = await gallery.boundingBox();
+  const sourceBefore = await card.boundingBox();
   const sideBefore = await gallery.getAttribute('data-scene-side');
   await card.click();
   await waitSettled(page);
-  await page.keyboard.press('Escape');
+  const returnFrames = await page.evaluate(async ({ artifactId }) => new Promise(resolve => {
+    const frames = [];
+    const source = document.querySelector(`[data-artifact-focus="${artifactId}"]`);
+    document.querySelector('.artifact-focus-backdrop')?.dispatchEvent(new MouseEvent('click', {
+      bubbles: true,
+      cancelable: true,
+      view: window
+    }));
+    const sample = remaining => {
+      const rect = source?.getBoundingClientRect();
+      const viewer = document.querySelector('.artifact-focus-viewer');
+      const primary = viewer?.querySelector('.artifact-focus-media > :not(.object-focus-media-hint)');
+      frames.push({
+        x: rect?.x ?? NaN,
+        visibility: source ? getComputedStyle(source).visibility : 'missing',
+        closing: viewer?.classList.contains('is-shared-focus-closing') || false,
+        mediaOpacity: primary ? Number(getComputedStyle(primary).opacity) : 0
+      });
+      if (remaining <= 0) return resolve(frames);
+      requestAnimationFrame(() => sample(remaining - 1));
+    };
+    sample(34);
+  }), { artifactId: 'hedgehog-house-inside' });
   await expect(page.locator('.artifact-focus-viewer')).toBeHidden();
   await expect(detail).toBeVisible();
   const after = await gallery.boundingBox();
   expect(await gallery.getAttribute('data-scene-side')).toBe(sideBefore);
   expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(3);
   expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(32);
+  const visibleReturnFrames = returnFrames.filter(frame => frame.visibility !== 'hidden');
+  expect(visibleReturnFrames.every(frame => Math.abs(frame.x - sourceBefore.x) <= 18)).toBe(true);
+  // The stage may fade, but its full-size media must stay invisible until the
+  // viewer is actually removed; otherwise it flashes in its stage position.
+  expect(returnFrames.filter(frame => frame.closing).every(frame => frame.mediaOpacity < .01)).toBe(true);
 });
 
 test('thesis and Modal Lab artifacts open Object Focus without dismissing their node detail', async ({ page }) => {

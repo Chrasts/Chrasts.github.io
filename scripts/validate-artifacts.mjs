@@ -18,6 +18,9 @@ for (const artifact of api.all()) {
   if (!fs.existsSync(artifact.source.path)) {
     issues.push(`Missing local artifact file for ${artifact.id}: ${artifact.source.path}`);
   }
+  if (artifact.source.fallbackPath && !fs.existsSync(artifact.source.fallbackPath)) {
+    issues.push(`Missing local artifact fallback for ${artifact.id}: ${artifact.source.fallbackPath}`);
+  }
   const presentation = artifact.presentation || {};
   if (artifact.mediaType === 'application/pdf') {
     const ratio = Number(presentation.aspectRatio);

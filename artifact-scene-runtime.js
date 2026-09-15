@@ -9,12 +9,23 @@
 
   const nodeMap = new Map(site.graph.nodes.map(node => [node.id, node]));
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-  const normaliseRoute = value =>
-    (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
+  const normaliseRoute = value => {
+    const route = (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
+    return site.graph.routeAliases?.[route] || route;
+  };
   const currentSceneRoute = () => normaliseRoute(scene.manager.context().route || 'overview');
   const routeForNode = id => nodeMap.get(id)?.route || null;
   const artifactFor = id => artifacts.get(id);
   const hrefFor = id => artifacts.hrefFor(id);
+  const attachImageFallback = (image, artifact) => {
+    const fallback = artifact?.source?.kind === 'local' ? artifact.source.fallbackPath : null;
+    if (!fallback) return;
+    image.addEventListener('error', () => {
+      if (image.dataset.artifactFallbackApplied === 'true') return;
+      image.dataset.artifactFallbackApplied = 'true';
+      image.src = fallback;
+    });
+  };
 
   const canvas = document.querySelector('.scene-canvas');
   if (!canvas) return;
@@ -139,7 +150,7 @@
   const syncInlineMedia = root => {
     root?.querySelectorAll?.('video[data-artifact-inline-video]').forEach(video => {
       const visible = root.isConnected && !root.hidden && document.visibilityState === 'visible';
-      if (visible) {
+      if (visible && video.dataset.artifactVideoEligible === 'true') {
         video.muted = true;
         video.play()?.catch?.(() => {});
       } else if (!video.paused) {
@@ -154,6 +165,7 @@
       image.src = href;
       image.alt = artifact.title || '';
       image.decoding = 'async';
+      attachImageFallback(image, artifact);
       return image;
     }
     if (artifact.mediaType === 'application/pdf') {

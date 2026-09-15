@@ -518,6 +518,10 @@
   const finishTransition = async ({ token, direction, anchorId, sourceRoute, targetRoute, sourceCount, targetCount, result = 'completed' }) => {
     if (active?.overlay) {
       active.overlay.classList.add('is-finishing');
+      // The overlay fades for 70ms. Reveal the already prepared live graph
+      // underneath before that fade begins; otherwise both layers are hidden
+      // for one perceptible frame at the end of an Atlas unfold.
+      document.body?.classList.remove('is-atlas-focus-transitioning');
       await wait(reducedMotion.matches ? 0 : 70);
     }
     active?.overlay?.remove();

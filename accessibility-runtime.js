@@ -127,6 +127,13 @@
     element.setAttribute('aria-pressed', element.classList.contains('is-selected') ? 'true' : 'false');
   };
 
+  const syncSemanticEvidence = element => {
+    const label = String(element.getAttribute('aria-label') || '').trim();
+    element.setAttribute('role', 'button');
+    element.setAttribute('tabindex', '0');
+    if (!label) element.setAttribute('aria-label', 'Completed course evidence; open related Knowledge.');
+  };
+
   const syncPrimaryNavigation = () => {
     const active = topRoute(currentRoute());
     document.querySelectorAll('#main-nav [data-route], .brand[data-route]').forEach(element => {
@@ -161,6 +168,7 @@
     root.querySelectorAll('.site-graph-node[data-node-id]').forEach(syncNode);
     root.querySelectorAll('.work-project-anchor-v5[data-project-id]').forEach(syncProjectAnchor);
     root.querySelectorAll('.work-theme-label-v5[data-theme-id]').forEach(syncThemeControl);
+    root.querySelectorAll('.site-graph-evidence-object[data-evidence-id]').forEach(syncSemanticEvidence);
     syncPrimaryNavigation();
     syncCount += 1;
   };
@@ -193,7 +201,7 @@
 
   const snapshot = () => {
     const svg = root?.querySelector('.site-graph-svg');
-    const interactive = [...(root?.querySelectorAll('.site-graph-node[data-node-id], .work-project-anchor-v5[data-project-id], .work-theme-label-v5[data-theme-id]') || [])]
+    const interactive = [...(root?.querySelectorAll('.site-graph-node[data-node-id], .work-project-anchor-v5[data-project-id], .work-theme-label-v5[data-theme-id], .site-graph-evidence-object[data-evidence-id]') || [])]
       .filter(element => !element.closest('.v9-transition-overlay') && element.getAttribute('aria-hidden') !== 'true');
     return {
       ready: Boolean(root?.isConnected && svg),

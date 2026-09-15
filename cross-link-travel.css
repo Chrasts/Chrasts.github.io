@@ -43,6 +43,8 @@
   border-radius:999px;
   background:color-mix(in srgb,var(--paper) 90%,transparent);
   color:var(--ink);
+  font:inherit;
+  cursor:pointer;
   text-decoration:none;
   transition:border-color .18s ease,transform .18s ease,background .18s ease,color .18s ease
 }
@@ -90,6 +92,9 @@
 .profile-crosslink.is-evidence::before{border-radius:1px;transform:translateY(-50%) rotate(45deg)}
 .profile-crosslink.is-study::before{border-style:dashed}
 .profile-crosslink.is-experience::before{box-shadow:0 0 0 2px color-mix(in srgb,var(--brown) 10%,transparent)}
+.profile-crosslink.is-return{border-style:dashed;border-color:color-mix(in srgb,var(--teal) 45%,var(--line))}
+.profile-crosslink.is-return::before{border-color:var(--teal);border-radius:1px;transform:translateY(-50%) rotate(45deg)}
+.profile-crosslink.is-return::after{border-top-style:solid;border-color:var(--teal)}
 
 body.is-crosslink-travelling{
   overflow:hidden

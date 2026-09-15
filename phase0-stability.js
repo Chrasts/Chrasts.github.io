@@ -1,39 +1,12 @@
 (() => {
   /* Content-integrity pass.
-     SITE_DATA deliberately keeps a richer ontology than the public graph needs
-     to expose as first-class destinations. Before the graph runtime boots,
-     collapse low-signal/course-only/tool-level nodes into their defensible
-     parent areas while preserving project technology metadata and evidence. */
+     The semantic inventory is already canonical. Progressive disclosure
+     belongs to Atlas LOD, not to a hidden bootstrap mutation of the graph. */
   const applyContentIntegrityPass = () => {
     const site = window.SITE_DATA;
     if (!site?.graph?.nodes?.length || !Array.isArray(site.graph.edges)) return;
 
-    const collapseInto = new Map([
-      ['dynamic-logic', 'modal-logic'],
-      ['sat-smt', 'computational-logic'],
-      ['logic-for-ai', 'computational-logic'],
-      ['data-qa', 'data-analysis'],
-      ['visualisation', 'data-analysis'],
-      ['data-cleaning', 'data-analysis'],
-      ['algorithms-data-structures', 'programming-automation'],
-      ['git', 'programming-automation']
-    ]);
-    const collapsedIds = new Set(collapseInto.keys());
-    const resolveId = id => collapseInto.get(id) || id;
-
-    site.graph.nodes = site.graph.nodes.filter(node => !collapsedIds.has(node.id));
-
-    const edgeKeys = new Set();
-    site.graph.edges = site.graph.edges.flatMap(edge => {
-      const source = resolveId(edge.source);
-      const target = resolveId(edge.target);
-      if (source === target) return [];
-      const normalized = { ...edge, source, target };
-      const key = `${source}|${target}|${normalized.type || ''}|${Boolean(normalized.secondary)}`;
-      if (edgeKeys.has(key)) return [];
-      edgeKeys.add(key);
-      return [normalized];
-    });
+    const collapsedIds = new Set();
 
     const modalLogicLab = site.work?.projects?.find(project => project.id === 'modal-logic-lab');
     if (modalLogicLab) {
@@ -45,7 +18,7 @@
 
     window.ProfileContentIntegrity = Object.freeze({
       collapsedNodeIds: Object.freeze([...collapsedIds]),
-      collapseInto: Object.freeze(Object.fromEntries(collapseInto))
+      collapseInto: Object.freeze({})
     });
   };
   applyContentIntegrityPass();

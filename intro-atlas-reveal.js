@@ -14,10 +14,13 @@
   // The desktop opening is a cinematic full-graph reveal. On a phone the
   // destination is the concise branch navigator, so do not spend six seconds
   // animating topology that cannot be read at that physical scale.
-  const REVEAL_IGNITION_LEAD = reducedMotion ? 0 : mobile ? 160 : 620;
-  const VISIBILITY_FIELD_DELAY = mobile ? 70 : 160;
-  const VISIBILITY_GENTLE_PHASE = mobile ? 260 : 1100;
-  const VISIBILITY_FAST_PHASE = mobile ? 520 : 1750;
+  // The root is already visible while this sequence runs. Keep the cinematic
+  // read, but do not hold its primary interaction hostage to a long tail of
+  // decorative edge/label animation.
+  const REVEAL_IGNITION_LEAD = reducedMotion ? 0 : mobile ? 160 : 180;
+  const VISIBILITY_FIELD_DELAY = mobile ? 70 : 60;
+  const VISIBILITY_GENTLE_PHASE = mobile ? 260 : 350;
+  const VISIBILITY_FAST_PHASE = mobile ? 520 : 750;
   const VISIBILITY_GENTLE_PROGRESS = mobile ? .34 : .30;
   const STATES = Object.freeze({
     PREPARING: 'PREPARING',
@@ -44,14 +47,14 @@
     settle: 720,
     ready: 800
   } : {
-    primary: 675,
-    territories: 1350,
-    structure: 1875,
-    deep: 2060,
-    labels: 2175,
-    cross: 2290,
-    settle: 2400,
-    ready: 2475
+    primary: 250,
+    territories: 450,
+    structure: 650,
+    deep: 780,
+    labels: 880,
+    cross: 980,
+    settle: 1080,
+    ready: 1150
   });
 
   const state = {

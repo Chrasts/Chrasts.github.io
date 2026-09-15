@@ -2,13 +2,25 @@
 setlocal
 cd /d "%~dp0"
 
-echo.
-echo Local portfolio server is running at:
-echo   http://127.0.0.1:4173/
-echo.
-echo Keep this window open while using the site.
-echo Press Ctrl+C to stop the server.
+echo Starting the current local portfolio build...
+echo The browser opens after the server confirms it is ready.
 echo.
 
-set "OPEN_BROWSER=1"
+where node >nul 2>nul
+if errorlevel 1 (
+  echo Node.js was not found. Install Node.js LTS, then run this file again.
+  echo.
+  pause
+  exit /b 1
+)
+
+if not defined OPEN_BROWSER set "OPEN_BROWSER=1"
 node scripts\serve.mjs
+set "SERVER_EXIT=%ERRORLEVEL%"
+
+if not "%SERVER_EXIT%"=="0" (
+  echo.
+  echo The local server did not start. See the message above for the cause.
+  pause
+)
+exit /b %SERVER_EXIT%

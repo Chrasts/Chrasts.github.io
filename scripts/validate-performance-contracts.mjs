@@ -21,6 +21,9 @@ if (/createElement\(['"](?:script|link)['"]\)|ensureScript|ensureStyle/.test(bin
 if (/\bfetch\s*\(|\.arrayBuffer\s*\(|new\s+TextDecoder/.test(recipes)) {
   issues.push('Artifact recipes must not download or decode media to infer presentation geometry.');
 }
+if (/createElement\(['"]iframe['"]\)/.test(recipes)) {
+  issues.push('Artifact scene cards must not create inline PDF viewers; Object Focus owns on-demand document rendering.');
+}
 if (!/const\s+resourcePromises\s*=\s*new\s+Map/.test(bridge) || !/const\s+featurePromises\s*=\s*new\s+Map/.test(bridge)) {
   issues.push('Optional feature loading must keep auditable Promise deduplication registries.');
 }
@@ -35,6 +38,9 @@ if (/intro-atlas-reveal\.(?:js|css)/.test(definitions)) {
 }
 if (/href=["']intro-animation\.css["']/.test(index)) {
   issues.push('The retired Phase H intro stylesheet must not be loaded by index.html.');
+}
+if (/href=["']mobile(?:-v2)?\.css["']/.test(index) || !/const\s+ensureMobileStyles\s*=/.test(read('graph-transition-prelude.js'))) {
+  issues.push('Mobile styles must remain viewport-gated instead of consuming desktop bootstrap requests.');
 }
 if (!/window\.__PROFILE_INTRO_BOOTSTRAP__\?\.eligible/.test(bridge) || !/const\s+bootIntro\s*=/.test(bridge)) {
   issues.push('The current intro feature must be gated by the early eligibility contract.');

@@ -142,7 +142,7 @@ test('BSc thesis materials preserve PDF geometry and open the defended thesis in
   await waitSettled(page);
   await expect(viewer).toHaveAttribute('data-shared-focus-artifact', 'bachelor-thesis-pdf');
   await expect(viewer.locator('.artifact-focus-title')).toContainText('Residuated Ortholattices and their Associative Fragment in Quantum Logic');
-  await expect(viewer.locator('.artifact-focus-media iframe')).toHaveAttribute('src', /assets\/documents\/education\/coursework\/thesis\.pdf#toolbar=1&navpanes=0&scrollbar=0&view=Fit/);
+  await expect(viewer.locator('.artifact-focus-media iframe')).toHaveAttribute('src', /assets\/documents\/education\/coursework\/thesis\.pdf#toolbar=1&navpanes=0&scrollbar=1&zoom=page-width/);
   await page.keyboard.press('Escape');
 });
 
@@ -230,6 +230,20 @@ test('Hedgehog House photo fan keeps every rotated photograph inside the viewpor
   await expect(viewer.locator('.artifact-focus-media img.object-focus-panzoom-media')).toHaveAttribute('src', /assets\/images\/about\/woodworking\/hedgehog-house\/outside\.webp$/);
   await page.keyboard.press('Escape');
   await expect(viewer).toBeHidden();
+});
+
+test('Entrance terrace prefers the optimized WebP photograph with an original fallback', async ({ page }) => {
+  await bypassIntro(page);
+  await page.goto('/#about/woodworking/entrance-terrace');
+  await waitArtifactScenes(page);
+
+  const scene = page.locator('[data-artifact-scene="entrance-terrace-photo"]');
+  const image = scene.locator('img');
+  await expect(scene).toBeVisible();
+  await expect(image).toHaveAttribute('src', /assets\/images\/about\/woodworking\/terasa\.webp$/);
+  const source = await page.evaluate(() => window.ProfileArtifacts.get('entrance-terrace-photo').source);
+  expect(source.fallbackPath).toBe('assets/images/about/woodworking/terasa.jpg');
+  expect(source.path).toBe('assets/images/about/woodworking/terasa.webp');
 });
 
 test('desktop descriptive inspector ends with its content instead of filling the scene', async ({ page }) => {

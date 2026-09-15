@@ -38,7 +38,10 @@
 
     const childrenFor = id => graph.nodes.filter(node => node.parentIds?.includes(id));
     const routeForNode = node => node?.route || 'overview';
-    const normaliseRoute = value => (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
+    const normaliseRoute = value => {
+      const route = (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
+      return graph.routeAliases?.[route] || route;
+    };
     const nodeForRoute = route => route === 'overview'
       ? profileRoot
       : graph.nodes.find(node => node.route === route) || null;
@@ -407,7 +410,9 @@
       lastLayout: null,
       frame: 0,
       drag: null,
-      timeline: null
+      timeline: null,
+      semanticGuides: new Map(),
+      semanticEvidence: new Map()
     };
 
     const FOCUS = { width: 1200, height: 720 };
@@ -429,6 +434,19 @@
             if (visible.size < 13) visible.set(grandchild.id, grandchild);
           });
         });
+      }
+      // Cross-section Work entities are added only when their Experience role
+      // or BSc programme is focused. They are canonical project nodes, not
+      // copies in a second section tree.
+      if (state.node?.type === 'experience') {
+        (state.node.relatedWorkIds || []).forEach(projectId => {
+          const project = nodeMap.get(`project-${projectId}`);
+          if (project) visible.set(project.id, project);
+        });
+      }
+      if (state.node?.id === 'charles-university') {
+        const thesis = nodeMap.get('project-bachelor-thesis');
+        if (thesis) visible.set(thesis.id, thesis);
       }
       return [...visible.values()];
     };
@@ -503,6 +521,26 @@
 
     const layoutFocus = nodes => {
       const { width, height } = FOCUS;
+      const semantic = window.ProfileSemanticLayouts?.compute?.({
+        nodes,
+        selectedNode: state.node,
+        viewport: FOCUS,
+        lod: 1,
+        metadata: window.SITE_DATA?.semantics
+      });
+      if (semantic) {
+        // A strategy owns its meaningful anchors. Keep any legacy leaf which
+        // happens to be visible in a quiet reserve area rather than forcing a
+        // second generic tree pass over the semantic composition.
+        nodes.forEach((node, index) => {
+          if (semantic.positions.has(node.id)) return;
+          semantic.positions.set(node.id, {
+            x: 920 + (index % 2) * 110,
+            y: 570 + Math.floor(index / 2) * 62
+          });
+        });
+        return semantic;
+      }
       const positions = new Map();
       const path = primaryPath(state.node);
 
@@ -659,20 +697,17 @@
       const ids = new Set(nodes.map(node => node.id));
       const edges = [];
       nodes.forEach(node => {
-        let parents = [...(node.parentIds || [])];
-        if (state.mode === 'atlas' && node.type === 'project' && parents.some(id => id.startsWith('work-theme-'))) {
-          parents = parents.filter(id => id !== 'work');
-        }
+        const parents = node.parentIds || [];
         parents.forEach((parentId, index) => {
           if (!ids.has(parentId)) return;
           if (state.mode === 'atlas') {
             if (!atlasOptions.hierarchy) return;
-            if (index > 0 && !atlasOptions.secondary && !(node.type === 'project' && parentId.startsWith('work-theme-'))) return;
+            if (index > 0 && !atlasOptions.secondary) return;
           }
           edges.push({
             source: parentId,
             target: node.id,
-            type: index === 0 || (node.type === 'project' && parentId.startsWith('work-theme-')) ? 'hierarchy' : 'hierarchy-alt'
+            type: index === 0 ? 'hierarchy' : 'hierarchy-alt'
           });
         });
       });
@@ -681,6 +716,14 @@
           if (!ids.has(edge.source) || !ids.has(edge.target)) return;
           if (edge.secondary && !atlasOptions.secondary) return;
           edges.push({ ...edge });
+        });
+      }
+      if (state.mode === 'focus' && (state.node?.type === 'experience' || state.node?.id === 'charles-university')) {
+        graph.edges.forEach(edge => {
+          if (!ids.has(edge.source) || !ids.has(edge.target)) return;
+          const permitted = edge.type === 'role-project' ||
+            (state.node.id === 'charles-university' && ['education-link', 'thesis-of'].includes(edge.type));
+          if (permitted) edges.push({ ...edge });
         });
       }
       const byKey = new Map();
@@ -840,6 +883,10 @@
 
       renderer.svg.addEventListener('wheel', event => {
         if (state.mode !== 'atlas') return;
+        // Phase 7 owns desktop Atlas input. Keeping this fallback dormant
+        // there prevents two camera updates for one physical wheel gesture;
+        // it remains the touch / pre-bootstrap fallback.
+        if (window.ProfileAtlasLOD?.ownsDesktopInput?.()) return;
         event.preventDefault();
         const bounds = renderer.svg.getBoundingClientRect();
         const active = renderer.lastLayout || layout;
@@ -853,12 +900,14 @@
 
       renderer.svg.addEventListener('pointerdown', event => {
         if (state.mode !== 'atlas' || event.button !== 0) return;
+        if (window.ProfileAtlasLOD?.ownsDesktopInput?.()) return;
         renderer.drag = { x: event.clientX, y: event.clientY, moved: false };
         renderer.svg.setPointerCapture?.(event.pointerId);
         renderer.svg.classList.add('is-dragging');
       });
       renderer.svg.addEventListener('pointermove', event => {
         if (!renderer.drag || state.mode !== 'atlas') return;
+        if (window.ProfileAtlasLOD?.ownsDesktopInput?.()) return;
         const bounds = renderer.svg.getBoundingClientRect();
         const active = renderer.lastLayout;
         const dx = (event.clientX - renderer.drag.x) * active.width / Math.max(1, bounds.width);
@@ -1020,22 +1069,114 @@
       renderer.lastLayout = layout;
       renderer.lastEdges = edges;
 
-      if (layout.timeline) {
-        if (!renderer.timeline) {
-          renderer.timeline = document.createElementNS(svgNS, 'line');
-          renderer.timeline.classList.add('site-graph-timeline');
-          renderer.edges.prepend(renderer.timeline);
+      const guideModels = layout.semanticGuides || (layout.timeline
+        ? [{ id: 'legacy-timeline', kind: 'axis', x1: layout.timeline.x1, y1: layout.timeline.y, x2: layout.timeline.x2, y2: layout.timeline.y }]
+        : []);
+      const desiredGuides = new Set(guideModels.map(guide => guide.id));
+      guideModels.forEach(guide => {
+        let group = renderer.semanticGuides.get(guide.id);
+        if (!group) {
+          group = document.createElementNS(svgNS, 'g');
+          group.classList.add('site-graph-semantic-guide', `is-${guide.kind}`);
+          group.dataset.semanticGuide = guide.id;
+          group.setAttribute('aria-hidden', 'true');
+          const line = document.createElementNS(svgNS, 'line');
+          line.classList.add('site-graph-semantic-guide-line');
+          group.appendChild(line);
+          if (guide.label) {
+            const label = document.createElementNS(svgNS, 'text');
+            label.classList.add('site-graph-semantic-guide-label');
+            group.appendChild(label);
+          }
+          renderer.semanticGuides.set(guide.id, group);
+          renderer.decorations.prepend(group);
         }
-        const timelineStart = visualPoint({ x: layout.timeline.x1, y: layout.timeline.y });
-        const timelineEnd = visualPoint({ x: layout.timeline.x2, y: layout.timeline.y });
-        renderer.timeline.setAttribute('x1', timelineStart.x);
-        renderer.timeline.setAttribute('x2', timelineEnd.x);
-        renderer.timeline.setAttribute('y1', timelineStart.y);
-        renderer.timeline.setAttribute('y2', timelineEnd.y);
-      } else if (renderer.timeline) {
-        renderer.timeline.remove();
-        renderer.timeline = null;
-      }
+        group.className.baseVal = `site-graph-semantic-guide is-${guide.kind}`;
+        const from = visualPoint({ x: guide.x1, y: guide.y1 });
+        const to = visualPoint({ x: guide.x2, y: guide.y2 });
+        const line = group.querySelector('line');
+        line.setAttribute('x1', from.x); line.setAttribute('y1', from.y);
+        line.setAttribute('x2', to.x); line.setAttribute('y2', to.y);
+        line.classList.toggle('is-current', Boolean(guide.current));
+        const label = group.querySelector('text');
+        if (label) {
+          label.textContent = guide.label || '';
+          label.setAttribute('x', ((from.x + to.x) / 2).toFixed(1));
+          label.setAttribute('y', (Math.min(from.y, to.y) - 12).toFixed(1));
+          label.setAttribute('text-anchor', 'middle');
+        }
+      });
+      [...renderer.semanticGuides.entries()].forEach(([id, element]) => {
+        if (desiredGuides.has(id)) return;
+        element.remove();
+        renderer.semanticGuides.delete(id);
+      });
+
+      const evidenceModels = layout.semanticEvidence || [];
+      const desiredEvidence = new Set(evidenceModels.map(item => item.id));
+      evidenceModels.forEach(item => {
+        let group = renderer.semanticEvidence.get(item.id);
+        if (!group) {
+          group = document.createElementNS(svgNS, 'g');
+          group.classList.add('site-graph-evidence-object');
+          group.dataset.evidenceId = item.id;
+          group.setAttribute('role', 'button');
+          group.setAttribute('tabindex', '0');
+          const dot = document.createElementNS(svgNS, 'circle');
+          dot.classList.add('site-graph-evidence-dot');
+          dot.setAttribute('r', '5.2');
+          const label = document.createElementNS(svgNS, 'text');
+          label.classList.add('site-graph-evidence-label');
+          label.setAttribute('x', '11'); label.setAttribute('y', '3.5');
+          const meta = document.createElementNS(svgNS, 'text');
+          meta.classList.add('site-graph-evidence-meta');
+          meta.setAttribute('x', '11'); meta.setAttribute('y', '16');
+          const title = document.createElementNS(svgNS, 'title');
+          group.append(dot, label, meta, title);
+          const highlight = active => group.classList.toggle('is-evidence-active', active);
+          group.addEventListener('mouseenter', () => highlight(true));
+          group.addEventListener('mouseleave', () => highlight(false));
+          group.addEventListener('focus', () => highlight(true));
+          group.addEventListener('blur', () => highlight(false));
+          const activate = restoreFocus => {
+            const destination = item.knowledgeIds.map(id => nodeMap.get(id)).find(Boolean);
+            if (!destination?.route) return;
+            if (restoreFocus) {
+              let fallback = 0;
+              const complete = () => {
+                window.removeEventListener('profile:graph-navigation', onNavigation);
+                clearTimeout(fallback);
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                  renderer.nodeElements.get(destination.id)?.focus?.({ preventScroll: true });
+                }));
+              };
+              const onNavigation = event => {
+                if (event.detail?.phase === 'idle') complete();
+              };
+              window.addEventListener('profile:graph-navigation', onNavigation);
+              fallback = window.setTimeout(complete, 1600);
+            }
+            updateHash(destination.route);
+          };
+          group.addEventListener('click', event => { event.stopPropagation(); activate(false); });
+          group.addEventListener('keydown', event => {
+            if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); activate(true); }
+          });
+          renderer.semanticEvidence.set(item.id, group);
+          renderer.decorations.appendChild(group);
+        }
+        const knowledgeLabels = item.knowledgeIds.map(id => nodeMap.get(id)?.label).filter(Boolean);
+        group.setAttribute('aria-label', `${item.label}. ${item.status} course evidence. Supports ${knowledgeLabels.join(', ') || 'related knowledge'}.`);
+        group.querySelector('.site-graph-evidence-label').textContent = item.label;
+        group.querySelector('.site-graph-evidence-meta').textContent = `${item.courseCount} completed courses`;
+        group.querySelector('title').textContent = `${item.label}: ${knowledgeLabels.join(', ')}`;
+        setVisualTransform(group, item.position);
+      });
+      [...renderer.semanticEvidence.entries()].forEach(([id, element]) => {
+        if (desiredEvidence.has(id)) return;
+        element.remove();
+        renderer.semanticEvidence.delete(id);
+      });
 
       const visibleIds = new Set(nodes.map(node => node.id));
       const edgeIds = new Set(edges.map(edgeKey));
@@ -1348,12 +1489,18 @@
     const clearLocalPreview = () => {
       renderer.nodeElements.forEach(element => element.classList.remove('is-upstream', 'is-downstream', 'is-muted-soft'));
       renderer.edgeElements.forEach(element => element.classList.remove('is-upstream', 'is-downstream', 'is-muted-soft'));
+      renderer.semanticGuides.forEach(element => element.classList.remove('is-active-semantic'));
     };
 
     const localPreview = nodeId => {
       clearLocalPreview();
       const up = ancestorIds(nodeId), down = descendantIds(nodeId);
-      const relevant = new Set([nodeId, ...up, ...down]);
+      const lateral = new Set();
+      graph.edges.forEach(edge => {
+        if (edge.source === nodeId) lateral.add(edge.target);
+        if (edge.target === nodeId) lateral.add(edge.source);
+      });
+      const relevant = new Set([nodeId, ...up, ...down, ...lateral]);
       renderer.nodeElements.forEach((element, id) => {
         element.classList.toggle('is-upstream', up.has(id));
         element.classList.toggle('is-downstream', down.has(id));
@@ -1363,11 +1510,13 @@
         const edge = renderer.lastEdges.find(item => edgeKey(item) === key);
         if (!edge) return;
         const upstream = up.has(edge.source) && (up.has(edge.target) || edge.target === nodeId);
-        const downstream = (edge.source === nodeId || down.has(edge.source)) && down.has(edge.target);
+        const downstream = (edge.source === nodeId || down.has(edge.source)) && (down.has(edge.target) || lateral.has(edge.target));
+        const relation = (edge.source === nodeId && lateral.has(edge.target)) || (edge.target === nodeId && lateral.has(edge.source));
         element.classList.toggle('is-upstream', upstream);
-        element.classList.toggle('is-downstream', downstream);
-        element.classList.toggle('is-muted-soft', !(upstream || downstream));
+        element.classList.toggle('is-downstream', downstream || relation);
+        element.classList.toggle('is-muted-soft', !(upstream || downstream || relation));
       });
+      renderer.semanticGuides.get(`experience-duration-${nodeId}`)?.classList.add('is-active-semantic');
     };
 
     const clearAtlasHighlight = () => {
@@ -1539,11 +1688,46 @@
 
     const openLeafDetail = node => {
       showDetailShell(humanType(node.type), node.detailLabel || node.label, node.summary || 'A focused part of the profile.');
+      if (node.type === 'experience') {
+        const facts = document.createElement('dl');
+        facts.className = 'detail-facts';
+        [
+          ['Organisation', node.organisation],
+          ['Role', node.role],
+          ['Period', node.meta]
+        ].filter(([, value]) => value).forEach(([key, value]) => {
+          const dt = document.createElement('dt'); dt.textContent = key;
+          const dd = document.createElement('dd'); dd.textContent = value;
+          facts.append(dt, dd);
+        });
+        detail.appendChild(facts);
+        if (node.highlights?.length) {
+          const heading = document.createElement('p');
+          heading.className = 'detail-list-title'; heading.textContent = 'Contributions';
+          const list = document.createElement('ul'); list.className = 'detail-evidence-list';
+          node.highlights.forEach(item => { const entry = document.createElement('li'); entry.textContent = item; list.appendChild(entry); });
+          detail.append(heading, list);
+        }
+        appendNodeButtons('Related Work', (node.relatedWorkIds || []).map(id => nodeMap.get(`project-${id}`)).filter(Boolean));
+      }
       if (node.status) {
         const p = document.createElement('p'); p.className = 'detail-status'; p.textContent = node.status; detail.appendChild(p);
       }
       if (node.meta) {
         const p = document.createElement('p'); p.className = 'detail-meta'; p.textContent = node.meta; detail.appendChild(p);
+      }
+      if (node.courseEvidence?.length) {
+        const heading = document.createElement('p');
+        heading.className = 'detail-list-title';
+        heading.textContent = 'Completed coursework evidence';
+        const list = document.createElement('ul');
+        list.className = 'detail-evidence-list';
+        node.courseEvidence.forEach(course => {
+          const item = document.createElement('li');
+          item.textContent = course;
+          list.appendChild(item);
+        });
+        detail.append(heading, list);
       }
       appendNodeButtons('Connected in the profile', graph.edges
         .filter(edge => edge.source === node.id || edge.target === node.id)

@@ -187,7 +187,9 @@
     document.body.dataset.atlasLod = lod;
     document.body.dataset.atlasTopology = topologyMode;
     syncTerritoryLabels(currentScale);
-    scheduleLabelCollisionPass();
+    // Camera motion may cross an LOD threshold several times. Keep labels
+    // marked dirty, but measure their boxes only after the camera settles.
+    invalidateLabelCollisions();
 
     if (previous !== lod) {
       dispatchEvent(new CustomEvent('profile:atlas-lod-change', {
@@ -220,6 +222,7 @@
   const camera = { x: 0, y: 0, scale: 1, targetX: 0, targetY: 0, targetScale: 1, frame: 0 };
   let lastWrittenTransform = '';
   let gesture = null;
+  let cameraMotionActive = false;
   let suppressAtlasClickUntil = 0;
   let preserveCameraUntil = 0;
   let preservedCamera = null;
@@ -266,6 +269,20 @@
       applyLOD(camera.scale);
     }
   };
+  const beginCameraMotion = source => {
+    if (cameraMotionActive) return;
+    cameraMotionActive = true;
+    if (collisionFrame) cancelAnimationFrame(collisionFrame);
+    collisionFrame = 0;
+    dispatchEvent(new CustomEvent('profile:atlas-camera-moving', { detail: { source } }));
+  };
+  const settleCameraMotion = detail => {
+    const wasMoving = cameraMotionActive;
+    cameraMotionActive = false;
+    dispatchEvent(new CustomEvent('profile:atlas-camera-settled', {
+      detail: { x: camera.x, y: camera.y, scale: camera.scale, ...detail, wasMoving }
+    }));
+  };
   const animateCamera = () => {
     if (camera.frame) return;
     const frame = () => {
@@ -284,17 +301,19 @@
         camera.scale = camera.targetScale;
         camera.frame = 0;
         writeCamera({ forceLOD: true });
-        dispatchEvent(new CustomEvent('profile:atlas-camera-settled', {
-          detail: { x: camera.x, y: camera.y, scale: camera.scale }
-        }));
+        settleCameraMotion();
         return;
       }
       camera.frame = requestAnimationFrame(frame);
     };
     camera.frame = requestAnimationFrame(frame);
   };
-  const setCamera = ({ x = camera.targetX, y = camera.targetY, scale = camera.targetScale } = {}, { immediate = false } = {}) => {
+  const setCamera = ({ x = camera.targetX, y = camera.targetY, scale = camera.targetScale } = {}, { immediate = false, deferSettlement = false, source = 'api' } = {}) => {
     const next = clampCamera({ x, y, scale });
+    const changed = Math.abs(next.x - camera.targetX) > .01 ||
+      Math.abs(next.y - camera.targetY) > .01 ||
+      Math.abs(next.scale - camera.targetScale) > .0001;
+    if (changed) beginCameraMotion(source);
     camera.targetX = next.x;
     camera.targetY = next.y;
     camera.targetScale = next.scale;
@@ -305,9 +324,7 @@
       camera.y = next.y;
       camera.scale = next.scale;
       writeCamera({ forceLOD: true });
-      dispatchEvent(new CustomEvent('profile:atlas-camera-settled', {
-        detail: { x: camera.x, y: camera.y, scale: camera.scale, immediate: true }
-      }));
+      if (!deferSettlement) settleCameraMotion({ immediate: true });
     } else animateCamera();
     return { ...next };
   };
@@ -390,7 +407,7 @@
     const nextScale = clamp(oldScale * factor, 0.48, 2.8);
     const graphX = (px - camera.targetX) / oldScale;
     const graphY = (py - camera.targetY) / oldScale;
-    setCamera({ x: px - graphX * nextScale, y: py - graphY * nextScale, scale: nextScale }, { immediate });
+    setCamera({ x: px - graphX * nextScale, y: py - graphY * nextScale, scale: nextScale }, { immediate, source: 'zoom' });
   };
   const zoomCentre = factor => {
     const svg = graphSvg();
@@ -561,11 +578,28 @@
      only text receives small local offsets when bounding boxes intersect.
      -------------------------------------------------------------------- */
   let collisionFrame = 0;
+  let collisionSignature = '';
+  let labelCollisionPasses = 0;
+  let labelCollisionPassesWhileCameraMoving = 0;
+  let labelCollisionBoxReads = 0;
+  let labelCollisionCandidateChecks = 0;
+  let labelCollisionWrites = 0;
+  const offsetLabels = new Set();
+  const labelCollisionState = () => {
+    const selectedId = document.querySelector('#site-graph .site-graph-node.is-previewed[data-node-id]')?.dataset.nodeId || '';
+    return `${topologyMode}|${currentLOD || ''}|${selectedId}`;
+  };
+  const invalidateLabelCollisions = () => {
+    collisionSignature = '';
+  };
   const clearAtlasLabelOffsets = () => {
-    document.querySelectorAll('#site-graph .site-graph-label[data-atlas-label-offset]').forEach(label => {
+    offsetLabels.forEach(label => {
+      if (!label.isConnected) return;
       label.removeAttribute('transform');
       delete label.dataset.atlasLabelOffset;
+      labelCollisionWrites += 1;
     });
+    offsetLabels.clear();
   };
   const overlapArea = (a, b, pad = 3) => {
     const left = Math.max(a.left - pad, b.left - pad);
@@ -574,13 +608,40 @@
     const bottom = Math.min(a.bottom + pad, b.bottom + pad);
     return Math.max(0, right - left) * Math.max(0, bottom - top);
   };
-  const resolveAtlasLabelCollisions = () => {
+  const renderedNodePoint = node => {
+    const transform = node.getAttribute('transform') || '';
+    const match = transform.match(/translate\(\s*(-?[\d.]+)[,\s]+(-?[\d.]+)\s*\)/i);
+    return match
+      ? { x: Number(match[1]), y: Number(match[2]) }
+      : { x: Number(node.dataset.x) || 0, y: Number(node.dataset.y) || 0 };
+  };
+  const graphRectForLabel = (node, label) => {
+    const bounds = label.getBBox();
+    labelCollisionBoxReads += 1;
+    const point = renderedNodePoint(node);
+    return {
+      left: point.x + bounds.x,
+      right: point.x + bounds.x + bounds.width,
+      top: point.y + bounds.y,
+      bottom: point.y + bounds.y + bounds.height
+    };
+  };
+  const resolveAtlasLabelCollisions = ({ force = false } = {}) => {
     collisionFrame = 0;
+    // Layout reads (`getBoundingClientRect`) would force SVG work into the
+    // drag frame. A settled-camera event schedules the retained pass instead.
+    if (cameraMotionActive) {
+      labelCollisionPassesWhileCameraMoving += 1;
+      return;
+    }
     const fullEntry = topologyMode === TOPOLOGY_MODES.ENTRY_FULL;
     if (document.body?.dataset.graphMode !== 'atlas' || (!fullEntry && !['near', 'detail'].includes(document.body.dataset.atlasLod))) {
       clearAtlasLabelOffsets();
+      collisionSignature = labelCollisionState();
       return;
     }
+    const signature = labelCollisionState();
+    if (!force && signature === collisionSignature) return;
     clearAtlasLabelOffsets();
     const priority = item => item.node.classList.contains('is-atlas-origin') ? -7 : item.node.classList.contains('is-atlas-predecessor') ? -6 : item.node.classList.contains('is-atlas-successor-primary') ? -5 : item.node.classList.contains('is-previewed') ? -4 : item.node.classList.contains('is-atlas-successor-secondary') ? -3 : item.node.dataset.nodeId === rootId ? -2 : sections.includes(item.node.dataset.nodeId) ? -1 : (depth.get(item.node.dataset.nodeId) ?? 99);
     const candidates = liveNodes()
@@ -588,10 +649,15 @@
       .map(node => ({ node, label: node.querySelector('.site-graph-label') }))
       .filter(item => item.label && getComputedStyle(item.label).opacity !== '0')
       .sort((a, b) => priority(a) - priority(b) || a.node.dataset.nodeId.localeCompare(b.node.dataset.nodeId));
+    const svg = graphSvg();
+    const viewport = svg?.getBoundingClientRect();
+    const graphPad = viewport?.width
+      ? 3 * atlasSize.width / Math.max(1, viewport.width * camera.scale)
+      : 3;
     const placed = [];
     candidates.forEach(({ node, label }) => {
-      let rect = label.getBoundingClientRect();
-      const conflicts = candidate => placed.reduce((sum, other) => sum + overlapArea(candidate, other), 0);
+      let rect = graphRectForLabel(node, label);
+      const conflicts = candidate => placed.reduce((sum, other) => sum + overlapArea(candidate, other, graphPad), 0);
       if (conflicts(rect) <= 0) {
         placed.push(rect);
         return;
@@ -613,25 +679,32 @@
         ]);
       let best = { score: conflicts(rect), offset: null, rect };
       offsets.forEach(offset => {
-        label.setAttribute('transform', `translate(${offset.x.toFixed(1)} ${offset.y.toFixed(1)})`);
-        const candidateRect = label.getBoundingClientRect();
+        labelCollisionCandidateChecks += 1;
+        const candidateRect = {
+          left: rect.left + offset.x,
+          right: rect.right + offset.x,
+          top: rect.top + offset.y,
+          bottom: rect.bottom + offset.y
+        };
         const score = conflicts(candidateRect);
         if (score < best.score) best = { score, offset, rect: candidateRect };
       });
       if (best.offset) {
         label.setAttribute('transform', `translate(${best.offset.x.toFixed(1)} ${best.offset.y.toFixed(1)})`);
         label.dataset.atlasLabelOffset = 'true';
+        offsetLabels.add(label);
+        labelCollisionWrites += 1;
         rect = best.rect;
-      } else {
-        label.removeAttribute('transform');
       }
       placed.push(rect);
     });
+    collisionSignature = signature;
+    labelCollisionPasses += 1;
   };
-  function scheduleLabelCollisionPass() {
+  function scheduleLabelCollisionPass({ force = false } = {}) {
     if (collisionFrame) cancelAnimationFrame(collisionFrame);
     collisionFrame = requestAnimationFrame(() => {
-      collisionFrame = requestAnimationFrame(resolveAtlasLabelCollisions);
+      collisionFrame = requestAnimationFrame(() => resolveAtlasLabelCollisions({ force }));
     });
   }
 
@@ -647,10 +720,14 @@
       delete document.body.dataset.atlasTopology;
       clearAtlasLabelOffsets();
       appliedVisibilitySignature = '';
+      invalidateLabelCollisions();
       previousGraphMode = mode;
       return;
     }
-    if (reason === 'graph-render-settled' || previousGraphMode !== mode) appliedVisibilitySignature = '';
+    if (reason === 'graph-render-settled' || previousGraphMode !== mode) {
+      appliedVisibilitySignature = '';
+      invalidateLabelCollisions();
+    }
     const introMarker = document.documentElement.dataset.profileIntro || '';
     if (previousGraphMode !== 'atlas' && !['pending', 'preparing', 'running'].includes(introMarker)) {
       setTopologyMode(TOPOLOGY_MODES.EXPLORATION_LOD, { reason: 'atlas-route-entry', apply: false });
@@ -669,6 +746,7 @@
       applyLOD(camera.scale);
       scrubLateralHighlight();
       decorateInspector();
+      if (!cameraMotionActive) scheduleLabelCollisionPass();
     });
   };
   addEventListener('profile:scene-state', () => syncAtlasLifecycle('scene-state'));
@@ -678,13 +756,24 @@
     if (document.body?.dataset.graphMode !== 'atlas') return;
     scrubLateralHighlight();
     applyLOD(camera.scale);
-    scheduleLabelCollisionPass();
+    invalidateLabelCollisions();
+    if (!cameraMotionActive) scheduleLabelCollisionPass();
   });
   requestAnimationFrame(() => syncAtlasLifecycle('boot'));
 
-  addEventListener('profile:geometry-applied', scheduleLabelCollisionPass);
-  addEventListener('profile:atlas-lod-change', scheduleLabelCollisionPass);
-  addEventListener('resize', scheduleLabelCollisionPass);
+  addEventListener('profile:atlas-camera-settled', () => scheduleLabelCollisionPass());
+  addEventListener('profile:geometry-applied', () => {
+    invalidateLabelCollisions();
+    if (!cameraMotionActive) scheduleLabelCollisionPass();
+  });
+  addEventListener('profile:atlas-lod-change', () => {
+    invalidateLabelCollisions();
+    if (!cameraMotionActive) scheduleLabelCollisionPass();
+  });
+  addEventListener('resize', () => {
+    invalidateLabelCollisions();
+    if (!cameraMotionActive) scheduleLabelCollisionPass();
+  });
 
   document.addEventListener('change', event => {
     if (document.body?.dataset.graphMode !== 'atlas' || !event.target.closest?.('#atlas-controls input')) return;
@@ -766,6 +855,7 @@
     if (!desktop.matches || document.body?.dataset.graphMode !== 'atlas' || event.button !== 0) return;
     const svg = event.target.closest?.('#site-graph .site-graph-svg');
     if (!svg) return;
+    beginCameraMotion('drag');
     gesture = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, moved: false };
     svg.classList.add('is-phase7-dragging');
     event.stopImmediatePropagation();
@@ -783,7 +873,10 @@
     const dy = pixelDy * atlasSize.height / Math.max(1, rect.height);
     gesture.x = event.clientX;
     gesture.y = event.clientY;
-    setCamera({ x: camera.targetX + dx, y: camera.targetY + dy, scale: camera.targetScale }, { immediate: true });
+    setCamera(
+      { x: camera.targetX + dx, y: camera.targetY + dy, scale: camera.targetScale },
+      { immediate: true, deferSettlement: true, source: 'drag' }
+    );
     event.preventDefault();
     event.stopImmediatePropagation();
   }, true);
@@ -793,6 +886,7 @@
     const svg = graphSvg();
     svg?.classList.remove('is-phase7-dragging');
     gesture = null;
+    settleCameraMotion({ immediate: true, source: 'drag' });
   };
   document.addEventListener('pointerup', endGesture, true);
   document.addEventListener('pointercancel', endGesture, true);
@@ -817,7 +911,8 @@
       if (!preserveTopology) setTopologyMode(TOPOLOGY_MODES.EXPLORATION_LOD, { reason: 'pan-to', apply: false });
       return setCamera({ x, y, scale: camera.targetScale }, { immediate });
     },
-    resolveLabelCollisions: resolveAtlasLabelCollisions,
+    resolveLabelCollisions: () => resolveAtlasLabelCollisions({ force: true }),
+    ownsDesktopInput: () => desktop.matches && document.body?.dataset.graphMode === 'atlas',
     snapshot: () => ({
       lod: currentLOD,
       topologyMode,
@@ -830,6 +925,12 @@
       visibleNodeCount,
       hiddenNodeCount,
       territoryLabels: document.querySelectorAll('.atlas-territory-label').length,
+      labelCollisionPasses,
+      labelCollisionPassesWhileCameraMoving,
+      labelCollisionBoxReads,
+      labelCollisionCandidateChecks,
+      labelCollisionWrites,
+      cameraMotionActive,
       selectedNodeId: document.querySelector('#site-graph .site-graph-node.is-previewed[data-node-id]')?.dataset.nodeId || null
     })
   });

@@ -33,6 +33,14 @@ test.describe('Intro interactivity and Atlas relation colors', () => {
 
     await page.waitForFunction(() => window.ProfileIntro?.snapshot?.().state === 'ATLAS_READY', null, { timeout: 10_000 });
 
+    const revealDuration = await page.evaluate(() => {
+      const snapshot = window.ProfileIntro.snapshot();
+      return snapshot.readyAt - snapshot.startedAt;
+    });
+    // Decorative reveal should not delay the first useful profile action for
+    // multiple seconds once the live Atlas is visible.
+    expect(revealDuration).toBeLessThan(1_600);
+
     const afterReady = await page.evaluate(() => ({
       workPointerEvents: getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="work"]')).pointerEvents,
       rootPointerEvents: getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"]')).pointerEvents

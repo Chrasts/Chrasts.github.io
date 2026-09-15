@@ -35,6 +35,23 @@
     mainBranchEdges().forEach(path => { path.dataset.profileMainEdge = 'true'; });
   };
 
+  // The Atlas → local transition replaces the SVG while an earlier profile
+  // emergence can still have a scheduled frame. Never let that old frame keep
+  // a newly-rendered root edge in its dashed/transparent intermediate state.
+  const restoreMainBranchEdges = () => {
+    cancelAnimationFrame(branchEdgeFrame);
+    branchEdgeFrame = 0;
+    mainBranchEdges().forEach(path => {
+      if (path.dataset.profileMainEdge !== 'true') return;
+      path.removeAttribute('pathLength');
+      path.style.removeProperty('stroke-dasharray');
+      path.style.removeProperty('stroke-dashoffset');
+      path.style.removeProperty('opacity');
+      path.style.removeProperty('visibility');
+    });
+    if (document.body) document.body.dataset.profileBranchEdgePhase = 'settled';
+  };
+
   const drawMainBranchEdges = () => {
     cancelAnimationFrame(branchEdgeFrame);
     branchEdgeFrame = 0;
@@ -114,7 +131,14 @@
   addEventListener('profile:profile-root-emergence', event => syncEmergencePhase(event.detail?.phase));
   addEventListener('profile:graph-render-settled', () => {
     refineProfileRootCopy();
-    if (document.body?.classList.contains('is-profile-root-emerging')) markMainBranchEdges();
+    if (document.body?.classList.contains('is-profile-root-emerging')) {
+      markMainBranchEdges();
+      return;
+    }
+    // Rendering any new graph is a hard lifecycle boundary. In particular,
+    // it covers a second Atlas click into a local segment and a subsequent
+    // return to the profile root.
+    requestAnimationFrame(restoreMainBranchEdges);
   });
 
   const boot = () => {
@@ -127,6 +151,7 @@
   window.ProfileMotionRefinements = Object.freeze({
     refineProfileRootCopy,
     drawMainBranchEdges,
+    restoreMainBranchEdges,
     snapshot: () => ({
       active: false,
       phase: null,

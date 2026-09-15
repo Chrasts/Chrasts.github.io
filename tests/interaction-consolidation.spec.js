@@ -58,7 +58,7 @@ test.describe('Final graph interaction consolidation', () => {
     expect(result.maxY).toBeLessThanOrEqual(1450);
     expect(result.knowledge.x).toBeGreaterThan(result.root.x + 250);
     expect(result.education.y).toBeLessThan(result.root.y - 150);
-    expect(result.about.y).toBeLessThan(result.root.y - 150);
+    expect(result.about.x).toBeLessThan(result.root.x - 250);
   });
 
   test('keeps deep primary-path labels to the right and stable after transitions', async ({ page }) => {

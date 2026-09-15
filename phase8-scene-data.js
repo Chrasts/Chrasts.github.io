@@ -4,10 +4,22 @@
     Object.values(value).forEach(freeze);
     return Object.freeze(value);
   };
+  const site = window.SITE_DATA || {};
 
   const data = {
     experience: {
       nodeIds: ['escape-room', 'student-ball', 'ceske-priority']
+    },
+    education: {
+      bsc: {
+        nodeId: 'charles-university',
+        thesisNodeId: 'project-bachelor-thesis',
+        courseEvidence: site.semantics?.education?.courseEvidence || []
+      },
+      msc: {
+        nodeId: 'charles-university-masters-logic',
+        evidencePolicy: 'Course evidence appears here only after it is completed or recognized in canonical study data.'
+      }
     },
     certifications: {
       nodeId: 'credentials',
@@ -60,7 +72,8 @@
       title: 'prg.ai Minor',
       subtitle: 'Inter-university AI minor',
       note: 'Shown as upcoming study context. Planned coursework is not treated as already mastered.',
-      links: ['ai-methods', 'programming-automation', 'data-analysis']
+      links: ['ai-methods', 'programming-automation', 'data-analysis'],
+      blocks: site.semantics?.education?.prgAiBlocks || []
     }
   };
 

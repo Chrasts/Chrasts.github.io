@@ -65,8 +65,8 @@ test.describe('Integrated artifact viewer media contract', () => {
       return { width: rect.width, height: rect.height, fit: frame.dataset.objectFocusFit, src: frame.getAttribute('src') };
     });
 
-    expect(early.fit).toBe('contain');
-    expect(settled.fit).toBe('contain');
+    expect(early.fit).toBe('reading');
+    expect(settled.fit).toBe('reading');
     expect(Math.abs(early.width - settled.width)).toBeLessThan(2);
     expect(Math.abs(early.height - settled.height)).toBeLessThan(2);
     expect(settled.src).toBe(early.src);
@@ -90,7 +90,7 @@ test.describe('Integrated artifact viewer media contract', () => {
     const focused = page.locator('.artifact-focus-viewer .artifact-focus-media iframe');
     await expect(focused).toBeVisible();
     await expect(focused).toHaveAttribute('src', /congruence-lattice-problem\.pdf#/);
-    await expect(focused).toHaveAttribute('data-object-focus-fit', 'contain');
+    await expect(focused).toHaveAttribute('data-object-focus-fit', 'reading');
     expect(await focused.evaluate(frame => getComputedStyle(frame).pointerEvents)).not.toBe('none');
     const bounds = await focused.boundingBox();
     expect(bounds.width).toBeGreaterThan(250);
@@ -115,7 +115,13 @@ test.describe('Integrated artifact viewer media contract', () => {
     expect(state.loop).toBe(true);
     expect(state.controls).toBe(true);
     expect(state.playsInline).toBe(true);
+    // Headless Chromium intentionally has no H.264 demuxer in this test
+    // environment, so it exercises the native-source fallback here.
     expect(state.src).toMatch(/assets\/video\/work\/axiom-wilds\/demo-gameplay\.mp4$/);
+    expect(await page.evaluate(() => window.ProfileArtifacts.get('axiom-wilds-gameplay').source.path))
+      .toMatch(/assets\/video\/work\/axiom-wilds\/demo-gameplay\.web\.mp4$/);
+    expect(await page.evaluate(() => window.ProfileArtifacts.get('axiom-wilds-gameplay').source.fallbackPath))
+      .toMatch(/assets\/video\/work\/axiom-wilds\/demo-gameplay\.mp4$/);
     await page.waitForFunction(async () => {
       const media = document.querySelector('[data-artifact-scene="axiom-wilds-gameplay"] video[data-artifact-inline-video]');
       if (!media) return false;

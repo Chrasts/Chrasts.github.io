@@ -1,0 +1,494 @@
+{
+  "generatedAt": "2026-09-13T22:02:34.145Z",
+  "baseURL": "http://127.0.0.1:4173",
+  "runs": 1,
+  "samples": [
+    {
+      "run": 1,
+      "scenario": "overview",
+      "readyMs": 314.19,
+      "requestCount": 51,
+      "transferBytes": 734551,
+      "failedRequests": 0,
+      "failedRequestURLs": [],
+      "domNodes": 354,
+      "jsHeapBytes": 3900552,
+      "longTaskCount": 1,
+      "longTaskTotalMs": 76,
+      "longTaskMaxMs": 76,
+      "lcpMs": 216,
+      "cls": 0.0015,
+      "frameP95Ms": 16.7,
+      "frameMaxMs": 16.8,
+      "frameOverBudget": 0,
+      "pageErrors": []
+    },
+    {
+      "run": 1,
+      "scenario": "atlas",
+      "readyMs": 523.93,
+      "requestCount": 60,
+      "transferBytes": 895013,
+      "failedRequests": 0,
+      "failedRequestURLs": [],
+      "domNodes": 976,
+      "jsHeapBytes": 3322808,
+      "longTaskCount": 4,
+      "longTaskTotalMs": 286,
+      "longTaskMaxMs": 109,
+      "lcpMs": 116,
+      "cls": 0.0053,
+      "frameP95Ms": 83.3,
+      "frameMaxMs": 150,
+      "frameOverBudget": 17,
+      "pageErrors": []
+    },
+    {
+      "run": 1,
+      "scenario": "local-focus",
+      "readyMs": 338.16,
+      "requestCount": 51,
+      "transferBytes": 734551,
+      "failedRequests": 0,
+      "failedRequestURLs": [],
+      "domNodes": 385,
+      "jsHeapBytes": 3446388,
+      "longTaskCount": 1,
+      "longTaskTotalMs": 78,
+      "longTaskMaxMs": 78,
+      "lcpMs": 144,
+      "cls": 0.001,
+      "frameP95Ms": 16.7,
+      "frameMaxMs": 16.8,
+      "frameOverBudget": 0,
+      "pageErrors": []
+    },
+    {
+      "run": 1,
+      "scenario": "artifact-route",
+      "readyMs": 516.55,
+      "requestCount": 63,
+      "transferBytes": 893039,
+      "failedRequests": 0,
+      "failedRequestURLs": [],
+      "domNodes": 535,
+      "jsHeapBytes": 3752784,
+      "longTaskCount": 2,
+      "longTaskTotalMs": 138,
+      "longTaskMaxMs": 81,
+      "lcpMs": 144,
+      "cls": 0.0175,
+      "frameP95Ms": 16.8,
+      "frameMaxMs": 33.2,
+      "frameOverBudget": 1,
+      "pageErrors": []
+    },
+    {
+      "run": 1,
+      "scenario": "fresh-intro",
+      "readyMs": 2244.8,
+      "requestCount": 62,
+      "transferBytes": 944931,
+      "failedRequests": 0,
+      "failedRequestURLs": [],
+      "domNodes": 979,
+      "jsHeapBytes": 3332252,
+      "longTaskCount": 8,
+      "longTaskTotalMs": 641,
+      "longTaskMaxMs": 110,
+      "lcpMs": 688,
+      "cls": 0.3958,
+      "frameP95Ms": 83.4,
+      "frameMaxMs": 100,
+      "frameOverBudget": 7,
+      "pageErrors": []
+    }
+  ],
+  "scenarios": {
+    "overview": {
+      "run": {
+        "median": 1,
+        "p95": 1,
+        "max": 1
+      },
+      "readyMs": {
+        "median": 314.19,
+        "p95": 314.19,
+        "max": 314.19
+      },
+      "requestCount": {
+        "median": 51,
+        "p95": 51,
+        "max": 51
+      },
+      "transferBytes": {
+        "median": 734551,
+        "p95": 734551,
+        "max": 734551
+      },
+      "failedRequests": {
+        "median": 0,
+        "p95": 0,
+        "max": 0
+      },
+      "domNodes": {
+        "median": 354,
+        "p95": 354,
+        "max": 354
+      },
+      "jsHeapBytes": {
+        "median": 3900552,
+        "p95": 3900552,
+        "max": 3900552
+      },
+      "longTaskCount": {
+        "median": 1,
+        "p95": 1,
+        "max": 1
+      },
+      "longTaskTotalMs": {
+        "median": 76,
+        "p95": 76,
+        "max": 76
+      },
+      "longTaskMaxMs": {
+        "median": 76,
+        "p95": 76,
+        "max": 76
+      },
+      "lcpMs": {
+        "median": 216,
+        "p95": 216,
+        "max": 216
+      },
+      "cls": {
+        "median": 0,
+        "p95": 0,
+        "max": 0
+      },
+      "frameP95Ms": {
+        "median": 16.7,
+        "p95": 16.7,
+        "max": 16.7
+      },
+      "frameMaxMs": {
+        "median": 16.8,
+        "p95": 16.8,
+        "max": 16.8
+      },
+      "frameOverBudget": {
+        "median": 0,
+        "p95": 0,
+        "max": 0
+      }
+    },
+    "atlas": {
+      "run": {
+        "median": 1,
+        "p95": 1,
+        "max": 1
+      },
+      "readyMs": {
+        "median": 523.93,
+        "p95": 523.93,
+        "max": 523.93
+      },
+      "requestCount": {
+        "median": 60,
+        "p95": 60,
+        "max": 60
+      },
+      "transferBytes": {
+        "median": 895013,
+        "p95": 895013,
+        "max": 895013
+      },
+      "failedRequests": {
+        "median": 0,
+        "p95": 0,
+        "max": 0
+      },
+      "domNodes": {
+        "median": 976,
+        "p95": 976,
+        "max": 976
+      },
+      "jsHeapBytes": {
+        "median": 3322808,
+        "p95": 3322808,
+        "max": 3322808
+      },
+      "longTaskCount": {
+        "median": 4,
+        "p95": 4,
+        "max": 4
+      },
+      "longTaskTotalMs": {
+        "median": 286,
+        "p95": 286,
+        "max": 286
+      },
+      "longTaskMaxMs": {
+        "median": 109,
+        "p95": 109,
+        "max": 109
+      },
+      "lcpMs": {
+        "median": 116,
+        "p95": 116,
+        "max": 116
+      },
+      "cls": {
+        "median": 0.01,
+        "p95": 0.01,
+        "max": 0.01
+      },
+      "frameP95Ms": {
+        "median": 83.3,
+        "p95": 83.3,
+        "max": 83.3
+      },
+      "frameMaxMs": {
+        "median": 150,
+        "p95": 150,
+        "max": 150
+      },
+      "frameOverBudget": {
+        "median": 17,
+        "p95": 17,
+        "max": 17
+      }
+    },
+    "local-focus": {
+      "run": {
+        "median": 1,
+        "p95": 1,
+        "max": 1
+      },
+      "readyMs": {
+        "median": 338.16,
+        "p95": 338.16,
+        "max": 338.16
+      },
+      "requestCount": {
+        "median": 51,
+        "p95": 51,
+        "max": 51
+      },
+      "transferBytes": {
+        "median": 734551,
+        "p95": 734551,
+        "max": 734551
+      },
+      "failedRequests": {
+        "median": 0,
+        "p95": 0,
+        "max": 0
+      },
+      "domNodes": {
+        "median": 385,
+        "p95": 385,
+        "max": 385
+      },
+      "jsHeapBytes": {
+        "median": 3446388,
+        "p95": 3446388,
+        "max": 3446388
+      },
+      "longTaskCount": {
+        "median": 1,
+        "p95": 1,
+        "max": 1
+      },
+      "longTaskTotalMs": {
+        "median": 78,
+        "p95": 78,
+        "max": 78
+      },
+      "longTaskMaxMs": {
+        "median": 78,
+        "p95": 78,
+        "max": 78
+      },
+      "lcpMs": {
+        "median": 144,
+        "p95": 144,
+        "max": 144
+      },
+      "cls": {
+        "median": 0,
+        "p95": 0,
+        "max": 0
+      },
+      "frameP95Ms": {
+        "median": 16.7,
+        "p95": 16.7,
+        "max": 16.7
+      },
+      "frameMaxMs": {
+        "median": 16.8,
+        "p95": 16.8,
+        "max": 16.8
+      },
+      "frameOverBudget": {
+        "median": 0,
+        "p95": 0,
+        "max": 0
+      }
+    },
+    "artifact-route": {
+      "run": {
+        "median": 1,
+        "p95": 1,
+        "max": 1
+      },
+      "readyMs": {
+        "median": 516.55,
+        "p95": 516.55,
+        "max": 516.55
+      },
+      "requestCount": {
+        "median": 63,
+        "p95": 63,
+        "max": 63
+      },
+      "transferBytes": {
+        "median": 893039,
+        "p95": 893039,
+        "max": 893039
+      },
+      "failedRequests": {
+        "median": 0,
+        "p95": 0,
+        "max": 0
+      },
+      "domNodes": {
+        "median": 535,
+        "p95": 535,
+        "max": 535
+      },
+      "jsHeapBytes": {
+        "median": 3752784,
+        "p95": 3752784,
+        "max": 3752784
+      },
+      "longTaskCount": {
+        "median": 2,
+        "p95": 2,
+        "max": 2
+      },
+      "longTaskTotalMs": {
+        "median": 138,
+        "p95": 138,
+        "max": 138
+      },
+      "longTaskMaxMs": {
+        "median": 81,
+        "p95": 81,
+        "max": 81
+      },
+      "lcpMs": {
+        "median": 144,
+        "p95": 144,
+        "max": 144
+      },
+      "cls": {
+        "median": 0.02,
+        "p95": 0.02,
+        "max": 0.02
+      },
+      "frameP95Ms": {
+        "median": 16.8,
+        "p95": 16.8,
+        "max": 16.8
+      },
+      "frameMaxMs": {
+        "median": 33.2,
+        "p95": 33.2,
+        "max": 33.2
+      },
+      "frameOverBudget": {
+        "median": 1,
+        "p95": 1,
+        "max": 1
+      }
+    },
+    "fresh-intro": {
+      "run": {
+        "median": 1,
+        "p95": 1,
+        "max": 1
+      },
+      "readyMs": {
+        "median": 2244.8,
+        "p95": 2244.8,
+        "max": 2244.8
+      },
+      "requestCount": {
+        "median": 62,
+        "p95": 62,
+        "max": 62
+      },
+      "transferBytes": {
+        "median": 944931,
+        "p95": 944931,
+        "max": 944931
+      },
+      "failedRequests": {
+        "median": 0,
+        "p95": 0,
+        "max": 0
+      },
+      "domNodes": {
+        "median": 979,
+        "p95": 979,
+        "max": 979
+      },
+      "jsHeapBytes": {
+        "median": 3332252,
+        "p95": 3332252,
+        "max": 3332252
+      },
+      "longTaskCount": {
+        "median": 8,
+        "p95": 8,
+        "max": 8
+      },
+      "longTaskTotalMs": {
+        "median": 641,
+        "p95": 641,
+        "max": 641
+      },
+      "longTaskMaxMs": {
+        "median": 110,
+        "p95": 110,
+        "max": 110
+      },
+      "lcpMs": {
+        "median": 688,
+        "p95": 688,
+        "max": 688
+      },
+      "cls": {
+        "median": 0.4,
+        "p95": 0.4,
+        "max": 0.4
+      },
+      "frameP95Ms": {
+        "median": 83.4,
+        "p95": 83.4,
+        "max": 83.4
+      },
+      "frameMaxMs": {
+        "median": 100,
+        "p95": 100,
+        "max": 100
+      },
+      "frameOverBudget": {
+        "median": 7,
+        "p95": 7,
+        "max": 7
+      }
+    }
+  }
+}

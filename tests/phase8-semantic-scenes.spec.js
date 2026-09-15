@@ -67,7 +67,9 @@ test('Phase 8 ESSLLI scene renders the selected timetable and semantic topic lin
   const timetable = page.locator('[data-phase8-object="esslli-timetable"]');
   await expect(timetable).toBeVisible();
   await expect(timetable.locator('.phase8-timetable-week')).toHaveCount(2);
-  await expect(timetable.locator('.phase8-course-cell')).toHaveCount(6);
+  // Only five attended/selected ESSLLI sessions are currently canonical.
+  // Keep this conservative instead of inventing a sixth course for layout.
+  await expect(timetable.locator('.phase8-course-cell')).toHaveCount(5);
   await expect(timetable).toContainText('Introduction to SAT and SMT Solving');
   const computationalLinks = timetable.locator('[data-route="knowledge/logic-math/mathematical-logic/computational-logic"]');
   expect(await computationalLinks.count()).toBeGreaterThan(0);

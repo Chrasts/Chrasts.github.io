@@ -15,21 +15,25 @@
     for (const character of String(value)) number = Math.imul(number ^ character.charCodeAt(0), 16777619);
     return number >>> 0;
   };
+  const stableNoise = value => (stableNumber(value) / 4294967295) * 2 - 1;
 
-  // Canonical fan-v4. Experience is the compact upper-left territory; About
-  // owns the broad western lane so its larger family can breathe sideways.
+  // Canonical profile compass: Knowledge owns the eastern lane while About
+  // occupies the broad western lane.
   const compass = Object.freeze({
     work: normalise({ x: .12, y: 1 }),
     knowledge: normalise({ x: 1, y: -.13 }),
     experience: normalise({ x: -.42, y: -.91 }),
     education: normalise({ x: .42, y: -.91 }),
-    about: normalise({ x: -1, y: .06 })
+    about: normalise({ x: -1, y: 0 })
   });
 
   const OVERVIEW = Object.freeze({ width: 1200, height: 720, center: { x: 600, y: 350 } });
   // Leave a deliberate breathing ring around the root: the five section
   // anchors must clear its halo in both the intro and the live Atlas.
-  const ATLAS = Object.freeze({ width: 2800, height: 1540, center: { x: 1400, y: 770 }, sectionRadius: 370 });
+  // Keep the complete semantic field inside the renderer's compact canonical
+  // viewBox. Scaling field positions here avoids a wider SVG/camera surface
+  // merely because a new deep Knowledge specialization is present.
+  const ATLAS = Object.freeze({ width: 2520, height: 1540, center: { x: 1260, y: 770 }, sectionRadius: 370 });
   const halfAngles = Object.freeze({ work: 0.80, knowledge: 0.78, experience: 0.46, education: 0.62, about: 0.84 });
   const overviewRadius = id => {
     const mobile = window.matchMedia('(max-width: 900px)').matches;
@@ -174,34 +178,30 @@
         const span = Math.min(tangentialCapacity * 2, desiredGap * Math.max(0, level.length - 1));
 
         level.forEach((node, index) => {
-          const baseTangent = level.length <= 1 ? 0 : -span / 2 + span * index / (level.length - 1);
+          // Warp sibling ranks and add a stable per-node offset. This keeps
+          // the map deterministic while breaking conventional radial-tree
+          // rows, so each territory fills its available field more naturally.
+          const rank = level.length <= 1 ? .5 : index / (level.length - 1);
+          const warpedRank = Math.max(0, Math.min(1,
+            rank + stableNoise(`${node.id}:rank`) * .17 * Math.sin(Math.PI * rank)
+          ));
+          const baseTangent = level.length <= 1 ? 0 : -span / 2 + span * warpedRank;
           const leaf = !hasChildInSection(node.id, sectionId);
-          const seed = stableNumber(`${node.id}:terminal`);
-          const tangentVariance = sectionId === 'work'
-            ? 0
-            : leaf
-              ? ((seed >>> 9) % (sectionId === 'knowledge' ? 31 : 23)) - (sectionId === 'knowledge' ? 15 : 11)
-              : ((seed >>> 12) % 11) - 5;
+          const tangentAmplitude = sectionId === 'knowledge' ? 86
+            : sectionId === 'work' ? 72
+              : leaf ? 68 : 48;
+          const tangentVariance = stableNoise(`${node.id}:tangent`) * tangentAmplitude;
           const tangential = baseTangent + tangentVariance;
 
-          let radialJitter = 0;
-          if (sectionId === 'work') {
-            radialJitter = ((stableNumber(`${node.id}:r`) % 11) - 5);
-          } else if (leaf) {
-            // Keep each non-Work territory as an organic field rather than
-            // a stack of ruler-straight generations. The bounded, stable
-            // ripple gives siblings distinct radial levels without reverting
-            // to the earlier satellite-like scatter. Work stays aligned above.
-            const ripple = ((seed >>> 7) % 5) - 2;
-            const amplitude = sectionId === 'knowledge' ? 34 : 27;
-            radialJitter = ripple * amplitude + ((seed % 17) - 8);
-            if (depth === maxDepth) radialJitter += ((seed >>> 16) % 19) - 9;
-          } else {
-            const ripple = ((stableNumber(`${node.id}:r`) >>> 5) % 3) - 1;
-            radialJitter = ripple * 18 + ((stableNumber(`${node.id}:r`) % 15) - 7);
-          }
+          const radialAmplitude = sectionId === 'knowledge' ? 92
+            : sectionId === 'work' ? 74
+              : leaf ? 76 : 54;
+          // Independent radial noise prevents correlated stripes while the
+          // lower bound preserves an outward progression by graph depth.
+          const radialJitter = stableNoise(`${node.id}:radial`) * radialAmplitude +
+            stableNoise(`${node.id}:radial-fine`) * 18;
 
-          const radial = Math.min(usable, Math.max(baseRadius - 28, baseRadius + radialJitter));
+          const radial = Math.min(usable, Math.max(baseRadius - 44, baseRadius + radialJitter));
           positions.set(node.id, {
             x: ATLAS.center.x + vector.x * radial + perpendicular.x * tangential,
             y: ATLAS.center.y + vector.y * radial + perpendicular.y * tangential

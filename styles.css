@@ -958,6 +958,22 @@ button:focus-visible{
   opacity:.48;
   vector-effect:non-scaling-stroke
 }
+.site-graph-semantic-guide{pointer-events:none}
+.site-graph-semantic-guide-line{stroke:var(--brown);stroke-width:1.1;opacity:.42;vector-effect:non-scaling-stroke}
+.site-graph-semantic-guide.is-trajectory .site-graph-semantic-guide-line,.site-graph-semantic-guide.is-axis .site-graph-semantic-guide-line{stroke-width:1.35;opacity:.58}
+.site-graph-semantic-guide.is-branch .site-graph-semantic-guide-line,.site-graph-semantic-guide.is-evidence .site-graph-semantic-guide-line{stroke-dasharray:3 4;opacity:.44}
+.site-graph-semantic-guide.is-duration .site-graph-semantic-guide-line{stroke:var(--teal);stroke-width:2;opacity:.38}
+.site-graph-semantic-guide.is-duration .site-graph-semantic-guide-line.is-current{opacity:.9;stroke-width:2.7}
+.site-graph-semantic-guide.is-active-semantic .site-graph-semantic-guide-line{stroke:var(--teal);stroke-width:3.1;opacity:1}
+.site-graph-semantic-guide.is-present .site-graph-semantic-guide-line{stroke:var(--teal);stroke-width:1.7;opacity:.85}
+.site-graph-semantic-guide.is-tick .site-graph-semantic-guide-line{opacity:.55}
+.site-graph-semantic-guide-label{fill:var(--muted);font:700 8px var(--sans);letter-spacing:.08em;text-transform:uppercase;pointer-events:none}
+.site-graph-evidence-object{cursor:pointer;outline:none}
+.site-graph-evidence-dot{fill:var(--paper);stroke:var(--teal);stroke-width:1.5;vector-effect:non-scaling-stroke;transition:fill .18s ease,transform .18s ease}
+.site-graph-evidence-label{fill:var(--ink);font:750 9px var(--sans);letter-spacing:.015em;pointer-events:none}
+.site-graph-evidence-meta{fill:var(--muted);font:650 7px var(--sans);letter-spacing:.045em;text-transform:uppercase;pointer-events:none}
+.site-graph-evidence-object:hover .site-graph-evidence-dot,.site-graph-evidence-object:focus-visible .site-graph-evidence-dot,.site-graph-evidence-object.is-evidence-active .site-graph-evidence-dot{fill:var(--teal);transform:scale(1.32)}
+.site-graph-evidence-object:hover .site-graph-evidence-label,.site-graph-evidence-object:focus-visible .site-graph-evidence-label,.site-graph-evidence-object.is-evidence-active .site-graph-evidence-label{fill:var(--teal)}
 .site-graph-node{cursor:pointer;outline:none;transition:opacity .24s ease}
 .site-graph-node.is-muted{opacity:.45}
 .site-graph-dot{
@@ -1161,7 +1177,9 @@ html,
 body{min-height:100%;overflow-x:hidden}
 .app-header{
   position:relative;
-  z-index:50;
+  /* Navigation remains an escape route even while Object Focus owns its
+     full-screen visual layer (z-index 90). */
+  z-index:120;
   width:min(1440px,calc(100% - 40px));
   height:62px;
   margin:0 auto;
@@ -1592,4 +1610,27 @@ body[data-graph-mode="work"] #site-explorer{display:block}
   .scene-detail,
   #work .work-detail-panel{transition:opacity .08s ease!important}
   #work.is-scene-entering *{animation:none!important}
+}
+
+/* Theme changes are colour-only: graph geometry, camera movement and existing
+   interaction transforms remain untouched. The class exists for one short
+   toggle, rather than making every hover state slower all the time. */
+html.is-theme-transitioning,
+html.is-theme-transitioning body,
+html.is-theme-transitioning body *,
+html.is-theme-transitioning body *::before,
+html.is-theme-transitioning body *::after{
+  transition-property:background-color,border-color,color,fill,stroke,outline-color,box-shadow,text-decoration-color!important;
+  transition-duration:240ms!important;
+  transition-timing-function:cubic-bezier(.2,.7,.2,1)!important;
+}
+
+@media (prefers-reduced-motion:reduce){
+  html.is-theme-transitioning,
+  html.is-theme-transitioning body,
+  html.is-theme-transitioning body *,
+  html.is-theme-transitioning body *::before,
+  html.is-theme-transitioning body *::after{
+    transition-duration:0ms!important;
+  }
 }

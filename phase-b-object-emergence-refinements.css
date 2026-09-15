@@ -51,7 +51,6 @@
     right:clamp(92px,10vw,150px)!important;
     left:auto!important
   }
-
   /* Work side rails are visually narrow but their scene object owns a larger
      hit area. Keep ambient media above that hit plane. During Inspect the focus
      layer must regain ownership, so this rule explicitly excludes that state. */

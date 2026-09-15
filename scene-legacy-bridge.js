@@ -7,8 +7,10 @@
   const rootId = window.SITE_DATA?.graph?.rootId || 'stepan-chrast';
   const routeNodeMap = new Map(graphNodes.filter(node => node.route).map(node => [node.route, node]));
 
-  const normaliseRoute = value =>
-    (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
+  const normaliseRoute = value => {
+    const route = (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
+    return window.SITE_DATA?.graph?.routeAliases?.[route] || route;
+  };
 
   const currentRoute = () => normaliseRoute(document.body.dataset.graphRoute || location.hash);
   const currentMode = () => document.body.dataset.graphMode || 'overview';
@@ -387,7 +389,9 @@
 
   const phase8RoutePrefixes = [
     'experience',
-    'education/charles-university/coursework',
+    'education/charles-university',
+    'education/charles-university-masters-logic',
+    'education/charles-university/academic-work',
     'education/credentials',
     'education/esslli',
     'education/prg-ai'

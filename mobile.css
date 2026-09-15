@@ -217,7 +217,7 @@
     display:block!important;
     position:absolute!important;
     top:52px!important;
-    right:max(14px,env(safe-area-inset-right))!important;
+    right:max(24px,env(safe-area-inset-right))!important;
     width:82px!important;
     height:82px!important;
     pointer-events:auto!important;

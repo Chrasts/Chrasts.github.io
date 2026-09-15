@@ -131,6 +131,55 @@ test.describe('Phase 7 Atlas semantic zoom', () => {
     expect(snap.topologyBounds.width).toBeGreaterThan(1000);
   });
 
+  test('one desktop drag owns the camera while node dynamics and label layout wait for release', async ({ page }) => {
+    await page.waitForTimeout(160);
+    const svg = page.locator('#site-graph .site-graph-svg');
+    const box = await svg.boundingBox();
+    expect(box).not.toBeNull();
+    const before = await page.evaluate(() => ({
+      camera: window.ProfileAtlasLOD.snapshot().camera,
+      labelPasses: window.ProfileAtlasLOD.snapshot().labelCollisionPasses
+    }));
+
+    await page.mouse.move(box.x + box.width * .82, box.y + box.height * .78);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width * .90, box.y + box.height * .84, { steps: 5 });
+    await expect.poll(() => page.evaluate(() => window.ProfileNodeDynamics.snapshot().suspended)).toBe(true);
+    const during = await page.evaluate(() => ({
+      atlas: window.ProfileAtlasLOD.snapshot(),
+      dynamics: window.ProfileNodeDynamics.snapshot()
+    }));
+    expect(during.atlas.cameraMotionActive).toBe(true);
+    expect(during.atlas.labelCollisionPassesWhileCameraMoving).toBe(0);
+    // A single owner maps the screen movement once; the former fallback
+    // would apply a second camera pan on the same gesture.
+    expect(Math.abs(during.atlas.camera.x - before.camera.x)).toBeLessThan(300);
+    expect(Math.abs(during.atlas.camera.y - before.camera.y)).toBeLessThan(230);
+
+    await page.mouse.up();
+    await expect.poll(() => page.evaluate(() => window.ProfileNodeDynamics.snapshot().suspended)).toBe(false);
+    await expect.poll(() => page.evaluate(() => window.ProfileAtlasLOD.snapshot().cameraMotionActive)).toBe(false);
+  });
+
+  test('label collision search measures each visible label once, not every candidate position', async ({ page }) => {
+    await page.evaluate(() => window.ProfileAtlasLOD.setScale(1.5, { immediate: true }));
+    await page.waitForTimeout(100);
+    const result = await page.evaluate(() => {
+      const before = window.ProfileAtlasLOD.snapshot();
+      window.ProfileAtlasLOD.resolveLabelCollisions();
+      const after = window.ProfileAtlasLOD.snapshot();
+      const visibleLabels = [...document.querySelectorAll('#site-graph .site-graph-node:not(.is-atlas-lod-hidden) .site-graph-label')]
+        .filter(label => getComputedStyle(label).opacity !== '0').length;
+      return { before, after, visibleLabels };
+    });
+    expect(result.after.labelCollisionBoxReads - result.before.labelCollisionBoxReads).toBe(result.visibleLabels);
+    expect(result.after.labelCollisionCandidateChecks - result.before.labelCollisionCandidateChecks).toBeGreaterThan(0);
+    // Only final accepted offsets write SVG attributes; candidate exploration
+    // is now arithmetic rather than write → forced-layout → read.
+    expect(result.after.labelCollisionWrites - result.before.labelCollisionWrites)
+      .toBeLessThan(result.after.labelCollisionCandidateChecks - result.before.labelCollisionCandidateChecks);
+  });
+
   test('layer toggles keep the camera fixed and change actual rendered relations', async ({ page }) => {
     await page.evaluate(() => {
       window.ProfileAtlasLOD.setScale(1.55, { immediate: true });
@@ -179,19 +228,20 @@ test.describe('Phase 7 Atlas semantic zoom', () => {
     expect(points.education.x).toBeLessThan(points.knowledge.x - 120);
   });
 
-  test('targeted Work theme labels are separated by the collision pass', async ({ page }) => {
-    await page.evaluate(() => {
-      window.ProfileAtlasLOD.setScale(1.1, { immediate: true });
-      window.ProfileAtlasLOD.resolveLabelCollisions();
-    });
-    const rects = await page.evaluate(() => {
-      const rect = id => {
-        const label = document.querySelector(`#site-graph .site-graph-node[data-node-id="${id}"] .site-graph-label`).getBoundingClientRect();
-        return { left: label.left, right: label.right, top: label.top, bottom: label.bottom };
-      };
-      return { logic: rect('work-theme-logic'), communication: rect('work-theme-education') };
-    });
-    expect(rectOverlap(rects.logic, rects.communication)).toBeLessThan(4);
+  test('Work FCA themes stay inside the Work exploration layer, not the global Atlas', async ({ page }) => {
+    const state = await page.evaluate(() => ({
+      graphThemeNodes: window.SITE_DATA.graph.nodes.filter(node =>
+        node.type === 'work-theme' || node.id.startsWith('work-theme-')
+      ).map(node => node.id),
+      atlasThemeNodes: [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id^="work-theme-"]')]
+        .map(node => node.dataset.nodeId),
+      projectParents: window.SITE_DATA.graph.nodes
+        .filter(node => node.type === 'project')
+        .map(node => node.parentIds)
+    }));
+    expect(state.graphThemeNodes).toEqual([]);
+    expect(state.atlasThemeNodes).toEqual([]);
+    expect(state.projectParents.every(parents => parents.length === 1 && parents[0] === 'work')).toBe(true);
   });
 });
 

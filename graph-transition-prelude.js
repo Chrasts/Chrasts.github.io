@@ -27,13 +27,27 @@
       insolvencyNode.label = 'Insolvency Analysis';
       insolvencyNode.detailLabel = 'Insolvency Analysis';
     }
-    const researchThemeNode = site.graph.nodes.find(node => node.id === 'work-theme-research');
-    if (researchThemeNode) researchThemeNode.label = 'Research';
   }
 
   const mobileViewport = window.matchMedia('(max-width: 900px)');
+  const ensureMobileStyles = () => {
+    if (!mobileViewport.matches) return;
+    [
+      ['mobile.css', 'data-profile-mobile'],
+      ['mobile-v2.css', 'data-profile-mobile-v2']
+    ].forEach(([href, marker]) => {
+      if (document.querySelector(`link[${marker}]`)) return;
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = href;
+      link.media = '(max-width: 900px)';
+      link.setAttribute(marker, 'true');
+      document.head.appendChild(link);
+    });
+  };
   const ensureMobileLayer = () => {
     if (!mobileViewport.matches) return;
+    ensureMobileStyles();
     setTimeout(() => setTimeout(() => {
       if (!mobileViewport.matches) return;
       if (!document.querySelector('script[data-profile-mobile-app]')) {

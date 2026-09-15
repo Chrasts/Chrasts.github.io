@@ -102,7 +102,7 @@ body[data-graph-mode="work"] .site-graph-node.is-work-concept .site-graph-dot{po
 .artifact-focus-shell{
   width:min(960px,100%)!important;
   height:100%!important;
-  max-height:650px!important;
+  max-height:none!important;
   min-height:0;
   overflow:hidden;
   grid-template-rows:auto minmax(0,1fr) auto!important;

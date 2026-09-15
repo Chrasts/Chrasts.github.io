@@ -26,6 +26,11 @@
      overlapping cards. */
   .artifact-object .artifact-deck-card.is-active{z-index:0!important}
 
+  /* The focused photo remains its own hit target above the decorative fan.
+     This prevents a neighbouring ambient card from intercepting an inspect
+     click while preserving the cards' fixed spatial arrangement. */
+  .artifact-object[data-artifact-variant="fan"] .artifact-deck-card.is-active{z-index:10!important}
+
   .artifact-object:is([data-artifact-variant="diagram"],[data-artifact-variant="screens"],[data-artifact-variant="fan"]) .artifact-deck-card{
     left:50%!important;
     right:auto!important
@@ -70,7 +75,7 @@
      the object and its name appears only in the hover/focus bubble. */
   .artifact-object[data-artifact-variant="fan"]{
     --artifact-fan-card-width:min(305px,28vw);
-    --artifact-fan-spread:min(78px,6vw);
+    --artifact-fan-spread:min(108px,8.5vw);
     height:390px!important
   }
   .artifact-object[data-artifact-variant="fan"] .artifact-deck-card{
@@ -87,7 +92,7 @@
     background:transparent!important
   }
   .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(1){
-    transform:translateX(calc(-50% - var(--artifact-fan-spread))) translateY(46px) rotate(-5deg)!important
+    transform:translateX(calc(-50% - var(--artifact-fan-spread) - 76px)) translateY(46px) rotate(-5deg)!important
   }
   .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(2){
     transform:translateX(-50%) translateY(0) rotate(0deg)!important
@@ -96,7 +101,7 @@
     transform:translateX(calc(-50% + var(--artifact-fan-spread))) translateY(46px) rotate(5deg)!important
   }
   .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(1):is(:hover,:focus-visible,.is-active){
-    transform:translateX(calc(-50% - var(--artifact-fan-spread))) translateY(38px) rotate(-2deg)!important
+    transform:translateX(calc(-50% - var(--artifact-fan-spread) - 76px)) translateY(38px) rotate(-2deg)!important
   }
   .artifact-object[data-artifact-variant="fan"] .artifact-deck-card:nth-child(2):is(:hover,:focus-visible,.is-active){
     transform:translateX(-50%) translateY(-8px) rotate(0deg)!important
@@ -142,8 +147,8 @@
   .artifact-document-object[data-artifact-variant="pdf-only"] .artifact-folio-page{
     left:50%!important;
     top:0!important;
-    width:min(560px,44vw)!important;
-    height:auto!important;
+    width:auto!important;
+    height:min(610px,calc(100vh - 106px))!important;
     aspect-ratio:.707071;
     overflow:hidden!important;
     transform:translateX(-50%) rotate(0deg)!important;
@@ -168,17 +173,17 @@
   .artifact-object[data-artifact-scene="bachelor-thesis-paper"] .artifact-folio-support-deck{
     position:absolute;
     z-index:5;
-    left:calc(50% + 145px);
-    top:132px;
-    width:205px;
-    height:505px;
+    left:calc(50% + 118px);
+    top:92px;
+    width:150px;
+    height:390px;
     pointer-events:none
   }
   .artifact-object[data-artifact-scene="bachelor-thesis-paper"] .artifact-folio-support-card{
     position:absolute!important;
     left:0!important;
     right:auto!important;
-    width:190px!important;
+    width:140px!important;
     height:auto!important;
     padding:0!important;
     border:2px solid #000!important;
@@ -194,7 +199,7 @@
     transform:rotate(2deg)!important
   }
   .artifact-object[data-artifact-scene="bachelor-thesis-paper"] .artifact-folio-support-card:nth-child(2){
-    top:310px!important;
+    top:198px!important;
     z-index:3!important;
     transform:rotate(-2.5deg)!important
   }

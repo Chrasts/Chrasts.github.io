@@ -2,6 +2,26 @@
   if (window.ProfileArtifactSceneRecipes) return;
 
   const registry = new Map();
+  // Inline video is decorative until its card is actually on screen. Delaying
+  // its decoder by one visibility boundary keeps route transitions responsive
+  // while preserving muted autoplay once the artifact is read.
+  const inlineVideoObserver = 'IntersectionObserver' in window
+    ? new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        const video = entry.target;
+        const eligible = entry.isIntersecting && entry.intersectionRatio >= .2;
+        video.dataset.artifactVideoEligible = eligible ? 'true' : 'false';
+        if (eligible && document.visibilityState === 'visible') {
+          inlineVideoObserver?.unobserve(video);
+          video.autoplay = true;
+          video.muted = true;
+          video.play()?.catch?.(() => {});
+        } else if (!video.paused) {
+          video.pause();
+        }
+      });
+    }, { threshold: [.2] })
+    : null;
   const element = (tag, className, text) => {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -9,8 +29,10 @@
     return node;
   };
 
-  const normaliseRoute = value =>
-    (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
+  const normaliseRoute = value => {
+    const route = (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
+    return window.SITE_DATA?.graph?.routeAliases?.[route] || route;
+  };
   const currentSceneRoute = () => normaliseRoute(window.ProfileScene?.manager?.context?.().route || 'overview');
 
   const bindingOwnsCurrentRoute = binding => {
@@ -68,6 +90,25 @@
   };
 
   const validAspect = ratio => Number.isFinite(ratio) && ratio >= .28 && ratio <= 5;
+  const attachImageFallback = (image, artifact) => {
+    const fallback = artifact?.source?.kind === 'local' ? artifact.source.fallbackPath : null;
+    if (!fallback) return;
+    image.addEventListener('error', () => {
+      if (image.dataset.artifactFallbackApplied === 'true') return;
+      image.dataset.artifactFallbackApplied = 'true';
+      image.src = fallback;
+    });
+  };
+  const attachVideoFallback = (video, artifact) => {
+    const fallback = artifact?.source?.kind === 'local' ? artifact.source.fallbackPath : null;
+    if (!fallback) return;
+    video.addEventListener('error', () => {
+      if (video.dataset.artifactFallbackApplied === 'true') return;
+      video.dataset.artifactFallbackApplied = 'true';
+      video.src = fallback;
+      video.load();
+    });
+  };
   const applyMediaAspect = (frame, ratio, source) => {
     if (!validAspect(ratio)) return;
     frame.style.aspectRatio = String(ratio);
@@ -112,6 +153,7 @@
       image.alt = artifact.title || '';
       image.loading = eager ? 'eager' : 'lazy';
       image.decoding = 'async';
+      attachImageFallback(image, artifact);
       if (artifact.presentation?.width) image.width = artifact.presentation.width;
       if (artifact.presentation?.height) image.height = artifact.presentation.height;
       frame.appendChild(image);
@@ -123,14 +165,16 @@
       frame.classList.add('is-video', 'is-inline-interactive');
       const video = document.createElement('video');
       video.src = href;
+      attachVideoFallback(video, artifact);
       video.controls = true;
-      video.autoplay = true;
+      video.autoplay = false;
       video.muted = true;
       video.defaultMuted = true;
       video.loop = true;
       video.playsInline = true;
       video.preload = 'metadata';
       video.dataset.artifactInlineVideo = 'true';
+      video.dataset.artifactVideoEligible = inlineVideoObserver ? 'false' : 'true';
       video.setAttribute('aria-label', artifact.title || 'Video artifact');
       ['pointerdown', 'click', 'dblclick'].forEach(type => {
         video.addEventListener(type, event => event.stopPropagation());
@@ -141,6 +185,7 @@
         }
       }, { once: true });
       frame.appendChild(video);
+      inlineVideoObserver?.observe(video);
       return frame;
     }
 
@@ -154,17 +199,9 @@
         element('span', 'artifact-pdf-mark', 'PDF'),
         element('strong', 'artifact-pdf-title', artifact.title)
       );
-      const preview = document.createElement('iframe');
-      const separator = href.includes('#') ? '&' : '#';
-      preview.src = `${href}${separator}toolbar=0&navpanes=0&scrollbar=0&view=Fit`;
-      preview.title = `${artifact.title || 'PDF'} preview`;
-      preview.loading = eager ? 'eager' : 'lazy';
-      preview.tabIndex = -1;
-      preview.setAttribute('aria-hidden', 'true');
-      preview.setAttribute('focusable', 'false');
       const expand = element('span', 'artifact-inline-expand', 'Inspect ↗');
       expand.setAttribute('aria-hidden', 'true');
-      frame.append(label, preview, expand);
+      frame.append(label, expand);
       hydratePreviewAspect(frame, artifact, href);
       return frame;
     }

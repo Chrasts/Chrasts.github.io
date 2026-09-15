@@ -30,12 +30,57 @@
     return node;
   };
 
-  const routeControl = (label, nodeId, className = 'phase8-route-link') => {
+  const focusGraphTarget = nodeId => {
+    const focus = () => {
+      const projectId = String(nodeId || '').replace(/^project-/, '');
+      const target = document.querySelector(`#site-graph .site-graph-node[data-node-id="${CSS.escape(nodeId)}"]`) ||
+        document.querySelector(`.work-project-anchor-v5[data-project-id="${CSS.escape(projectId)}"]`);
+      target?.focus?.({ preventScroll: true });
+    };
+    const focusAfterPaint = () => requestAnimationFrame(() => requestAnimationFrame(focus));
+    let fallback = 0;
+    const complete = () => {
+      window.removeEventListener('profile:graph-navigation', onNavigation);
+      clearTimeout(fallback);
+      focusAfterPaint();
+    };
+    const onNavigation = event => {
+      if (event.detail?.phase === 'idle') complete();
+    };
+    // A native button is removed when the route changes. Keyboard activation
+    // must therefore land on its newly rendered graph counterpart instead of
+    // silently dropping focus back to the document.
+    window.addEventListener('profile:graph-navigation', onNavigation);
+    // A non-animated or interrupted route may not publish a settle phase.
+    // The bounded fallback keeps focus recovery deterministic in that case.
+    fallback = window.setTimeout(complete, 1600);
+  };
+
+  const routeControl = (label, nodeId, className = 'phase8-route-link', options = {}) => {
     const route = routeForNode(nodeId);
     const button = element('button', className, label);
     button.type = 'button';
-    if (route) button.dataset.route = route;
-    else button.disabled = true;
+    if (!route) {
+      button.disabled = true;
+      return button;
+    }
+    button.dataset.route = route;
+    if (options.crossLink) button.dataset.crosslinkTarget = nodeId;
+    button.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (options.crossLink && window.ProfileCrossLinkTravel?.navigate) {
+        Promise.resolve(window.ProfileCrossLinkTravel.navigate(nodeId, options.crossLink))
+          .then(started => {
+            // Preserve an ordinary route as a safe fallback should the
+            // semantic relation no longer exist in the canonical model.
+            if (!started) location.hash = `#${route}`;
+          });
+        return;
+      }
+      if (event.detail === 0) focusGraphTarget(nodeId);
+      location.hash = `#${route}`;
+    });
     return button;
   };
 
@@ -79,6 +124,60 @@
   experience.appendChild(experienceRail);
   layer.appendChild(experience);
 
+  // Course evidence is intentionally instantiated only when Phase 8 is
+  // requested for the BSc route. It remains compact, curated and carries a
+  // positive completion status in the canonical data model.
+  const bscData = data.education?.bsc;
+  const bsc = shell('bsc-evidence', 'BSc in Logic · completed evidence', 'Course constellation');
+  bsc.dataset.phase8Object = 'bsc-course-constellation';
+  const bscClusters = element('div', 'phase8-bsc-clusters');
+  (bscData?.courseEvidence || [])
+    .filter(cluster => ['completed', 'recognized'].includes(cluster.status))
+    .forEach(cluster => {
+      const clusterElement = element('section', 'phase8-bsc-cluster');
+      clusterElement.appendChild(element('h4', 'phase8-bsc-cluster-title', cluster.title));
+      const courses = element('p', 'phase8-bsc-course-list', cluster.courses.join(' · '));
+      clusterElement.appendChild(courses);
+      const knowledge = element('div', 'phase8-course-links');
+      (cluster.supportsKnowledgeIds || []).forEach(id => {
+        const node = nodeMap.get(id);
+        if (node) knowledge.appendChild(routeControl(node.label, id, 'phase8-topic-link'));
+      });
+      clusterElement.appendChild(knowledge);
+      bscClusters.appendChild(clusterElement);
+    });
+  const bscActions = element('div', 'phase8-actions');
+  if (bscData?.thesisNodeId && nodeMap.has(bscData.thesisNodeId)) {
+    bscActions.appendChild(routeControl('Open BSc thesis', bscData.thesisNodeId));
+  }
+  bsc.append(bscClusters, bscActions);
+  layer.appendChild(bsc);
+
+  // MSc is deliberately a truthful ongoing-programme context. No speculative
+  // course constellation is rendered until completed/recognized records are
+  // present in the canonical Education data.
+  const mscData = data.education?.msc;
+  const mscNode = nodeMap.get(mscData?.nodeId);
+  const msc = shell('msc-progress', 'MSc in Logic · ongoing', 'Programme context');
+  msc.dataset.phase8Object = 'msc-programme-context';
+  if (mscNode) {
+    const facts = element('dl', 'phase8-role-facts');
+    [
+      ['Institution', mscNode.organisation],
+      ['Programme', mscNode.programme],
+      ['Period', mscNode.meta],
+      ['Status', mscNode.status]
+    ].forEach(([term, value]) => {
+      if (!value) return;
+      facts.append(element('dt', '', term), element('dd', '', value));
+    });
+    msc.append(
+      facts,
+      element('p', 'phase8-object-note', mscData.evidencePolicy)
+    );
+  }
+  layer.appendChild(msc);
+
   const syncExperience = context => {
     const route = normaliseRoute(context?.route || location.hash);
     experience.querySelectorAll('.phase8-experience-item').forEach(item => {
@@ -87,6 +186,47 @@
       item.setAttribute('aria-current', active ? 'page' : 'false');
     });
   };
+
+  // Tier-A Experience focus: factual role context plus canonical Work links.
+  // Responsibilities stay inspector content rather than becoming graph nodes.
+  const currentRole = shell('current-role', 'Experience · current role', '');
+  currentRole.dataset.phase8Object = 'experience-current-role';
+  const syncCurrentRole = context => {
+    const route = normaliseRoute(context?.route || location.hash);
+    const role = [...nodeMap.values()].find(node => node.type === 'experience' && routeForNode(node.id) === route);
+    if (!role) return;
+    currentRole.querySelector('.phase8-object-title').textContent = role.label;
+    const body = element('div', 'phase8-role-inspector-body');
+    const facts = element('dl', 'phase8-role-facts');
+    [['Organisation', role.organisation], ['Role', role.role], ['Period', role.meta]].forEach(([term, value]) => {
+      if (!value) return;
+      const dt = element('dt', '', term);
+      const dd = element('dd', '', value);
+      facts.append(dt, dd);
+    });
+    body.appendChild(facts);
+    if (role.highlights?.length) {
+      const heading = element('p', 'phase8-eyebrow', 'Contributions');
+      const list = element('ul', 'phase8-role-contributions');
+      role.highlights.forEach(item => list.appendChild(element('li', '', item)));
+      body.append(heading, list);
+    }
+    const related = (role.relatedWorkIds || []).map(id => nodeMap.get(`project-${id}`)).filter(Boolean);
+    if (related.length) {
+      const heading = element('p', 'phase8-eyebrow', 'Related Work');
+      const links = element('div', 'phase8-actions');
+      related.forEach(project => links.appendChild(routeControl(
+        project.detailLabel || project.label,
+        project.id,
+        'phase8-route-link',
+        { crossLink: 'role-project' }
+      )));
+      body.append(heading, links);
+    }
+    currentRole.querySelectorAll('.phase8-role-inspector-body').forEach(node => node.remove());
+    currentRole.appendChild(body);
+  };
+  layer.appendChild(currentRole);
 
   const credentials = shell('credentials', 'Education · credentials', 'Certificate stack');
   credentials.dataset.phase8Object = 'certificate-stack';
@@ -221,6 +361,15 @@
     prgLinks.appendChild(link);
   });
   prgAi.appendChild(prgLinks);
+  if (data.prgAi.blocks?.length) {
+    const blocks = element('ol', 'phase8-prg-blocks');
+    data.prgAi.blocks.forEach(block => {
+      const item = element('li', `phase8-prg-block is-${block.status}`, block.label);
+      item.dataset.status = block.status;
+      blocks.appendChild(item);
+    });
+    prgAi.appendChild(blocks);
+  }
   layer.appendChild(prgAi);
 
   const routeMatches = (route, prefixes) => prefixes.some(prefix => route === prefix || route.startsWith(`${prefix}/`));
@@ -248,6 +397,38 @@
       visible: context => routeMatches(normaliseRoute(context.route), ['education/credentials']),
       mount: syncCertificates,
       update: syncCertificates,
+      variants: { mobile: { placement: 'semantic-mobile-tray' } }
+    },
+    {
+      id: 'phase8-current-experience-role',
+      selector: '[data-phase8-object="experience-current-role"]',
+      anchorNodeId: 'ceske-priority',
+      placement: 'semantic-right-role',
+      enter: 'semantic-rise',
+      exit: 'semantic-fade',
+      visible: context => normaliseRoute(context.route) === 'experience/ceske-priority',
+      mount: syncCurrentRole,
+      update: syncCurrentRole,
+      variants: { mobile: { placement: 'semantic-mobile-tray' } }
+    },
+    {
+      id: 'phase8-bsc-course-constellation',
+      selector: '[data-phase8-object="bsc-course-constellation"]',
+      anchorNodeId: 'charles-university',
+      placement: 'semantic-right-evidence',
+      enter: 'semantic-rise',
+      exit: 'semantic-fade',
+      visible: context => routeMatches(normaliseRoute(context.route), ['education/charles-university']),
+      variants: { mobile: { placement: 'semantic-mobile-tray' } }
+    },
+    {
+      id: 'phase8-msc-programme-context',
+      selector: '[data-phase8-object="msc-programme-context"]',
+      anchorNodeId: 'charles-university-masters-logic',
+      placement: 'semantic-right-msc',
+      enter: 'semantic-rise',
+      exit: 'semantic-fade',
+      visible: context => normaliseRoute(context.route) === 'education/charles-university-masters-logic',
       variants: { mobile: { placement: 'semantic-mobile-tray' } }
     },
     {

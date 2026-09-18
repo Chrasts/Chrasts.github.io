@@ -287,7 +287,19 @@
     });
 
     node.addEventListener('click', event => {
-      if (!available() || event.target.closest?.('[data-root-entry-action]')) return;
+      if (event.target.closest?.('[data-root-entry-action]')) return;
+      // The portrait portal belongs exclusively to the Atlas entry state. In
+      // a local fragment this same node is the user's reliable route home;
+      // handling it here avoids a stale portal listener swallowing the graph
+      // renderer's click before it can restore the overview.
+      if (mode() !== 'atlas') {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (location.hash !== '#overview') location.hash = '#overview';
+        else dispatchEvent(new HashChangeEvent('hashchange'));
+        return;
+      }
+      if (!available()) return;
       event.preventDefault();
       event.stopImmediatePropagation();
       enterProfile(event.pointerType === 'touch' || coarsePointer.matches ? 'touch-root' : 'pointer-root');
@@ -379,6 +391,19 @@
     refresh,
     snapshot
   });
+
+  // This must run in document capture, before any per-node drag/camera
+  // listeners. The root is shared by Atlas and local fragments; in the latter
+  // it is an unconditional route-home control, never an Atlas entry portal.
+  document.addEventListener('click', event => {
+    if (mode() === 'atlas' || event.button !== 0 || event.defaultPrevented) return;
+    const node = event.target.closest?.('#site-graph .site-graph-node[data-node-id]');
+    if (node?.dataset.nodeId !== rootId || event.target.closest?.('[data-root-entry-action]')) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (location.hash !== '#overview') location.hash = '#overview';
+    else dispatchEvent(new HashChangeEvent('hashchange'));
+  }, true);
 
   if (!ensurePortal()) document.addEventListener('DOMContentLoaded', ensurePortal, { once: true });
 })();

@@ -100,7 +100,7 @@
   .graph-routebar>*{pointer-events:auto!important}
   .graph-breadcrumb{
     min-width:0!important;
-    max-width:calc(100vw - 78px)!important;
+    max-width:calc(100vw - 128px)!important;
     height:36px!important;
     padding:0!important;
     overflow-x:auto!important;

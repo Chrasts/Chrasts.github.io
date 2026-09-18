@@ -326,8 +326,16 @@
     await loadScript('atlas-focus-unification.js', 'data-profile-atlas-focus-unification', () => Boolean(window.ProfileAtlasFocus));
     await loadScript('root-entry-portal.js', 'data-profile-root-entry-portal', () => Boolean(window.ProfileRootEntryPortal));
     await loadScript('atlas-condensation.js', 'data-profile-atlas-condensation', () => Boolean(window.ProfileAtlasCondensation));
+    await bootProfileMotion();
     manager.scheduleRefresh('atlas-interactions-ready');
   });
+
+  const bootProfileMotion = () => loadScript(
+    'profile-motion-refinements.js', 'data-profile-motion-refinements', () => Boolean(window.ProfileMotionRefinements)
+  );
+  const bootDetailDismiss = () => loadScript(
+    'node-detail-dismiss.js', 'data-profile-node-detail-dismiss', () => Boolean(window.ProfileNodeDetailDismiss)
+  );
 
   const bootIntro = () => loadFeature('intro', async () => {
     await Promise.all([
@@ -406,6 +414,7 @@
     const tasks = [];
     if (window.__PROFILE_INTRO_BOOTSTRAP__?.eligible && route === 'overview') tasks.push(bootIntro());
     if (route === 'atlas') tasks.push(bootAtlasInteractions());
+    if (route !== 'overview') tasks.push(bootDetailDismiss());
     if (window.ARTIFACT_SCENE_BINDINGS.some(binding => bindingOwnsRoute(binding, route))) tasks.push(bootArtifactScenes());
     if (routeNeedsPhase8(route)) tasks.push(bootPhase8(route));
     if (route === 'education/credentials' || route.startsWith('education/credentials/')) tasks.push(bootCertificateFocus());

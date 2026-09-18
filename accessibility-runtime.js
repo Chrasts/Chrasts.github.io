@@ -38,6 +38,23 @@
     'work-concept': 'Work concept'
   }[type] || 'Profile item');
 
+  const humanDate = value => {
+    const match = String(value || '').match(/^(\d{4})(?:-(\d{2}))?$/);
+    if (!match) return '';
+    if (!match[2]) return match[1];
+    const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][Number(match[2]) - 1];
+    return month ? `${month} ${match[1]}` : match[1];
+  };
+
+  const temporalDescription = model => {
+    if (!model) return '';
+    if (model.type === 'credential' && model.awardDate) return `Credential awarded ${humanDate(model.awardDate)}.`;
+    if (!['experience', 'education'].includes(model.type) || !model.startDate) return '';
+    const start = humanDate(model.startDate);
+    const end = model.ongoing ? 'present' : humanDate(model.endDate);
+    return `${humanType(model.type)} timeline: ${start}${end ? ` to ${end}` : ''}.${model.ongoing ? ' Ongoing.' : ''}`;
+  };
+
   const workConceptLabel = id => {
     if (!String(id).startsWith('work-concept:')) return null;
     const key = String(id).slice('work-concept:'.length);
@@ -82,13 +99,14 @@
     if (!id || element.closest('.v9-transition-overlay')) return;
     const label = modelLabel(id, element);
     const type = humanType(nodeType(id));
+    const model = nodeMap.get(id);
+    const temporal = temporalDescription(model);
     element.setAttribute('role', 'button');
     element.setAttribute('tabindex', '0');
     element.setAttribute('aria-label', currentMode() === 'atlas' && id === rootId
       ? 'Enter profile — Štěpán Chrast'
-      : `${label}. ${type}. ${nodeAction(id, element)}.`);
+      : `${label}. ${temporal || `${type}.`} ${nodeAction(id, element)}.`);
 
-    const model = nodeMap.get(id);
     const route = model?.route ? normaliseRoute(model.route) : (id === rootId ? 'overview' : null);
     if (currentMode() !== 'atlas' && route && route === currentRoute()) element.setAttribute('aria-current', 'page');
     else element.removeAttribute('aria-current');

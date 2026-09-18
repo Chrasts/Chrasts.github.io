@@ -11,6 +11,21 @@
   const shouldAlreadyBeRetired = () => {
     let stored = false;
     try { stored = sessionStorage.getItem(STORAGE_KEY) === 'true'; } catch (_) {}
+    // On a first eligible visit the app briefly boots its ordinary overview
+    // shell before the intro routes it into Atlas. That transient shell is
+    // not evidence that the visitor has entered the profile; retiring here
+    // used to hide the root portrait for the entire introductory Atlas.
+    // The interactive opening Atlas is still entry state even after the
+    // reveal has reached ready. Do not let compatibility cleanup retire the
+    // canonical portrait before its root hover/focus interaction can use it.
+    const openingAtlasReady = document.body?.dataset.graphMode === 'atlas' &&
+      ['reveal', 'ready'].includes(document.body?.dataset.entryState || '') &&
+      !document.body?.classList.contains('is-root-entry-committing');
+    if (openingAtlasReady) return false;
+    const initialIntro = window.__PROFILE_INTRO_BOOTSTRAP__?.eligible && !stored &&
+      !document.body?.classList.contains('is-profile-root-ready') &&
+      document.body?.dataset.entryState !== 'profile';
+    if (initialIntro) return false;
     return stored ||
       document.body?.dataset.entryState === 'profile' ||
       (document.body?.dataset.graphMode === 'overview' && document.body?.dataset.rootLanding === 'false') ||

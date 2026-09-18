@@ -18,10 +18,10 @@
   // read, but do not hold its primary interaction hostage to a long tail of
   // decorative edge/label animation.
   const REVEAL_IGNITION_LEAD = reducedMotion ? 0 : mobile ? 160 : 180;
-  const VISIBILITY_FIELD_DELAY = mobile ? 70 : 60;
-  const VISIBILITY_GENTLE_PHASE = mobile ? 260 : 350;
-  const VISIBILITY_FAST_PHASE = mobile ? 520 : 750;
-  const VISIBILITY_GENTLE_PROGRESS = mobile ? .34 : .30;
+  const VISIBILITY_FIELD_DELAY = mobile ? 70 : 190;
+  const VISIBILITY_GENTLE_PHASE = mobile ? 260 : 2400;
+  const VISIBILITY_FAST_PHASE = mobile ? 520 : 7000;
+  const VISIBILITY_GENTLE_PROGRESS = mobile ? .34 : .12;
   const STATES = Object.freeze({
     PREPARING: 'PREPARING',
     ATLAS_REVEAL: 'ATLAS_REVEAL',
@@ -47,14 +47,14 @@
     settle: 720,
     ready: 800
   } : {
-    primary: 250,
-    territories: 450,
-    structure: 650,
-    deep: 780,
-    labels: 880,
-    cross: 980,
-    settle: 1080,
-    ready: 1150
+    primary: 300,
+    territories: 560,
+    structure: 830,
+    deep: 1050,
+    labels: 1260,
+    cross: 1450,
+    settle: 1660,
+    ready: 1840
   });
 
   const state = {
@@ -96,6 +96,7 @@
   let visibilityInteractiveResolve = null;
   let visibilityInteractivePromise = Promise.resolve(true);
   let visibilityLayout = null;
+  let completionInFlight = false;
 
   const normaliseRoute = value =>
     (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
@@ -170,9 +171,9 @@
         Math.hypot(width - cx, height - cy)
       );
     }
-    /* The clear core of the gradient ends at 52%. Finish against the real
-       content bounds so the reveal does not waste its tail on empty corners. */
-    return { width, height, cx, cy, targetRadius: (graphDistance + 8) / .515 };
+    /* The clear core deliberately ends early. The remaining wide feather is
+       the soft darkness the viewer sees while the Atlas comes into focus. */
+    return { width, height, cx, cy, targetRadius: (graphDistance + 8) / .04 };
   };
 
   const visibilityMetrics = progress => {
@@ -227,9 +228,8 @@
       resolve(true);
       return;
     }
-    /* Preserve a short, legible ignition around the root, then let the field
-       decisively carry the eye across the full graph. The former acceleration
-       began well after one second and made the opening feel sluggish. */
+    /* Preserve a legible ignition around the root, then use a long, evenly
+       eased field instead of a sharp final burst. */
     const delay = VISIBILITY_FIELD_DELAY;
     const duration = VISIBILITY_GENTLE_PHASE + VISIBILITY_FAST_PHASE;
     const started = performance.now();
@@ -238,7 +238,7 @@
       const progress = elapsed <= VISIBILITY_GENTLE_PHASE
         ? VISIBILITY_GENTLE_PROGRESS * (elapsed / VISIBILITY_GENTLE_PHASE)
         : VISIBILITY_GENTLE_PROGRESS + (1 - VISIBILITY_GENTLE_PROGRESS) *
-          (1 - Math.pow(1 - Math.min(1, (elapsed - VISIBILITY_GENTLE_PHASE) / VISIBILITY_FAST_PHASE), 4));
+          (1 - Math.pow(1 - Math.min(1, (elapsed - VISIBILITY_GENTLE_PHASE) / VISIBILITY_FAST_PHASE), 2.2));
       visibilityMetrics(progress);
       if (progress >= .76 && visibilityInteractiveResolve) {
         const resolveInteractive = visibilityInteractiveResolve;
@@ -639,7 +639,8 @@
   };
 
   async function completeToReady(reason = 'completed') {
-    if (!state.eligible || state.state === STATES.ATLAS_READY || state.state === STATES.BYPASSED) return false;
+    if (completionInFlight || !state.eligible || state.state === STATES.ATLAS_READY || state.state === STATES.BYPASSED) return false;
+    completionInFlight = true;
     ++generation;
     cancelAnimationFrame(frame);
     frame = 0;
@@ -669,6 +670,15 @@
     }
 
     if (!nodeElements.length) classifyLiveAtlas();
+    // A user can pan the pseudo-Atlas before entering. Normalize the shared
+    // root to its entry camera before the Atlas becomes the collapse source,
+    // so its screen position survives the hand-off into the main segment.
+    if (reason === 'pointer') {
+      window.ProfileAtlasLOD?.fit?.({ immediate: false, purpose: 'entry', recompute: true });
+      // Let the camera visibly settle before removing the introduction's
+      // interaction layer. This avoids an abrupt re-centering blink.
+      await wait(reducedMotion ? 0 : 180);
+    }
     revealEverything();
     setStage('settle');
     if (!atlasFullyReady()) {
@@ -677,8 +687,11 @@
       if (Number.isFinite(stableScale)) window.ProfileAtlasLOD?.applyLOD?.(stableScale);
     }
     window.ProfileHaloRenderer?.refresh?.();
-    if (reason === 'completed') await visibilityInteractivePromise;
-    else await wait(reducedMotion ? 0 : 60);
+    // The field is deliberately much slower than the interaction timeline.
+    // It continues as a visual veil after Atlas becomes usable; waiting for
+    // its former 76% gate here made the root look live, then hard-lock it for
+    // several seconds as soon as the structural waves finished.
+    if (reason !== 'completed') await wait(reducedMotion ? 0 : 60);
 
     const maskFinishing = reason === 'completed' && Boolean(visibilityFrame);
     cleanupRevealPresentation({ keepVisibility: maskFinishing });
@@ -689,7 +702,10 @@
       document.body.dataset.entryState = 'ready';
       document.body.dataset.atlasTopology = 'entry-full';
       document.body.classList.toggle('is-entry-mask-finishing', maskFinishing);
-      document.body.classList.toggle('is-entry-loader-complete', !maskFinishing);
+      // Atlas is usable as soon as its semantic state is ready. The remaining
+      // soft light field is visual-only and must never keep the loader state
+      // (or downstream interaction contracts) pending for several seconds.
+      document.body.classList.add('is-entry-loader-complete');
       if (!maskFinishing) document.body.classList.remove('is-entry-loader-releasing');
     }
     state.loaderReleased = true;
@@ -706,7 +722,6 @@
     emit('completed', { reason, entryState: STATES.ATLAS_READY });
     if (maskFinishing) visibilityFieldPromise.then(() => {
       if (!document.body?.classList.contains('is-entry-mask-finishing')) return;
-      document.body.classList.add('is-entry-loader-complete');
       document.body.classList.remove('is-entry-loader-releasing', 'is-entry-mask-finishing');
     });
     dispatchEvent(new CustomEvent('profile:atlas-ready', { detail: snapshot() }));
@@ -758,6 +773,28 @@
   const bindInteractions = () => {
     if (interactionBound) return;
     interactionBound = true;
+
+    addEventListener('pointerover', event => {
+      if (!state.running || state.state !== STATES.ATLAS_REVEAL) return;
+      const node = event.target.closest?.('#site-graph .site-graph-node[data-node-id]');
+      if (node?.dataset.nodeId === rootId) node.classList.add('is-intro-root-hover');
+    }, true);
+    addEventListener('pointerout', event => {
+      const node = event.target.closest?.('#site-graph .site-graph-node[data-node-id]');
+      if (node?.dataset.nodeId !== rootId || node.contains(event.relatedTarget)) return;
+      node.classList.remove('is-intro-root-hover');
+    }, true);
+
+    // The root is the one intentional early exit from the cinematic reveal.
+    // Start its transition on press, not one browser click cycle later.
+    addEventListener('pointerdown', event => {
+      if (!state.running || state.state !== STATES.ATLAS_REVEAL || event.button !== 0) return;
+      const node = event.target.closest?.('#site-graph .site-graph-node[data-node-id]');
+      if (node?.dataset.nodeId !== rootId) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      completeToReady('pointer');
+    }, true);
 
     addEventListener('keydown', event => {
       if (!state.running || state.state !== STATES.ATLAS_REVEAL) return;
@@ -843,6 +880,7 @@
 
   const prepareAndRun = async () => {
     if (!state.eligible || state.running || state.state === STATES.ATLAS_READY) return false;
+    completionInFlight = false;
     const currentGeneration = ++generation;
     state.state = STATES.PREPARING;
     state.stage = 'preparing';

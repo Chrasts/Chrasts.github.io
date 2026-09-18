@@ -32,7 +32,7 @@
     esslli: {
       nodeId: 'esslli',
       label: 'Selected ESSLLI 2026 programme',
-      note: 'Compact record of the selected programme. Sessions are education context, not automatic claims of standalone expertise. Links point only to broader knowledge areas retained in the portfolio.',
+      note: 'Compact record of the selected programme.',
       weeks: [
         {
           label: 'Week 1',
@@ -71,7 +71,7 @@
       status: '2026/27',
       title: 'prg.ai Minor',
       subtitle: 'Inter-university AI minor',
-      note: 'Shown as upcoming study context. Planned coursework is not treated as already mastered.',
+      note: 'Ongoing study context organised around subject areas.',
       links: ['ai-methods', 'programming-automation', 'data-analysis'],
       blocks: site.semantics?.education?.prgAiBlocks || []
     }

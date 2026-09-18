@@ -7,7 +7,6 @@ const boot = async (page, route = 'overview') => {
   });
   await page.route('https://cloud.umami.is/**', request => request.abort()).catch(() => {});
   await page.goto(`/#${route}`);
-  await page.waitForFunction(() => Boolean(window.ProfileMotionRefinements));
   await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
 };
 
@@ -89,6 +88,7 @@ test.describe('Profile motion refinements', () => {
     await boot(page, 'overview');
     await page.waitForFunction(() => document.body.classList.contains('is-profile-root-ready'));
     await page.locator('[data-route="atlas"]').first().click();
+    await page.waitForFunction(() => Boolean(window.ProfileMotionRefinements));
     await page.waitForFunction(() => document.body.dataset.profileAtlasPhase === 'collapse');
     await expect(page.locator('.profile-atlas-unfold-bridge')).toHaveCount(1);
     await page.waitForFunction(() => document.body.dataset.profileAtlasPhase === 'unfold', null, { timeout: 5_000 });

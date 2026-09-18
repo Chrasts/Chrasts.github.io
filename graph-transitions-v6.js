@@ -188,9 +188,12 @@
       const id = element.dataset.nodeId;
       const label = element.querySelector('.site-graph-label');
       if (!label) return;
+      const timelineRole = element.classList.contains('is-semantic-timeline-role');
       label.setAttribute('text-anchor', 'middle');
       label.setAttribute('x', '0');
-      label.setAttribute('y', id === rootId ? '-25' : '25');
+      label.setAttribute('y', timelineRole ? '-20' : id === rootId ? '-25' : '25');
+      const meta = element.querySelector('.site-graph-meta');
+      if (meta) meta.setAttribute('y', timelineRole ? '-37' : '42');
     });
   };
 

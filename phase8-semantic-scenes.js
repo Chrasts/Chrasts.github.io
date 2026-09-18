@@ -131,11 +131,32 @@
   const bsc = shell('bsc-evidence', 'BSc in Logic · completed evidence', 'Course constellation');
   bsc.dataset.phase8Object = 'bsc-course-constellation';
   const bscClusters = element('div', 'phase8-bsc-clusters');
+  let activeBscEvidenceId = null;
+  const selectBscEvidence = (evidenceId, { restoreFocus = false } = {}) => {
+    const cluster = bscClusters.querySelector(`[data-evidence-id="${CSS.escape(evidenceId || '')}"]`);
+    if (!cluster) return false;
+    activeBscEvidenceId = evidenceId;
+    bscClusters.querySelectorAll('[data-evidence-id]').forEach(item => {
+      const active = item === cluster;
+      item.classList.toggle('is-active', active);
+      item.querySelector('.phase8-bsc-cluster-select')?.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    if (restoreFocus) requestAnimationFrame(() => cluster.querySelector('.phase8-bsc-cluster-select')?.focus({ preventScroll: true }));
+    return true;
+  };
   (bscData?.courseEvidence || [])
     .filter(cluster => ['completed', 'recognized'].includes(cluster.status))
     .forEach(cluster => {
       const clusterElement = element('section', 'phase8-bsc-cluster');
-      clusterElement.appendChild(element('h4', 'phase8-bsc-cluster-title', cluster.title));
+      clusterElement.dataset.evidenceId = cluster.id;
+      const select = element('button', 'phase8-bsc-cluster-select', cluster.title);
+      select.type = 'button';
+      select.setAttribute('aria-pressed', 'false');
+      select.addEventListener('click', event => {
+        event.stopPropagation();
+        selectBscEvidence(cluster.id);
+      });
+      clusterElement.appendChild(select);
       const courses = element('p', 'phase8-bsc-course-list', cluster.courses.join(' · '));
       clusterElement.appendChild(courses);
       const knowledge = element('div', 'phase8-course-links');
@@ -148,10 +169,13 @@
     });
   const bscActions = element('div', 'phase8-actions');
   if (bscData?.thesisNodeId && nodeMap.has(bscData.thesisNodeId)) {
-    bscActions.appendChild(routeControl('Open BSc thesis', bscData.thesisNodeId));
+    bscActions.appendChild(routeControl('Open BSc thesis', bscData.thesisNodeId, 'phase8-route-link', { crossLink: 'thesis-of' }));
   }
   bsc.append(bscClusters, bscActions);
   layer.appendChild(bsc);
+  window.addEventListener('profile:education-evidence-select', event => {
+    selectBscEvidence(event.detail?.evidenceId, { restoreFocus: Boolean(event.detail?.restoreFocus) });
+  });
 
   // MSc is deliberately a truthful ongoing-programme context. No speculative
   // course constellation is rendered until completed/recognized records are
@@ -322,10 +346,11 @@
     column.appendChild(element('h4', 'phase8-week-title', week.label));
     week.sessions.forEach(session => {
       const cell = element('article', 'phase8-course-cell');
-      cell.append(
-        element('time', 'phase8-course-time', session.time),
-        element('strong', 'phase8-course-title', session.title)
-      );
+      if (session.time) {
+        cell.classList.add('has-time');
+        cell.appendChild(element('time', 'phase8-course-time', session.time));
+      }
+      cell.appendChild(element('strong', 'phase8-course-title', session.title));
       if (session.note) cell.appendChild(element('span', 'phase8-course-note', session.note));
       if (session.links?.length) {
         const links = element('div', 'phase8-course-links');
@@ -350,26 +375,33 @@
   prgAi.dataset.phase8Object = 'prg-ai-route';
   prgAi.append(
     element('p', 'phase8-prg-subtitle', data.prgAi.subtitle),
-    element('p', 'phase8-object-note', data.prgAi.note)
+    element('p', 'phase8-object-note', 'Ongoing study plan completed through subject areas alongside the degree programme.')
   );
-  const prgLinks = element('div', 'phase8-prg-route');
-  data.prgAi.links.forEach((id, index) => {
-    const node = nodeMap.get(id);
-    if (!node) return;
-    const link = routeControl(node.label, id, 'phase8-prg-stop');
-    link.style.setProperty('--stop-index', String(index));
-    prgLinks.appendChild(link);
-  });
-  prgAi.appendChild(prgLinks);
+  // The minor is an ongoing programme, so its panel is a study plan rather
+  // than a completed-course timeline.  Concrete subjects can later enrich
+  // these canonical areas without changing the scene structure.
   if (data.prgAi.blocks?.length) {
-    const blocks = element('ol', 'phase8-prg-blocks');
+    const blocks = element('ol', 'phase8-prg-study-areas');
     data.prgAi.blocks.forEach(block => {
-      const item = element('li', `phase8-prg-block is-${block.status}`, block.label);
+      const item = element('li', `phase8-prg-study-area is-${block.status}`);
       item.dataset.status = block.status;
+      item.append(
+        element('span', 'phase8-prg-study-status', block.status === 'current' ? 'In progress' : 'Planned'),
+        element('strong', 'phase8-prg-study-title', block.label)
+      );
       blocks.appendChild(item);
     });
     prgAi.appendChild(blocks);
   }
+  const prgTopics = element('div', 'phase8-prg-topics');
+  prgTopics.appendChild(element('p', 'phase8-eyebrow', 'Related knowledge areas'));
+  const prgTopicList = element('div', 'phase8-course-links');
+  data.prgAi.links.forEach(id => {
+    const node = nodeMap.get(id);
+    if (node) prgTopicList.appendChild(routeControl(node.label, id, 'phase8-topic-link'));
+  });
+  prgTopics.appendChild(prgTopicList);
+  prgAi.appendChild(prgTopics);
   layer.appendChild(prgAi);
 
   const routeMatches = (route, prefixes) => prefixes.some(prefix => route === prefix || route.startsWith(`${prefix}/`));
@@ -382,7 +414,10 @@
       placement: 'semantic-lower-rail',
       enter: 'semantic-rise',
       exit: 'semantic-fade',
-      visible: context => routeMatches(normaliseRoute(context.route), ['experience']),
+      // Role focus is handled by one primary inspector (or the normal leaf
+      // detail for an earlier role). A second lower timeline repeats that
+      // information and competes with the focused graph.
+      visible: () => false,
       mount: syncExperience,
       update: syncExperience,
       variants: { mobile: { placement: 'semantic-mobile-tray' } }
@@ -419,6 +454,8 @@
       enter: 'semantic-rise',
       exit: 'semantic-fade',
       visible: context => routeMatches(normaliseRoute(context.route), ['education/charles-university']),
+      mount: () => selectBscEvidence(activeBscEvidenceId),
+      update: () => selectBscEvidence(activeBscEvidenceId),
       variants: { mobile: { placement: 'semantic-mobile-tray' } }
     },
     {
@@ -465,14 +502,16 @@
       }))
       .filter(item => item.visible)
       .map(item => item.id),
-    activeCertificateId
+    activeCertificateId,
+    activeBscEvidenceId
   });
 
   window.ProfilePhase8 = Object.freeze({
     data,
     layer,
     snapshot,
-    inspectCertificate
+    inspectCertificate,
+    selectBscEvidence
   });
   window.dispatchEvent(new CustomEvent('profile:phase8-ready', { detail: snapshot() }));
 })();

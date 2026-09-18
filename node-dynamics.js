@@ -33,6 +33,8 @@
   const records = new Map();
   const canonicalEdgePaths = new WeakMap();
   const edgeRecords = new Set();
+  const edgeRecordsByNode = new Map();
+  const adaptedEdges = new Set();
   let recordsNeedSync = true;
 
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
@@ -45,9 +47,6 @@
   const currentConfig = () => {
     const mode = normaliseMode();
     const source = MODE_CONFIG[mode];
-    // The strong Atlas reading field is intentionally desktop-only. On a
-    // touch viewport it would consume the limited label space, so retain the
-    // previous small physical footprint there.
     const factor = mode === 'atlas' && (coarsePointer.matches || innerWidth <= 900)
       ? .14
       : mobileFactor();
@@ -73,8 +72,11 @@
     suspended ||
     document.body?.classList.contains('is-v9-transitioning') ||
     document.body?.classList.contains('is-profile-root-emerging') ||
+    document.visibilityState !== 'visible' ||
     introOwned()
   );
+  const renderableRecord = (record, mode) =>
+    mode !== 'atlas' || !record.node.classList.contains('is-atlas-lod-hidden');
 
   const stableAngle = value => {
     let hash = 2166136261;
@@ -116,6 +118,7 @@
   };
 
   const syncRecords = () => {
+    if (adaptedEdges.size) restoreEdges();
     const alive = new Set();
     liveNodes().forEach(node => {
       alive.add(node.dataset.nodeId);
@@ -127,14 +130,21 @@
       record.node?.style?.removeProperty('--node-dynamics-scale');
     });
     edgeRecords.clear();
+    edgeRecordsByNode.clear();
+    adaptedEdges.clear();
     root?.querySelectorAll('.site-graph-edges path[data-source][data-target]').forEach(edge => {
       if (edge.closest('.v9-transition-overlay')) return;
-      edgeRecords.add({
+      const record = {
         edge,
         sourceId: edge.dataset.source,
         targetId: edge.dataset.target,
         canonical: edge.getAttribute('d') || '',
         parsed: null
+      };
+      edgeRecords.add(record);
+      [record.sourceId, record.targetId].forEach(id => {
+        if (!edgeRecordsByNode.has(id)) edgeRecordsByNode.set(id, new Set());
+        edgeRecordsByNode.get(id).add(record);
       });
     });
     recordsNeedSync = false;
@@ -153,11 +163,12 @@
   };
 
   const restoreEdges = () => {
-    edgeRecords.forEach(({ edge, canonical }) => {
+    adaptedEdges.forEach(({ edge, canonical }) => {
       if (!edge.isConnected || edge.dataset.nodeDynamicsAdapted !== 'true') return;
       if (canonical) edge.setAttribute('d', canonical);
       delete edge.dataset.nodeDynamicsAdapted;
     });
+    adaptedEdges.clear();
     adaptedEdgeCount = 0;
   };
 
@@ -201,7 +212,8 @@
 
   const computeTargets = activeId => {
     const config = currentConfig();
-    const active = activeId ? records.get(activeId) : null;
+    const candidate = activeId ? records.get(activeId) : null;
+    const active = candidate && renderableRecord(candidate, config.mode) ? candidate : null;
     const activePoint = active ? canonicalPoint(active.node) : null;
 
     records.forEach(record => {
@@ -215,6 +227,7 @@
 
     records.forEach(record => {
       if (record === active) return;
+      if (!renderableRecord(record, config.mode)) return;
       const point = canonicalPoint(record.node);
       let dx = point.x - activePoint.x;
       let dy = point.y - activePoint.y;
@@ -231,8 +244,6 @@
       const proximity = clamp(1 - distance / config.influenceRadius, 0, 1);
       const falloff = proximity * proximity * (3 - 2 * proximity);
       const relation = interaction.stateFor(record.id)?.relation || 'none';
-      // In Atlas, unrelated context moves aside while the reading path grows
-      // in place. This keeps parents and children prominent and connected.
       const relationWeight = relation === 'none'
         ? 1
         : config.mode === 'atlas' ? .30 : 1.08;
@@ -317,8 +328,12 @@
   };
 
   const adaptEdges = () => {
-    let count = 0;
-    edgeRecords.forEach(record => {
+    const candidates = new Set(adaptedEdges);
+    records.forEach(record => {
+      if (magnitude(record.x, record.y) <= EPSILON) return;
+      edgeRecordsByNode.get(record.id)?.forEach(edge => candidates.add(edge));
+    });
+    candidates.forEach(record => {
       const { edge } = record;
       if (!edge.isConnected) return;
       const source = records.get(record.sourceId);
@@ -338,6 +353,7 @@
       if (!moving) {
         if (edge.dataset.nodeDynamicsAdapted === 'true' && canonical) edge.setAttribute('d', canonical);
         delete edge.dataset.nodeDynamicsAdapted;
+        adaptedEdges.delete(record);
         return;
       }
 
@@ -355,15 +371,16 @@
         edge.setAttribute('d', `M ${(x1 + sx).toFixed(1)} ${(y1 + sy).toFixed(1)} L ${(x2 + tx).toFixed(1)} ${(y2 + ty).toFixed(1)}`);
       }
       edge.dataset.nodeDynamicsAdapted = 'true';
-      count += 1;
+      adaptedEdges.add(record);
     });
-    adaptedEdgeCount = count;
-    return count;
+    adaptedEdgeCount = adaptedEdges.size;
+    return adaptedEdgeCount;
   };
 
-  const settleExact = () => {
+  const settleExact = mode => {
     let moving = false;
     records.forEach(record => {
+      if (!renderableRecord(record, mode)) return;
       const offsetError = magnitude(record.targetX - record.x, record.targetY - record.y);
       const velocity = magnitude(record.vx, record.vy);
       const scaleError = Math.abs(record.targetScale - record.scale);
@@ -393,6 +410,7 @@
     const config = computeTargets(activeId);
 
     records.forEach(record => {
+      if (!renderableRecord(record, config.mode)) return;
       [record.x, record.vx] = springAxis(record.x, record.vx, record.targetX, dt, SPRING);
       [record.y, record.vy] = springAxis(record.y, record.vy, record.targetY, dt, SPRING);
       [record.scale, record.scaleVelocity] = springScale(record.scale, record.scaleVelocity, record.targetScale, dt);
@@ -402,7 +420,7 @@
     adaptEdges();
     frameCount += 1;
 
-    if (settleExact()) {
+    if (settleExact(config.mode)) {
       frame = requestAnimationFrame(tick);
       return;
     }
@@ -515,7 +533,11 @@
 
     window.addEventListener('profile:node-interaction', wake);
     window.addEventListener('profile:scene-state', () => requestAnimationFrame(wake));
-    window.addEventListener('profile:atlas-lod-change', wake);
+    window.addEventListener('profile:atlas-lod-change', () => {
+      hardReset();
+      recordsNeedSync = true;
+      wake();
+    });
     window.addEventListener('profile:transition-begin', () => suspend('transition'));
     window.addEventListener('profile:transition-finish', () => resume('transition'));
     window.addEventListener('profile:transition-cancel', () => resume('transition'));
@@ -541,6 +563,14 @@
     };
     ['profile:intro-stage', 'profile:intro-completed', 'profile:intro-interrupted', 'profile:profile-root-emergence']
       .forEach(type => window.addEventListener(type, environmentChanged));
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible') {
+        hardReset();
+        return;
+      }
+      recordsNeedSync = true;
+      wake();
+    });
     environmentChanged();
 
     return true;

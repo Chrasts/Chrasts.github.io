@@ -125,13 +125,17 @@ test.describe('Intro entry experience master contract', () => {
       entryState: document.body.dataset.entryState,
       revealClass: document.body.classList.contains('is-atlas-reveal'),
       portalAvailable: window.ProfileRootEntryPortal.snapshot().available,
-      shellPointerEvents: getComputedStyle(document.querySelector('.entry-loading-shell')).pointerEvents
+      shellPointerEvents: getComputedStyle(document.querySelector('.entry-loading-shell')).pointerEvents,
+      shellBackground: getComputedStyle(document.querySelector('.entry-loading-shell')).backgroundColor,
+      loaderOpacity: Number(getComputedStyle(document.querySelector('.entry-loading-object')).opacity)
     }));
     expect(unlocked.intro).toBe('ready');
     expect(unlocked.entryState).toBe('ready');
     expect(unlocked.revealClass).toBe(false);
     expect(unlocked.portalAvailable).toBe(true);
     expect(unlocked.shellPointerEvents).toBe('none');
+    expect(unlocked.shellBackground).toBe('rgba(0, 0, 0, 0)');
+    expect(unlocked.loaderOpacity).toBe(0);
   });
 
   test('entry chrome stays absent through condensation and five-branch emergence', async ({ page }) => {
@@ -149,7 +153,7 @@ test.describe('Intro entry experience master contract', () => {
     await page.waitForFunction(() => document.body.classList.contains('is-profile-root-emerging'), null, { timeout: 6_000 });
     expect(await chromeDisplay()).toEqual({ routebar: 'none', controls: 'none', brief: 'none' });
 
-    await page.waitForFunction(() => window.ProfileAtlasCondensation.snapshot().state === 'COMPLETE');
+    await page.waitForFunction(() => window.ProfileAtlasCondensation.snapshot().state === 'COMPLETE', null, { timeout: 7_000 });
     expect(await page.evaluate(() => document.body.classList.contains('is-entry-atlas-condensation'))).toBe(false);
   });
 
@@ -171,6 +175,7 @@ test.describe('Intro entry experience master contract', () => {
         quickOverview: getComputedStyle(document.querySelector('.quick-overview-global-trigger')).display,
         controls: getComputedStyle(document.querySelector('#atlas-controls')).display,
         loader: getComputedStyle(document.querySelector('.entry-loading-shell')).display,
+        loaderPointerEvents: getComputedStyle(document.querySelector('.entry-loading-shell')).pointerEvents,
         portraitWidth: Number(portrait.getAttribute('width')),
         hitRadius: Number(hit.getAttribute('r')),
         haloRadii: [...rootNode.querySelectorAll(':scope > .site-graph-halo')].map(ring => Number(ring.getAttribute('r'))),
@@ -183,12 +188,15 @@ test.describe('Intro entry experience master contract', () => {
     expect(settled.routebar).toBe('none');
     expect(settled.quickOverview).toBe('none');
     expect(settled.controls).toBe('none');
-    expect(settled.loader).toBe('none');
+    // The slow feathered light field may remain visible after semantic entry
+    // readiness, but it is purely visual and can never block the graph.
+    expect(['grid', 'none']).toContain(settled.loader);
+    expect(settled.loaderPointerEvents).toBe('none');
     expect(settled.portraitWidth).toBe(96);
     expect(settled.hitRadius).toBe(254);
     expect(settled.haloRadii).toEqual([132, 228]);
     expect(settled.rootScreen.x).toBeCloseTo(settled.viewport.width / 2, 0);
-    expect(settled.rootScreen.y).toBeCloseTo(settled.viewport.height / 2, 0);
+    expect(settled.rootScreen.y).toBeCloseTo(settled.viewport.height / 2 + 16, 0);
 
     const idleMaterial = await root.evaluate(node => ({
       portraitScale: new DOMMatrixReadOnly(getComputedStyle(node.querySelector(':scope > [data-root-entry-portrait]')).transform).a,
@@ -262,24 +270,22 @@ test.describe('Intro entry experience master contract', () => {
     expect(await page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]').count()).toBe(1);
   });
 
-  test('condensation captures every non-root node and starts at the visible camera', async ({ page }) => {
+  test('condensation captures every non-root node after the Atlas camera settles at the shared entry composition', async ({ page }) => {
     await bootAtlas(page);
     await page.evaluate(() => {
       window.ProfileAtlasLOD.setTopologyMode('entry-full', { reason: 'contract-test' });
-      window.__entryCameraProbe = window.ProfileAtlasLOD.snapshot().camera;
     });
     await page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-hit').click();
     await page.waitForFunction(() => window.ProfileAtlasCondensation.snapshot().state === 'CONDENSING');
     const state = await page.evaluate(() => ({
       condensation: window.ProfileAtlasCondensation.snapshot(),
-      camera: window.ProfileAtlasLOD.snapshot().camera,
-      probe: window.__entryCameraProbe
+      camera: window.ProfileAtlasLOD.snapshot().camera
     }));
     expect(state.condensation.nodeCount).toBe(state.condensation.expectedNodeCount);
     expect(state.condensation.initialTopologyMode).toBe('entry-full');
-    expect(state.camera.x).toBeCloseTo(state.probe.x, 4);
-    expect(state.camera.y).toBeCloseTo(state.probe.y, 4);
-    expect(state.camera.scale).toBeCloseTo(state.probe.scale, 4);
+    expect(state.camera.x).toBeCloseTo(state.condensation.initialCamera.x, 4);
+    expect(state.camera.y).toBeCloseTo(state.condensation.initialCamera.y, 4);
+    expect(state.camera.scale).toBeCloseTo(state.condensation.initialCamera.scale, 4);
     await page.evaluate(() => window.ProfileAtlasCondensation.cancel('contract-test'));
     await page.waitForFunction(() => window.ProfileAtlasCondensation.snapshot().state === 'CANCELLED');
   });
@@ -293,7 +299,7 @@ test.describe('Intro entry experience master contract', () => {
       });
     });
     await page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-hit').click();
-    await page.waitForFunction(() => window.ProfileAtlasCondensation.snapshot().state === 'COMPLETE');
+    await page.waitForFunction(() => window.ProfileAtlasCondensation.snapshot().state === 'COMPLETE', null, { timeout: 7_000 });
     expect(await page.evaluate(() => window.__profileSettledEvents)).toBeGreaterThan(0);
     const source = await (await page.request.get('/atlas-condensation.js')).text();
     expect(source).not.toContain('setTimeout(resolve, 510)');

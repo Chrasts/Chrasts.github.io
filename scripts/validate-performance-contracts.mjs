@@ -13,6 +13,7 @@ const introFixes = read('intro-fixes-v3.js');
 const localLabels = read('local-label-policy.js');
 const phase7 = read('phase7-atlas.js');
 const postEntry = read('profile-post-entry.js');
+const shell = read('site-shell.js');
 const productionScripts = fs.readdirSync('.').filter(file => file.endsWith('.js'));
 
 if (/createElement\(['"](?:script|link)['"]\)|ensureScript|ensureStyle/.test(bindings)) {
@@ -104,14 +105,25 @@ if (mutationObserverOwners.length) {
 }
 const retiredFiles = [
   'intro-animation.css', 'intro-unfold.js', 'intro-unfold.css',
-  'intro-state-consistency.js', 'graph-v4.css', 'artifact-open-guard.css'
+  'intro-state-consistency.js', 'graph-v4.css', 'artifact-open-guard.css',
+  // Unreferenced compatibility patches retired in the September optimisation
+  // pass. The active owners now expose the same behaviour directly.
+  'content-copy-policy.js', 'intro-root-early-entry.js',
+  'profile-motion-compat.js', 'node-dynamics.css'
 ];
 const returnedRetiredFiles = retiredFiles.filter(file => fs.existsSync(file));
 if (returnedRetiredFiles.length) {
   issues.push(`Retired runtime assets must stay deleted: ${returnedRetiredFiles.join(', ')}`);
 }
-if (/createElement\(['"](?:script|link)['"]\)/.test(postEntry) || !/profile-motion-refinements\.js/.test(definitions)) {
-  issues.push('Core motion resources must be owned by scene-definitions, not a nested post-entry loader chain.');
+if (/intro-root-early-entry\.js|content-copy-policy\.js|profile-motion-compat\.js/.test(shell)) {
+  issues.push('Retired compatibility helpers must not be reintroduced through the base site shell.');
+}
+if (
+  /createElement\(['"](?:script|link)['"]\)/.test(postEntry) ||
+  /profile-motion-refinements\.js/.test(definitions) ||
+  !/profile-motion-refinements\.js/.test(bridge)
+) {
+  issues.push('Profile root motion must be Atlas-gated by the feature bridge, not eagerly loaded or nested in post-entry cleanup.');
 }
 
 if (issues.length) {

@@ -741,13 +741,8 @@
     if (mode() !== 'atlas') return;
     const help = document.querySelector('#site-graph-help');
     if (help) help.textContent = 'Hover to trace structure and connections. Click a node for details; re-activate a local item to open the same node at local scale.';
-    const detail = document.querySelector('#site-detail-panel');
-    const selected = selectedAtlasNode();
-    if (!detail || detail.hidden || !selected) return;
-    const anchor = nodeMap.get(selected.dataset.nodeId);
-    const targetRoute = routeForNode(anchor);
-    const hint = detail.querySelector('.atlas-repeat-click-hint');
-    if (hint && isFocusRoute(targetRoute)) hint.textContent = 'Activate the selected node again, or use the action below, to open it at local scale.';
+    // The local-open action is self-explanatory. Do not supplement it with a
+    // second activation instruction in the Atlas inspector.
   };
   function scheduleCopySync() {
     cancelAnimationFrame(copyFrame);

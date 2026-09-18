@@ -11,25 +11,16 @@ const waitPhase8 = async page => {
   await page.waitForTimeout(120);
 };
 
-test('Phase 8 turns Experience into a stable chronological timeline object', async ({ page }) => {
+test('Phase 8 keeps redundant Experience timeline detail out of overview and focus states', async ({ page }) => {
   await bypassIntro(page);
   await page.goto('/#experience');
   await waitPhase8(page);
 
   const timeline = page.locator('[data-phase8-object="experience-timeline"]');
-  await expect(timeline).toBeVisible();
-  await expect(timeline.locator('.phase8-experience-item')).toHaveCount(3);
-
-  const labels = await timeline.locator('.phase8-experience-item').evaluateAll(items =>
-    items.map(item => [
-      item.dataset.nodeId,
-      item.querySelector('.phase8-experience-meta')?.textContent,
-      item.querySelector('.phase8-experience-role')?.textContent
-    ])
-  );
-  expect(labels.map(item => item[0])).toEqual(['escape-room', 'student-ball', 'ceske-priority']);
-  expect(labels[0][1]).toContain('2019');
-  expect(labels[2][1]).toContain('present');
+  await expect(timeline).toBeHidden();
+  await page.goto('/#experience/escape-room');
+  await waitPhase8(page);
+  await expect(timeline).toBeHidden();
 });
 
 test('Phase 8 certificate stack keeps every credential directly selectable', async ({ page }) => {
@@ -71,9 +62,28 @@ test('Phase 8 ESSLLI scene renders the selected timetable and semantic topic lin
   // Keep this conservative instead of inventing a sixth course for layout.
   await expect(timetable.locator('.phase8-course-cell')).toHaveCount(5);
   await expect(timetable).toContainText('Introduction to SAT and SMT Solving');
+  await expect(page.locator('body')).toContainText('Compact record of the selected programme.');
+  await expect(page.locator('body')).not.toContainText('Links point only to broader knowledge areas retained in the portfolio.');
+  await expect(page.locator('body')).not.toContainText('Sessions are education context, not automatic claims of standalone expertise.');
   const computationalLinks = timetable.locator('[data-route="knowledge/logic-math/mathematical-logic/computational-logic"]');
   expect(await computationalLinks.count()).toBeGreaterThan(0);
   await expect(computationalLinks.first()).toBeVisible();
+});
+
+test('BSc thesis uses cross-section return history instead of losing Education context', async ({ page }) => {
+  await bypassIntro(page);
+  await page.goto('/#education/charles-university');
+  await waitPhase8(page);
+
+  await page.getByRole('button', { name: 'Open BSc thesis' }).click();
+  await page.waitForFunction(() => document.body.dataset.graphRoute === 'work/project/bachelor-thesis');
+  await page.waitForFunction(() => window.ProfileCrossLinkTravel?.snapshot?.().result === 'completed');
+  await expect(page.getByRole('button', { name: /Return to Bachelor/i })).toBeVisible();
+
+  await page.keyboard.press('Control+Z');
+  await page.waitForFunction(() => document.body.dataset.graphRoute === 'education/charles-university');
+  await page.waitForFunction(() => window.ProfileCrossLinkTravel?.snapshot?.().result === 'completed');
+  expect((await page.evaluate(() => window.ProfileCrossLinkTravel.snapshot())).history).toHaveLength(0);
 });
 
 test('Phase 8 mobile semantic tray stays inside the viewport without document scroll', async ({ page }) => {

@@ -378,9 +378,15 @@
     const entryRoot = purpose === 'entry' ? geometry.atlasPoint(rootId) : null;
     const anchorX = Number.isFinite(entryRoot?.x) ? entryRoot.x : bounds.centerX;
     const anchorY = Number.isFinite(entryRoot?.y) ? entryRoot.y : bounds.centerY;
+    // The compact profile scene deliberately holds its root a little below
+    // the geometric viewport centre. Match that composition for entry mode,
+    // so an Atlas-to-profile hand-off does not finish with a visible drop.
+    const entryVerticalBias = purpose === 'entry' && !mobileQuery.matches
+      ? 16 * viewBox.height / Math.max(1, rect.height)
+      : 0;
     const next = clampCamera({
       x: safeCenterX - anchorX * scale,
-      y: safeCenterY - anchorY * scale,
+      y: safeCenterY + entryVerticalBias - anchorY * scale,
       scale
     });
     return { ...next, topologyBounds: bounds, occupancy, anchorId: purpose === 'entry' ? rootId : null };
@@ -565,12 +571,6 @@
     const selectedId = document.querySelector('#site-graph .site-graph-node.is-previewed[data-node-id]')?.dataset.nodeId;
     const actionCopy = selectedId === rootId ? 'Back to overview' : selectedId === 'work' ? 'Open Work' : 'Explore this section';
     if (action.textContent !== actionCopy) action.textContent = actionCopy;
-    if (!detail.querySelector('.atlas-repeat-click-hint')) {
-      const hint = document.createElement('p');
-      hint.className = 'atlas-repeat-click-hint';
-      hint.textContent = 'Click the selected node again to centre and zoom.';
-      detail.insertBefore(hint, action);
-    }
   };
 
   /* --------------------------------------------------------------------
@@ -584,7 +584,9 @@
   let labelCollisionBoxReads = 0;
   let labelCollisionCandidateChecks = 0;
   let labelCollisionWrites = 0;
+  let labelCollisionDeferred = false;
   const offsetLabels = new Set();
+  const atlasWorkVisible = () => document.visibilityState === 'visible';
   const labelCollisionState = () => {
     const selectedId = document.querySelector('#site-graph .site-graph-node.is-previewed[data-node-id]')?.dataset.nodeId || '';
     return `${topologyMode}|${currentLOD || ''}|${selectedId}`;
@@ -628,6 +630,10 @@
   };
   const resolveAtlasLabelCollisions = ({ force = false } = {}) => {
     collisionFrame = 0;
+    if (!atlasWorkVisible()) {
+      labelCollisionDeferred = true;
+      return;
+    }
     // Layout reads (`getBoundingClientRect`) would force SVG work into the
     // drag frame. A settled-camera event schedules the retained pass instead.
     if (cameraMotionActive) {
@@ -699,9 +705,14 @@
       placed.push(rect);
     });
     collisionSignature = signature;
+    labelCollisionDeferred = false;
     labelCollisionPasses += 1;
   };
   function scheduleLabelCollisionPass({ force = false } = {}) {
+    if (!atlasWorkVisible()) {
+      labelCollisionDeferred = true;
+      return;
+    }
     if (collisionFrame) cancelAnimationFrame(collisionFrame);
     collisionFrame = requestAnimationFrame(() => {
       collisionFrame = requestAnimationFrame(() => resolveAtlasLabelCollisions({ force }));
@@ -773,6 +784,18 @@
   addEventListener('resize', () => {
     invalidateLabelCollisions();
     if (!cameraMotionActive) scheduleLabelCollisionPass();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (!atlasWorkVisible()) {
+      if (collisionFrame) cancelAnimationFrame(collisionFrame);
+      collisionFrame = 0;
+      labelCollisionDeferred = true;
+      return;
+    }
+    if (labelCollisionDeferred || document.body?.dataset.graphMode === 'atlas') {
+      invalidateLabelCollisions();
+      scheduleLabelCollisionPass();
+    }
   });
 
   document.addEventListener('change', event => {
@@ -930,6 +953,8 @@
       labelCollisionBoxReads,
       labelCollisionCandidateChecks,
       labelCollisionWrites,
+      labelCollisionDeferred,
+      pageVisible: atlasWorkVisible(),
       cameraMotionActive,
       selectedNodeId: document.querySelector('#site-graph .site-graph-node.is-previewed[data-node-id]')?.dataset.nodeId || null
     })

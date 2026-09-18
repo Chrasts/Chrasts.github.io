@@ -48,12 +48,16 @@
   let overlay = null;
   let sequence = 0;
   let activeTransitionToken = null;
+  const routeHistory = [];
+  let lastRoute = null;
+  let expectedReturnRoute = null;
 
   const normaliseRoute = value => {
     const route = (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
     return graph.routeAliases?.[route] || route;
   };
   const routeForNode = node => node?.route || 'overview';
+  const currentRoute = () => normaliseRoute(location.hash || document.body?.dataset.graphRoute || 'overview');
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   const waitFor = (predicate, timeout = 3500) => new Promise(resolve => {
     const started = performance.now();
@@ -154,36 +158,71 @@
   rail.append(railTitle, railList);
   routebar.insertAdjacentElement('afterend', rail);
 
+  // Cross-links can be numerous, but returning across one is a single,
+  // high-value action. Keep that action in the shared routebar so it remains
+  // visible in Work, local semantic fragments and mobile navigation alike.
+  const returnControl = document.createElement('button');
+  returnControl.type = 'button';
+  returnControl.className = 'crosslink-return-control';
+  returnControl.hidden = true;
+  returnControl.dataset.crosslinkReturn = 'true';
+  const returnPrefix = document.createElement('span');
+  returnPrefix.className = 'crosslink-return-prefix';
+  returnPrefix.textContent = '← Back';
+  const returnTarget = document.createElement('span');
+  returnTarget.className = 'crosslink-return-target';
+  returnControl.append(returnPrefix, returnTarget);
+  const header = document.querySelector('.site-header');
+  (header || routebar).appendChild(returnControl);
+
   const introOwnsScreen = () => ['pending', 'waiting', 'running', 'identity', 'expanding', 'handoff']
     .includes(document.documentElement.dataset.profileIntro);
+  const openingAtlasOwnsScreen = () => document.body?.dataset.graphMode === 'atlas' &&
+    ['preparing', 'ignition', 'reveal', 'ready'].includes(document.body?.dataset.entryState || '');
+
+  const nodeForRoute = route => graph.nodes.find(node => normaliseRoute(node.route) === normaliseRoute(route)) || null;
+  const labelForRoute = route => {
+    const node = nodeForRoute(route);
+    if (node) return node.detailLabel || node.label;
+    return ({ atlas: 'Atlas', overview: 'Profile overview', work: 'Work' })[normaliseRoute(route)] || 'previous view';
+  };
+
+  const returnEntryForCurrentRoute = () => {
+    const entry = state.history.at(-1);
+    const sourceId = currentSourceId();
+    return entry && entry.targetId === sourceId && nodeMap.has(entry.sourceId) ? entry : null;
+  };
+
+  const routeReturnForCurrentRoute = () => routeHistory.at(-1) || null;
+  const returnDestination = () => {
+    const crossLink = returnEntryForCurrentRoute();
+    if (crossLink) return { kind: 'cross-link', route: crossLink.sourceRoute, label: labelForRoute(crossLink.sourceRoute) };
+    const route = routeReturnForCurrentRoute();
+    return route ? { kind: 'route', route, label: labelForRoute(route) } : null;
+  };
+
+  const updateReturnControl = destination => {
+    const available = Boolean(destination) && !state.travelling && !introOwnsScreen() && !openingAtlasOwnsScreen();
+    returnControl.hidden = !available;
+    if (!available) return;
+    const label = destination.label;
+    returnTarget.textContent = label;
+    returnControl.setAttribute('aria-label', `Return to ${label}. Keyboard shortcut Control or Command Z.`);
+    returnControl.title = `Return to ${label} (Ctrl/Cmd+Z)`;
+  };
 
   const renderRail = () => {
     if (state.travelling) return;
     const sourceId = currentSourceId();
     const relations = relationsFor(sourceId);
-    const returnEntry = state.history.at(-1);
-    const canReturn = Boolean(returnEntry && returnEntry.targetId === sourceId && nodeMap.has(returnEntry.sourceId));
+    updateReturnControl(returnDestination());
     railList.replaceChildren();
-    const hide = !sourceId || (!relations.length && !canReturn) || document.body?.dataset.graphMode === 'atlas' || introOwnsScreen();
+    // Return is deliberately singular: the persistent control beneath the
+    // brand owns it.  Keeping a second copy inside the graph rail made the
+    // navigation appear in the middle of otherwise local reading scenes.
+    const hide = !sourceId || !relations.length || document.body?.dataset.graphMode === 'atlas' || introOwnsScreen();
     rail.hidden = hide;
     if (hide) return;
-
-    if (canReturn) {
-      const origin = nodeMap.get(returnEntry.sourceId);
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'profile-crosslink is-return';
-      button.dataset.crosslinkReturn = 'true';
-      button.setAttribute('aria-label', `Return to ${origin.detailLabel || origin.label}`);
-      const relationText = document.createElement('span');
-      relationText.className = 'profile-crosslink-relation';
-      relationText.textContent = 'Return';
-      const targetText = document.createElement('span');
-      targetText.className = 'profile-crosslink-target';
-      targetText.textContent = origin.detailLabel || origin.label;
-      button.append(relationText, targetText);
-      railList.appendChild(button);
-    }
 
     relations.forEach(relation => {
       const anchor = document.createElement('a');
@@ -207,6 +246,23 @@
       anchor.append(relationText, targetText);
       railList.appendChild(anchor);
     });
+  };
+
+  const recordRouteVisit = () => {
+    const route = currentRoute();
+    if (!lastRoute) {
+      lastRoute = route;
+      return;
+    }
+    if (route === lastRoute) return;
+    if (expectedReturnRoute) {
+      if (route === expectedReturnRoute && routeHistory.at(-1) === route) routeHistory.pop();
+      expectedReturnRoute = null;
+    } else {
+      routeHistory.push(lastRoute);
+      if (routeHistory.length > 16) routeHistory.splice(0, routeHistory.length - 16);
+    }
+    lastRoute = route;
   };
 
   const elementForNode = id => {
@@ -453,6 +509,7 @@
     document.body.classList.add('is-crosslink-travelling');
     document.body.dataset.crossLinkTravel = 'trace';
     rail.hidden = true;
+    returnControl.hidden = true;
     overlay = createTravelOverlay(relation);
     scene?.transitions?.prepare?.(transitionToken, { phaseDetail: 'trace-relation' });
     emit('start', { relation });
@@ -521,14 +578,39 @@
     return sourceId && targetId ? { sourceId, targetId, type } : null;
   };
 
+  const returnToOrigin = () => {
+    if (state.travelling) return false;
+    const entry = returnEntryForCurrentRoute();
+    const sourceId = currentSourceId();
+    const relation = entry && relationsFor(sourceId).find(item => item.targetId === entry.sourceId);
+    if (!relation) return false;
+    expectedReturnRoute = routeForNode(relation.target);
+    const started = navigate({ sourceId, targetId: relation.targetId, type: relation.type, returnEntry: entry });
+    Promise.resolve(started).then(result => {
+      if (!result && expectedReturnRoute === routeForNode(relation.target)) expectedReturnRoute = null;
+    });
+    return started;
+  };
+
+  const returnToPrevious = () => {
+    if (state.travelling) return false;
+    if (returnEntryForCurrentRoute()) return returnToOrigin();
+    const route = routeReturnForCurrentRoute();
+    if (!route) return false;
+    expectedReturnRoute = route;
+    if (location.hash !== `#${route}`) location.hash = `#${route}`;
+    else {
+      expectedReturnRoute = null;
+      return false;
+    }
+    return true;
+  };
+
   rail.addEventListener('click', event => {
     const returnButton = event.target.closest?.('[data-crosslink-return="true"]');
     if (returnButton) {
       event.preventDefault();
-      const entry = state.history.at(-1);
-      const sourceId = currentSourceId();
-      const relation = entry && relationsFor(sourceId).find(item => item.targetId === entry.sourceId);
-      if (relation) navigate({ sourceId, targetId: relation.targetId, type: relation.type, returnEntry: entry });
+      returnToOrigin();
       return;
     }
     const anchor = event.target.closest?.('.profile-crosslink[data-target-id]');
@@ -553,8 +635,24 @@
     navigate(relation);
   }, true);
 
+  returnControl.addEventListener('click', event => {
+    event.preventDefault();
+    returnToPrevious();
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.defaultPrevented || event.altKey || event.shiftKey || !(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 'z') return;
+    const target = event.target;
+    if (target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
+    if (returnToPrevious()) event.preventDefault();
+  }, true);
+
   const scheduleRender = () => requestAnimationFrame(() => requestAnimationFrame(renderRail));
-  window.addEventListener('hashchange', scheduleRender);
+  lastRoute = currentRoute();
+  window.addEventListener('hashchange', () => {
+    recordRouteVisit();
+    scheduleRender();
+  });
   window.addEventListener('profile:scene-state', scheduleRender);
   window.addEventListener('profile:geometry-applied', scheduleRender);
   window.addEventListener('profile:intro-stage', scheduleRender);
@@ -571,7 +669,9 @@
     snapshot: () => ({
       ...state,
       history: state.history.map(entry => ({ ...entry })),
-      canReturn: Boolean(state.history.at(-1)?.targetId === currentSourceId()),
+      canReturn: Boolean(returnEntryForCurrentRoute()),
+      canNavigateBack: Boolean(returnDestination()),
+      routeHistory: [...routeHistory],
       vector: state.vector ? { ...state.vector } : null,
       currentSourceId: currentSourceId(),
       railVisible: !rail.hidden,
@@ -580,12 +680,8 @@
       sequence,
       transitionToken: activeTransitionToken
     }),
-    returnToOrigin: () => {
-      const entry = state.history.at(-1);
-      const sourceId = currentSourceId();
-      const relation = entry && relationsFor(sourceId).find(item => item.targetId === entry.sourceId);
-      return relation ? navigate({ sourceId, targetId: relation.targetId, type: relation.type, returnEntry: entry }) : false;
-    }
+    returnToOrigin,
+    returnToPrevious
   });
 
   scheduleRender();

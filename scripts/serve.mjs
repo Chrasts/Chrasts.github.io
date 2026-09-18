@@ -36,24 +36,46 @@ const server = createServer((request, response) => {
     return;
   }
 
-  response.writeHead(200, { 'Content-Type': mimeTypes[extname(file).toLowerCase()] || 'application/octet-stream' });
+  response.writeHead(200, {
+    'Content-Type': mimeTypes[extname(file).toLowerCase()] || 'application/octet-stream',
+    // This is a development-only server. Never let an old graph module mask
+    // a local change after a normal browser refresh.
+    'Cache-Control': 'no-store, max-age=0'
+  });
   createReadStream(file).pipe(response);
 });
 
-const address = 'http://127.0.0.1:4173/';
-server.listen(4173, '127.0.0.1', () => {
+const host = '127.0.0.1';
+const requestedPort = Number.parseInt(process.env.PORT || '4173', 10);
+const preferredPort = Number.isInteger(requestedPort) && requestedPort > 0 && requestedPort < 65536
+  ? requestedPort
+  : 4173;
+let triedFallbackPort = false;
+
+const ready = () => {
+  const binding = server.address();
+  const port = typeof binding === 'object' && binding ? binding.port : preferredPort;
+  const address = `http://${host}:${port}/`;
   console.log(`Local portfolio server is ready at ${address}`);
   console.log('Press Ctrl+C to stop the server.');
   if (process.env.OPEN_BROWSER !== '1') return;
   if (process.platform === 'win32') execFile('cmd.exe', ['/c', 'start', '', address]);
   else if (process.platform === 'darwin') execFile('open', [address]);
   else execFile('xdg-open', [address]);
-});
+};
+
+server.on('listening', ready);
 
 server.on('error', error => {
-  const message = error?.code === 'EADDRINUSE'
-    ? `Port 4173 is already in use. Open ${address} or stop the existing server first.`
-    : `Local portfolio server could not start: ${error.message}`;
+  if (error?.code === 'EADDRINUSE' && !triedFallbackPort) {
+    triedFallbackPort = true;
+    console.warn(`Port ${preferredPort} is already in use; using the next available local port instead.`);
+    server.listen(0, host);
+    return;
+  }
+  const message = `Local portfolio server could not start: ${error.message}`;
   console.error(message);
   process.exitCode = 1;
 });
+
+server.listen(preferredPort, host);

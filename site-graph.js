@@ -397,6 +397,7 @@
       targetX: 0, targetY: 0, targetScale: 1,
       frame: 0
     };
+    const localCamera = { x: 0, y: 0 };
     const renderer = {
       svg: null,
       camera: null,
@@ -410,6 +411,7 @@
       lastLayout: null,
       frame: 0,
       drag: null,
+      panClickUntil: 0,
       timeline: null,
       semanticGuides: new Map(),
       semanticEvidence: new Map()
@@ -417,6 +419,12 @@
 
     const FOCUS = { width: 1200, height: 720 };
     const SAFE = { top: 105, right: 90, bottom: 95, left: 90 };
+    // These routes own their concise Phase 8 inspector. Suppress the generic
+    // leaf panel there so focus never opens two competing descriptions.
+    const semanticInspectorNodeIds = new Set([
+      'ceske-priority', 'charles-university', 'charles-university-masters-logic',
+      'esslli', 'prg-ai', 'credentials', 'cert-cambridge-b2', 'cert-ethics-ai', 'cert-intro-ai'
+    ]);
 
     const currentNodeById = id => nodeMap.get(id) || workConceptNodeMap.get(id) || null;
 
@@ -425,9 +433,34 @@
       if (state.mode === 'atlas') return graph.nodes;
       if (state.mode === 'work') return [profileRoot, workRoot, ...workConceptNodes];
 
+      // Credentials are dated evidence, not a navigational parent in the
+      // Education map. Keep deep links useful by showing their milestones
+      // directly instead of resurrecting a redundant Credentials node.
+      if (state.node.id === 'credentials') {
+        return [profileRoot, nodeMap.get('education'), ...childrenFor('credentials')].filter(Boolean);
+      }
+
+      if (state.node.id === 'charles-university') {
+        // BSc focus has its own compact, clickable course-evidence
+        // constellation. Do not also spill the legacy child tree into the
+        // generic reserve area underneath the inspector.
+        return [profileRoot, nodeMap.get('education'), state.node, nodeMap.get('project-bachelor-thesis')].filter(Boolean);
+      }
+
       const visible = new Map(primaryPath(state.node).map(node => [node.id, node]));
       const children = childrenFor(state.node.id);
       children.slice(0, 8).forEach(node => visible.set(node.id, node));
+      if (state.node.id === 'education') {
+        // The Education overview is a temporal map, not a recursively opened
+        // course tree. Only certificate milestones join its programme lanes;
+        // coursework stays available after selecting its BSc programme.
+        visible.delete('credentials');
+        // Milestones are part of the temporal projection on every viewport;
+        // the semantic layout supplies the mobile cluster rather than hiding
+        // factual education evidence on a phone.
+        childrenFor('credentials').slice(0, 3).forEach(node => visible.set(node.id, node));
+        return [...visible.values()];
+      }
       if (children.length <= 5) {
         children.forEach(child => {
           childrenFor(child.id).slice(0, 2).forEach(grandchild => {
@@ -692,25 +725,28 @@
       state.mode === 'atlas' ? layoutAtlas(nodes) :
       layoutFocus(nodes);
 
-    const graphEdges = nodes => {
+    const graphEdges = (nodes, layout = null) => {
       if (state.mode === 'work') return workEdgesModel();
       const ids = new Set(nodes.map(node => node.id));
       const edges = [];
-      nodes.forEach(node => {
-        const parents = node.parentIds || [];
-        parents.forEach((parentId, index) => {
-          if (!ids.has(parentId)) return;
-          if (state.mode === 'atlas') {
-            if (!atlasOptions.hierarchy) return;
-            if (index > 0 && !atlasOptions.secondary) return;
-          }
-          edges.push({
-            source: parentId,
-            target: node.id,
-            type: index === 0 ? 'hierarchy' : 'hierarchy-alt'
+      const semanticLayout = state.mode === 'focus' && Boolean(layout?.semanticKind);
+      if (!semanticLayout) {
+        nodes.forEach(node => {
+          const parents = node.parentIds || [];
+          parents.forEach((parentId, index) => {
+            if (!ids.has(parentId)) return;
+            if (state.mode === 'atlas') {
+              if (!atlasOptions.hierarchy) return;
+              if (index > 0 && !atlasOptions.secondary) return;
+            }
+            edges.push({
+              source: parentId,
+              target: node.id,
+              type: index === 0 ? 'hierarchy' : 'hierarchy-alt'
+            });
           });
         });
-      });
+      }
       if (state.mode === 'atlas' && atlasOptions.crossLinks) {
         graph.edges.forEach(edge => {
           if (!ids.has(edge.source) || !ids.has(edge.target)) return;
@@ -722,7 +758,7 @@
         graph.edges.forEach(edge => {
           if (!ids.has(edge.source) || !ids.has(edge.target)) return;
           const permitted = edge.type === 'role-project' ||
-            (state.node.id === 'charles-university' && ['education-link', 'thesis-of'].includes(edge.type));
+            (state.node.id === 'charles-university' && edge.type === 'thesis-of');
           if (permitted) edges.push({ ...edge });
         });
       }
@@ -783,8 +819,25 @@
         node.type === 'work-concept' ? '5.5' : '6'
       );
 
+      // The semantic layouts use one renderer and vary only the node
+      // morphology.  Keep the normal circle for generic graph nodes and add
+      // a dormant glyph for programme / credential markers; CSS turns it on
+      // only in the two temporal fragments.
+      const variantGlyph = document.createElementNS(svgNS, 'rect');
+      variantGlyph.classList.add('site-graph-variant-glyph');
+      variantGlyph.setAttribute('x', '-5');
+      variantGlyph.setAttribute('y', '-5');
+      variantGlyph.setAttribute('width', '10');
+      variantGlyph.setAttribute('height', '10');
+      variantGlyph.setAttribute('rx', '1.8');
+      variantGlyph.setAttribute('aria-hidden', 'true');
+
       const label = document.createElementNS(svgNS, 'text');
       label.classList.add('site-graph-label');
+      // Text is part of a graph node's hit target.  SVG defaults made labels
+      // visually present but mouse-transparent, which was particularly
+      // frustrating in the compact Education constellations.
+      label.setAttribute('pointer-events', 'all');
       label.setAttribute('text-anchor', 'middle');
       label.setAttribute('y', node.id === profileRoot.id ? '-25' : '25');
       if (node.type === 'work-concept') {
@@ -793,11 +846,12 @@
         label.textContent = node.id === workRoot.id && state.mode === 'work' ? 'WORK' : node.label;
       }
 
-      group.append(hit, dot, label);
+      group.append(hit, dot, variantGlyph, label);
 
       if (node.meta && state.mode !== 'work') {
         const meta = document.createElementNS(svgNS, 'text');
         meta.classList.add('site-graph-meta');
+        meta.setAttribute('pointer-events', 'all');
         meta.setAttribute('text-anchor', 'middle');
         meta.setAttribute('y', '42');
         meta.textContent = node.meta;
@@ -853,7 +907,10 @@
       group.addEventListener('blur', clear);
       group.addEventListener('click', event => {
         event.stopPropagation();
-        if (!renderer.drag?.moved) activate();
+        // The shared profile root is always the explicit way back home. Its
+        // route must not be swallowed by the short anti-click window that
+        // protects ordinary nodes after a deliberate camera drag.
+        if (node.id === profileRoot.id || performance.now() >= renderer.panClickUntil) activate();
       });
       group.addEventListener('keydown', event => {
         if (event.key === 'Enter' || event.key === ' ') {
@@ -881,6 +938,17 @@
       renderer.svg.appendChild(renderer.camera);
       root.replaceChildren(renderer.svg);
 
+      // The root is shared by every focused fragment. Keep a capture-phase
+      // route-home handler on the SVG itself so nested node visuals and drag
+      // listeners can never leave it looking clickable without navigating.
+      renderer.svg.addEventListener('click', event => {
+        const target = event.target.closest?.('.site-graph-node[data-node-id]');
+        if (state.mode !== 'focus' || target?.dataset.nodeId !== profileRoot.id) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        updateHash('overview');
+      }, true);
+
       renderer.svg.addEventListener('wheel', event => {
         if (state.mode !== 'atlas') return;
         // Phase 7 owns desktop Atlas input. Keeping this fallback dormant
@@ -899,37 +967,69 @@
       }, { passive: false });
 
       renderer.svg.addEventListener('pointerdown', event => {
-        if (state.mode !== 'atlas' || event.button !== 0) return;
-        if (window.ProfileAtlasLOD?.ownsDesktopInput?.()) return;
-        renderer.drag = { x: event.clientX, y: event.clientY, moved: false };
+        if (event.button !== 0) return;
+        const atlasDrag = state.mode === 'atlas' && !window.ProfileAtlasLOD?.ownsDesktopInput?.();
+        const localDrag = state.mode === 'focus' && Boolean(renderer.lastLayout?.semanticKind);
+        if (!atlasDrag && !localDrag) return;
+        renderer.drag = {
+          kind: atlasDrag ? 'atlas' : 'local',
+          x: event.clientX,
+          y: event.clientY,
+          originX: event.clientX,
+          originY: event.clientY,
+          sourceNodeId: event.target.closest?.('.site-graph-node[data-node-id]')?.dataset.nodeId || null,
+          moved: false
+        };
         renderer.svg.setPointerCapture?.(event.pointerId);
         renderer.svg.classList.add('is-dragging');
       });
       renderer.svg.addEventListener('pointermove', event => {
-        if (!renderer.drag || state.mode !== 'atlas') return;
-        if (window.ProfileAtlasLOD?.ownsDesktopInput?.()) return;
+        if (!renderer.drag) return;
         const bounds = renderer.svg.getBoundingClientRect();
         const active = renderer.lastLayout;
+        if (!active) return;
+        const physicalDistance = Math.hypot(event.clientX - renderer.drag.originX, event.clientY - renderer.drag.originY);
+        // A node click naturally moves a pointer by a pixel or two. Do not
+        // turn that into a pan (and then suppress its click); a deliberate
+        // camera gesture needs a small but unambiguous physical threshold.
+        if (physicalDistance < 7) return;
+        renderer.drag.moved = true;
         const dx = (event.clientX - renderer.drag.x) * active.width / Math.max(1, bounds.width);
         const dy = (event.clientY - renderer.drag.y) * active.height / Math.max(1, bounds.height);
-        if (Math.abs(dx) + Math.abs(dy) > 2) renderer.drag.moved = true;
-        const atlasOwner = window.ProfileAtlasLOD;
-        if (atlasOwner?.panTo && atlasOwner?.snapshot) {
-          const ownerState = atlasOwner.snapshot();
-          const current = ownerState.targetCamera || ownerState.camera || { x: 0, y: 0 };
-          atlasOwner.panTo(current.x + dx, current.y + dy, { immediate: true });
+        if (renderer.drag.kind === 'local') {
+          const maxX = active.width * .38, maxY = active.height * .34;
+          localCamera.x = Math.max(-maxX, Math.min(maxX, localCamera.x + dx));
+          localCamera.y = Math.max(-maxY, Math.min(maxY, localCamera.y + dy));
+          paintLocalCamera();
         } else {
-          atlasCamera.x += dx; atlasCamera.y += dy;
-          atlasCamera.targetX = atlasCamera.x; atlasCamera.targetY = atlasCamera.y;
-          paintAtlas();
+          const atlasOwner = window.ProfileAtlasLOD;
+          if (atlasOwner?.panTo && atlasOwner?.snapshot) {
+            const ownerState = atlasOwner.snapshot();
+            const current = ownerState.targetCamera || ownerState.camera || { x: 0, y: 0 };
+            atlasOwner.panTo(current.x + dx, current.y + dy, { immediate: true });
+          } else {
+            atlasCamera.x += dx; atlasCamera.y += dy;
+            atlasCamera.targetX = atlasCamera.x; atlasCamera.targetY = atlasCamera.y;
+            paintAtlas();
+          }
         }
         renderer.drag.x = event.clientX; renderer.drag.y = event.clientY;
       });
       const endDrag = event => {
         if (!renderer.drag) return;
+        const returnToOverview = renderer.drag.kind === 'local' &&
+          !renderer.drag.moved && renderer.drag.sourceNodeId === profileRoot.id;
+        const selectedLocalNode = renderer.drag.kind === 'local' &&
+          !renderer.drag.moved && renderer.drag.sourceNodeId &&
+          renderer.drag.sourceNodeId !== profileRoot.id
+          ? currentNodeById(renderer.drag.sourceNodeId)
+          : null;
         renderer.svg.releasePointerCapture?.(event.pointerId);
+        if (renderer.drag.moved) renderer.panClickUntil = performance.now() + 120;
         renderer.drag = null;
         renderer.svg.classList.remove('is-dragging');
+        if (returnToOverview) updateHash('overview');
+        else if (selectedLocalNode && selectedLocalNode.id !== state.node?.id) updateHash(routeForNode(selectedLocalNode));
       };
       renderer.svg.addEventListener('pointerup', endDrag);
       renderer.svg.addEventListener('pointercancel', endDrag);
@@ -1063,11 +1163,12 @@
     const renderGraph = () => {
       const nodes = visibleGraph();
       const layout = layoutGraph(nodes);
-      const edges = graphEdges(nodes);
+      const edges = graphEdges(nodes, layout);
       ensureRenderer(layout);
       renderer.svg.setAttribute('viewBox', `0 0 ${layout.width} ${layout.height}`);
       renderer.lastLayout = layout;
       renderer.lastEdges = edges;
+      renderer.svg.classList.toggle('is-local-pannable', state.mode === 'focus' && Boolean(layout.semanticKind));
 
       const guideModels = layout.semanticGuides || (layout.timeline
         ? [{ id: 'legacy-timeline', kind: 'axis', x1: layout.timeline.x1, y1: layout.timeline.y, x2: layout.timeline.x2, y2: layout.timeline.y }]
@@ -1101,8 +1202,12 @@
         const label = group.querySelector('text');
         if (label) {
           label.textContent = guide.label || '';
-          label.setAttribute('x', ((from.x + to.x) / 2).toFixed(1));
-          label.setAttribute('y', (Math.min(from.y, to.y) - 12).toFixed(1));
+          const labelPoint = visualPoint({
+            x: Number.isFinite(guide.labelX) ? guide.labelX : (guide.x1 + guide.x2) / 2,
+            y: Number.isFinite(guide.labelY) ? guide.labelY : Math.min(guide.y1, guide.y2) - 12
+          });
+          label.setAttribute('x', labelPoint.x.toFixed(1));
+          label.setAttribute('y', labelPoint.y.toFixed(1));
           label.setAttribute('text-anchor', 'middle');
         }
       });
@@ -1127,9 +1232,11 @@
           dot.setAttribute('r', '5.2');
           const label = document.createElementNS(svgNS, 'text');
           label.classList.add('site-graph-evidence-label');
+          label.setAttribute('pointer-events', 'all');
           label.setAttribute('x', '11'); label.setAttribute('y', '3.5');
           const meta = document.createElementNS(svgNS, 'text');
           meta.classList.add('site-graph-evidence-meta');
+          meta.setAttribute('pointer-events', 'all');
           meta.setAttribute('x', '11'); meta.setAttribute('y', '16');
           const title = document.createElementNS(svgNS, 'title');
           group.append(dot, label, meta, title);
@@ -1139,6 +1246,16 @@
           group.addEventListener('focus', () => highlight(true));
           group.addEventListener('blur', () => highlight(false));
           const activate = restoreFocus => {
+            // BSc evidence objects name course areas, not separate routes.
+            // Selecting one keeps the learner in the BSc fragment and makes
+            // its corresponding inspector section explicit on the right.
+            if (item.programmeId === 'charles-university') {
+              highlight(true);
+              window.dispatchEvent(new CustomEvent('profile:education-evidence-select', {
+                detail: { evidenceId: item.id, restoreFocus: Boolean(restoreFocus) }
+              }));
+              return;
+            }
             const destination = item.knowledgeIds.map(id => nodeMap.get(id)).find(Boolean);
             if (!destination?.route) return;
             if (restoreFocus) {
@@ -1203,8 +1320,39 @@
         targets.set(node.id, target);
         element.classList.toggle('is-selected', node.id === state.node?.id && state.mode !== 'overview');
         element.classList.toggle('is-work-root', node.id === 'work' && state.mode === 'work');
+        const timelineRole = Boolean(layout.timelineNodeIds?.has?.(node.id)) ||
+          (layout.semanticKind === 'experience-temporal' && node.type === 'experience');
+        element.classList.toggle('is-semantic-timeline-role', timelineRole);
+        const semanticVariant = layout.semanticNodeVariants?.get?.(node.id) || '';
+        element.dataset.semanticVariant = semanticVariant;
+        element.classList.toggle('is-semantic-degree', semanticVariant === 'degree');
+        element.classList.toggle('is-semantic-programme', semanticVariant === 'programme');
+        // Retain this class as a small compatibility bridge for existing
+        // motion rules while the semantic name reflects the data model.
+        element.classList.toggle('is-semantic-parallel-study', semanticVariant === 'programme');
+        element.classList.toggle('is-semantic-credential', semanticVariant === 'credential');
+        element.classList.toggle('is-experience-earlier', semanticVariant === 'experience-earlier');
+        element.classList.toggle('is-experience-current', semanticVariant === 'experience-current');
+        element.classList.toggle('is-legacy-experience', semanticVariant === 'experience-earlier');
+        element.classList.toggle('is-professional-experience', semanticVariant === 'experience-current');
+        element.classList.toggle('is-semantic-section-anchor', Boolean(layout.semanticSectionAnchors?.has?.(node.id)));
+        const priority = layout.semanticNodePriorities?.get?.(node.id) || '';
+        element.classList.toggle('is-semantic-primary', priority === 'primary');
+        element.classList.toggle('is-semantic-secondary', priority === 'secondary');
+        element.classList.toggle('is-semantic-tertiary', priority === 'tertiary');
         const label = element.querySelector('.site-graph-label');
-        if (label && node.id === 'work') label.textContent = state.mode === 'work' ? 'WORK' : 'Work';
+        const textOffsets = layout.timelineTextOffsets?.get?.(node.id);
+        if (label) {
+          if (node.id === 'work') label.textContent = state.mode === 'work' ? 'WORK' : 'Work';
+          label.setAttribute('y', timelineRole ? String(textOffsets?.label ?? -20) : node.id === profileRoot.id ? '-25' : '25');
+        }
+        const meta = element.querySelector('.site-graph-meta');
+        const metaModel = layout.timelineLabelMeta?.get?.(node.id);
+        if (meta) {
+          meta.setAttribute('y', timelineRole ? String(textOffsets?.meta ?? -37) : '42');
+          meta.textContent = metaModel?.text ?? node.meta ?? '';
+          meta.classList.toggle('is-semantic-meta-hidden', Boolean(metaModel?.hidden));
+        }
       });
 
       const leavingNodes = [...renderer.nodeElements].filter(([id]) => !visibleIds.has(id));
@@ -1303,7 +1451,7 @@
           paintAtlas();
           restoreAtlasHighlight();
         } else {
-          renderer.camera.setAttribute('transform', '');
+          paintLocalCamera();
         }
         syncWorkDecorations(layout);
         window.dispatchEvent(new CustomEvent('profile:graph-render-settled', {
@@ -1624,26 +1772,29 @@
 
     const openAtlasInspector = node => {
       showDetailShell(humanType(node.type), node.detailLabel || node.label, node.summary || 'A connected item in the profile map.');
-      const section = primaryPath(node).find(item => item.parentIds?.includes(profileRoot.id));
+      const parents = (node.parentIds || []).map(id => nodeMap.get(id)).filter(Boolean);
+      const children = childrenFor(node.id);
       const facts = document.createElement('dl');
       facts.className = 'detail-facts atlas-facts';
-      const pairs = [
-        ['Part of', section?.label],
-        ['Parent', (node.parentIds || []).map(id => nodeMap.get(id)?.label).filter(Boolean).join(' · ') || null],
-        ['Below', `${descendantIds(node.id).size} connected descendant${descendantIds(node.id).size === 1 ? '' : 's'}`]
-      ].filter(([, value]) => value);
+      // Present immediate hierarchy once. The former Part of / Parent /
+      // Upstream trio duplicated one relation, while a descendant count was
+      // redundant when the direct children are listed below.
+      const uniqueParents = [...new Map(parents.map(parent => [parent.id, parent])).values()];
+      const parentLabel = uniqueParents.map(parent => parent.detailLabel || parent.label).join(' · ');
+      const pairs = parentLabel ? [[uniqueParents.length > 1 ? 'Parents' : 'Parent', parentLabel]] : [];
       pairs.forEach(([key, value]) => {
         const dt = document.createElement('dt'); dt.textContent = key;
         const dd = document.createElement('dd'); dd.textContent = value;
         facts.append(dt, dd);
       });
-      detail.appendChild(facts);
-      appendNodeButtons('Upstream', (node.parentIds || []).map(id => nodeMap.get(id)).filter(Boolean));
-      appendNodeButtons('Downstream', childrenFor(node.id));
-      appendNodeButtons('Cross-links', graph.edges
-        .filter(edge => edge.source === node.id || edge.target === node.id)
+      if (pairs.length) detail.appendChild(facts);
+      appendNodeButtons('Children', children);
+      const hierarchyIds = new Set([...parents, ...children].map(item => item.id));
+      appendNodeButtons('Connections', graph.edges
+        .filter(edge => (edge.source === node.id || edge.target === node.id) &&
+          !['hierarchy', 'hierarchy-alt'].includes(edge.type))
         .map(edge => nodeMap.get(edge.source === node.id ? edge.target : edge.source))
-        .filter(Boolean));
+        .filter(connected => connected && !hierarchyIds.has(connected.id)));
       const action = document.createElement('button');
       action.type = 'button';
       action.className = 'detail-route-action atlas-open-local';
@@ -1739,6 +1890,13 @@
     /* ----------------------------------------------------------------------
        Atlas camera
        ---------------------------------------------------------------------- */
+    const paintLocalCamera = () => {
+      const active = renderer.lastLayout;
+      const enabled = state.mode === 'focus' && Boolean(active?.semanticKind);
+      renderer.camera?.setAttribute('transform', enabled
+        ? `translate(${localCamera.x.toFixed(2)} ${localCamera.y.toFixed(2)})`
+        : '');
+    };
     const paintAtlas = () => renderer.camera?.setAttribute('transform', `translate(${atlasCamera.x.toFixed(2)} ${atlasCamera.y.toFixed(2)}) scale(${atlasCamera.scale.toFixed(4)})`);
     const runAtlasCamera = () => {
       if (atlasCamera.frame) return;
@@ -1853,8 +2011,10 @@
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'graph-crumb';
-        button.textContent = item.label;
+        const localReturn = state.mode === 'focus' && index < path.length - 1 && ['experience', 'education'].includes(item.id);
+        button.textContent = localReturn ? `← ${item.label}` : item.label;
         button.dataset.route = item.route || 'overview';
+        if (localReturn) button.setAttribute('aria-label', `Return to ${item.label} overview`);
         button.setAttribute('aria-current', String(index === path.length - 1));
         bindRoute(button);
         breadcrumb.appendChild(button);
@@ -1897,6 +2057,8 @@
 
     const renderRoute = rawRoute => {
       ++routeToken;
+      localCamera.x = 0;
+      localCamera.y = 0;
       const route = normaliseRoute(rawRoute);
       const projectMatch = route.match(/^work\/project\/([^/]+)$/);
       const themeMatch = route.match(/^work\/theme\/([^/]+)$/);
@@ -1963,7 +2125,7 @@
       } else {
         atlasPinnedId = null;
         clearAtlasHighlight();
-        if (state.mode === 'focus' && childrenFor(target.id).length === 0) openLeafDetail(target);
+        if (state.mode === 'focus' && childrenFor(target.id).length === 0 && !semanticInspectorNodeIds.has(target.id)) openLeafDetail(target);
         else closeDetail();
       }
       updateNavigation();

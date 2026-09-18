@@ -92,7 +92,7 @@ body.is-entry-mask-finishing .entry-loading-shell{
 body.is-entry-loader-releasing .entry-loading-object{
   animation:entry-loader-collapse .62s cubic-bezier(.72,.02,.84,.28) both
 }
-body.is-entry-loader-complete .entry-loading-shell{
+body.is-entry-loader-complete:not(.is-entry-mask-finishing) .entry-loading-shell{
   display:none!important;
   visibility:hidden!important;
   pointer-events:none!important
@@ -241,6 +241,14 @@ body.is-atlas-reveal #site-graph .site-graph-edges path[data-intro-edge-wave="cr
    targets cannot override the node-level pointer-events gate. */
 body.is-atlas-reveal #site-graph,
 body.is-atlas-reveal #site-graph *{
+  pointer-events:none!important
+}
+
+/* The shared root joins the rest of the Atlas only once the reveal has
+   completed.  This prevents hover/click races from reopening the intro or
+   producing a partial portrait before the live graph is ready. */
+body.is-atlas-reveal #site-graph .site-graph-node[data-node-id="stepan-chrast"],
+body.is-atlas-reveal #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-hit{
   pointer-events:none!important
 }
 

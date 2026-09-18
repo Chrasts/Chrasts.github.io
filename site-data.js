@@ -32,7 +32,7 @@ window.SITE_DATA={
     nodes:[
   N("stepan-chrast","profile","Štěpán Chrast",null,"overview",null,"Data analysis, research and mathematical logic.",null),
   N("work","section","Work","stepan-chrast","work",null,"Selected projects, explored through a concept lattice of themes and contexts.",null),
-  N("knowledge","section","Knowledge","stepan-chrast","knowledge",null,"Substantive working knowledge: areas used in projects, research, sustained study or independent practice rather than a catalogue of completed courses.",null),
+  N("knowledge","section","Knowledge","stepan-chrast","knowledge",null,"Substantive working knowledge from projects, research, sustained study and independent practice.",null),
   N("experience","section","Experience","stepan-chrast","experience",null,"Roles and practical contexts behind the work.",null),
   N("education","section","Education","stepan-chrast","education",null,"Programmes, coursework and academic foundations.",null),
   N("about","section","About","stepan-chrast","about",null,"Research interests and the wider context of the profile.",null),
@@ -91,7 +91,7 @@ window.SITE_DATA={
   N("escape-room","experience","EscapeTheRoom.cz","experience","experience/escape-room",null,"Customer-facing operations, incident handling and structured issue logging.",{"meta":"2019 — 2023","timelineOrder":1,"role":"Game Master","organisation":"EscapeTheRoom.cz - Part-time","highlights":["Customer-facing operations","Incident handling","Structured issue logging"]}),
   N("student-ball","experience","Student Ball","experience","experience/student-ball",null,"Two-person event project covering budgeting, sponsorship and operations.",{"meta":"2020 — 2021","timelineOrder":2,"role":"Event Co-lead","organisation":"Self-organised project - Two-person team","highlights":["Budgeting and cash-flow planning","Sponsorship","Transaction reconciliation and event operations"]}),
   N("charles-university","education","BSc in Logic","education","education/charles-university","completed","Completed Bachelor's degree in Logic at Charles University in September 2026, focused on mathematical logic, algebraic logic and related mathematics.",{"meta":"2022 - Sep 2026 · completed","layoutOrder":1,"programme":"Bachelor's degree in Logic","organisation":"Charles University","detailLabel":"Bachelor's Degree in Logic","highlights":["Mathematical and modal logic","Algebraic logic, universal algebra and lattice theory","Successfully completed degree with thesis on structures related to quantum logic"]}),
-  N("selected-coursework","education","Academic Work","charles-university","education/charles-university/academic-work",null,"Independently inspectable academic notes and papers; completed courses are retained as evidence rather than graph destinations.",{"layoutOrder":1}),
+  N("selected-coursework","education","Academic Work","charles-university","education/charles-university/academic-work",null,"Independently inspectable academic notes and papers, with completed courses retained as evidence.",{"layoutOrder":1}),
   N("metalogic-amalgamation-interpolation","education","Amalgamation & Interpolation","selected-coursework","education/charles-university/academic-work/amalgamation-interpolation",null,"A short metalogic note on the relationship between amalgamation and interpolation in equational theories.",{"meta":"Metalogic note","layoutOrder":1,"detailLabel":"Amalgamation & Interpolation in Equational Theories"}),
   N("simulation-credence-coursework","education","Simulation Credence","selected-coursework","education/charles-university/academic-work/simulation-credence",null,"A course paper formalising credence in the simulation hypothesis and examining its consequences.",{"meta":"Course paper","layoutOrder":2,"detailLabel":"Simulation Credence and Its Consequences"}),
   N("charles-university-masters-logic","education","MSc in Logic","education","education/charles-university-masters-logic","ongoing","Ongoing follow-up Master's degree in Logic at Charles University.",{"meta":"2026 - present · ongoing","layoutOrder":2,"programme":"Master's degree in Logic","organisation":"Charles University","detailLabel":"Master's Degree in Logic"}),
@@ -235,24 +235,28 @@ window.SITE_DATA.graph.edges.push({source:"charles-university",target:"project-b
 // absent so the data can remain truthful across desktop and mobile geometry.
 const semanticNodes=new Map(window.SITE_DATA.graph.nodes.map(node=>[node.id,node]));
 const applySemanticMeta=(id,meta)=>Object.assign(semanticNodes.get(id)||{},meta);
-applySemanticMeta("ceske-priority",{status:"ongoing",meta:"Jul 2026 â€” present",startDate:"2026-07",endDate:null,ongoing:true,prominence:3,role:"Junior researcher / analytical support",organisation:"ÄŒeskÃ© priority",relatedWorkIds:["social-workers-survey","tachov-workshop"]});
+applySemanticMeta("ceske-priority",{status:"ongoing",meta:"Jul 2026 — present",startDate:"2026-07",endDate:null,ongoing:true,prominence:3,role:"Junior researcher / analytical support",organisation:"České priority",relatedWorkIds:["social-workers-survey","tachov-workshop"]});
 applySemanticMeta("student-ball",{status:"completed",startDate:"2020-01",endDate:"2021-12",ongoing:false,prominence:1,role:"Event co-lead",organisation:"Student Ball",relatedWorkIds:[]});
 applySemanticMeta("escape-room",{status:"completed",startDate:"2019-01",endDate:"2023-12",ongoing:false,prominence:1,role:"Game Master",organisation:"EscapeTheRoom.cz",relatedWorkIds:[]});
 applySemanticMeta("charles-university",{startDate:"2022-09",endDate:"2026-09",ongoing:false,prominence:3,degreeType:"BSc",thesisProjectId:"bachelor-thesis"});
 applySemanticMeta("charles-university-masters-logic",{startDate:"2026-09",endDate:null,ongoing:true,prominence:3,degreeType:"MSc"});
-applySemanticMeta("esslli",{status:"completed",meta:"2026 Â· completed",startDate:"2026-07",endDate:"2026-08",ongoing:false,prominence:2,programmeRelation:"parallel-programme"});
+applySemanticMeta("esslli",{status:"completed",meta:"2026 · completed",startDate:"2026-07",endDate:"2026-08",ongoing:false,prominence:2,programmeRelation:"parallel-programme"});
 applySemanticMeta("prg-ai",{startDate:"2026-09",endDate:null,ongoing:true,prominence:2,programmeRelation:"parallel-programme"});
 applySemanticMeta("credentials",{prominence:1,programmeRelation:"documentary"});
+applySemanticMeta("cert-cambridge-b2",{awardDate:"2021",datePrecision:"year",prominence:1});
+applySemanticMeta("cert-ethics-ai",{awardDate:"2024",datePrecision:"year",prominence:1});
+applySemanticMeta("cert-intro-ai",{awardDate:"2024",datePrecision:"year",prominence:1});
 
 window.SITE_DATA.semantics={
   experience:{
     entityIds:["escape-room","student-ball","ceske-priority"],
-    relationTypes:["role-project","professional-evidence","developed-through"]
+    relationTypes:["role-project","professional-evidence","developed-through"],
+    timeline:{careerFocusStart:"2026-07",earlierStart:"2019-01",earlierEnd:"2023-12",present:"2026-10"}
   },
   education:{
     programmeIds:["charles-university","charles-university-masters-logic","esslli","prg-ai","credentials"],
     courseEvidence:[
-      {id:"bsc-logic-core",title:"Logic core",programmeId:"charles-university",status:"completed",courses:["Propositional and Predicate Logic","Introduction to Mathematical Logic","Modal and Non-classical Logics","Dynamic Logic","Incompleteness and GÃ¶del's Theorems"],supportsKnowledgeIds:["mathematical-logic","modal-logic","dynamic-logic","incompleteness"]},
+      {id:"bsc-logic-core",title:"Logic core",programmeId:"charles-university",status:"completed",courses:["Propositional and Predicate Logic","Introduction to Mathematical Logic","Modal and Non-classical Logics","Dynamic Logic","Incompleteness and Gödel's Theorems"],supportsKnowledgeIds:["mathematical-logic","modal-logic","dynamic-logic","incompleteness"]},
       {id:"bsc-mathematics",title:"Mathematics & algebra",programmeId:"charles-university",status:"completed",courses:["Set Theory I","Arithmetic and Algorithms","Algebra and Structures in Logic"],supportsKnowledgeIds:["set-theory","number-theory","universal-algebra","lattice-theory"]},
       {id:"bsc-computing-data",title:"Computing & data",programmeId:"charles-university",status:"completed",courses:["Algorithms and Data Structures","Programming and Algorithms","SQL Databases","Principles of Statistical Reasoning"],supportsKnowledgeIds:["programming-automation","algorithms-data-structures","data-management","statistics"]},
       {id:"bsc-ai-philosophy",title:"AI & philosophy",programmeId:"charles-university",status:"completed",courses:["AI in Context","Elements of AI+","AI and Philosophy","Can Machines Think?"],supportsKnowledgeIds:["ai-methods","philosophy-ai"]}

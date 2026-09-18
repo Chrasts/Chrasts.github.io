@@ -107,6 +107,23 @@ test.describe('V3.1 Phase I Atlas / Focus unification', () => {
     expect(result.anchorId).toBe('knowledge');
   });
 
+  test('Atlas inspector presents immediate hierarchy once and keeps only meaningful connections', async ({ page }) => {
+    await bypassIntro(page);
+    await page.goto('/#atlas');
+    await waitReady(page);
+    await page.locator('#site-graph .site-graph-node[data-node-id="research-practice"]').click();
+    const detail = page.locator('#site-detail-panel');
+    await expect(detail).toContainText('Research Practice');
+    await expect(detail).toContainText('Reproducible analytical practice');
+    await expect(detail.locator('.atlas-facts dt')).toHaveText(['Parent']);
+    await expect(detail.locator('.detail-list-title').filter({ hasText: 'Children' })).toHaveCount(1);
+    await expect(detail.locator('.detail-list-title').filter({ hasText: 'Connections' })).toHaveCount(1);
+    await expect(detail).not.toContainText('Part of');
+    await expect(detail).not.toContainText('Below');
+    await expect(detail).not.toContainText('Activate the selected node again');
+    await expect(detail.locator('.atlas-open-local')).toBeVisible();
+  });
+
   test('deep Focus to Atlas collapses into the centred root, then unfolds the complete Atlas from that root', async ({ page }) => {
     await bypassIntro(page);
     await page.goto(`/#${COMPUTATIONAL_ROUTE}`);

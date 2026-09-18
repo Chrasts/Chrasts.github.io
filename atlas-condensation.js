@@ -89,6 +89,7 @@
   };
 
   let frame = 0;
+  let centeringTimer = 0;
   let emergenceFrame = 0;
   let participantInstalled = false;
   let records = [];
@@ -100,6 +101,7 @@
 
   const clamp01 = value => Math.max(0, Math.min(1, value));
   const wait = milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds));
+  const nextFrame = () => new Promise(resolve => requestAnimationFrame(resolve));
   const ease = value => {
     const t = clamp01(value);
     return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -699,57 +701,99 @@
     state.lastResult = null;
     state.lastReason = null;
     state.reducedMotion = reducedMotion.matches;
-    state.initialCamera = window.ProfileAtlasLOD?.snapshot?.().camera || null;
-    state.initialTopologyMode = window.ProfileAtlasLOD?.snapshot?.().topologyMode || null;
-    state.entryOwned = document.body?.dataset.entryState === 'ready' && document.documentElement.dataset.profileIntro === 'ready';
+    const beginCondensation = async () => {
+      clearTimeout(centeringTimer);
+      centeringTimer = 0;
+      if (!state.running || state.state !== STATES.PREPARING || state.generation !== generation || mode() !== 'atlas') return false;
+      state.entryOwned = document.body?.dataset.entryState === 'ready' && document.documentElement.dataset.profileIntro === 'ready';
 
-    const token = transitions.begin({
-      operation: 'CONDENSE',
-      source,
-      fromRoute: 'atlas',
-      targetRoute: 'overview',
-      rootId
-    }, { reason: 'atlas-condensation' });
-    if (!token) {
-      state.running = false;
-      state.state = STATES.IDLE;
-      return false;
-    }
-    state.token = token;
+      const token = transitions.begin({
+        operation: 'CONDENSE', source, fromRoute: 'atlas', targetRoute: 'overview', rootId
+      }, { reason: 'atlas-condensation' });
+      if (!token) {
+        state.running = false;
+        state.state = STATES.IDLE;
+        return false;
+      }
+      state.token = token;
 
-    document.body.classList.add('is-atlas-condensing', 'is-root-entry-committing');
-    document.body.classList.toggle('is-entry-atlas-condensation', state.entryOwned);
-    document.body.dataset.entryState = 'condensing';
-    document.body.dataset.rootEntry = 'committing';
-    graphRoot.setAttribute('aria-busy', 'true');
-    if (status) status.textContent = 'Folding the Atlas into the profile root.';
-    window.ProfileNodeDynamics?.suspend?.('atlas-condensation');
-    window.ProfileCameraMateriality?.reset?.();
-    window.ProfileAtlasLOD?.setTopologyMode?.('entry-full', { reason: 'condensation-start' });
-    const visibleScale = state.initialCamera?.scale;
-    if (Number.isFinite(visibleScale)) window.ProfileAtlasLOD?.applyLOD?.(visibleScale);
+      document.body.classList.add('is-atlas-condensing', 'is-root-entry-committing');
+      document.body.classList.toggle('is-entry-atlas-condensation', state.entryOwned);
+      document.body.dataset.entryState = 'condensing';
+      document.body.dataset.rootEntry = 'committing';
+      graphRoot.setAttribute('aria-busy', 'true');
+      if (status) status.textContent = 'Folding the Atlas into the profile root.';
+      window.ProfileNodeDynamics?.suspend?.('atlas-condensation');
+      window.ProfileCameraMateriality?.reset?.();
+      window.ProfileAtlasLOD?.setTopologyMode?.('entry-full', { reason: 'condensation-start' });
+      const visibleScale = window.ProfileAtlasLOD?.snapshot?.().camera?.scale;
+      if (Number.isFinite(visibleScale)) window.ProfileAtlasLOD?.applyLOD?.(visibleScale);
 
-    if (!prepareRecords()) {
-      transitions.cancel(token, { reason: 'condensation-preparation-failed', targetRoute: 'atlas' });
-      return false;
-    }
+      // Transition participants can reconcile their geometry in the frame
+      // after `begin`. Sample only after that work and any camera easing have
+      // finished; otherwise the fold starts from an obsolete camera snapshot.
+      await nextFrame();
+      await nextFrame();
+      const settleDeadline = performance.now() + 520;
+      while (window.ProfileAtlasLOD?.snapshot?.().cameraMotionActive && performance.now() < settleDeadline) {
+        await nextFrame();
+      }
+      const pendingCamera = window.ProfileAtlasLOD?.snapshot?.();
+      if (pendingCamera?.cameraMotionActive && pendingCamera.targetCamera) {
+        // Do not carry sub-pixel easing into a topology-changing transition.
+        window.ProfileAtlasLOD?.panTo?.(pendingCamera.targetCamera.x, pendingCamera.targetCamera.y, {
+          immediate: true,
+          preserveTopology: true
+        });
+      }
+      if (!state.running || state.state !== STATES.PREPARING || state.generation !== generation || mode() !== 'atlas') return false;
+      state.initialCamera = window.ProfileAtlasLOD?.snapshot?.().camera || null;
+      state.initialTopologyMode = window.ProfileAtlasLOD?.snapshot?.().topologyMode || null;
 
-    state.state = STATES.CONDENSING;
-    state.startedAt = performance.now();
-    transitions.prepare(token, {
-      operation: 'CONDENSE',
-      nodeCount: state.nodeCount,
-      maxDepth: state.maxDepth,
-      hierarchy: 'strict-bottom-up'
-    });
-    emit('started', { nodeCount: state.nodeCount, primaryEdgeCount: state.primaryEdgeCount, maxDepth });
-    track('atlas_condensation_started');
-    frame = requestAnimationFrame(tick);
+      if (!prepareRecords()) {
+        transitions.cancel(token, { reason: 'condensation-preparation-failed', targetRoute: 'atlas' });
+        return false;
+      }
+
+      state.state = STATES.CONDENSING;
+      state.startedAt = performance.now();
+      transitions.prepare(token, {
+        operation: 'CONDENSE', nodeCount: state.nodeCount, maxDepth: state.maxDepth, hierarchy: 'strict-bottom-up'
+      });
+      emit('started', { nodeCount: state.nodeCount, primaryEdgeCount: state.primaryEdgeCount, maxDepth });
+      track('atlas_condensation_started');
+      frame = requestAnimationFrame(tick);
+      return true;
+    };
+
+    // Smoothly return a panned Atlas to the entry composition before taking
+    // the condensation snapshot. The timer is only a fail-safe for a browser
+    // that misses the settled event.
+    window.ProfileAtlasLOD?.fit?.({ immediate: false, purpose: 'entry', recompute: true });
+    if (reducedMotion.matches || !window.ProfileAtlasLOD?.snapshot?.().cameraMotionActive) return beginCondensation();
+    const finishCentering = async () => {
+      // The camera emits its settled event before other graph owners finish
+      // their final geometry reconciliation. Keep the current visual camera
+      // for two frames, so condensation begins from the screen position the
+      // visitor actually saw instead of a one-frame snap afterwards.
+      await nextFrame();
+      await nextFrame();
+      beginCondensation();
+    };
+    addEventListener('profile:atlas-camera-settled', finishCentering, { once: true });
+    centeringTimer = setTimeout(finishCentering, 420);
     return true;
   };
 
   const cancel = (reason = 'api-cancel') => {
-    if (!state.running || !state.token) return false;
+    if (!state.running) return false;
+    if (!state.token) {
+      clearTimeout(centeringTimer);
+      centeringTimer = 0;
+      state.running = false;
+      state.state = STATES.IDLE;
+      return true;
+    }
     return transitions.cancel(state.token, { reason, targetRoute: 'atlas' });
   };
 

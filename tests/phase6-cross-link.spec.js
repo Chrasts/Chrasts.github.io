@@ -115,7 +115,7 @@ test.describe('Phase 6 cross-link travel — desktop', () => {
     await expect(page.locator('#site-detail-panel h2')).toContainText('Social Workers Survey Analysis');
   });
 
-  test('cross-section travel retains a short semantic return path', async ({ page }) => {
+  test('cross-section travel offers both a visible return action and Ctrl/Cmd+Z', async ({ page }) => {
     await prepare(page);
     await page.goto('/#experience/ceske-priority');
     await page.waitForFunction(() => Boolean(window.ProfileCrossLinkTravel));
@@ -127,12 +127,42 @@ test.describe('Phase 6 cross-link travel — desktop', () => {
     expect(travelled.canReturn).toBe(true);
     expect(travelled.history).toHaveLength(1);
 
-    await page.evaluate(() => window.ProfileCrossLinkTravel.returnToOrigin());
+    const returnControl = page.getByRole('button', { name: /Return to Česk/i });
+    await expect(returnControl).toBeVisible();
+    await returnControl.click();
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'experience/ceske-priority');
     await waitTravelComplete(page);
     const returned = await page.evaluate(() => window.ProfileCrossLinkTravel.snapshot());
     expect(returned.canReturn).toBe(false);
     expect(returned.history).toHaveLength(0);
+
+    await navigateCrossLink(page, 'project-social-workers-survey', 'role-project');
+    await page.waitForFunction(() => document.body.dataset.graphRoute === 'work/project/social-workers-survey');
+    await waitTravelComplete(page);
+    await page.keyboard.press('Control+Z');
+    await page.waitForFunction(() => document.body.dataset.graphRoute === 'experience/ceske-priority');
+    await waitTravelComplete(page);
+    expect((await page.evaluate(() => window.ProfileCrossLinkTravel.snapshot())).history).toHaveLength(0);
+  });
+
+  test('ordinary route changes retain a local Back path, including Atlas', async ({ page }) => {
+    await prepare(page);
+    await page.goto('/#education');
+    await page.waitForFunction(() => document.body.dataset.graphRoute === 'education');
+
+    await page.locator('#main-nav [data-route="work"]').click();
+    await page.waitForFunction(() => document.body.dataset.graphRoute === 'work');
+    const back = page.getByRole('button', { name: /Return to Education/i });
+    await expect(back).toBeVisible();
+    await expect(back.locator('xpath=..')).toHaveClass(/site-header/);
+    await back.click();
+    await page.waitForFunction(() => document.body.dataset.graphRoute === 'education');
+
+    await page.evaluate(() => { location.hash = '#atlas'; });
+    await page.waitForFunction(() => document.body.dataset.graphRoute === 'atlas');
+    await expect(page.getByRole('button', { name: /Return to Education/i })).toBeVisible();
+    await page.keyboard.press('Control+Z');
+    await page.waitForFunction(() => document.body.dataset.graphRoute === 'education');
   });
 
   test('ordinary parent/child navigation remains structural rather than cross-link travel', async ({ page }) => {

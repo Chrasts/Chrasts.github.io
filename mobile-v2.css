@@ -81,6 +81,11 @@
      canonical geometry. */
   body[data-graph-mode="focus"] #site-graph .site-graph-label{font-size:28px!important;stroke-width:8px!important}
   body[data-graph-mode="focus"] #site-graph .site-graph-node.is-section .site-graph-label{font-size:31px!important}
+  /* Timeline section nodes are local anchors, not the primary objects of a
+     phone timeline. Preserve their touch target while reducing their visual
+     weight to match the desktop semantic hierarchy. */
+  body[data-graph-mode="focus"] #site-graph .site-graph-node.is-semantic-section-anchor .site-graph-label{font-size:20px!important;opacity:.72}
+  body[data-graph-mode="focus"] #site-graph .site-graph-node.is-semantic-section-anchor .site-graph-dot{transform:scale(.74)!important}
   body[data-graph-mode="focus"] #site-graph .site-graph-hit{r:56px!important}
   body[data-graph-mode="focus"] #site-graph .site-graph-node.is-section .site-graph-hit{r:64px!important}
   body[data-graph-mode="overview"] #site-graph .site-graph-label{font-size:18px!important;stroke-width:6px!important}

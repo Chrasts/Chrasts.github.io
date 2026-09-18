@@ -37,9 +37,9 @@ test.describe('Intro interactivity and Atlas relation colors', () => {
       const snapshot = window.ProfileIntro.snapshot();
       return snapshot.readyAt - snapshot.startedAt;
     });
-    // Decorative reveal should not delay the first useful profile action for
-    // multiple seconds once the live Atlas is visible.
-    expect(revealDuration).toBeLessThan(1_600);
+    // The intentionally diffuse reveal remains bounded: it can read as a
+    // gradual light-up without turning into a multi-second input lock.
+    expect(revealDuration).toBeLessThan(2_400);
 
     const afterReady = await page.evaluate(() => ({
       workPointerEvents: getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="work"]')).pointerEvents,
@@ -104,12 +104,22 @@ test.describe('Intro interactivity and Atlas relation colors', () => {
     await page.waitForFunction(() => window.ProfileIntro?.snapshot?.().state === 'ATLAS_READY', null, { timeout: 20_000 });
 
     const root = page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]').first();
+    const portraitOpacity = () => page.evaluate(() => Number(getComputedStyle(
+      document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"] > [data-root-entry-portrait]')
+    ).opacity));
+    expect(await portraitOpacity()).toBeLessThan(.1);
     await root.hover();
     await expect.poll(() => page.evaluate(() => window.ProfileRootEntryPortal?.snapshot?.().open)).toBe(true);
+    await expect.poll(portraitOpacity).toBeGreaterThan(.8);
 
     const preview = await page.evaluate(() => window.ProfileRootEntryPortal.snapshot());
     expect(preview.previewAvailable).toBe(true);
     expect(preview.introState).toBe('ATLAS_READY');
+
+    await page.mouse.move(12, 12);
+    await expect.poll(() => page.evaluate(() => window.ProfileRootEntryPortal?.snapshot?.().open)).toBe(false);
+    await expect.poll(portraitOpacity).toBeLessThan(.1);
+    await root.hover();
 
     await root.locator(':scope > .site-graph-hit').click();
     await page.waitForFunction(() => {

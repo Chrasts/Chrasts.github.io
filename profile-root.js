@@ -83,7 +83,7 @@
   const makeCvLink = className => {
     const cv = element('a', className, 'CV on request');
     cv.href = `mailto:${profile.email}?subject=${encodeURIComponent('CV request')}`;
-    cv.title = 'A downloadable CV is not currently published on this site.';
+    cv.title = 'Request a CV by email.';
     cv.dataset.cvState = 'request';
     return cv;
   };
@@ -103,7 +103,10 @@
       element('h1', 'profile-root-name', profile.name || 'Štěpán Chrast'),
       element('p', 'profile-root-role', profile.label || 'Data analysis · Research · Mathematical logic')
     );
-    const intro = element('p', 'profile-root-summary', profile.intro || '');
+    // The compact graph-native root uses the professional statement directly;
+    // its junior-career qualifier is already represented by the Experience
+    // branch and otherwise consumes scarce left-column space.
+    const intro = element('p', 'profile-root-summary', (profile.intro || '').replace(/^\s*Junior\s+/i, ''));
     const actions = element('div', 'profile-root-actions');
 
     const email = element('a', 'profile-root-action', 'Email');
@@ -128,8 +131,7 @@
     quick.addEventListener('click', () => openQuickOverview('profile-root'));
     actions.appendChild(quick);
 
-    const guide = element('p', 'profile-root-guide', 'Choose Work, Knowledge, Experience, Education or About in the graph. Atlas remains available for deeper exploration.');
-    brief.append(identity, intro, actions, guide);
+    brief.append(identity, intro, actions);
     heading.appendChild(brief);
     return brief;
   };

@@ -20,9 +20,6 @@
   const introEligible = earlyIntroState
     ? earlyIntroState === 'pending'
     : initialOverview && storageAvailable && !introSeen;
-  // Phase H retires the old standalone root as a normal destination. It is
-  // retained only as an internal first-session bootstrap while Intro owns the
-  // screen. Same-session Overview starts directly in the practical graph root.
   const initialRootLanding = initialOverview && introEligible;
 
   if (!initialOverview && storageAvailable && !introSeen) {
@@ -176,6 +173,4 @@
   ensureScript('accessibility-runtime.js', 'data-profile-accessibility-runtime');
   ensureScript('portfolio-refinements.js', 'data-profile-refinements');
   ensureScript('profile-post-entry.js', 'data-profile-post-entry');
-  ensureScript('profile-motion-refinements.js', 'data-profile-motion-refinements');
-  ensureScript('node-detail-dismiss.js', 'data-profile-node-detail-dismiss');
 })();

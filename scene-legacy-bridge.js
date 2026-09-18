@@ -3,6 +3,11 @@
   if (!scene?.manager || !scene?.camera || !scene?.transitions) return;
 
   const { manager, camera, transitions } = scene;
+  // Keep a coherent release together when GitHub Pages or a browser has an
+  // earlier same-named lazy asset cached. The entry document versions its
+  // eagerly loaded modules with this same revision.
+  const releaseRevision = '20260918-r2';
+  const versionedResource = resource => `${resource}${resource.includes('?') ? '&' : '?'}v=${releaseRevision}`;
   const graphNodes = window.SITE_DATA?.graph?.nodes || [];
   const rootId = window.SITE_DATA?.graph?.rootId || 'stepan-chrast';
   const routeNodeMap = new Map(graphNodes.filter(node => node.route).map(node => [node.route, node]));
@@ -228,7 +233,7 @@
       const link = existing || document.createElement('link');
       if (!existing) {
         link.rel = 'stylesheet';
-        link.href = href;
+        link.href = versionedResource(href);
         link.setAttribute(marker, 'true');
       }
       link.addEventListener('load', () => resolve(link), { once: true });
@@ -250,7 +255,7 @@
       const existing = document.querySelector(`script[${marker}]`);
       const script = existing || document.createElement('script');
       if (!existing) {
-        script.src = src;
+        script.src = versionedResource(src);
         script.async = false;
         script.setAttribute(marker, 'true');
       }

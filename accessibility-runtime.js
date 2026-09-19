@@ -104,7 +104,7 @@
     element.setAttribute('role', 'button');
     element.setAttribute('tabindex', '0');
     element.setAttribute('aria-label', currentMode() === 'atlas' && id === rootId
-      ? 'Enter profile — Štěpán Chrast'
+      ? 'Enter profile - Štěpán Chrast'
       : `${label}. ${temporal || `${type}.`} ${nodeAction(id, element)}.`);
 
     const route = model?.route ? normaliseRoute(model.route) : (id === rootId ? 'overview' : null);

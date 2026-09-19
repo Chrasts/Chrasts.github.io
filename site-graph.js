@@ -1252,6 +1252,11 @@
           group.dataset.evidenceId = item.id;
           group.setAttribute('role', 'button');
           group.setAttribute('tabindex', '0');
+          const hit = document.createElementNS(svgNS, 'circle');
+          hit.classList.add('site-graph-evidence-hit');
+          hit.setAttribute('r', '14');
+          hit.setAttribute('fill', 'transparent');
+          hit.setAttribute('pointer-events', 'all');
           const dot = document.createElementNS(svgNS, 'circle');
           dot.classList.add('site-graph-evidence-dot');
           dot.setAttribute('r', '5.2');
@@ -1264,7 +1269,7 @@
           meta.setAttribute('pointer-events', 'all');
           meta.setAttribute('x', '11'); meta.setAttribute('y', '16');
           const title = document.createElementNS(svgNS, 'title');
-          group.append(dot, label, meta, title);
+          group.append(hit, dot, label, meta, title);
           const highlight = active => group.classList.toggle('is-evidence-active', active);
           group.addEventListener('mouseenter', () => highlight(true));
           group.addEventListener('mouseleave', () => highlight(false));

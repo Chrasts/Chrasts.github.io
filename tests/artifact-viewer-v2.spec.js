@@ -81,7 +81,7 @@ test.describe('Integrated artifact viewer media contract', () => {
     const scene = page.locator('[data-artifact-scene="clp-survey-paper"]');
     const preview = scene.locator('.artifact-media-preview.is-pdf');
     await expect(preview).toBeVisible();
-    await expect(preview.locator('iframe')).toHaveCount(0);
+    await expect(preview.locator('iframe[data-artifact-inline-pdf="true"]')).toHaveCount(1);
     await expect(preview.locator('.artifact-pdf-mark')).toHaveText('PDF');
     await expect(scene.locator('.artifact-inline-expand')).toContainText('Inspect');
 

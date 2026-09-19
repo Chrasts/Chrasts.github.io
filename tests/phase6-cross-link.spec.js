@@ -34,7 +34,7 @@ const expectVectorClose = (actual, expected) => {
   expect(Math.abs(actual.y - expected.y)).toBeLessThan(0.01);
 };
 
-test.describe('Phase 6 cross-link travel — desktop', () => {
+test.describe('Phase 6 cross-link travel - desktop', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
   test('Work project -> Knowledge evidence follows the exact canonical Atlas vector', async ({ page }) => {
@@ -112,7 +112,7 @@ test.describe('Phase 6 cross-link travel — desktop', () => {
     expectVectorClose(snapshot.vector, expected.vector);
     expect(await page.evaluate(() => document.body.dataset.graphMode)).toBe('work');
     await expect(page.locator('#site-detail-panel')).toBeVisible();
-    await expect(page.locator('#site-detail-panel h2')).toContainText('Social Workers Survey Analysis');
+    await expect(page.locator('#site-detail-panel h2')).toContainText('Survey Analysis and Open-Text Coding');
   });
 
   test('cross-section travel offers both a visible return action and Ctrl/Cmd+Z', async ({ page }) => {
@@ -210,7 +210,7 @@ test.describe('Phase 6 reduced motion', () => {
   });
 });
 
-test.describe('Phase 6 cross-link data — mobile portrait', () => {
+test.describe('Phase 6 cross-link data - mobile portrait', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
   test('keeps vector cross-links available while the legacy rail stays hidden', async ({ page }) => {

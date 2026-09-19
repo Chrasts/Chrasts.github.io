@@ -85,8 +85,10 @@ body[data-profile-branch="about"]{--profile-accent:var(--branch-about);--teal:va
 #site-graph .site-graph-edges path[data-profile-branch]:is(.is-hierarchy,.is-hierarchy-alt,.is-work-lattice){
   stroke:color-mix(in srgb,var(--edge-branch-color) 48%,var(--line))
 }
-#site-graph .site-graph-edges path[data-profile-branch]:is(.is-upstream,.is-downstream,.is-work-strong,.is-work-soft,.is-selected-downset){
-  stroke:var(--edge-branch-color)
+/* Interaction may thicken/emphasise a structural path, but must not swap
+   its semantic territory colour for the generic upstream/downstream accents. */
+#site-graph .site-graph-edges path[data-profile-branch]:is(.is-upstream,.is-downstream,.is-lateral,.is-work-strong,.is-work-soft,.is-selected-downset){
+  stroke:var(--edge-branch-color)!important
 }
 
 /* Atlas territory copy follows the same five-colour grammar. */

@@ -40,7 +40,7 @@ html[data-profile-intro="running"] .entry-loading-shell{display:grid}
   --entry-about:var(--branch-about,#ff4fa8);
   position:relative;
   z-index:1;
-  width:clamp(92px,8vw,126px);
+  width:clamp(108px,9.5vw,148px);
   aspect-ratio:1;
   animation:entry-loader-float 2.8s ease-in-out infinite
 }
@@ -66,25 +66,25 @@ html[data-profile-intro="running"] .entry-loading-shell{display:grid}
   z-index:0
 }
 .entry-loading-object::before{
-  inset:-3%;
-  padding:2.8px;
+  inset:-13%;
+  padding:4.8px;
   background:conic-gradient(
     from 17deg,
-    transparent 0 11%,
-    var(--entry-experience) 11% 22%,
-    transparent 22% 100%
+    transparent 0 8%,
+    var(--entry-experience) 8% 31%,
+    transparent 31% 100%
   );
   filter:drop-shadow(0 0 4px color-mix(in srgb,var(--entry-experience) 34%,transparent));
   animation:entry-loader-spectrum 9.4s linear infinite
 }
 .entry-loading-object::after{
-  inset:7%;
-  padding:2.8px;
+  inset:-1%;
+  padding:4.4px;
   background:conic-gradient(
     from 211deg,
-    transparent 0 18%,
-    var(--entry-about) 18% 31%,
-    transparent 31% 100%
+    transparent 0 14%,
+    var(--entry-about) 14% 39%,
+    transparent 39% 100%
   );
   filter:drop-shadow(0 0 4px color-mix(in srgb,var(--entry-about) 32%,transparent));
   animation:entry-loader-spectrum 7.3s linear infinite reverse
@@ -99,10 +99,10 @@ html[data-profile-intro="running"] .entry-loading-shell{display:grid}
 }
 .entry-loading-core{
   z-index:2;
-  width:31%;
-  height:31%;
+  width:36%;
+  height:36%;
   box-sizing:border-box;
-  border:3px solid var(--entry-brown);
+  border:3.8px solid var(--entry-brown);
   border-radius:50%;
   background:#000;
   box-shadow:0 0 9px color-mix(in srgb,var(--entry-brown) 34%,transparent);
@@ -115,40 +115,40 @@ html[data-profile-intro="running"] .entry-loading-shell{display:grid}
   transform:translate(-50%,-50%)
 }
 .entry-loading-orbit.is-inner{
-  width:48%;
-  height:48%;
-  padding:3.0px;
+  width:62%;
+  height:62%;
+  padding:4.6px;
   background:conic-gradient(
     from 146deg,
-    transparent 0 7%,
-    var(--entry-work) 7% 30%,
-    transparent 30% 100%
+    transparent 0 5%,
+    var(--entry-work) 5% 39%,
+    transparent 39% 100%
   );
   filter:drop-shadow(0 0 3px color-mix(in srgb,var(--entry-work) 30%,transparent));
   animation:entry-loader-orbit 4.9s linear infinite
 }
 .entry-loading-orbit.is-mid{
-  width:72%;
-  height:72%;
-  padding:2.7px;
+  width:89%;
+  height:89%;
+  padding:4.2px;
   background:conic-gradient(
     from 31deg,
-    transparent 0 23%,
-    var(--entry-knowledge) 23% 39%,
-    transparent 39% 100%
+    transparent 0 19%,
+    var(--entry-knowledge) 19% 47%,
+    transparent 47% 100%
   );
   filter:drop-shadow(0 0 3px color-mix(in srgb,var(--entry-knowledge) 28%,transparent));
   animation:entry-loader-orbit 8.1s linear infinite reverse
 }
 .entry-loading-orbit.is-outer{
-  width:100%;
-  height:100%;
-  padding:2.5px;
+  width:120%;
+  height:120%;
+  padding:4px;
   background:conic-gradient(
     from 278deg,
-    transparent 0 37%,
-    var(--entry-education) 37% 48%,
-    transparent 48% 100%
+    transparent 0 33%,
+    var(--entry-education) 33% 56%,
+    transparent 56% 100%
   );
   filter:drop-shadow(0 0 4px color-mix(in srgb,var(--entry-education) 28%,transparent));
   animation:entry-loader-orbit 12.4s linear infinite

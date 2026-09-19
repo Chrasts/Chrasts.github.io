@@ -268,7 +268,7 @@
     boundRoots.add(node);
     node.setAttribute('aria-haspopup', 'false');
     node.setAttribute('role', 'button');
-    node.setAttribute('aria-label', 'Enter profile — Štěpán Chrast');
+    node.setAttribute('aria-label', 'Enter profile - Štěpán Chrast');
     const hit = node.querySelector(':scope > .site-graph-hit');
     if (hit) hit.setAttribute('r', '48');
 

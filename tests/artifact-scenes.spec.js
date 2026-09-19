@@ -61,7 +61,7 @@ test('artifact route mounts one scene, tears it down and remounts without multip
   await page.waitForFunction(() => document.body.dataset.graphRoute === 'work/project/bachelor-thesis');
   const remounted = page.locator('[data-artifact-scene="bachelor-thesis-paper"]');
   await expect(remounted).toHaveCount(1);
-  await expect(remounted.locator('iframe')).toHaveCount(0);
+  await expect(remounted.locator('iframe[data-artifact-inline-pdf="true"]')).toHaveCount(3);
   await expect(remounted.locator('.artifact-pdf-fallback')).toHaveCount(3);
 });
 
@@ -82,7 +82,7 @@ test('BSc thesis materials preserve PDF geometry and open the defended thesis in
   await expect(cluster.locator('.artifact-object-description')).toHaveCount(0);
   await expect(cluster.locator('.artifact-deck-footer')).toHaveCount(0);
   await expect(cluster.locator('.artifact-object-tag')).toHaveCount(2);
-  await expect(cluster.locator('iframe')).toHaveCount(0);
+  await expect(cluster.locator('iframe[data-artifact-inline-pdf="true"]')).toHaveCount(3);
   await expect(cluster.locator('.artifact-pdf-fallback')).toHaveCount(3);
 
   const previews = cluster.locator('.artifact-folio-preview, .artifact-deck-preview');

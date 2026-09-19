@@ -23,7 +23,10 @@ test.describe('semantic graph restructuring', () => {
           'set-theory', 'number-theory', 'residuated-ortholattices-arol',
           'qualitative-coding', 'ai-research-workflows'
         ].map(id => [id, parentOf(id)])),
-        absent: ['python', 'git', 'sql', 'science-evidence'].filter(id => nodes.has(id)),
+        absent: ['python', 'git', 'sql', 'science-evidence', 'congruence-lattice-problem'].filter(id => nodes.has(id)),
+        knowledgeMissingSummary: [...nodes.values()].filter(node => node.type === 'knowledge' && !String(node.summary || '').trim()).map(node => node.id),
+        modelTheorySummary: nodes.get('model-theory')?.summary || '',
+        latticeTheorySummary: nodes.get('lattice-theory')?.summary || '',
         workThemeNodes: [...nodes.values()].filter(node => node.type === 'work-theme' || node.id.startsWith('work-theme-')).map(node => node.id)
       };
     });
@@ -45,6 +48,11 @@ test.describe('semantic graph restructuring', () => {
       'ai-research-workflows': ['research-practice']
     });
     expect(model.absent).toEqual([]);
+    expect(model.knowledgeMissingSummary).toEqual([]);
+    expect(model.modelTheorySummary).toMatch(/Löwenheim-Skolem/);
+    expect(model.modelTheorySummary).toMatch(/ultraproduct/i);
+    expect(model.latticeTheorySummary).toMatch(/Boolean algebras/);
+    expect(model.latticeTheorySummary).toMatch(/duality/i);
     expect(model.workThemeNodes).toEqual([]);
   });
 

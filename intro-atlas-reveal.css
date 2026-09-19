@@ -67,7 +67,7 @@ html[data-profile-intro="running"] .entry-loading-shell{display:grid}
 }
 .entry-loading-object::before{
   inset:-3%;
-  padding:1.45px;
+  padding:2.8px;
   background:conic-gradient(
     from 17deg,
     transparent 0 11%,
@@ -79,7 +79,7 @@ html[data-profile-intro="running"] .entry-loading-shell{display:grid}
 }
 .entry-loading-object::after{
   inset:7%;
-  padding:1.35px;
+  padding:2.8px;
   background:conic-gradient(
     from 211deg,
     transparent 0 18%,
@@ -99,10 +99,10 @@ html[data-profile-intro="running"] .entry-loading-shell{display:grid}
 }
 .entry-loading-core{
   z-index:2;
-  width:25%;
-  height:25%;
+  width:31%;
+  height:31%;
   box-sizing:border-box;
-  border:2px solid var(--entry-brown);
+  border:3px solid var(--entry-brown);
   border-radius:50%;
   background:#000;
   box-shadow:0 0 9px color-mix(in srgb,var(--entry-brown) 34%,transparent);
@@ -117,7 +117,7 @@ html[data-profile-intro="running"] .entry-loading-shell{display:grid}
 .entry-loading-orbit.is-inner{
   width:48%;
   height:48%;
-  padding:1.35px;
+  padding:3.0px;
   background:conic-gradient(
     from 146deg,
     transparent 0 7%,
@@ -130,7 +130,7 @@ html[data-profile-intro="running"] .entry-loading-shell{display:grid}
 .entry-loading-orbit.is-mid{
   width:72%;
   height:72%;
-  padding:1.2px;
+  padding:2.7px;
   background:conic-gradient(
     from 31deg,
     transparent 0 23%,
@@ -143,7 +143,7 @@ html[data-profile-intro="running"] .entry-loading-shell{display:grid}
 .entry-loading-orbit.is-outer{
   width:100%;
   height:100%;
-  padding:1.1px;
+  padding:2.5px;
   background:conic-gradient(
     from 278deg,
     transparent 0 37%,

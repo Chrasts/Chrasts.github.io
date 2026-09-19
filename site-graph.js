@@ -40,6 +40,7 @@
     // graph. The profile root itself remains neutral/identity-brown.
     const profileBranchIds = new Set(['work', 'knowledge', 'experience', 'education', 'about']);
     const profileBranchFor = value => {
+      if (typeof value === 'string' && value.startsWith('work-concept:')) return 'work';
       const start = typeof value === 'string' ? nodeMap.get(value) : value;
       if (!start || start.id === profileRoot.id) return null;
       if (start.type === 'work-concept' || String(start.id).startsWith('work-concept:')) return 'work';

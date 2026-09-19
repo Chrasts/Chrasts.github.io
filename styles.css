@@ -1690,3 +1690,6 @@ html.is-theme-transitioning body *::after{
     max-height:calc(100% - 122px)!important
   }
 }
+
+
+.site-graph-evidence-hit{cursor:pointer}

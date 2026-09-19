@@ -115,7 +115,7 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-read
   stroke-width:1.75!important;
   stroke-dasharray:8 5 2 5;
   stroke-linecap:round;
-  filter:drop-shadow(0 0 9px color-mix(in srgb,var(--teal) 28%,transparent));
+  filter:drop-shadow(0 0 9px color-mix(in srgb,var(--node-branch-color,var(--teal)) 28%,transparent));
   animation:profile-main-branch-halo 11s linear infinite
 }
 
@@ -124,6 +124,56 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-read
 body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-node-id="experience"] > .site-graph-halo--primary{animation-duration:11.5s}
 body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-node-id="education"] > .site-graph-halo--primary{animation-duration:14s;animation-direction:reverse}
 body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-node-id="about"] > .site-graph-halo--primary{animation-duration:12s}
+
+/* Overview hover is deliberately richer than the idle state: the node itself
+   stays brown, while its branch identity moves into the label and halo. */
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-profile-root-branch="true"] > .site-graph-label{
+  transition:
+    fill .22s ease,
+    font-size .24s cubic-bezier(.18,.78,.2,1),
+    font-weight .22s ease!important
+}
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-profile-root-branch="true"]:is(:hover,:focus-visible) > .site-graph-label{
+  fill:var(--node-branch-color)!important;
+  font-size:16px!important;
+  font-weight:860!important
+}
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-profile-root-branch="true"]:is(:hover,:focus-visible) > .site-graph-dot{
+  transform:scale(2.04)!important;
+  stroke-width:2.65!important;
+  filter:drop-shadow(0 0 8px color-mix(in srgb,var(--brown) 26%,transparent))
+}
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-profile-root-branch="true"]:is(:hover,:focus-visible) > .site-graph-halo--primary{
+  opacity:.84!important;
+  transform:scale(2.18)!important;
+  stroke-width:2.15!important;
+  filter:drop-shadow(0 0 13px color-mix(in srgb,var(--node-branch-color) 48%,transparent));
+  animation-duration:3.8s!important
+}
+
+/* The profile root receives the same physical emphasis, but keeps the single
+   brown identity rather than inventing a sixth secondary semantic colour. */
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .site-graph-label{
+  fill:var(--brown)!important;
+  font-size:14px!important;
+  font-weight:880!important
+}
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .site-graph-dot{
+  transform:scale(1.24)!important;
+  stroke-width:2.55!important;
+  filter:drop-shadow(0 0 9px color-mix(in srgb,var(--brown) 34%,transparent))
+}
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .site-graph-halo--primary{
+  opacity:.76!important;
+  transform:scale(1.16)!important;
+  stroke-width:1.9!important;
+  filter:drop-shadow(0 0 11px color-mix(in srgb,var(--brown) 36%,transparent))
+}
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready #site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .site-graph-halo--secondary{
+  opacity:.36!important;
+  transform:scale(1.10)!important;
+  animation-duration:4.6s!important
+}
 
 @keyframes profile-main-branch-halo{to{stroke-dashoffset:-96}}
 

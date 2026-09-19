@@ -128,7 +128,7 @@
   // requested for the BSc route. It remains compact, curated and carries a
   // positive completion status in the canonical data model.
   const bscData = data.education?.bsc;
-  const bsc = shell('bsc-evidence', 'BSc in Logic · completed evidence', 'Course constellation');
+  const bsc = shell('bsc-evidence', 'BSc in Logic · completed coursework', 'Verified course groups');
   bsc.dataset.phase8Object = 'bsc-course-constellation';
   const bscClusters = element('div', 'phase8-bsc-clusters');
   let activeBscEvidenceId = null;
@@ -141,7 +141,10 @@
       item.classList.toggle('is-active', active);
       item.querySelector('.phase8-bsc-cluster-select')?.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
-    if (restoreFocus) requestAnimationFrame(() => cluster.querySelector('.phase8-bsc-cluster-select')?.focus({ preventScroll: true }));
+    requestAnimationFrame(() => {
+      cluster.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+      if (restoreFocus) cluster.querySelector('.phase8-bsc-cluster-select')?.focus({ preventScroll: true });
+    });
     return true;
   };
   (bscData?.courseEvidence || [])
@@ -172,6 +175,7 @@
     bscActions.appendChild(routeControl('Open BSc thesis', bscData.thesisNodeId, 'phase8-route-link', { crossLink: 'thesis-of' }));
   }
   bsc.append(bscClusters, bscActions);
+  if (bscData?.courseEvidence?.[0]?.id) selectBscEvidence(bscData.courseEvidence[0].id);
   layer.appendChild(bsc);
   window.addEventListener('profile:education-evidence-select', event => {
     selectBscEvidence(event.detail?.evidenceId, { restoreFocus: Boolean(event.detail?.restoreFocus) });
@@ -195,10 +199,7 @@
       if (!value) return;
       facts.append(element('dt', '', term), element('dd', '', value));
     });
-    msc.append(
-      facts,
-      element('p', 'phase8-object-note', mscData.evidencePolicy)
-    );
+    msc.append(facts);
   }
   layer.appendChild(msc);
 

@@ -39,7 +39,7 @@
 .phase8-experience-role{font-size:10px;line-height:1.2;color:var(--ink)}
 .phase8-experience-org{font-size:8px;line-height:1.15;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-.phase8-coursework[data-scene-placement="semantic-right-document"],.phase8-credentials[data-scene-placement="semantic-right-stack"],.phase8-esslli[data-scene-placement="semantic-right-timetable"],.phase8-prg-ai[data-scene-placement="semantic-right-route"],.phase8-bsc-evidence[data-scene-placement="semantic-right-evidence"],.phase8-current-role[data-scene-placement="semantic-right-role"],.phase8-msc-progress[data-scene-placement="semantic-right-msc"]{right:18px;top:74px;width:min(410px,36%);padding:17px}
+.phase8-coursework[data-scene-placement="semantic-right-document"],.phase8-credentials[data-scene-placement="semantic-right-stack"],.phase8-esslli[data-scene-placement="semantic-right-timetable"],.phase8-prg-ai[data-scene-placement="semantic-right-route"],.phase8-bsc-evidence[data-scene-placement="semantic-right-evidence"],.phase8-current-role[data-scene-placement="semantic-right-role"],.phase8-msc-progress[data-scene-placement="semantic-right-msc"]{right:18px;top:106px!important;width:min(410px,36%);max-height:calc(100% - 132px);padding:17px;overflow:auto}
 
 .phase8-document-shelf{display:grid;gap:10px}
 .phase8-document{display:grid;grid-template-columns:minmax(0,1fr);gap:7px}

@@ -28,10 +28,12 @@
   const route = () => document.body?.dataset.graphRoute || (location.hash || '#overview').slice(1);
   const available = () => {
     if (mode() !== 'atlas') return false;
-    if (document.body?.classList.contains('is-atlas-reveal')) return false;
-    if (['pending', 'preparing', 'running'].includes(document.documentElement.dataset.profileIntro || '')) return false;
+    const entryState = document.body?.dataset.entryState || '';
+    const entryReady = entryState === 'ready';
+    if (document.body?.classList.contains('is-atlas-reveal') && !entryReady) return false;
+    if (['pending', 'preparing', 'running'].includes(document.documentElement.dataset.profileIntro || '') && !entryReady) return false;
     const state = introState();
-    return !state || ['ATLAS_READY', 'BYPASSED'].includes(state);
+    return entryReady || !state || ['ATLAS_READY', 'BYPASSED'].includes(state);
   };
   const previewAvailable = () => available();
   const emit = (type, detail = {}) => {
@@ -395,6 +397,24 @@
   // This must run in document capture, before any per-node drag/camera
   // listeners. The root is shared by Atlas and local fragments; in the latter
   // it is an unconditional route-home control, never an Atlas entry portal.
+  // Render transitions can replace the live root after the original node was
+  // bound. Delegated hover/focus recovery makes the portrait portal resilient
+  // to that replacement instead of depending on event ordering.
+  document.addEventListener('pointerover', event => {
+    if (event.pointerType === 'touch' || mode() !== 'atlas') return;
+    const node = event.target.closest?.('#site-graph .site-graph-node[data-node-id]');
+    if (node?.dataset.nodeId !== rootId) return;
+    if (node !== rootNode) ensurePortal();
+    openPortal('pointer-hover-delegated');
+  }, true);
+  document.addEventListener('focusin', event => {
+    if (mode() !== 'atlas') return;
+    const node = event.target.closest?.('#site-graph .site-graph-node[data-node-id]');
+    if (node?.dataset.nodeId !== rootId) return;
+    if (node !== rootNode) ensurePortal();
+    openPortal('keyboard-focus-delegated');
+  }, true);
+
   document.addEventListener('click', event => {
     if (mode() === 'atlas' || event.button !== 0 || event.defaultPrevented) return;
     const node = event.target.closest?.('#site-graph .site-graph-node[data-node-id]');

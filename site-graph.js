@@ -1308,10 +1308,10 @@
           renderer.decorations.appendChild(group);
         }
         const knowledgeLabels = item.knowledgeIds.map(id => nodeMap.get(id)?.label).filter(Boolean);
-        group.setAttribute('aria-label', `${item.label}. ${item.status} course evidence. Supports ${knowledgeLabels.join(', ') || 'related knowledge'}.`);
+        group.setAttribute('aria-label', `${item.label}. Verified completed coursework group. Select to inspect the courses and related Knowledge areas.`);
         group.querySelector('.site-graph-evidence-label').textContent = item.label;
-        group.querySelector('.site-graph-evidence-meta').textContent = `${item.courseCount} completed courses`;
-        group.querySelector('title').textContent = `${item.label}: ${knowledgeLabels.join(', ')}`;
+        group.querySelector('.site-graph-evidence-meta').textContent = 'VERIFIED COURSEWORK';
+        group.querySelector('title').textContent = `${item.label}: select to inspect completed coursework`;
         setVisualTransform(group, item.position);
       });
       [...renderer.semanticEvidence.entries()].forEach(([id, element]) => {

@@ -260,8 +260,6 @@
     controls.setAttribute('aria-label', 'Work filters');
     const leftRail = document.createElement('aside');
     leftRail.className = 'integrated-work-rail is-left';
-    const rightRail = document.createElement('aside');
-    rightRail.className = 'integrated-work-rail is-right';
 
     const makeControlGroup = (className, titleText, titleId) => {
       const group = document.createElement('div');
@@ -348,10 +346,6 @@
     });
     matchControl.appendChild(matchButtons);
 
-    const resultCount = document.createElement('span');
-    resultCount.id = 'work-result-count';
-    resultCount.className = 'work-result-count';
-    resultCount.setAttribute('aria-live', 'polite');
     const resetButton = document.createElement('button');
     resetButton.id = 'work-reset';
     resetButton.className = 'work-reset integrated-work-reset';
@@ -364,9 +358,8 @@
       syncWorkControls('reset');
     });
 
-    leftRail.appendChild(contextControl);
-    rightRail.append(themeControl, matchControl, resultCount, resetButton);
-    controls.append(leftRail, rightRail);
+    leftRail.append(contextControl, themeControl, matchControl, resetButton);
+    controls.append(leftRail);
     scene.appendChild(controls);
 
     const readWorkState = () => ({
@@ -395,7 +388,6 @@
         button.disabled = workFilterState.selectedThemes.size < 2;
       });
       const visibleCount = projects.filter(project => projectMatchesWork(project)).length;
-      resultCount.textContent = `${visibleCount} of ${projects.length} ${visibleCount === 1 ? 'project' : 'projects'}`;
       resetButton.disabled = workFilterState.context === 'all' &&
         !workFilterState.selectedThemes.size && workFilterState.mode === 'any';
       dispatchEvent(new CustomEvent('profile:work-filters', {

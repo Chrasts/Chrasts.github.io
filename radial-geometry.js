@@ -33,8 +33,8 @@
   // Keep the complete semantic field inside the renderer's compact canonical
   // viewBox. Scaling field positions here avoids a wider SVG/camera surface
   // merely because a new deep Knowledge specialization is present.
-  const ATLAS = Object.freeze({ width: 2520, height: 1540, center: { x: 1260, y: 770 }, sectionRadius: 370 });
-  const halfAngles = Object.freeze({ work: 0.80, knowledge: 0.78, experience: 0.46, education: 0.62, about: 0.84 });
+  const ATLAS = Object.freeze({ width: 2520, height: 1540, center: { x: 1260, y: 770 }, sectionRadius: 395 });
+  const halfAngles = Object.freeze({ work: 0.88, knowledge: 0.88, experience: 0.55, education: 0.70, about: 0.92 });
   const overviewRadius = id => {
     const mobile = window.matchMedia('(max-width: 900px)').matches;
     const values = mobile
@@ -141,12 +141,12 @@
       // genuine radial tiers. The previous extra 56px reserve plus a hard
       // 76px minimum gap forced the last two tiers into the same clamped
       // radius. Give Work the available sector depth instead of collapsing it.
-      const usableReserve = sectionId === 'work' ? 16 : 56;
-      const usable = Math.max(ATLAS.sectionRadius + 120, limit - usableReserve);
-      const minimumLevelGap = sectionId === 'work' ? 62 : 82;
+      const usableReserve = sectionId === 'work' ? 10 : 38;
+      const usable = Math.max(ATLAS.sectionRadius + 130, limit - usableReserve);
+      const minimumLevelGap = sectionId === 'work' ? 72 : 94;
       const levelGap = maxDepth > 0
-        ? Math.max(minimumLevelGap, Math.min(sectionId === 'knowledge' ? 158 : 150, (usable - ATLAS.sectionRadius) / maxDepth))
-        : 132;
+        ? Math.max(minimumLevelGap, Math.min(sectionId === 'knowledge' ? 172 : 164, (usable - ATLAS.sectionRadius) / maxDepth))
+        : 144;
       const sectionPoint = {
         x: ATLAS.center.x + vector.x * ATLAS.sectionRadius,
         y: ATLAS.center.y + vector.y * ATLAS.sectionRadius
@@ -171,11 +171,15 @@
         const baseRadius = ATLAS.sectionRadius + levelGap * depth;
         const tangentialCapacity = Math.max(160, baseRadius * Math.tan(halfAngles[sectionId]));
         const desiredGap = sectionId === 'knowledge'
-          ? 126
+          ? 158
           : sectionId === 'work'
-            ? 162
-            : sectionId === 'education' ? 124 : 136;
+            ? 178
+            : sectionId === 'education'
+              ? 148
+              : sectionId === 'experience' ? 152 : 160;
         const span = Math.min(tangentialCapacity * 2, desiredGap * Math.max(0, level.length - 1));
+        const levelBiasAmplitude = sectionId === 'knowledge' ? 74 : sectionId === 'work' ? 54 : 62;
+        const levelBias = stableNoise(`${sectionId}:${depth}:level-bias`) * levelBiasAmplitude;
 
         level.forEach((node, index) => {
           // Warp sibling ranks and add a stable per-node offset. This keeps
@@ -183,25 +187,25 @@
           // rows, so each territory fills its available field more naturally.
           const rank = level.length <= 1 ? .5 : index / (level.length - 1);
           const warpedRank = Math.max(0, Math.min(1,
-            rank + stableNoise(`${node.id}:rank`) * .17 * Math.sin(Math.PI * rank)
+            rank + stableNoise(`${node.id}:rank`) * .24 * Math.sin(Math.PI * rank)
           ));
           const baseTangent = level.length <= 1 ? 0 : -span / 2 + span * warpedRank;
           const leaf = !hasChildInSection(node.id, sectionId);
-          const tangentAmplitude = sectionId === 'knowledge' ? 86
-            : sectionId === 'work' ? 72
-              : leaf ? 68 : 48;
+          const tangentAmplitude = sectionId === 'knowledge' ? 100
+            : sectionId === 'work' ? 84
+              : leaf ? 78 : 58;
           const tangentVariance = stableNoise(`${node.id}:tangent`) * tangentAmplitude;
-          const tangential = baseTangent + tangentVariance;
+          const tangential = baseTangent + levelBias + tangentVariance;
 
-          const radialAmplitude = sectionId === 'knowledge' ? 92
-            : sectionId === 'work' ? 74
-              : leaf ? 76 : 54;
+          const radialAmplitude = sectionId === 'knowledge' ? 100
+            : sectionId === 'work' ? 84
+              : leaf ? 82 : 60;
           // Independent radial noise prevents correlated stripes while the
           // lower bound preserves an outward progression by graph depth.
           const radialJitter = stableNoise(`${node.id}:radial`) * radialAmplitude +
             stableNoise(`${node.id}:radial-fine`) * 18;
 
-          const radial = Math.min(usable, Math.max(baseRadius - 44, baseRadius + radialJitter));
+          const radial = Math.min(usable, Math.max(baseRadius - 48, baseRadius + radialJitter));
           positions.set(node.id, {
             x: ATLAS.center.x + vector.x * radial + perpendicular.x * tangential,
             y: ATLAS.center.y + vector.y * radial + perpendicular.y * tangential
@@ -220,7 +224,7 @@
     const availableX = Math.min(ATLAS.center.x - 150, ATLAS.width - 150 - ATLAS.center.x);
     const availableY = Math.min(ATLAS.center.y - 160, ATLAS.height - 160 - ATLAS.center.y);
     const scaleX = Math.min(1, availableX / maxDx);
-    const scaleY = Math.min(.98, availableY / maxDy);
+    const scaleY = Math.min(1, availableY / maxDy);
     positions.forEach((point, id) => {
       if (id === rootId) return;
       positions.set(id, {

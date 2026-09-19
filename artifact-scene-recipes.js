@@ -201,7 +201,19 @@
       );
       const expand = element('span', 'artifact-inline-expand', 'Inspect ↗');
       expand.setAttribute('aria-hidden', 'true');
-      frame.append(label, expand);
+      frame.append(label);
+      if (artifact.source?.kind === 'local') {
+        const iframe = document.createElement('iframe');
+        iframe.src = `${href}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`;
+        iframe.title = '';
+        iframe.tabIndex = -1;
+        iframe.loading = eager ? 'eager' : 'lazy';
+        iframe.setAttribute('aria-hidden', 'true');
+        iframe.setAttribute('focusable', 'false');
+        iframe.dataset.artifactInlinePdf = 'true';
+        frame.appendChild(iframe);
+      }
+      frame.appendChild(expand);
       hydratePreviewAspect(frame, artifact, href);
       return frame;
     }

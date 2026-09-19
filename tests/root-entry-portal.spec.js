@@ -34,7 +34,7 @@ const expectSameCanonicalRoot = (actual, expected) => {
   expect(actual.ty).toBeCloseTo(expected.ty, 4);
 };
 
-test.describe('V3.1 Phase F root entry portal — desktop', () => {
+test.describe('V3.1 Phase F root entry portal - desktop', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
   test('reveals identity inside the one persistent semantic root instead of creating a portrait overlay', async ({ page }) => {
@@ -95,7 +95,7 @@ test.describe('V3.1 Phase F root entry portal — desktop', () => {
     expect(opened.actionOpacity).toBeGreaterThan(.8);
     expect(opened.actionTabIndex).toBe('-1');
     expect(opened.actionAriaHidden).toBe('true');
-    expect(opened.rootLabel).toBe('Enter profile — Štěpán Chrast');
+    expect(opened.rootLabel).toBe('Enter profile - Štěpán Chrast');
     expect(opened.haloRadii).toEqual([27, 42]);
     expect(opened.expanded).toBe('true');
     expectSameCanonicalRoot(await canonicalRoot(page), before);

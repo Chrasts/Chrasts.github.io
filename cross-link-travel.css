@@ -100,7 +100,7 @@
    where it remains discoverable without entering the graph's reading field. */
 .crosslink-return-control{
   position:absolute;
-  top:calc(100% + 8px);
+  top:calc(100% + 12px);
   left:0;
   z-index:1;
   display:inline-flex;
@@ -137,8 +137,8 @@
    present, reserve a small vertical lane for it before the graph breadcrumb
    and root brief begin; otherwise those independent absolute layers compete
    for the same top-left reading space. */
-body:has(.crosslink-return-control:not([hidden])) .graph-routebar{top:56px!important}
-body:has(.crosslink-return-control:not([hidden])) .site-graph-heading{top:112px!important}
+body:has(.crosslink-return-control:not([hidden])) #site-explorer .graph-routebar{top:92px!important}
+body:has(.crosslink-return-control:not([hidden])) #site-explorer .site-graph-heading{top:148px!important}
 
 body.is-crosslink-travelling{
   overflow:hidden

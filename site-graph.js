@@ -36,6 +36,35 @@
     const workRoot = nodeMap.get('work');
     if (!profileRoot || !workRoot) return;
 
+    // Five top-level profile territories own the chromatic semantics of the
+    // graph. The profile root itself remains neutral/identity-brown.
+    const profileBranchIds = new Set(['work', 'knowledge', 'experience', 'education', 'about']);
+    const profileBranchFor = value => {
+      const start = typeof value === 'string' ? nodeMap.get(value) : value;
+      if (!start || start.id === profileRoot.id) return null;
+      if (start.type === 'work-concept' || String(start.id).startsWith('work-concept:')) return 'work';
+
+      const seen = new Set();
+      let current = start;
+      while (current && !seen.has(current.id)) {
+        if (profileBranchIds.has(current.id)) return current.id;
+        seen.add(current.id);
+        const parentId = current.parentIds?.[0];
+        if (!parentId) break;
+        if (profileBranchIds.has(parentId)) return parentId;
+        current = nodeMap.get(parentId);
+      }
+
+      // Work projects are canonical graph entities under Work even if a
+      // temporary renderer model omits their primary parent.
+      if (start.type === 'project') return 'work';
+      return null;
+    };
+    const setProfileBranch = branch => {
+      if (profileBranchIds.has(branch)) document.body.dataset.profileBranch = branch;
+      else delete document.body.dataset.profileBranch;
+    };
+
     const childrenFor = id => graph.nodes.filter(node => node.parentIds?.includes(id));
     const routeForNode = node => node?.route || 'overview';
     const normaliseRoute = value => {
@@ -801,6 +830,8 @@
       const group = document.createElementNS(svgNS, 'g');
       group.classList.add('site-graph-node', `is-${node.type}`);
       group.dataset.nodeId = node.id;
+      const profileBranch = profileBranchFor(node);
+      group.dataset.profileBranch = profileBranch || 'identity';
       group.setAttribute('tabindex', '0');
       group.setAttribute('role', 'button');
 
@@ -885,6 +916,7 @@
       const activate = () => {
         if (state.mode === 'atlas') {
           atlasPinnedId = node.id;
+          setProfileBranch(profileBranchFor(node));
           atlasHighlight(node.id, true);
           openAtlasInspector(node);
           return;
@@ -1374,6 +1406,18 @@
           enteringEdges.add(key);
           element.style.opacity = '0';
         }
+        const sourceBranch = profileBranchFor(edge.source);
+        const targetBranch = profileBranchFor(edge.target);
+        const edgeBranch = sourceBranch && sourceBranch === targetBranch
+          ? sourceBranch
+          : edge.source === profileRoot.id
+            ? targetBranch
+            : edge.target === profileRoot.id
+              ? sourceBranch
+              : null;
+        if (edgeBranch) element.dataset.profileBranch = edgeBranch;
+        else delete element.dataset.profileBranch;
+
         const sourceStart = starts.get(edge.source) || previous.get(edge.source) || focusPoint;
         const targetStart = starts.get(edge.target) || previous.get(edge.target) || sourceStart;
         const sourceTarget = targets.get(edge.source) || sourceStart;
@@ -1761,6 +1805,7 @@
         button.addEventListener('click', () => {
           if (state.mode === 'atlas') {
             atlasPinnedId = node.id;
+            setProfileBranch(profileBranchFor(node));
             atlasHighlight(node.id, true);
             openAtlasInspector(node);
           } else updateHash(routeForNode(node));
@@ -2072,6 +2117,7 @@
         };
         document.body.dataset.graphMode = 'work';
         document.body.dataset.graphRoute = route;
+        setProfileBranch('work');
         dispatchEvent(new CustomEvent('profile:graph-state-committed', { detail: { route, mode: 'work' } }));
         hero.hidden = true;
         explorer.hidden = false;
@@ -2108,6 +2154,7 @@
 
       document.body.dataset.graphMode = state.mode;
       document.body.dataset.graphRoute = state.route;
+      setProfileBranch(state.mode === 'atlas' || state.mode === 'overview' ? null : profileBranchFor(target));
       dispatchEvent(new CustomEvent('profile:graph-state-committed', { detail: { route: state.route, mode: state.mode } }));
       hero.hidden = state.mode !== 'overview';
       explorer.hidden = false;
@@ -2242,6 +2289,7 @@
         event.preventDefault();
         if (state.mode === 'atlas' && atlasPinnedId) {
           atlasPinnedId = null;
+          setProfileBranch(null);
           clearAtlasHighlight();
         }
         closeDetail();

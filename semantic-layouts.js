@@ -125,7 +125,7 @@
       // the accessible name and appear in the focused inspector.
       ['student-ball', { text: '', hidden: true }],
       ['escape-room', { text: '', hidden: true }],
-      ['ceske-priority', { text: 'Jul 2026 – present' }]
+      ['ceske-priority', { text: 'Jul 2026 - present' }]
     ]);
     const timelineTextOffsets = new Map([
       ['student-ball', { label: -16, meta: -29 }],
@@ -205,8 +205,8 @@
     const timelineNodeIds = new Set();
     const semanticSectionAnchors = new Set(['education']);
     const semanticNodePriorities = new Map([
-      [bsc, 'primary'], [msc, 'primary'],
-      ['esslli', 'secondary'], ['prg-ai', 'secondary'],
+      [bsc, 'primary'], [msc, 'primary'], ['prg-ai', 'primary'],
+      ['esslli', 'secondary'],
       ['cert-cambridge-b2', 'tertiary'], ['cert-ethics-ai', 'tertiary'], ['cert-intro-ai', 'tertiary'],
       ['education', 'tertiary']
     ]);
@@ -220,10 +220,10 @@
       ['prg-ai', { label: -16, meta: -29 }]
     ]);
     const timelineLabelMeta = new Map([
-      [bsc, { text: '2022 – Sep 2026' }],
-      [msc, { text: 'Sep 2026 – present' }],
+      [bsc, { text: '2022 - Sep 2026' }],
+      [msc, { text: 'Sep 2026 - present' }],
       ['esslli', { text: '2026' }],
-      ['prg-ai', { text: '2026/27' }]
+      ['prg-ai', { text: '2026 - present' }]
     ]);
     if (mobile) {
       // Phone labels are rendered at a much larger physical scale. Keep the
@@ -238,7 +238,7 @@
       timelineLabelMeta.set('esslli', { text: '', hidden: true });
       timelineLabelMeta.set('prg-ai', { text: '', hidden: true });
     }
-    const semanticNodeVariants = new Map([[bsc, 'degree'], [msc, 'degree'], ['esslli', 'programme'], ['prg-ai', 'programme']]);
+    const semanticNodeVariants = new Map([[bsc, 'degree'], [msc, 'degree'], ['prg-ai', 'degree'], ['esslli', 'programme']]);
     const evidenceConstellation = [];
     positions.set(rootId, mobile ? point(600, 72) : point(190, 94));
     if (visible.has('education')) positions.set('education', mobile ? point(482, 198) : point(236, 264));
@@ -365,8 +365,8 @@
     if (selectedId !== 'education' && visible.has(selectedId)) {
       positions.set(selectedId, focal);
       semanticNodePriorities.set(selectedId, 'primary');
-      if (['charles-university', 'charles-university-masters-logic'].includes(selectedId)) semanticNodeVariants.set(selectedId, 'degree');
-      else if (['esslli', 'prg-ai'].includes(selectedId)) semanticNodeVariants.set(selectedId, 'programme');
+      if (['charles-university', 'charles-university-masters-logic', 'prg-ai'].includes(selectedId)) semanticNodeVariants.set(selectedId, 'degree');
+      else if (selectedId === 'esslli') semanticNodeVariants.set(selectedId, 'programme');
       else if (selectedNode?.type === 'credential') semanticNodeVariants.set(selectedId, 'credential');
     }
 

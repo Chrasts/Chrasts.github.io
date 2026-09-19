@@ -830,6 +830,9 @@
     const transitionEdges = finalEdges.map(source => {
       const clone = source.cloneNode(true);
       clone.classList.remove('is-upstream', 'is-downstream', 'is-lateral', 'is-muted-soft', 'is-work-soft', 'is-work-strong', 'is-selected-downset');
+      clone.style.removeProperty('filter');
+      clone.style.removeProperty('stroke-dashoffset');
+      clone.dataset.transitionEdgeVisible = 'false';
       clone.style.visibility = 'hidden';
       setTransitionOpacity(clone, 0);
       current.overlayEdges.appendChild(clone);
@@ -916,16 +919,22 @@
       const edgeStart = current.direction === 'up' ? .62 : current.direction === 'down' ? .36 : .48;
       const edgeRaw = clamp01((raw - edgeStart) / (1 - edgeStart));
 
-      if (edgeRaw > 0) transitionEdges.forEach(edge => {
+      transitionEdges.forEach(edge => {
         const source = currentPoints.get(edge.dataset.source);
         const target = currentPoints.get(edge.dataset.target);
-        if (!source || !target) return;
+        const visible = edgeRaw > .035 && Boolean(source && target);
+        edge.dataset.transitionEdgeVisible = visible ? 'true' : 'false';
+        if (!visible) {
+          edge.style.visibility = 'hidden';
+          setTransitionOpacity(edge, 0);
+          return;
+        }
         const straight = pathIds.has(edge.dataset.source) && pathIds.has(edge.dataset.target);
         edge.setAttribute(
           'd',
           edgePath(source, target, `${edge.dataset.source}|${edge.dataset.target}`, straight)
         );
-        edge.style.visibility = edgeRaw > 0 ? 'visible' : 'hidden';
+        edge.style.visibility = 'visible';
         setTransitionOpacity(edge, ease(edgeRaw));
       });
 

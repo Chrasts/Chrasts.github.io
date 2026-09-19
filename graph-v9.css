@@ -34,8 +34,15 @@ body.is-v9-transitioning #site-graph .site-graph-svg > g:not(.v9-transition-over
   transition:none!important;
 }
 
+.v9-transition-overlay .site-graph-edges{
+  animation:none!important
+}
 .v9-transition-overlay .site-graph-edges path{
   vector-effect:non-scaling-stroke;
+}
+.v9-transition-overlay .site-graph-edges path:not([data-transition-edge-visible="true"]){
+  opacity:0!important;
+  visibility:hidden!important
 }
 
 body.is-v9-transitioning #site-graph{

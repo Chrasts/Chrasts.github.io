@@ -77,7 +77,7 @@ test('BSc PDF uses an inert ambient preview and a reliable focused reader afford
   const preview = card.locator('.artifact-media-preview.is-pdf');
 
   await expect(preview).toBeVisible();
-  await expect(preview.locator('iframe')).toHaveCount(0);
+  await expect(preview.locator('iframe[data-artifact-inline-pdf="true"]')).toHaveCount(1);
   await expect(preview.locator('.artifact-pdf-mark')).toHaveText('PDF');
   await card.click();
   await waitSettled(page);

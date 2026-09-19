@@ -24,6 +24,7 @@ window.SITE_DATA={
       "education/msc-logic":"education/charles-university-masters-logic",
       "knowledge/logic-math/set-theory":"knowledge/logic-math/mathematical-logic/set-theory",
       "knowledge/logic-math/number-theory":"knowledge/logic-math/mathematical-logic/number-theory",
+      "knowledge/logic-math/lattice-theory/congruence-lattice-problem":"knowledge/logic-math/lattice-theory",
       "knowledge/data-computing/ai-methods/ai-research-workflows":"knowledge/research-practice/ai-research-workflows",
       "knowledge/logic-math/mathematical-logic/algebraic-logic/quantum-logic-arol":"knowledge/logic-math/mathematical-logic/algebraic-logic/quantum-logic",
       "about/research-interests/logic-ai":"about/research-interests/formal-reasoning-ai",

@@ -42,94 +42,155 @@ html[data-profile-intro="running"] .entry-loading-shell{display:grid}
   z-index:1;
   width:clamp(92px,8vw,126px);
   aspect-ratio:1;
-  filter:drop-shadow(0 0 14px color-mix(in srgb,var(--entry-brown) 28%,transparent));
+  filter:drop-shadow(0 0 13px color-mix(in srgb,var(--entry-brown) 30%,transparent));
   animation:entry-loader-float 2.8s ease-in-out infinite
+}
+
+/* The six-colour identity appears as discrete, uneven halo fragments rather
+   than a continuous rainbow disc. Brown remains the dominant material. */
+.entry-loading-object::before,
+.entry-loading-object::after,
+.entry-loading-orbit{
+  box-sizing:border-box;
+  border-radius:50%;
+  pointer-events:none;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask-composite:exclude
 }
 .entry-loading-object::before,
 .entry-loading-object::after{
   content:"";
   position:absolute;
-  z-index:0;
-  border-radius:50%;
-  pointer-events:none
+  z-index:0
 }
 .entry-loading-object::before{
-  inset:3%;
+  inset:-2%;
+  padding:1.7px;
   background:conic-gradient(
-    from 18deg,
-    var(--entry-brown) 0 42%,
-    var(--entry-work) 42% 51%,
-    var(--entry-knowledge) 51% 60%,
-    var(--entry-experience) 60% 69%,
-    var(--entry-education) 69% 78%,
-    var(--entry-about) 78% 87%,
-    var(--entry-brown) 87% 100%
+    from 11deg,
+    transparent 0 5%,
+    var(--entry-brown) 5% 24%,
+    transparent 24% 33%,
+    var(--entry-work) 33% 40%,
+    transparent 40% 54%,
+    var(--entry-brown) 54% 67%,
+    transparent 67% 76%,
+    var(--entry-experience) 76% 82%,
+    transparent 82% 91%,
+    var(--entry-brown) 91% 100%
   );
-  opacity:.30;
-  filter:blur(12px);
-  animation:entry-loader-spectrum 8.4s linear infinite
+  opacity:.82;
+  filter:drop-shadow(0 0 4px color-mix(in srgb,var(--entry-brown) 25%,transparent));
+  animation:entry-loader-spectrum 9.7s linear infinite
 }
 .entry-loading-object::after{
-  inset:8%;
-  padding:1.5px;
+  inset:11%;
+  padding:1.35px;
   background:conic-gradient(
-    from 210deg,
-    var(--entry-brown) 0 48%,
-    var(--entry-about) 48% 57%,
-    var(--entry-education) 57% 66%,
-    var(--entry-experience) 66% 75%,
-    var(--entry-knowledge) 75% 84%,
-    var(--entry-work) 84% 93%,
-    var(--entry-brown) 93% 100%
+    from 203deg,
+    transparent 0 10%,
+    var(--entry-brown) 10% 31%,
+    transparent 31% 39%,
+    var(--entry-about) 39% 46%,
+    transparent 46% 58%,
+    var(--entry-brown) 58% 70%,
+    transparent 70% 79%,
+    var(--entry-education) 79% 86%,
+    transparent 86% 93%,
+    var(--entry-knowledge) 93% 97%,
+    transparent 97% 100%
   );
-  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
-  -webkit-mask-composite:xor;
-  mask-composite:exclude;
-  opacity:.74;
-  animation:entry-loader-spectrum 6.8s linear infinite reverse
+  opacity:.78;
+  filter:drop-shadow(0 0 3px color-mix(in srgb,var(--entry-about) 22%,transparent));
+  animation:entry-loader-spectrum 7.1s linear infinite reverse
 }
+
 .entry-loading-core,
 .entry-loading-orbit{
   position:absolute;
-  z-index:1;
   inset:50%;
   display:block;
-  border-radius:50%;
   transform-origin:center
 }
 .entry-loading-core{
+  z-index:2;
   width:25%;
   height:25%;
   box-sizing:border-box;
   border:2px solid var(--entry-brown);
+  border-radius:50%;
   background:color-mix(in srgb,var(--entry-brown) 16%,#000);
-  box-shadow:0 0 0 6px color-mix(in srgb,var(--entry-brown) 12%,transparent),0 0 16px color-mix(in srgb,var(--entry-brown) 38%,transparent);
+  box-shadow:
+    0 0 0 6px color-mix(in srgb,var(--entry-brown) 11%,transparent),
+    0 0 16px color-mix(in srgb,var(--entry-brown) 38%,transparent);
   transform:translate(-50%,-50%);
   animation:entry-loader-core 1.7s ease-in-out infinite alternate
 }
 .entry-loading-orbit{
-  box-sizing:border-box;
-  border:1.25px solid color-mix(in srgb,var(--entry-brown) 76%,transparent);
-  transform:translate(-50%,-50%);
-  box-shadow:0 0 9px color-mix(in srgb,var(--entry-brown) 14%,transparent)
+  z-index:1;
+  border:0;
+  transform:translate(-50%,-50%)
 }
 .entry-loading-orbit.is-inner{
-  width:48%;height:48%;
-  border-style:solid;
-  border-left-color:transparent;
-  animation:entry-loader-orbit 4.2s linear infinite
+  width:48%;
+  height:48%;
+  padding:1.4px;
+  background:conic-gradient(
+    from 147deg,
+    var(--entry-brown) 0 24%,
+    transparent 24% 38%,
+    var(--entry-work) 38% 49%,
+    transparent 49% 67%,
+    var(--entry-brown) 67% 86%,
+    transparent 86% 100%
+  );
+  opacity:.88;
+  filter:drop-shadow(0 0 3px color-mix(in srgb,var(--entry-work) 18%,transparent));
+  animation:entry-loader-orbit 4.6s linear infinite
 }
 .entry-loading-orbit.is-mid{
-  width:72%;height:72%;
-  border-style:dashed;
-  border-color:color-mix(in srgb,var(--entry-brown) 48%,var(--entry-knowledge));
-  animation:entry-loader-orbit 7.8s linear infinite reverse
+  width:72%;
+  height:72%;
+  padding:1.2px;
+  background:conic-gradient(
+    from 28deg,
+    transparent 0 8%,
+    var(--entry-brown) 8% 27%,
+    transparent 27% 41%,
+    var(--entry-knowledge) 41% 48%,
+    transparent 48% 61%,
+    var(--entry-brown) 61% 74%,
+    transparent 74% 86%,
+    var(--entry-education) 86% 92%,
+    transparent 92% 100%
+  );
+  opacity:.80;
+  filter:drop-shadow(0 0 3px color-mix(in srgb,var(--entry-knowledge) 18%,transparent));
+  animation:entry-loader-orbit 8.3s linear infinite reverse
 }
 .entry-loading-orbit.is-outer{
-  width:100%;height:100%;
-  border-style:dotted;
-  border-color:color-mix(in srgb,var(--entry-brown) 58%,var(--entry-about));
-  animation:entry-loader-orbit 12s linear infinite
+  width:100%;
+  height:100%;
+  padding:1.05px;
+  background:conic-gradient(
+    from 271deg,
+    var(--entry-brown) 0 18%,
+    transparent 18% 31%,
+    var(--entry-about) 31% 37%,
+    transparent 37% 49%,
+    var(--entry-brown) 49% 63%,
+    transparent 63% 72%,
+    var(--entry-experience) 72% 78%,
+    transparent 78% 88%,
+    var(--entry-work) 88% 93%,
+    transparent 93% 100%
+  );
+  opacity:.72;
+  filter:drop-shadow(0 0 4px color-mix(in srgb,var(--entry-brown) 18%,transparent));
+  animation:entry-loader-orbit 12.7s linear infinite
 }
 body.is-entry-loader-releasing .entry-loading-shell{
   background:transparent;

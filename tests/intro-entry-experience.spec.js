@@ -262,7 +262,7 @@ test.describe('Intro entry experience master contract', () => {
     await bootAtlas(page);
     const root = page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]').first();
     const action = root.locator(':scope > [data-root-entry-action]');
-    await expect(root).toHaveAttribute('aria-label', 'Enter profile — Štěpán Chrast');
+    await expect(root).toHaveAttribute('aria-label', 'Enter profile - Štěpán Chrast');
     await expect(action).toHaveAttribute('tabindex', '-1');
     await expect(action).toHaveAttribute('aria-hidden', 'true');
     await root.locator(':scope > .site-graph-hit').click();

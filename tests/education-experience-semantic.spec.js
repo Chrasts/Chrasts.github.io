@@ -57,7 +57,7 @@ test.describe('Education and Experience semantic geometry', () => {
     await expect(page.locator('#site-graph [data-semantic-guide^="experience-compressed-break"]')).toHaveCount(0);
     await expect(page.locator('#site-graph [data-semantic-guide="experience-axis"] text')).toHaveCount(0);
     await expect(page.locator('#site-graph')).not.toContainText('compressed');
-    await expect(page.locator('#site-graph .site-graph-node[data-node-id="ceske-priority"] .site-graph-meta')).toHaveText('Jul 2026 – present');
+    await expect(page.locator('#site-graph .site-graph-node[data-node-id="ceske-priority"] .site-graph-meta')).toHaveText('Jul 2026 - present');
     await expect(page.locator('#site-graph .site-graph-node[data-node-id="escape-room"] .site-graph-meta')).toBeHidden();
     await expect(page.locator('#site-graph .site-graph-node.is-legacy-experience')).toHaveCount(2);
     await expect(page.locator('#site-graph .site-graph-node.is-professional-experience')).toHaveCount(1);
@@ -91,7 +91,7 @@ test.describe('Education and Experience semantic geometry', () => {
     // The semantic inspector is built after the initial page boot. Its
     // controls must still be live native route controls, and related Work
     // should use the same semantic travel/history as the graph relation.
-    const relatedWork = inspector.getByRole('button', { name: /Social Workers Survey Analysis/i });
+    const relatedWork = inspector.getByRole('button', { name: /Survey Analysis and Open-Text Coding/i });
     await expect(relatedWork).toHaveAttribute('data-crosslink-target', 'project-social-workers-survey');
     await relatedWork.click();
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'work/project/social-workers-survey');

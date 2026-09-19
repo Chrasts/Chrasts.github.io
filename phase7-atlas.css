@@ -25,8 +25,6 @@ body[data-graph-mode="atlas"] #site-graph .site-graph-edges path.is-cross-link.i
   opacity:.96!important;
   stroke-width:1.9!important
 }
-body[data-graph-mode="atlas"][data-atlas-lod="far"] #site-graph .is-atlas-territory-node .site-graph-label,
-body[data-graph-mode="atlas"][data-atlas-lod="medium"] #site-graph .is-atlas-territory-node .site-graph-label,
 body[data-graph-mode="atlas"][data-atlas-lod="far"] #site-graph .site-graph-meta,
 body[data-graph-mode="atlas"][data-atlas-lod="medium"] #site-graph .site-graph-meta,
 body[data-graph-mode="atlas"][data-atlas-lod="near"] #site-graph .site-graph-meta{
@@ -363,4 +361,21 @@ html body[data-graph-mode="atlas"] #site-graph .site-graph-edges path[data-targe
   [data-source="about"]
 ){
   stroke:var(--brown)!important
+}
+
+
+/* Canonical territory names replace the old duplicate LOD labels.
+   The dedicated screen-space territory layer was useful before the five
+   top-level nodes became strong landmarks, but now only duplicates them. */
+body[data-graph-mode="atlas"] #site-graph .atlas-territory-label-layer{
+  display:none!important
+}
+body[data-graph-mode="atlas"] #site-graph .site-graph-node:is(
+  [data-node-id="work"],
+  [data-node-id="knowledge"],
+  [data-node-id="experience"],
+  [data-node-id="education"],
+  [data-node-id="about"]
+) > .site-graph-label.site-graph-label{
+  opacity:1!important
 }

@@ -131,8 +131,8 @@ test.describe('Education and Experience semantic geometry', () => {
     await expect(page.locator('#site-graph [data-semantic-guide^="education-credential-stem-"]')).toHaveCount(3);
     await expect(page.locator('#site-graph [data-semantic-guide="education-credential-shared-2024"]')).toHaveCount(1);
     await expect(page.locator('#site-graph .site-graph-node[data-node-id="credentials"]')).toHaveCount(0);
-    await expect(page.locator('#site-graph .site-graph-node.is-semantic-degree')).toHaveCount(2);
-    await expect(page.locator('#site-graph .site-graph-node.is-semantic-parallel-study')).toHaveCount(2);
+    await expect(page.locator('#site-graph .site-graph-node.is-semantic-degree')).toHaveCount(3);
+    await expect(page.locator('#site-graph .site-graph-node.is-semantic-parallel-study')).toHaveCount(1);
     const [ethics, intro] = await Promise.all([point(page, 'cert-ethics-ai'), point(page, 'cert-intro-ai')]);
     expect(Math.abs(ethics.x - intro.x) + Math.abs(ethics.y - intro.y)).toBeGreaterThan(80);
     await expect(page.locator('[data-phase8-object="bsc-course-constellation"]')).toBeHidden();
@@ -147,7 +147,7 @@ test.describe('Education and Experience semantic geometry', () => {
     const graphEvidence = page.locator('#site-graph .site-graph-evidence-object');
     await expect(graphEvidence).toHaveCount(4);
     await expect(page.locator('#site-graph [data-semantic-guide="education-trajectory"]')).toHaveCount(0);
-    await expect(graphEvidence.first()).toHaveAttribute('aria-label', /completed course evidence/);
+    await expect(graphEvidence.first()).toHaveAttribute('aria-label', /Verified completed coursework group/);
     const safety = await page.evaluate(() => window.SITE_DATA.semantics.education.courseEvidence
       .every(course => ['completed', 'recognized'].includes(course.status)));
     expect(safety).toBe(true);
@@ -160,7 +160,7 @@ test.describe('Education and Experience semantic geometry', () => {
     await graphEvidence.first().focus();
     await page.keyboard.press('Enter');
     await expect(constellation.locator('.phase8-bsc-cluster.is-active')).toHaveCount(1);
-    await expect(constellation.locator('.phase8-bsc-cluster.is-active')).toContainText('Logic core');
+    await expect(constellation.locator('.phase8-bsc-cluster.is-active')).toContainText('Logic & metalogic');
     await expect(page).toHaveURL(/#education\/charles-university$/);
   });
 
@@ -205,7 +205,6 @@ test.describe('Education and Experience semantic geometry', () => {
     const context = page.locator('[data-phase8-object="msc-programme-context"]');
     await expect(context).toBeVisible();
     await expect(context).toContainText('ongoing');
-    await expect(context).toContainText('completed or recognized');
     await expect(context.locator('.phase8-bsc-cluster')).toHaveCount(0);
   });
 

@@ -42,12 +42,11 @@ html[data-profile-intro="running"] .entry-loading-shell{display:grid}
   z-index:1;
   width:clamp(92px,8vw,126px);
   aspect-ratio:1;
-  filter:drop-shadow(0 0 13px color-mix(in srgb,var(--entry-brown) 30%,transparent));
   animation:entry-loader-float 2.8s ease-in-out infinite
 }
 
-/* The six-colour identity appears as discrete, uneven halo fragments rather
-   than a continuous rainbow disc. Brown remains the dominant material. */
+/* Loading mark = six discrete monochrome pieces on pure black. No blended
+   spectrum, no multicolour aura. Each halo fragment owns exactly one hue. */
 .entry-loading-object::before,
 .entry-loading-object::after,
 .entry-loading-orbit{
@@ -67,45 +66,28 @@ html[data-profile-intro="running"] .entry-loading-shell{display:grid}
   z-index:0
 }
 .entry-loading-object::before{
-  inset:-2%;
-  padding:1.7px;
+  inset:-3%;
+  padding:1.45px;
   background:conic-gradient(
-    from 11deg,
-    transparent 0 5%,
-    var(--entry-brown) 5% 24%,
-    transparent 24% 33%,
-    var(--entry-work) 33% 40%,
-    transparent 40% 54%,
-    var(--entry-brown) 54% 67%,
-    transparent 67% 76%,
-    var(--entry-experience) 76% 82%,
-    transparent 82% 91%,
-    var(--entry-brown) 91% 100%
+    from 17deg,
+    transparent 0 11%,
+    var(--entry-experience) 11% 22%,
+    transparent 22% 100%
   );
-  opacity:.82;
-  filter:drop-shadow(0 0 4px color-mix(in srgb,var(--entry-brown) 25%,transparent));
-  animation:entry-loader-spectrum 9.7s linear infinite
+  filter:drop-shadow(0 0 4px color-mix(in srgb,var(--entry-experience) 34%,transparent));
+  animation:entry-loader-spectrum 9.4s linear infinite
 }
 .entry-loading-object::after{
-  inset:11%;
+  inset:7%;
   padding:1.35px;
   background:conic-gradient(
-    from 203deg,
-    transparent 0 10%,
-    var(--entry-brown) 10% 31%,
-    transparent 31% 39%,
-    var(--entry-about) 39% 46%,
-    transparent 46% 58%,
-    var(--entry-brown) 58% 70%,
-    transparent 70% 79%,
-    var(--entry-education) 79% 86%,
-    transparent 86% 93%,
-    var(--entry-knowledge) 93% 97%,
-    transparent 97% 100%
+    from 211deg,
+    transparent 0 18%,
+    var(--entry-about) 18% 31%,
+    transparent 31% 100%
   );
-  opacity:.78;
-  filter:drop-shadow(0 0 3px color-mix(in srgb,var(--entry-about) 22%,transparent));
-  animation:entry-loader-spectrum 7.1s linear infinite reverse
+  filter:drop-shadow(0 0 4px color-mix(in srgb,var(--entry-about) 32%,transparent));
+  animation:entry-loader-spectrum 7.3s linear infinite reverse
 }
 
 .entry-loading-core,
@@ -122,10 +104,8 @@ html[data-profile-intro="running"] .entry-loading-shell{display:grid}
   box-sizing:border-box;
   border:2px solid var(--entry-brown);
   border-radius:50%;
-  background:color-mix(in srgb,var(--entry-brown) 16%,#000);
-  box-shadow:
-    0 0 0 6px color-mix(in srgb,var(--entry-brown) 11%,transparent),
-    0 0 16px color-mix(in srgb,var(--entry-brown) 38%,transparent);
+  background:#000;
+  box-shadow:0 0 9px color-mix(in srgb,var(--entry-brown) 34%,transparent);
   transform:translate(-50%,-50%);
   animation:entry-loader-core 1.7s ease-in-out infinite alternate
 }
@@ -137,60 +117,41 @@ html[data-profile-intro="running"] .entry-loading-shell{display:grid}
 .entry-loading-orbit.is-inner{
   width:48%;
   height:48%;
-  padding:1.4px;
+  padding:1.35px;
   background:conic-gradient(
-    from 147deg,
-    var(--entry-brown) 0 24%,
-    transparent 24% 38%,
-    var(--entry-work) 38% 49%,
-    transparent 49% 67%,
-    var(--entry-brown) 67% 86%,
-    transparent 86% 100%
+    from 146deg,
+    transparent 0 7%,
+    var(--entry-work) 7% 30%,
+    transparent 30% 100%
   );
-  opacity:.88;
-  filter:drop-shadow(0 0 3px color-mix(in srgb,var(--entry-work) 18%,transparent));
-  animation:entry-loader-orbit 4.6s linear infinite
+  filter:drop-shadow(0 0 3px color-mix(in srgb,var(--entry-work) 30%,transparent));
+  animation:entry-loader-orbit 4.9s linear infinite
 }
 .entry-loading-orbit.is-mid{
   width:72%;
   height:72%;
   padding:1.2px;
   background:conic-gradient(
-    from 28deg,
-    transparent 0 8%,
-    var(--entry-brown) 8% 27%,
-    transparent 27% 41%,
-    var(--entry-knowledge) 41% 48%,
-    transparent 48% 61%,
-    var(--entry-brown) 61% 74%,
-    transparent 74% 86%,
-    var(--entry-education) 86% 92%,
-    transparent 92% 100%
+    from 31deg,
+    transparent 0 23%,
+    var(--entry-knowledge) 23% 39%,
+    transparent 39% 100%
   );
-  opacity:.80;
-  filter:drop-shadow(0 0 3px color-mix(in srgb,var(--entry-knowledge) 18%,transparent));
-  animation:entry-loader-orbit 8.3s linear infinite reverse
+  filter:drop-shadow(0 0 3px color-mix(in srgb,var(--entry-knowledge) 28%,transparent));
+  animation:entry-loader-orbit 8.1s linear infinite reverse
 }
 .entry-loading-orbit.is-outer{
   width:100%;
   height:100%;
-  padding:1.05px;
+  padding:1.1px;
   background:conic-gradient(
-    from 271deg,
-    var(--entry-brown) 0 18%,
-    transparent 18% 31%,
-    var(--entry-about) 31% 37%,
-    transparent 37% 49%,
-    var(--entry-brown) 49% 63%,
-    transparent 63% 72%,
-    var(--entry-experience) 72% 78%,
-    transparent 78% 88%,
-    var(--entry-work) 88% 93%,
-    transparent 93% 100%
+    from 278deg,
+    transparent 0 37%,
+    var(--entry-education) 37% 48%,
+    transparent 48% 100%
   );
-  opacity:.72;
-  filter:drop-shadow(0 0 4px color-mix(in srgb,var(--entry-brown) 18%,transparent));
-  animation:entry-loader-orbit 12.7s linear infinite
+  filter:drop-shadow(0 0 4px color-mix(in srgb,var(--entry-education) 28%,transparent));
+  animation:entry-loader-orbit 12.4s linear infinite
 }
 body.is-entry-loader-releasing .entry-loading-shell{
   background:transparent;

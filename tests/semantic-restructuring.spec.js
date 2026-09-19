@@ -27,6 +27,15 @@ test.describe('semantic graph restructuring', () => {
         knowledgeMissingSummary: [...nodes.values()].filter(node => node.type === 'knowledge' && !String(node.summary || '').trim()).map(node => node.id),
         modelTheorySummary: nodes.get('model-theory')?.summary || '',
         latticeTheorySummary: nodes.get('lattice-theory')?.summary || '',
+        courseBackedKnowledge: Object.fromEntries(
+          ['model-theory','lattice-theory'].map(id => [
+            id,
+            window.SITE_DATA.semantics.education.courseEvidence.some(group =>
+              ['completed','recognized'].includes(group.status) &&
+              (group.supportsKnowledgeIds || []).includes(id)
+            )
+          ])
+        ),
         workThemeNodes: [...nodes.values()].filter(node => node.type === 'work-theme' || node.id.startsWith('work-theme-')).map(node => node.id)
       };
     });
@@ -53,6 +62,10 @@ test.describe('semantic graph restructuring', () => {
     expect(model.modelTheorySummary).toMatch(/ultraproduct/i);
     expect(model.latticeTheorySummary).toMatch(/Boolean algebras/);
     expect(model.latticeTheorySummary).toMatch(/duality/i);
+    expect(model.courseBackedKnowledge).toEqual({
+      'model-theory': true,
+      'lattice-theory': true
+    });
     expect(model.workThemeNodes).toEqual([]);
   });
 

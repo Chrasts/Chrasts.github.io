@@ -293,3 +293,74 @@ body[data-graph-mode="atlas"] #site-detail-panel[hidden]{
     transition-duration:.01ms!important
   }
 }
+
+
+/* Branch identity is retained by Atlas nodes as they gain interaction weight.
+   Text receives a background-coloured outline so same-colour highlighted
+   relations can pass behind it without reducing legibility. */
+html body[data-graph-mode="atlas"] #site-graph .site-graph-node[data-profile-branch]:not([data-profile-branch="identity"]):is(
+  :hover,
+  :focus-visible,
+  .is-atlas-origin,
+  .is-previewed,
+  .is-upstream,
+  .is-downstream,
+  .is-lateral
+) > .site-graph-label.site-graph-label{
+  fill:var(--node-branch-color)!important;
+  stroke:var(--paper)!important;
+  stroke-width:7px!important;
+  stroke-linejoin:round!important;
+  paint-order:stroke!important
+}
+html body[data-graph-mode="atlas"] #site-graph .site-graph-node:is(
+  [data-node-id="work"],
+  [data-node-id="knowledge"],
+  [data-node-id="experience"],
+  [data-node-id="education"],
+  [data-node-id="about"]
+) > .site-graph-dot{
+  stroke:var(--node-branch-color)!important;
+  fill:color-mix(in srgb,var(--node-branch-color) 8%,var(--paper))!important;
+  stroke-width:2.5px!important
+}
+html body[data-graph-mode="atlas"] #site-graph .site-graph-node:is(
+  [data-node-id="work"],
+  [data-node-id="knowledge"],
+  [data-node-id="experience"],
+  [data-node-id="education"],
+  [data-node-id="about"]
+) > .site-graph-label.site-graph-label{
+  fill:var(--node-branch-color)!important;
+  font:860 19px/1 var(--sans)!important;
+  stroke:var(--paper)!important;
+  stroke-width:7px!important
+}
+html body[data-graph-mode="atlas"] #site-graph .site-graph-node:is(
+  [data-node-id="work"],
+  [data-node-id="knowledge"],
+  [data-node-id="experience"],
+  [data-node-id="education"],
+  [data-node-id="about"]
+):is(:hover,:focus-visible,.is-atlas-origin,.is-previewed) > .site-graph-label.site-graph-label{
+  fill:var(--node-branch-color)!important;
+  font:900 24px/1 var(--sans)!important;
+  stroke:var(--paper)!important;
+  stroke-width:9px!important
+}
+html body[data-graph-mode="atlas"] #site-graph .site-graph-edges path[data-source="stepan-chrast"]:is(
+  [data-target="work"],
+  [data-target="knowledge"],
+  [data-target="experience"],
+  [data-target="education"],
+  [data-target="about"]
+),
+html body[data-graph-mode="atlas"] #site-graph .site-graph-edges path[data-target="stepan-chrast"]:is(
+  [data-source="work"],
+  [data-source="knowledge"],
+  [data-source="experience"],
+  [data-source="education"],
+  [data-source="about"]
+){
+  stroke:var(--brown)!important
+}

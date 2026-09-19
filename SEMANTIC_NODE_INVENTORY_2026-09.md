@@ -32,8 +32,8 @@ This is the pre-migration inventory required by `portfolio_graph_node_restructur
 | universal-algebra | Universal Algebra | Mathematics & Logic | KEEP | Universal Algebra | Mathematics & Logic | - |
 | varieties-equational | Varieties & Equational Logic | Universal Algebra | KEEP | Varieties & Equational Logic | Universal Algebra | - |
 | semigroups-bands | Semigroups & Bands | Universal Algebra | KEEP | Semigroups & Bands | Universal Algebra | - |
-| lattice-theory | Lattice Theory | Mathematics & Logic | KEEP | Lattice Theory | Mathematics & Logic | - |
-| congruence-lattice-problem | Congruence Lattices & CLP | Lattice Theory | KEEP | Congruence Lattices & CLP | Lattice Theory | - |
+| lattice-theory | Lattice Theory | Mathematics & Logic | KEEP | Lattice Theory | Mathematics & Logic | Terminal Knowledge node for lattice foundations, Boolean algebras and duality/representation results. |
+| congruence-lattice-problem | Congruence Lattices & CLP | Lattice Theory | REMOVE_AS_KNOWLEDGE | - | canonical CLP Survey Work project | CLP remains represented by the Work project and its Lattice Theory relation, not as a standalone Knowledge claim. |
 | set-theory | Set Theory | Mathematics & Logic | MOVE | Set Theory | Mathematical Logic | Parent expresses its logical foundations role. |
 | number-theory | Number Theory & Arithmetic | Mathematics & Logic | MOVE | Number Theory & Arithmetic | Mathematical Logic | Parent expresses its logical foundations role. |
 | data-analysis | Data Analysis | Data & Computing | KEEP | Data Analysis | Data & Computing | - |

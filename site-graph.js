@@ -1910,6 +1910,9 @@
       if (node.meta) {
         const p = document.createElement('p'); p.className = 'detail-meta'; p.textContent = node.meta; detail.appendChild(p);
       }
+      if (node.type === 'knowledge' && childrenFor(node.id).length) {
+        appendNodeButtons('Topics', childrenFor(node.id));
+      }
       if (node.courseEvidence?.length) {
         const heading = document.createElement('p');
         heading.className = 'detail-list-title';
@@ -2170,7 +2173,9 @@
       } else {
         atlasPinnedId = null;
         clearAtlasHighlight();
-        if (state.mode === 'focus' && childrenFor(target.id).length === 0 && !semanticInspectorNodeIds.has(target.id)) openLeafDetail(target);
+        const knowledgeDetail = state.mode === 'focus' && target.type === 'knowledge';
+        const ordinaryLeafDetail = state.mode === 'focus' && childrenFor(target.id).length === 0;
+        if ((knowledgeDetail || ordinaryLeafDetail) && !semanticInspectorNodeIds.has(target.id)) openLeafDetail(target);
         else closeDetail();
       }
       updateNavigation();

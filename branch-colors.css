@@ -10,7 +10,7 @@
 :root{
   --branch-work:#2f6b4f;
   --branch-knowledge:#947800;
-  --branch-experience:#a34841;
+  --branch-experience:#9f1f24;
   --branch-education:#0f5068;
   --branch-about:#9b4f77;
 
@@ -21,7 +21,7 @@
 html[data-theme="dark"]{
   --branch-work:#6ecb91;
   --branch-knowledge:#f2f65a;
-  --branch-experience:#ef746d;
+  --branch-experience:#ff5a62;
   --branch-education:#68c9d8;
   --branch-about:#e58ab6;
 
@@ -56,23 +56,22 @@ body[data-profile-branch="about"]{--profile-accent:var(--branch-about);--teal:va
 
 #site-graph .site-graph-node[data-profile-branch]:not([data-profile-branch="identity"]) > .site-graph-dot,
 #site-graph .site-graph-node[data-profile-branch]:not([data-profile-branch="identity"]) > .site-graph-variant-glyph{
-  stroke:var(--node-branch-color)
+  stroke:var(--brown)
 }
 #site-graph .site-graph-node[data-profile-branch]:not([data-profile-branch="identity"]) > .site-graph-halo{
   stroke:var(--node-branch-color)
 }
 
-/* Keep the idle graph restrained. Territory colour is strongest on anchors
-   and only moves into labels/fills through interaction. */
-#site-graph .site-graph-node.is-section[data-profile-branch]:not([data-profile-branch="identity"]) > .site-graph-label{
-  fill:var(--node-branch-color)
-}
+/* Nodes keep the stable brown identity. The branch colour is reserved for
+   relationships and halos, so the graph reads as one profile with five
+   coloured semantic territories rather than five separate node systems. */
+#site-graph .site-graph-node.is-section[data-profile-branch]:not([data-profile-branch="identity"]) > .site-graph-label,
 #site-graph .site-graph-node[data-profile-branch]:not([data-profile-branch="identity"]):is(:hover,:focus-visible,.is-selected,.is-previewed,.is-atlas-origin) > .site-graph-label{
-  fill:var(--node-branch-color)
+  fill:var(--brown)
 }
 #site-graph .site-graph-node[data-profile-branch]:not([data-profile-branch="identity"]):is(.is-selected,.is-previewed,.is-atlas-origin) > .site-graph-dot{
-  stroke:var(--node-branch-color)!important;
-  fill:color-mix(in srgb,var(--node-branch-color) 9%,var(--paper))
+  stroke:var(--brown)!important;
+  fill:color-mix(in srgb,var(--brown) 8%,var(--paper))
 }
 
 /* Structural edges inherit territory colour. Cross-domain links remain
@@ -106,7 +105,10 @@ body[data-profile-branch="about"]{--profile-accent:var(--branch-about);--teal:va
 .header-utility,
 .inline-links a,
 .site-header nav a[aria-current="page"]{
-  transition:color .22s ease,border-color .22s ease,background-color .22s ease
+  transition:
+    color .48s cubic-bezier(.22,.72,.22,1),
+    border-color .48s cubic-bezier(.22,.72,.22,1),
+    background-color .48s cubic-bezier(.22,.72,.22,1)
 }
 
 @media(prefers-reduced-motion:reduce){

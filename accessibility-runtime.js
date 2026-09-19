@@ -149,7 +149,7 @@
     const label = String(element.getAttribute('aria-label') || '').trim();
     element.setAttribute('role', 'button');
     element.setAttribute('tabindex', '0');
-    if (!label) element.setAttribute('aria-label', 'Completed course evidence; open related Knowledge.');
+    if (!label) element.setAttribute('aria-label', 'Verified coursework group; inspect completed courses and related Knowledge.');
   };
 
   const syncPrimaryNavigation = () => {

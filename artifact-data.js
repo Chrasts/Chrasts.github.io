@@ -56,7 +56,7 @@
     {
       id: 'modal-logic-lab-screenshot-lab',
       type: 'image',
-      title: 'Modal Logic Lab — model laboratory',
+      title: 'Modal Logic Lab - model laboratory',
       description: 'Screenshot of the model-building laboratory interface.',
       anchorNodeIds: ['project-modal-logic-lab', 'modal-logic'],
       source: { kind: 'local', path: 'assets/images/work/modal-logic-lab/lab.png' },
@@ -67,7 +67,7 @@
     {
       id: 'modal-logic-lab-screenshot-learn',
       type: 'image',
-      title: 'Modal Logic Lab — learning interface',
+      title: 'Modal Logic Lab - learning interface',
       description: 'Screenshot of the guided learning interface.',
       anchorNodeIds: ['project-modal-logic-lab', 'modal-logic'],
       source: { kind: 'local', path: 'assets/images/work/modal-logic-lab/learn.png' },
@@ -78,7 +78,7 @@
     {
       id: 'sql-schema-er-diagram',
       type: 'diagram',
-      title: 'Algebraic Logic SQL Schema — entity relationship diagram',
+      title: 'Algebraic Logic SQL Schema - entity relationship diagram',
       description: 'Entity relationship diagram for the MySQL schema modelling logics, algebraic classes, properties, axioms and subclass relations.',
       anchorNodeIds: ['project-sql-schema', 'data-modelling', 'algebraic-logic'],
       source: { kind: 'local', path: 'assets/diagrams/11_ER_diagram.png' },
@@ -89,7 +89,7 @@
     {
       id: 'sql-schema-subclass-hierarchy',
       type: 'diagram',
-      title: 'Algebraic Logic SQL Schema — subclass hierarchy',
+      title: 'Algebraic Logic SQL Schema - subclass hierarchy',
       description: 'Diagram of the algebraic subclass hierarchy represented by the SQL schema, including the A-ROL branch.',
       anchorNodeIds: ['project-sql-schema', 'data-modelling', 'algebraic-logic'],
       source: { kind: 'local', path: 'assets/diagrams/diagram of subclasses.png' },
@@ -100,7 +100,7 @@
     {
       id: 'clp-survey-pdf',
       type: 'document',
-      title: 'The Congruence Lattice Problem — Historical Survey',
+      title: 'The Congruence Lattice Problem - Historical Survey',
       description: 'Local portfolio copy of the historical survey PDF.',
       anchorNodeIds: ['project-clp-survey', 'congruence-lattice-problem'],
       source: { kind: 'local', path: 'assets/documents/work/clp-survey/congruence-lattice-problem.pdf' },
@@ -166,7 +166,7 @@
     {
       id: 'cambridge-b2-certificate',
       type: 'certificate',
-      title: 'Cambridge English B2 First — Score 170',
+      title: 'Cambridge English B2 First - Score 170',
       anchorNodeIds: ['cert-cambridge-b2'],
       source: { kind: 'local', path: 'assets/documents/certificates/cambridge-b2-first.pdf' },
       mediaType: 'application/pdf',
@@ -176,7 +176,7 @@
     {
       id: 'ethics-ai-certificate',
       type: 'certificate',
-      title: 'Ethics of AI — University of Helsinki',
+      title: 'Ethics of AI - University of Helsinki',
       anchorNodeIds: ['cert-ethics-ai'],
       source: { kind: 'local', path: 'assets/images/certificates/ethics-of-ai.png' },
       verificationUrl: 'https://certificates.mooc.fi/validate/reryypwawai',
@@ -187,7 +187,7 @@
     {
       id: 'introduction-ai-certificate',
       type: 'certificate',
-      title: 'Introduction to Artificial Intelligence — University of Helsinki',
+      title: 'Introduction to Artificial Intelligence - University of Helsinki',
       anchorNodeIds: ['cert-intro-ai'],
       source: { kind: 'local', path: 'assets/images/certificates/elements-of-ai-introduction-to-ai.png' },
       verificationUrl: 'https://certificates.mooc.fi/validate/6vgxrj7s3fq',
@@ -198,7 +198,7 @@
     {
       id: 'hedgehog-house-outside',
       type: 'image',
-      title: 'Hedgehog House — exterior',
+      title: 'Hedgehog House - exterior',
       description: 'Exterior view of the finished wooden hedgehog shelter.',
       anchorNodeIds: ['hedgehog-house'],
       source: { kind: 'local', path: 'assets/images/about/woodworking/hedgehog-house/outside.webp' },
@@ -209,7 +209,7 @@
     {
       id: 'hedgehog-house-inside',
       type: 'image',
-      title: 'Hedgehog House — interior',
+      title: 'Hedgehog House - interior',
       description: 'Interior construction and sheltered chamber of the hedgehog house.',
       anchorNodeIds: ['hedgehog-house'],
       source: { kind: 'local', path: 'assets/images/about/woodworking/hedgehog-house/inside.jpg' },
@@ -220,7 +220,7 @@
     {
       id: 'hedgehog-house-visitor',
       type: 'image',
-      title: 'Hedgehog House — visitor',
+      title: 'Hedgehog House - visitor',
       description: 'A hedgehog visiting the completed shelter.',
       anchorNodeIds: ['hedgehog-house'],
       source: { kind: 'local', path: 'assets/images/about/woodworking/hedgehog-house/hedgehog.jpeg' },
@@ -231,7 +231,7 @@
     {
       id: 'entrance-terrace-photo',
       type: 'image',
-      title: 'Entrance Terrace — finished build',
+      title: 'Entrance Terrace - finished build',
       description: 'Finished small wooden entrance terrace built for a family house.',
       anchorNodeIds: ['entrance-terrace'],
       source: {
@@ -246,7 +246,7 @@
     {
       id: 'mtg-norin-rocco-deck',
       type: 'external',
-      title: 'Norin the Wary — “Norin not brave, but alive”',
+      title: 'Norin the Wary - “Norin not brave, but alive”',
       description: 'Commander deck with Rocco, Cabaretti Caterer as the hidden commander.',
       anchorNodeIds: ['mtg'],
       source: { kind: 'external', url: 'https://moxfield.com/decks/LhyVkd1Sk0OeMiTGYnFXLQ' },
@@ -256,7 +256,7 @@
     {
       id: 'mtg-raphael-deck',
       type: 'external',
-      title: 'Raphael, Fiendish Savior — “rafael”',
+      title: 'Raphael, Fiendish Savior - “rafael”',
       anchorNodeIds: ['mtg'],
       source: { kind: 'external', url: 'https://moxfield.com/decks/gOA-TXqrPEO0MpGcYcw3wg' },
       availability: 'public',
@@ -265,7 +265,7 @@
     {
       id: 'mtg-adrix-nev-deck',
       type: 'external',
-      title: 'Adrix and Nev, Twincasters — “twincasters”',
+      title: 'Adrix and Nev, Twincasters - “twincasters”',
       anchorNodeIds: ['mtg'],
       source: { kind: 'external', url: 'https://moxfield.com/decks/2hkN183FlEyAh2IcrEP40A' },
       availability: 'public',
@@ -274,7 +274,7 @@
     {
       id: 'mtg-willowdusk-deck',
       type: 'external',
-      title: 'Willowdusk, Essence Seer — “willowdusk”',
+      title: 'Willowdusk, Essence Seer - “willowdusk”',
       anchorNodeIds: ['mtg'],
       source: { kind: 'external', url: 'https://moxfield.com/decks/bCOv4Caao0-0b_xn1Z8bmQ' },
       availability: 'public',
@@ -283,7 +283,7 @@
     {
       id: 'mtg-myrkul-deck',
       type: 'external',
-      title: 'Myrkul, Lord of Bones — “myrkultok”',
+      title: 'Myrkul, Lord of Bones - “myrkultok”',
       anchorNodeIds: ['mtg'],
       source: { kind: 'external', url: 'https://moxfield.com/decks/T0P5WkI19UOtB6hNZ24Hhg' },
       availability: 'public',
@@ -292,7 +292,7 @@
     {
       id: 'mtg-jon-irenicus-deck',
       type: 'external',
-      title: 'Jon Irenicus, Shattered One — “evil santa”',
+      title: 'Jon Irenicus, Shattered One - “evil santa”',
       anchorNodeIds: ['mtg'],
       source: { kind: 'external', url: 'https://moxfield.com/decks/EMcentbQwk2mU-2gfEHC1A' },
       availability: 'public',
@@ -301,7 +301,7 @@
     {
       id: 'mtg-don-andres-deck',
       type: 'external',
-      title: 'Don Andres, the Renegade — “Don andres”',
+      title: 'Don Andres, the Renegade - “Don andres”',
       anchorNodeIds: ['mtg'],
       source: { kind: 'external', url: 'https://moxfield.com/decks/NyYtHJqlG0-KaQ45o3yz0g' },
       availability: 'public',
@@ -310,7 +310,7 @@
     {
       id: 'axiom-wilds-gameplay',
       type: 'video',
-      title: 'Axiom Wilds — gameplay preview',
+      title: 'Axiom Wilds - gameplay preview',
       description: 'Gameplay capture from the in-development Axiom Wilds project.',
       anchorNodeIds: ['project-axiom-wilds'],
       source: {

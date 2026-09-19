@@ -334,7 +334,7 @@
         .forEach((item, index) => {
           const offset = [{ x: 122, y: -96 }, { x: 252, y: -42 }, { x: 258, y: 72 }, { x: 118, y: 122 }][index];
           const position = point(anchor.x + offset.x, anchor.y + offset.y);
-          evidenceConstellation.push({ id: item.id, label: item.title, position, courseCount: item.courses?.length || 0, knowledgeIds: item.supportsKnowledgeIds || [], status: item.status, programmeId: item.programmeId });
+          evidenceConstellation.push({ id: item.id, label: item.title, position, knowledgeIds: item.supportsKnowledgeIds || [], status: item.status, programmeId: item.programmeId });
           guides.push({ id: `education-evidence-${item.id}`, kind: 'evidence', x1: anchor.x, y1: anchor.y, x2: position.x, y2: position.y });
         });
     }
@@ -388,7 +388,7 @@
         .forEach((item, index) => {
           const offset = [{ x: 122, y: -96 }, { x: 260, y: -42 }, { x: 266, y: 72 }, { x: 122, y: 122 }][index];
           const position = point(anchor.x + offset.x, anchor.y + offset.y);
-          evidenceConstellation.push({ id: item.id, label: item.title, position, courseCount: item.courses?.length || 0, knowledgeIds: item.supportsKnowledgeIds || [], status: item.status, programmeId: item.programmeId });
+          evidenceConstellation.push({ id: item.id, label: item.title, position, knowledgeIds: item.supportsKnowledgeIds || [], status: item.status, programmeId: item.programmeId });
           guides.push({ id: `education-evidence-${item.id}`, kind: 'evidence', x1: anchor.x, y1: anchor.y, x2: position.x, y2: position.y });
         });
     }

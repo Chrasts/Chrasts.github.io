@@ -33,13 +33,15 @@
   // Keep the complete semantic field inside the renderer's compact canonical
   // viewBox. Scaling field positions here avoids a wider SVG/camera surface
   // merely because a new deep Knowledge specialization is present.
-  const ATLAS = Object.freeze({ width: 2520, height: 1540, center: { x: 1260, y: 770 }, sectionRadius: 390 });
-  // Atlas territories are deliberately bounded clouds rather than full wedges.
-  // This keeps each subtree locally compact while stable depth/tangent jitter
-  // preserves a loose pseudo-3D, non-grid composition.
+  const ATLAS = Object.freeze({ width: 2520, height: 1540, center: { x: 1260, y: 770 }, sectionRadius: 305 });
+  // Atlas territories are bounded clouds rather than full wedges. Territory
+  // anchors sit close to the profile root; their descendants begin on a
+  // separate outer shell and then spread in two dimensions.
   const halfAngles = Object.freeze({ work: 0.62, knowledge: 0.74, experience: 0.52, education: 0.60, about: 0.76 });
-  const territorySpan = Object.freeze({ work: 660, knowledge: 760, experience: 470, education: 540, about: 650 });
-  const territoryBias = Object.freeze({ work: 72, knowledge: -18, experience: 10, education: -8, about: 12 });
+  const territorySpan = Object.freeze({ work: 700, knowledge: 800, experience: 510, education: 580, about: 690 });
+  const territoryBias = Object.freeze({ work: 58, knowledge: -18, experience: 10, education: -8, about: 12 });
+  const childShellRadius = Object.freeze({ work: 440, knowledge: 430, experience: 425, education: 430, about: 430 });
+  const childSpacing = Object.freeze({ work: 128, knowledge: 116, experience: 120, education: 120, about: 122 });
   const overviewRadius = id => {
     const mobile = window.matchMedia('(max-width: 900px)').matches;
     const values = mobile
@@ -147,16 +149,16 @@
       // 76px minimum gap forced the last two tiers into the same clamped
       // radius. Give Work the available sector depth instead of collapsing it.
       const usableReserve = sectionId === 'work' ? 26 : 44;
-      const usable = Math.max(ATLAS.sectionRadius + 150, limit - usableReserve);
-      // Depth remains readable, but it is no longer allowed to stretch a
-      // territory into a long radial chain. The extra apparent depth comes
-      // from deterministic node-level radial staggering instead.
-      const targetLevelGap = sectionId === 'knowledge' ? 92
-        : sectionId === 'work' ? 78
-          : sectionId === 'education' ? 88 : 84;
-      const levelGap = maxDepth > 0
-        ? Math.max(68, Math.min(targetLevelGap, (usable - ATLAS.sectionRadius) / Math.max(1, maxDepth)))
-        : 82;
+      const firstChildRadius = childShellRadius[sectionId] || 430;
+      const usable = Math.max(firstChildRadius + 145, limit - usableReserve);
+      // Depth is encoded by compact shells around the territory rather than by
+      // a long spoke from the root. This leaves room for sibling separation.
+      const targetLevelGap = sectionId === 'knowledge' ? 82
+        : sectionId === 'work' ? 72
+          : sectionId === 'education' ? 78 : 76;
+      const levelGap = maxDepth > 1
+        ? Math.max(62, Math.min(targetLevelGap, (usable - firstChildRadius) / Math.max(1, maxDepth - 1)))
+        : 72;
       const sectionPoint = {
         x: ATLAS.center.x + vector.x * ATLAS.sectionRadius,
         y: ATLAS.center.y + vector.y * ATLAS.sectionRadius
@@ -178,12 +180,12 @@
           left.label.localeCompare(right.label)
         );
 
-        const baseRadius = ATLAS.sectionRadius + levelGap * depth;
-        const tangentialCapacity = Math.max(150, baseRadius * Math.tan(halfAngles[sectionId]));
-        const desiredGap = sectionId === 'knowledge' ? 132
-          : sectionId === 'work' ? 126
-            : sectionId === 'education' ? 120
-              : sectionId === 'experience' ? 118 : 126;
+        const baseRadius = firstChildRadius + levelGap * Math.max(0, depth - 1);
+        const tangentialCapacity = Math.max(170, baseRadius * Math.tan(halfAngles[sectionId]));
+        const desiredGap = sectionId === 'knowledge' ? 160
+          : sectionId === 'work' ? 166
+            : sectionId === 'education' ? 150
+              : sectionId === 'experience' ? 148 : 156;
         const naturalSpan = desiredGap * Math.max(0, level.length - 1);
         const span = Math.min(tangentialCapacity * 1.55, territorySpan[sectionId], naturalSpan);
         const levelBias = stableNoise(`${sectionId}:${depth}:level-bias`) * (sectionId === 'knowledge' ? 38 : 30);
@@ -208,10 +210,10 @@
             (parentAnchor - (territoryBias[sectionId] || 0)) * parentWeight +
             levelBias + tangentNoise;
 
-          const stagger = (index % 3 - 1) * (sectionId === 'work' ? 34 : 28);
-          const radialNoise = stableNoise(`${node.id}:radial`) * (sectionId === 'knowledge' ? 58 : 50) +
-            stableNoise(`${node.id}:radial-fine`) * 16 + stagger;
-          const radial = Math.min(usable, Math.max(ATLAS.sectionRadius + 54, baseRadius + radialNoise));
+          const stagger = (index % 4 - 1.5) * (sectionId === 'work' ? 42 : 34);
+          const radialNoise = stableNoise(`${node.id}:radial`) * (sectionId === 'knowledge' ? 66 : 58) +
+            stableNoise(`${node.id}:radial-fine`) * 18 + stagger;
+          const radial = Math.min(usable, Math.max(firstChildRadius - 18, baseRadius + radialNoise));
 
           positions.set(node.id, {
             x: ATLAS.center.x + vector.x * radial + perpendicular.x * tangential,
@@ -220,6 +222,56 @@
           tangentById.set(node.id, tangential);
         });
       });
+
+      // Keep the territory shape compact, but enforce visibly larger gaps
+      // between descendant nodes. Relaxation is deterministic because the
+      // initial coordinates and pair ordering are deterministic.
+      const descendantIds = owned.map(node => node.id).filter(id => id !== sectionId && positions.has(id));
+      const minSpacing = childSpacing[sectionId] || 120;
+      const tangentLimit = (territorySpan[sectionId] || 620) / 2;
+      for (let pass = 0; pass < 12; pass += 1) {
+        let moved = false;
+        for (let leftIndex = 0; leftIndex < descendantIds.length; leftIndex += 1) {
+          for (let rightIndex = leftIndex + 1; rightIndex < descendantIds.length; rightIndex += 1) {
+            const leftId = descendantIds[leftIndex];
+            const rightId = descendantIds[rightIndex];
+            const left = positions.get(leftId);
+            const right = positions.get(rightId);
+            let dx = right.x - left.x;
+            let dy = right.y - left.y;
+            let distance = Math.hypot(dx, dy);
+            if (distance >= minSpacing) continue;
+            if (distance < 1e-3) {
+              const angle = stableNoise(`${leftId}:${rightId}:collision`) * Math.PI;
+              dx = Math.cos(angle);
+              dy = Math.sin(angle);
+              distance = 1;
+            }
+            const push = (minSpacing - distance) * .54;
+            const ux = dx / distance;
+            const uy = dy / distance;
+            left.x -= ux * push;
+            left.y -= uy * push;
+            right.x += ux * push;
+            right.y += uy * push;
+            moved = true;
+          }
+        }
+
+        descendantIds.forEach(id => {
+          const point = positions.get(id);
+          const dx = point.x - ATLAS.center.x;
+          const dy = point.y - ATLAS.center.y;
+          const radial = Math.max(firstChildRadius - 18, Math.min(usable, dx * vector.x + dy * vector.y));
+          const tangent = Math.max(
+            (territoryBias[sectionId] || 0) - tangentLimit,
+            Math.min((territoryBias[sectionId] || 0) + tangentLimit, dx * perpendicular.x + dy * perpendicular.y)
+          );
+          point.x = ATLAS.center.x + vector.x * radial + perpendicular.x * tangent;
+          point.y = ATLAS.center.y + vector.y * radial + perpendicular.y * tangent;
+        });
+        if (!moved) break;
+      }
     });
 
     let maxDx = 1;

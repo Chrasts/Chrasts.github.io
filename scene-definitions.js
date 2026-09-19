@@ -109,7 +109,7 @@
   ensureStylesheet('portfolio-refinements.css', 'data-profile-refinements-style');
   ensureStylesheet('profile-post-entry.css', 'data-profile-post-entry-style');
   ensureStylesheet('profile-motion-refinements.css', 'data-profile-motion-refinements-style');
-  ensureStylesheet('branch-colors.css?v=20260919-r3', 'data-profile-branch-colors-style');
+  ensureStylesheet('branch-colors.css?v=20260919-r4', 'data-profile-branch-colors-style');
   prepareRootLandingDom();
 
   document.body.dataset.rootLanding = initialRootLanding ? 'true' : 'false';

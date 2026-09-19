@@ -1,0 +1,116 @@
+/* ==========================================================================
+   Branch colour semantics
+   --------------------------------------------------------------------------
+   Brown is the permanent profile/root identity. The five top-level branches
+   add one secondary colour each. The legacy --teal token intentionally becomes
+   the current contextual accent so existing controls, links and focus states
+   inherit the active branch without duplicating component-specific palettes.
+   ========================================================================== */
+
+:root{
+  --branch-work:#2f6b4f;
+  --branch-knowledge:#947800;
+  --branch-experience:#a34841;
+  --branch-education:#0f5068;
+  --branch-about:#9b4f77;
+
+  --profile-accent:var(--brown);
+  --teal:var(--profile-accent)
+}
+
+html[data-theme="dark"]{
+  --branch-work:#6ecb91;
+  --branch-knowledge:#f2f65a;
+  --branch-experience:#ef746d;
+  --branch-education:#68c9d8;
+  --branch-about:#e58ab6;
+
+  --profile-accent:var(--brown);
+  --teal:var(--profile-accent)
+}
+
+/* A focused branch changes the site's secondary identity colour. Brown stays
+   available as the stable identity/structure colour. */
+body[data-profile-branch="work"]{--profile-accent:var(--branch-work);--teal:var(--branch-work)}
+body[data-profile-branch="knowledge"]{--profile-accent:var(--branch-knowledge);--teal:var(--branch-knowledge)}
+body[data-profile-branch="experience"]{--profile-accent:var(--branch-experience);--teal:var(--branch-experience)}
+body[data-profile-branch="education"]{--profile-accent:var(--branch-education);--teal:var(--branch-education)}
+body[data-profile-branch="about"]{--profile-accent:var(--branch-about);--teal:var(--branch-about)}
+
+/* The profile mark and semantic root never inherit a branch colour. */
+.brand{color:var(--brown)}
+#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-dot,
+#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-halo{
+  stroke:var(--brown)!important
+}
+#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-label{
+  fill:var(--brown)
+}
+
+/* Node-local branch token. */
+#site-graph .site-graph-node[data-profile-branch="work"]{--node-branch-color:var(--branch-work)}
+#site-graph .site-graph-node[data-profile-branch="knowledge"]{--node-branch-color:var(--branch-knowledge)}
+#site-graph .site-graph-node[data-profile-branch="experience"]{--node-branch-color:var(--branch-experience)}
+#site-graph .site-graph-node[data-profile-branch="education"]{--node-branch-color:var(--branch-education)}
+#site-graph .site-graph-node[data-profile-branch="about"]{--node-branch-color:var(--branch-about)}
+
+#site-graph .site-graph-node[data-profile-branch]:not([data-profile-branch="identity"]) > .site-graph-dot,
+#site-graph .site-graph-node[data-profile-branch]:not([data-profile-branch="identity"]) > .site-graph-variant-glyph{
+  stroke:var(--node-branch-color)
+}
+#site-graph .site-graph-node[data-profile-branch]:not([data-profile-branch="identity"]) > .site-graph-halo{
+  stroke:var(--node-branch-color)
+}
+
+/* Keep the idle graph restrained. Territory colour is strongest on anchors
+   and only moves into labels/fills through interaction. */
+#site-graph .site-graph-node.is-section[data-profile-branch]:not([data-profile-branch="identity"]) > .site-graph-label{
+  fill:var(--node-branch-color)
+}
+#site-graph .site-graph-node[data-profile-branch]:not([data-profile-branch="identity"]):is(:hover,:focus-visible,.is-selected,.is-previewed,.is-atlas-origin) > .site-graph-label{
+  fill:var(--node-branch-color)
+}
+#site-graph .site-graph-node[data-profile-branch]:not([data-profile-branch="identity"]):is(.is-selected,.is-previewed,.is-atlas-origin) > .site-graph-dot{
+  stroke:var(--node-branch-color)!important;
+  fill:color-mix(in srgb,var(--node-branch-color) 9%,var(--paper))
+}
+
+/* Structural edges inherit territory colour. Cross-domain links remain
+   neutral unless the existing interaction layer highlights them. */
+#site-graph .site-graph-edges path[data-profile-branch="work"]{--edge-branch-color:var(--branch-work)}
+#site-graph .site-graph-edges path[data-profile-branch="knowledge"]{--edge-branch-color:var(--branch-knowledge)}
+#site-graph .site-graph-edges path[data-profile-branch="experience"]{--edge-branch-color:var(--branch-experience)}
+#site-graph .site-graph-edges path[data-profile-branch="education"]{--edge-branch-color:var(--branch-education)}
+#site-graph .site-graph-edges path[data-profile-branch="about"]{--edge-branch-color:var(--branch-about)}
+
+#site-graph .site-graph-edges path[data-profile-branch]:is(.is-hierarchy,.is-hierarchy-alt,.is-work-lattice){
+  stroke:color-mix(in srgb,var(--edge-branch-color) 48%,var(--line))
+}
+#site-graph .site-graph-edges path[data-profile-branch]:is(.is-upstream,.is-downstream,.is-work-strong,.is-work-soft,.is-selected-downset){
+  stroke:var(--edge-branch-color)
+}
+
+/* Atlas territory copy follows the same five-colour grammar. */
+#site-graph .atlas-territory-label[data-territory="work"]{--territory-color:var(--branch-work)}
+#site-graph .atlas-territory-label[data-territory="knowledge"]{--territory-color:var(--branch-knowledge)}
+#site-graph .atlas-territory-label[data-territory="experience"]{--territory-color:var(--branch-experience)}
+#site-graph .atlas-territory-label[data-territory="education"]{--territory-color:var(--branch-education)}
+#site-graph .atlas-territory-label[data-territory="about"]{--territory-color:var(--branch-about)}
+#site-graph .atlas-territory-label .atlas-territory-title{fill:var(--territory-color)}
+#site-graph .atlas-territory-label .atlas-territory-count{
+  fill:color-mix(in srgb,var(--territory-color) 66%,var(--muted))
+}
+
+/* Preserve the brown + branch-colour pairing in the shell. Existing controls
+   that use --teal automatically follow the active branch. */
+.header-utility,
+.inline-links a,
+.site-header nav a[aria-current="page"]{
+  transition:color .22s ease,border-color .22s ease,background-color .22s ease
+}
+
+@media(prefers-reduced-motion:reduce){
+  .header-utility,
+  .inline-links a,
+  .site-header nav a[aria-current="page"]{transition:none}
+}

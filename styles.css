@@ -1679,3 +1679,14 @@ html.is-theme-transitioning body *::after{
     transition-duration:0ms!important;
   }
 }
+
+
+/* Desktop graph HUD safe zone: inspectors never occupy the breadcrumb / Atlas
+   action lane at the top of the explorer. Mode-specific CSS may still choose
+   left vs right placement, but not a smaller top clearance. */
+@media(min-width:901px){
+  #site-explorer #site-detail-panel.scene-detail:not([hidden]){
+    top:96px!important;
+    max-height:calc(100% - 122px)!important
+  }
+}

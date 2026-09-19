@@ -68,11 +68,11 @@
     },
     prgAi: {
       nodeId: 'prg-ai',
-      status: '2026/27',
+      status: '2026 - present',
       title: 'prg.ai Minor',
-      subtitle: 'Inter-university AI minor',
-      note: 'Ongoing study context organised around subject areas.',
-      links: ['ai-methods', 'programming-automation', 'data-analysis'],
+      subtitle: 'Inter-university AI programme',
+      note: 'Cross-faculty AI coursework with industry talks. My focus includes mathematical logic in AI, AI-assisted scientific workflows, and AI in scientific inquiry.',
+      links: ['logic-for-ai', 'ai-research-workflows', 'ai-science-workflows-interest'],
       blocks: site.semantics?.education?.prgAiBlocks || []
     }
   };

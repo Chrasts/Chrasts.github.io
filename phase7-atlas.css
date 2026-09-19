@@ -83,6 +83,7 @@ body[data-graph-mode="atlas"][data-atlas-lod="detail"] #site-graph .atlas-territ
    styles also use font shorthands; font-size alone can otherwise be reset.
    -------------------------------------------------------------------------- */
 body[data-graph-mode="atlas"] #site-graph .site-graph-label{
+  pointer-events:none!important;
   transition:fill .12s ease,opacity .12s ease,font-size .12s ease
 }
 html body[data-graph-mode="atlas"] #site-graph .site-graph-node:hover .site-graph-label.site-graph-label,
@@ -120,10 +121,10 @@ html body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-section:is(.i
   fill:var(--teal)!important
 }
 html body[data-graph-mode="atlas"] #site-graph .site-graph-edges path.is-upstream{
-  stroke:var(--graph-upstream,var(--brown))!important
+  stroke:var(--edge-branch-color,var(--graph-upstream,var(--brown)))!important
 }
 html body[data-graph-mode="atlas"] #site-graph .site-graph-edges path:is(.is-downstream,.is-lateral){
-  stroke:var(--graph-downstream,var(--teal))!important
+  stroke:var(--edge-branch-color,var(--graph-downstream,var(--teal)))!important
 }
 
 /* --------------------------------------------------------------------------

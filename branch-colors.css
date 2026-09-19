@@ -19,11 +19,11 @@
 }
 
 html[data-theme="dark"]{
-  --branch-work:#6ecb91;
+  --branch-work:#35d86b;
   --branch-knowledge:#f2f65a;
   --branch-experience:#ff2147;
-  --branch-education:#68c9d8;
-  --branch-about:#e58ab6;
+  --branch-education:#29c7e6;
+  --branch-about:#ff4fa8;
 
   --profile-accent:var(--brown);
   --teal:var(--profile-accent)

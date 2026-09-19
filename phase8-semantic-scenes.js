@@ -229,6 +229,7 @@
       facts.append(dt, dd);
     });
     body.appendChild(facts);
+    if (role.summary) body.appendChild(element('p', 'phase8-object-note', role.summary));
     if (role.highlights?.length) {
       const heading = element('p', 'phase8-eyebrow', 'Contributions');
       const list = element('ul', 'phase8-role-contributions');
@@ -375,24 +376,8 @@
   prgAi.dataset.phase8Object = 'prg-ai-route';
   prgAi.append(
     element('p', 'phase8-prg-subtitle', data.prgAi.subtitle),
-    element('p', 'phase8-object-note', 'Ongoing study plan completed through subject areas alongside the degree programme.')
+    element('p', 'phase8-object-note', data.prgAi.note)
   );
-  // The minor is an ongoing programme, so its panel is a study plan rather
-  // than a completed-course timeline.  Concrete subjects can later enrich
-  // these canonical areas without changing the scene structure.
-  if (data.prgAi.blocks?.length) {
-    const blocks = element('ol', 'phase8-prg-study-areas');
-    data.prgAi.blocks.forEach(block => {
-      const item = element('li', `phase8-prg-study-area is-${block.status}`);
-      item.dataset.status = block.status;
-      item.append(
-        element('span', 'phase8-prg-study-status', block.status === 'current' ? 'In progress' : 'Planned'),
-        element('strong', 'phase8-prg-study-title', block.label)
-      );
-      blocks.appendChild(item);
-    });
-    prgAi.appendChild(blocks);
-  }
   const prgTopics = element('div', 'phase8-prg-topics');
   prgTopics.appendChild(element('p', 'phase8-eyebrow', 'Related knowledge areas'));
   const prgTopicList = element('div', 'phase8-course-links');

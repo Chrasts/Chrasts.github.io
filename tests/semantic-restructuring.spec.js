@@ -56,6 +56,17 @@ test.describe('semantic graph restructuring', () => {
     expect(model.workThemeNodes).toEqual([]);
   });
 
+  test('non-leaf Knowledge nodes expose their summaries and child topics', async ({ page }) => {
+    await bypassIntro(page);
+    await page.goto('/#knowledge/logic-math/mathematical-logic');
+    await page.waitForFunction(() => document.body.dataset.graphRoute === 'knowledge/logic-math/mathematical-logic');
+    const detail = page.locator('#site-detail-panel');
+    await expect(detail).toBeVisible();
+    await expect(detail).toContainText('Formal languages, semantics, proof systems and metalogical reasoning.');
+    await expect(detail).toContainText('Topics');
+    await expect(detail.getByRole('button', { name: 'Model Theory' })).toBeVisible();
+  });
+
   test('consolidates academic duplicates and resolves their legacy routes', async ({ page }) => {
     await bypassIntro(page);
     await page.goto('/#education/charles-university/thesis');

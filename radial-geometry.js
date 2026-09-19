@@ -21,7 +21,7 @@
   // occupies the broad western lane.
   const compass = Object.freeze({
     work: normalise({ x: .12, y: 1 }),
-    knowledge: normalise({ x: 1, y: -.13 }),
+    knowledge: normalise({ x: 1, y: .10 }),
     experience: normalise({ x: -.42, y: -.91 }),
     education: normalise({ x: .42, y: -.91 }),
     about: normalise({ x: -1, y: 0 })
@@ -38,10 +38,10 @@
   // anchors sit close to the profile root; their descendants begin on a
   // separate outer shell and then spread in two dimensions.
   const halfAngles = Object.freeze({ work: 0.62, knowledge: 0.74, experience: 0.52, education: 0.60, about: 0.76 });
-  const territorySpan = Object.freeze({ work: 700, knowledge: 800, experience: 510, education: 580, about: 690 });
-  const territoryBias = Object.freeze({ work: 58, knowledge: -18, experience: 10, education: -8, about: 12 });
-  const childShellRadius = Object.freeze({ work: 440, knowledge: 430, experience: 425, education: 430, about: 430 });
-  const childSpacing = Object.freeze({ work: 128, knowledge: 116, experience: 120, education: 120, about: 122 });
+  const territorySpan = Object.freeze({ work: 700, knowledge: 790, experience: 510, education: 560, about: 690 });
+  const territoryBias = Object.freeze({ work: 58, knowledge: 78, experience: 10, education: -24, about: 12 });
+  const childShellRadius = Object.freeze({ work: 440, knowledge: 470, experience: 425, education: 430, about: 430 });
+  const childSpacing = Object.freeze({ work: 128, knowledge: 128, experience: 120, education: 122, about: 122 });
   const overviewRadius = id => {
     const mobile = window.matchMedia('(max-width: 900px)').matches;
     const values = mobile

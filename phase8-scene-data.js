@@ -17,8 +17,7 @@
         courseEvidence: site.semantics?.education?.courseEvidence || []
       },
       msc: {
-        nodeId: 'charles-university-masters-logic',
-        evidencePolicy: 'Course evidence appears here only after it is completed or recognized in canonical study data.'
+        nodeId: 'charles-university-masters-logic'
       }
     },
     certifications: {

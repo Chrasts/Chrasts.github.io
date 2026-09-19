@@ -224,7 +224,7 @@
     experienceSection.append(element('h3', '', 'Experience'));
     const experienceList = element('ul', 'quick-overview-list');
     directChildren('experience', { newestFirst: true }).slice(0, 3).forEach(node => {
-      const li = element('li', '', `${node.label}${node.role ? ` — ${node.role}` : ''}`);
+      const li = element('li', '', `${node.label}${node.role ? ` - ${node.role}` : ''}`);
       experienceList.appendChild(li);
     });
     experienceSection.append(experienceList, makeRouteButton('Open Experience', 'experience'));

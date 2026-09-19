@@ -60,7 +60,7 @@ body[data-graph-mode="atlas"][data-atlas-lod="near"] #site-graph .atlas-territor
 body[data-graph-mode="atlas"][data-atlas-lod="detail"] #site-graph .atlas-territory-label{opacity:0}
 .atlas-territory-title{
   fill:var(--ink);
-  font:800 14px/1 var(--sans);
+  font:840 18px/1 var(--sans);
   letter-spacing:-.015em;
   paint-order:stroke;
   stroke:var(--paper);
@@ -85,6 +85,37 @@ body[data-graph-mode="atlas"][data-atlas-lod="detail"] #site-graph .atlas-territ
 body[data-graph-mode="atlas"] #site-graph .site-graph-label{
   pointer-events:none!important;
   transition:fill .12s ease,opacity .12s ease,font-size .12s ease
+}
+
+/* The five top-level territory nodes are stronger Atlas landmarks. */
+html body[data-graph-mode="atlas"] #site-graph .site-graph-node:is(
+  [data-node-id="work"],
+  [data-node-id="knowledge"],
+  [data-node-id="experience"],
+  [data-node-id="education"],
+  [data-node-id="about"]
+) > .site-graph-label.site-graph-label{
+  font:850 17px/1 var(--sans)!important;
+  fill:var(--node-branch-color)!important
+}
+
+/* Root-to-territory spokes belong to the brown profile identity. Every deeper
+   relation keeps the secondary colour of its branch. */
+html body[data-graph-mode="atlas"] #site-graph .site-graph-edges path[data-source="stepan-chrast"]:is(
+  [data-target="work"],
+  [data-target="knowledge"],
+  [data-target="experience"],
+  [data-target="education"],
+  [data-target="about"]
+),
+html body[data-graph-mode="atlas"] #site-graph .site-graph-edges path[data-target="stepan-chrast"]:is(
+  [data-source="work"],
+  [data-source="knowledge"],
+  [data-source="experience"],
+  [data-source="education"],
+  [data-source="about"]
+){
+  stroke:var(--brown)!important
 }
 html body[data-graph-mode="atlas"] #site-graph .site-graph-node:hover .site-graph-label.site-graph-label,
 html body[data-graph-mode="atlas"] #site-graph .site-graph-node:focus-visible .site-graph-label.site-graph-label,

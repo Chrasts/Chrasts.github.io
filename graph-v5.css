@@ -382,15 +382,20 @@ body[data-graph-mode="work"] #work.legacy-work-source{display:none!important}
 .integrated-work-controls[hidden]{display:none!important}
 .integrated-work-rail{
   position:absolute;
-  top:116px;
-  width:190px;
+  top:172px;
+  width:228px;
   pointer-events:auto;
   color:var(--ink)
 }
-.integrated-work-rail.is-left{left:max(24px,calc((100vw - 1440px)/2))}
-.integrated-work-rail.is-right{right:max(24px,calc((100vw - 1440px)/2))}
+.integrated-work-rail.is-left{
+  left:max(24px,calc((100vw - 1440px)/2));
+  padding:10px 14px 12px;
+  border-left:1px solid color-mix(in srgb,var(--line) 88%,transparent);
+  background:color-mix(in srgb,var(--paper) 86%,transparent)
+}
+.integrated-work-rail.is-right{display:none!important}
 .integrated-work-rail .work-control-group{
-  margin:0 0 22px!important;
+  margin:0 0 14px!important;
   padding:0!important;
   border:0!important;
   background:transparent!important
@@ -412,13 +417,17 @@ body[data-graph-mode="work"] #work.legacy-work-source{display:none!important}
 }
 .integrated-work-rail .work-filter{font-size:10px;padding-block:6px}
 .integrated-work-rail .theme-filter-option{font-size:10px}
+.integrated-work-rail .work-theme-control{
+  padding-top:12px!important;
+  border-top:1px solid var(--line)!important
+}
 .integrated-work-rail .theme-match-control{
-  margin-top:20px!important;
-  padding-top:16px!important;
+  margin-top:2px!important;
+  padding-top:12px!important;
   border-top:1px solid var(--line)!important
 }
 .integrated-work-reset{
-  margin-top:8px!important;
+  margin-top:2px!important;
   pointer-events:auto
 }
 

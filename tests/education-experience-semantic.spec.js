@@ -149,6 +149,10 @@ test.describe('Education and Experience semantic geometry', () => {
     await expect(constellation.locator('.phase8-bsc-cluster.is-active')).toHaveCount(0);
     const graphEvidence = page.locator('#site-graph .site-graph-evidence-object');
     await expect(graphEvidence).toHaveCount(4);
+    await expect(graphEvidence).toHaveAttribute('data-thematic-node', 'bsc');
+    for (let index = 0; index < 4; index += 1) {
+      await expect(graphEvidence.nth(index).locator('.site-graph-evidence-hit')).toHaveAttribute('width', '220');
+    }
     await expect(page.locator('#site-graph [data-semantic-guide="education-trajectory"]')).toHaveCount(0);
     await expect(graphEvidence.first()).toHaveAttribute('aria-label', /Verified completed coursework group/);
     const safety = await page.evaluate(() => window.SITE_DATA.semantics.education.courseEvidence
@@ -169,7 +173,9 @@ test.describe('Education and Experience semantic geometry', () => {
         panelGap: routebar && panel ? panel.top - routebar.bottom : null,
         panelQuick: intersects(panel, quick),
         panelAtlas: intersects(panel, atlas),
-        rootBreadcrumb: intersects(root, breadcrumb)
+        rootBreadcrumb: intersects(root, breadcrumb),
+        panelLayerZ: Number(getComputedStyle(document.querySelector('.phase8-semantic-layer')).zIndex || 0),
+        routebarZ: Number(getComputedStyle(document.querySelector('.graph-routebar')).zIndex || 0)
       };
     });
     expect(collisionState.panelGap).not.toBeNull();
@@ -177,6 +183,7 @@ test.describe('Education and Experience semantic geometry', () => {
     expect(collisionState.panelQuick).toBe(false);
     expect(collisionState.panelAtlas).toBe(false);
     expect(collisionState.rootBreadcrumb).toBe(false);
+    expect(collisionState.panelLayerZ).toBeGreaterThan(collisionState.routebarZ);
     await expect(page.locator('#graph-breadcrumb .graph-crumb').filter({ hasText: 'Education' })).toHaveAccessibleName('Return to Education overview');
 
     // All four SVG thematic nodes must respond to an ordinary pointer click,
@@ -192,6 +199,7 @@ test.describe('Education and Experience semantic geometry', () => {
       const active = constellation.locator('.phase8-bsc-cluster.is-active');
       await expect(active).toHaveCount(1);
       await expect(active).toContainText(thematic[index][0]);
+      await expect(active.locator('.phase8-bsc-cluster-detail')).toBeVisible();
       await expect(active.locator('.phase8-bsc-cluster-description')).toBeVisible();
       await expect(active.locator('.phase8-bsc-cluster-description')).toContainText(thematic[index][1]);
       await expect(graphEvidence.nth(index)).toHaveClass(/is-evidence-active/);

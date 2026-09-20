@@ -115,6 +115,28 @@ test.describe('Phase 6 cross-link travel - desktop', () => {
     await expect(page.locator('#site-detail-panel h2')).toContainText('Survey Analysis and Open-Text Coding');
   });
 
+  test('BSc thesis connected control performs visible cross-section edge travel', async ({ page }) => {
+    await prepare(page);
+    await page.goto('/#education/charles-university');
+    await page.waitForFunction(() => document.body.dataset.graphRoute === 'education/charles-university');
+    await page.waitForFunction(() => Boolean(window.ProfileCrossLinkTravel && window.ProfilePhase8));
+
+    const thesis = page.getByRole('button', { name: 'Open BSc thesis' });
+    await expect(thesis).toHaveAttribute('data-crosslink-target', 'project-bachelor-thesis');
+    await thesis.click();
+
+    await page.waitForFunction(() => window.ProfileCrossLinkTravel?.snapshot().travelling === true);
+    await expect(page.locator('.profile-crosslink-travel-overlay')).toBeVisible();
+    await expect(page.locator('.profile-crosslink-trace.is-departure')).toHaveCount(1);
+    await page.waitForFunction(() => document.body.dataset.graphRoute === 'work/project/bachelor-thesis');
+    const snapshot = await waitTravelComplete(page);
+
+    expect(snapshot.relationType).toBe('thesis-of');
+    expect(snapshot.sourceId).toBe('charles-university');
+    expect(snapshot.targetId).toBe('project-bachelor-thesis');
+    await expect(page.locator('.profile-crosslink-travel-overlay')).toHaveCount(0);
+  });
+
   test('cross-section travel offers both a visible return action and Ctrl/Cmd+Z', async ({ page }) => {
     await prepare(page);
     await page.goto('/#experience/ceske-priority');
@@ -163,6 +185,34 @@ test.describe('Phase 6 cross-link travel - desktop', () => {
     await expect(page.getByRole('button', { name: /Return to Education/i })).toBeVisible();
     await page.keyboard.press('Control+Z');
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'education');
+  });
+
+  test('local information panels own foreground over graph route controls', async ({ page }) => {
+    await prepare(page);
+
+    await page.goto('/#work/project/sql-schema');
+    await page.waitForFunction(() => document.body.dataset.graphRoute === 'work/project/sql-schema');
+    const workZ = await page.evaluate(() => ({
+      panel: Number(getComputedStyle(document.querySelector('#site-detail-panel')).zIndex || 0),
+      routebar: Number(getComputedStyle(document.querySelector('.graph-routebar')).zIndex || 0)
+    }));
+    expect(workZ.panel).toBeGreaterThan(workZ.routebar);
+
+    await page.goto('/#knowledge/logic-math/mathematical-logic/modal-logic');
+    await page.waitForFunction(() => document.body.dataset.graphRoute.endsWith('/modal-logic'));
+    const knowledgeZ = await page.evaluate(() => ({
+      panel: Number(getComputedStyle(document.querySelector('#site-detail-panel')).zIndex || 0),
+      routebar: Number(getComputedStyle(document.querySelector('.graph-routebar')).zIndex || 0)
+    }));
+    expect(knowledgeZ.panel).toBeGreaterThan(knowledgeZ.routebar);
+
+    await page.goto('/#education/charles-university');
+    await page.waitForFunction(() => Boolean(window.ProfilePhase8));
+    const educationZ = await page.evaluate(() => ({
+      panel: Number(getComputedStyle(document.querySelector('.phase8-semantic-layer')).zIndex || 0),
+      routebar: Number(getComputedStyle(document.querySelector('.graph-routebar')).zIndex || 0)
+    }));
+    expect(educationZ.panel).toBeGreaterThan(educationZ.routebar);
   });
 
   test('ordinary parent/child navigation remains structural rather than cross-link travel', async ({ page }) => {

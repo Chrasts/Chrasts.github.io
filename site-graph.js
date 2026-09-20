@@ -1256,8 +1256,8 @@
           hit.classList.add('site-graph-evidence-hit');
           hit.setAttribute('x', '-14');
           hit.setAttribute('y', '-16');
-          hit.setAttribute('width', '184');
-          hit.setAttribute('height', '40');
+          hit.setAttribute('width', '220');
+          hit.setAttribute('height', '44');
           hit.setAttribute('rx', '8');
           hit.setAttribute('fill', 'transparent');
           hit.setAttribute('pointer-events', 'all');
@@ -1320,10 +1320,14 @@
             if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); activate(true); }
           });
           renderer.semanticEvidence.set(item.id, group);
-          renderer.decorations.appendChild(group);
         }
+        // BSc thematic areas are interactive subnodes, not passive decoration.
+        // Keep them in the top graph plane so no decoration/node hit area can
+        // sit above their pointer target.
+        renderer.nodes.appendChild(group);
         const knowledgeLabels = item.knowledgeIds.map(id => nodeMap.get(id)?.label).filter(Boolean);
-        group.setAttribute('aria-label', `${item.label}. Verified completed coursework group. Select to inspect the courses and related Knowledge areas.`);
+        group.setAttribute('aria-label', `${item.label}. BSc thematic area. Select to open its description, completed courses and related Knowledge areas.`);
+        group.dataset.thematicNode = 'bsc';
         group.querySelector('.site-graph-evidence-label').textContent = item.label;
         group.querySelector('.site-graph-evidence-meta').textContent = 'VERIFIED COURSEWORK';
         group.querySelector('title').textContent = `${item.label}: select to inspect completed coursework`;
@@ -1822,6 +1826,8 @@
         const button = document.createElement('button');
         button.type = 'button';
         button.textContent = node.detailLabel || node.label;
+        button.dataset.nodeId = node.id;
+        button.dataset.detailGroup = label;
         button.addEventListener('click', () => {
           if (state.mode === 'atlas') {
             atlasPinnedId = node.id;

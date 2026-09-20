@@ -515,8 +515,14 @@
     emit('start', { relation });
 
     if (status) status.textContent = `${relation.label}: travelling to ${relation.target.detailLabel || relation.target.label}.`;
-    await animateTrace(overlay.departure, overlay.traveller, reducedMotion.matches ? 0 : 360, id);
+    await animateTrace(overlay.departure, overlay.traveller, reducedMotion.matches ? 0 : 420, id);
     if (id !== sequence || !state.travelling) return false;
+
+    const portalRing = document.createElement('span');
+    portalRing.className = 'profile-crosslink-marker is-portal';
+    portalRing.style.left = `${overlay.portal.x}px`;
+    portalRing.style.top = `${overlay.portal.y}px`;
+    overlay.shell.appendChild(portalRing);
 
     overlay.shell.dataset.phase = 'travel';
     document.body.dataset.crossLinkTravel = 'travel';
@@ -545,8 +551,8 @@
     overlay.shell.appendChild(targetRing);
     overlay.shell.dataset.phase = 'arrive';
     document.body.dataset.crossLinkTravel = 'arrive';
-    await animateTrace(arrival, overlay.traveller, reducedMotion.matches ? 0 : 320, id);
-    await wait(reducedMotion.matches ? 70 : 190);
+    await animateTrace(arrival, overlay.traveller, reducedMotion.matches ? 0 : 390, id);
+    await wait(reducedMotion.matches ? 70 : 220);
     if (id !== sequence || !state.travelling) return false;
 
     targetElement?.focus?.({ preventScroll: true });
@@ -621,14 +627,12 @@
 
   detail?.addEventListener('click', event => {
     if (document.body.dataset.graphMode === 'atlas' || state.travelling) return;
-    const button = event.target.closest?.('.detail-node-list.is-secondary button');
+    const button = event.target.closest?.('.detail-node-list.is-secondary button[data-node-id]');
     if (!button) return;
-    const heading = button.closest('.detail-node-list')?.previousElementSibling;
-    if (!heading?.classList.contains('detail-list-title') || !['Connected in the profile', 'Related Work'].includes(heading.textContent.trim())) return;
     const sourceId = currentSourceId();
-    const targetLabel = button.textContent.trim();
+    const targetId = button.dataset.nodeId;
     const relation = relationsFor(sourceId).find(item =>
-      (item.target.detailLabel || item.target.label) === targetLabel || item.target.label === targetLabel);
+      item.targetId === targetId && !['hierarchy', 'hierarchy-alt'].includes(item.type));
     if (!relation) return;
     event.preventDefault();
     event.stopImmediatePropagation();

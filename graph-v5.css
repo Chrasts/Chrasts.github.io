@@ -452,7 +452,7 @@ body[data-graph-mode="atlas"] .site-graph-svg{cursor:grab}
 
 /* Shared detail drawer */
 .scene-detail{
-  z-index:40!important;
+  z-index:60!important;
   overscroll-behavior:contain;
   scrollbar-width:thin;
   scrollbar-color:var(--line) transparent

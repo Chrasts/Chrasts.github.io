@@ -19,7 +19,7 @@ module.exports = defineConfig({
     command: 'node scripts/serve.mjs',
     url: baseURL,
     env: { ...process.env, PORT: port, OPEN_BROWSER: '0' },
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true,
     timeout: 10_000
   }
 });

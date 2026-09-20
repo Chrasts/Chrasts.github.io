@@ -152,6 +152,11 @@
       item.classList.toggle('is-active', active);
       item.querySelector('.phase8-bsc-cluster-select')?.setAttribute('aria-pressed', active ? 'true' : 'false');
       item.querySelector('.phase8-bsc-cluster-select')?.setAttribute('aria-expanded', active ? 'true' : 'false');
+      const detail = item.querySelector('.phase8-bsc-cluster-detail');
+      if (detail) {
+        detail.hidden = !active;
+        detail.setAttribute('aria-hidden', active ? 'false' : 'true');
+      }
     });
     requestAnimationFrame(() => {
       cluster.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
@@ -176,17 +181,21 @@
         }));
       });
       clusterElement.appendChild(select);
-      if (cluster.description) clusterElement.appendChild(element('p', 'phase8-bsc-cluster-description', cluster.description));
-      clusterElement.appendChild(element('p', 'phase8-bsc-detail-label', 'Completed courses'));
+      const clusterDetail = element('div', 'phase8-bsc-cluster-detail');
+      clusterDetail.hidden = true;
+      clusterDetail.setAttribute('aria-hidden', 'true');
+      if (cluster.description) clusterDetail.appendChild(element('p', 'phase8-bsc-cluster-description', cluster.description));
+      clusterDetail.appendChild(element('p', 'phase8-bsc-detail-label', 'Completed courses'));
       const courses = element('p', 'phase8-bsc-course-list', cluster.courses.join(' · '));
-      clusterElement.appendChild(courses);
-      clusterElement.appendChild(element('p', 'phase8-bsc-detail-label phase8-bsc-related-label', 'Related Knowledge'));
+      clusterDetail.appendChild(courses);
+      clusterDetail.appendChild(element('p', 'phase8-bsc-detail-label phase8-bsc-related-label', 'Related Knowledge'));
       const knowledge = element('div', 'phase8-course-links');
       (cluster.supportsKnowledgeIds || []).forEach(id => {
         const node = nodeMap.get(id);
         if (node) knowledge.appendChild(routeControl(node.label, id, 'phase8-topic-link'));
       });
-      clusterElement.appendChild(knowledge);
+      clusterDetail.appendChild(knowledge);
+      clusterElement.appendChild(clusterDetail);
       bscClusters.appendChild(clusterElement);
     });
   const bscActions = element('div', 'phase8-actions');

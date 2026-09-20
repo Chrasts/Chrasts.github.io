@@ -7,6 +7,26 @@
 
   const nodeMap = new Map(graph.nodes.map(node => [node.id, node]));
   const rootId = graph.rootId;
+  const branchIds = new Set(['work', 'knowledge', 'experience', 'education', 'about']);
+  const branchForNode = value => {
+    if (typeof value === 'string' && (value.startsWith('work-concept:') || value.startsWith('work-theme-'))) return 'work';
+    const start = typeof value === 'string' ? nodeMap.get(value) : value;
+    if (!start || start.id === rootId) return null;
+    if (start.type === 'project') return 'work';
+    const queue = [start];
+    const seen = new Set();
+    while (queue.length) {
+      const current = queue.shift();
+      if (!current || seen.has(current.id)) continue;
+      seen.add(current.id);
+      if (branchIds.has(current.id)) return current.id;
+      for (const parentId of current.parentIds || []) {
+        if (branchIds.has(parentId)) return parentId;
+        queue.push(nodeMap.get(parentId));
+      }
+    }
+    return null;
+  };
   const explorer = document.querySelector('#site-explorer');
   const routebar = explorer?.querySelector('.graph-routebar');
   const detail = document.querySelector('#site-detail-panel');
@@ -134,6 +154,8 @@
           secondary: Boolean(edge.secondary),
           label: forward ? copy.forward : copy.reverse,
           family: copy.family,
+          sourceBranch: branchForNode(sourceId),
+          targetBranch: branchForNode(targetId),
           vector,
           direction: directionName(sourceId, targetId, vector)
         };
@@ -393,6 +415,16 @@
     shell.dataset.phase = 'trace';
     shell.dataset.direction = relation.direction;
     shell.dataset.relationType = relation.type;
+    if (relation.sourceBranch) shell.dataset.sourceBranch = relation.sourceBranch;
+    if (relation.targetBranch) shell.dataset.targetBranch = relation.targetBranch;
+    shell.style.setProperty(
+      '--crosslink-source-color',
+      relation.sourceBranch ? `var(--branch-${relation.sourceBranch})` : 'var(--profile-accent)'
+    );
+    shell.style.setProperty(
+      '--crosslink-target-color',
+      relation.targetBranch ? `var(--branch-${relation.targetBranch})` : 'var(--profile-accent)'
+    );
     shell.style.setProperty('--crosslink-snapshot-x', `${(-relation.vector.x * 8).toFixed(2)}vw`);
     shell.style.setProperty('--crosslink-snapshot-y', `${(-relation.vector.y * 8).toFixed(2)}vh`);
     shell.setAttribute('aria-hidden', 'true');

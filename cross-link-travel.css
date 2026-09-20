@@ -206,24 +206,29 @@ body.is-crosslink-travelling{
 }
 .profile-crosslink-trace{
   fill:none;
-  stroke:var(--teal);
+  stroke:var(--crosslink-source-color,var(--teal));
   stroke-width:2;
   stroke-linecap:round;
   opacity:.94;
   vector-effect:non-scaling-stroke;
-  filter:drop-shadow(0 0 4px color-mix(in srgb,var(--teal) 42%,transparent))
+  filter:drop-shadow(0 0 4px color-mix(in srgb,var(--crosslink-source-color,var(--teal)) 42%,transparent))
 }
 .profile-crosslink-trace.is-departure{stroke-dasharray:6 4}
 .profile-crosslink-trace.is-arrival{
-  stroke:var(--brown);
-  stroke-width:1.45;
-  opacity:.88
+  stroke:var(--crosslink-target-color,var(--teal));
+  stroke-width:2;
+  opacity:.94;
+  filter:drop-shadow(0 0 4px color-mix(in srgb,var(--crosslink-target-color,var(--teal)) 42%,transparent))
 }
 .profile-crosslink-traveller{
   fill:var(--paper);
-  stroke:var(--teal);
+  stroke:var(--crosslink-source-color,var(--teal));
   stroke-width:2;
-  vector-effect:non-scaling-stroke
+  vector-effect:non-scaling-stroke;
+  transition:stroke .18s ease
+}
+.profile-crosslink-travel-overlay[data-phase="arrive"] .profile-crosslink-traveller{
+  stroke:var(--crosslink-target-color,var(--teal))
 }
 
 .profile-crosslink-marker{
@@ -232,7 +237,7 @@ body.is-crosslink-travelling{
   width:28px;
   height:28px;
   margin:-14px 0 0 -14px;
-  border:1px solid color-mix(in srgb,var(--teal) 55%,transparent);
+  border:1px solid color-mix(in srgb,var(--crosslink-source-color,var(--teal)) 55%,transparent);
   border-radius:50%;
   pointer-events:none;
   animation:profile-crosslink-pulse .72s cubic-bezier(.16,.76,.18,1) both
@@ -242,23 +247,23 @@ body.is-crosslink-travelling{
   position:absolute;
   inset:7px;
   border-radius:50%;
-  background:var(--teal)
+  background:var(--crosslink-source-color,var(--teal))
 }
 .profile-crosslink-marker.is-target{
-  border-color:color-mix(in srgb,var(--brown) 65%,transparent)
+  border-color:color-mix(in srgb,var(--crosslink-target-color,var(--teal)) 65%,transparent)
 }
-.profile-crosslink-marker.is-target::after{background:var(--brown)}
+.profile-crosslink-marker.is-target::after{background:var(--crosslink-target-color,var(--teal))}
 .profile-crosslink-marker.is-portal{
   width:38px;
   height:38px;
   margin:-19px 0 0 -19px;
-  border-color:color-mix(in srgb,var(--teal) 34%,transparent);
+  border-color:color-mix(in srgb,var(--crosslink-source-color,var(--teal)) 34%,transparent);
   animation:profile-crosslink-portal .72s cubic-bezier(.16,.76,.18,1) both
 }
 .profile-crosslink-marker.is-portal::after{
   inset:14px;
   background:var(--paper);
-  border:1px solid var(--teal)
+  border:1px solid var(--crosslink-source-color,var(--teal))
 }
 @keyframes profile-crosslink-portal{
   0%{transform:scale(.45);opacity:0}
@@ -277,7 +282,7 @@ body.is-crosslink-travelling{
   min-width:128px;
   max-width:min(260px,42vw);
   padding:8px 10px;
-  border:1px solid color-mix(in srgb,var(--teal) 38%,var(--line));
+  border:1px solid color-mix(in srgb,var(--crosslink-source-color,var(--teal)) 38%,var(--line));
   border-radius:5px;
   background:color-mix(in srgb,var(--paper) 94%,transparent);
   box-shadow:0 8px 26px color-mix(in srgb,var(--ink) 8%,transparent);
@@ -288,7 +293,7 @@ body.is-crosslink-travelling{
 .profile-crosslink-token small,
 .profile-crosslink-token strong{display:block}
 .profile-crosslink-token small{
-  color:var(--brown);
+  color:var(--crosslink-source-color,var(--teal));
   font:760 8px/1.1 var(--sans);
   letter-spacing:.09em;
   text-transform:uppercase

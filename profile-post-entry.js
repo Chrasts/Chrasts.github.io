@@ -7,6 +7,34 @@
   const persist = () => {
     try { sessionStorage.setItem(STORAGE_KEY, 'true'); } catch (_) {}
   };
+  const clearPersisted = () => {
+    try { sessionStorage.removeItem(STORAGE_KEY); } catch (_) {}
+  };
+  const openingEntryAtlas = () => {
+    const introState = window.ProfileIntro?.snapshot?.().state || '';
+    const marker = document.documentElement.dataset.profileIntro || '';
+    const entryState = document.body?.dataset.entryState || '';
+    return document.body?.dataset.graphMode === 'atlas' &&
+      !document.body?.classList.contains('is-root-entry-committing') &&
+      (['reveal', 'ready'].includes(entryState) ||
+       ['ATLAS_REVEAL', 'ATLAS_READY'].includes(introState) ||
+       (window.__PROFILE_INTRO_BOOTSTRAP__?.eligible && ['pending', 'preparing', 'running', 'ready'].includes(marker)));
+  };
+  const restoreEntryMaterial = reason => {
+    if (!document.body || !openingEntryAtlas()) return false;
+    retired = false;
+    clearPersisted();
+    document.body.classList.remove('is-root-entry-retired');
+    if (document.body.dataset.rootEntryMaterial === 'retired') delete document.body.dataset.rootEntryMaterial;
+    document.querySelectorAll('[data-root-entry-portrait],[data-root-entry-action]').forEach(element => {
+      delete element.dataset.rootEntryRetired;
+      // Both SVG objects are intentionally presentation-only to AT; removing
+      // the stale retirement marker is enough to restore visual ownership.
+      element.setAttribute('aria-hidden', 'true');
+    });
+    dispatchEvent(new CustomEvent('profile:root-entry-restored', { detail: { reason } }));
+    return true;
+  };
 
   const shouldAlreadyBeRetired = () => {
     let stored = false;
@@ -18,13 +46,10 @@
     // The interactive opening Atlas is still entry state even after the
     // reveal has reached ready. Do not let compatibility cleanup retire the
     // canonical portrait before its root hover/focus interaction can use it.
-    const openingAtlasReady = document.body?.dataset.graphMode === 'atlas' &&
-      ['reveal', 'ready'].includes(document.body?.dataset.entryState || '') &&
-      !document.body?.classList.contains('is-root-entry-committing');
-    if (openingAtlasReady) return false;
-    const initialIntro = window.__PROFILE_INTRO_BOOTSTRAP__?.eligible && !stored &&
-      !document.body?.classList.contains('is-profile-root-ready') &&
-      document.body?.dataset.entryState !== 'profile';
+    if (openingEntryAtlas()) return false;
+    const initialIntro = window.__PROFILE_INTRO_BOOTSTRAP__?.eligible &&
+      document.body?.dataset.entryState !== 'profile' &&
+      !['ATLAS_READY', 'BYPASSED'].includes(window.ProfileIntro?.snapshot?.().state || '');
     if (initialIntro) return false;
     return stored ||
       document.body?.dataset.entryState === 'profile' ||
@@ -33,7 +58,10 @@
   };
 
   const retire = (reason = 'profile-root') => {
-    if (!document.body) return false;
+    if (!document.body || openingEntryAtlas()) {
+      restoreEntryMaterial(`blocked-retire:${reason}`);
+      return false;
+    }
     retired = true;
     persist();
     document.body.classList.add('is-root-entry-retired');
@@ -51,6 +79,10 @@
   };
 
   const sync = reason => {
+    if (openingEntryAtlas()) {
+      restoreEntryMaterial(reason || 'entry-atlas');
+      return;
+    }
     if (retired || shouldAlreadyBeRetired()) retire(reason || 'sync');
   };
 
@@ -63,7 +95,12 @@
       });
   };
 
-  addEventListener('profile:profile-root-settled', () => retire('profile-root-settled'));
+  // Never bypass the ownership guard. This direct retire() call was the
+  // recurring race: a transient Overview render could fire this event before
+  // the intro moved to Atlas and permanently hide the portrait for the session.
+  addEventListener('profile:profile-root-settled', () => sync('profile-root-settled'));
+  addEventListener('profile:atlas-ready', () => sync('atlas-ready'));
+  addEventListener('profile:intro-completed', () => sync('intro-completed'));
   addEventListener('profile:atlas-condensation-complete', () => requestAnimationFrame(() => sync('condensation-complete')));
   addEventListener('profile:scene-state', () => sync('scene-state'));
   addEventListener('profile:transition-finish', () => sync('transition-finish'));
@@ -79,7 +116,8 @@
 
   window.ProfilePostEntry = Object.freeze({
     retire,
-    snapshot: () => ({ retired, stored: (() => {
+    restoreEntryMaterial,
+    snapshot: () => ({ retired, openingEntryAtlas: openingEntryAtlas(), stored: (() => {
       try { return sessionStorage.getItem(STORAGE_KEY) === 'true'; } catch (_) { return false; }
     })() })
   });

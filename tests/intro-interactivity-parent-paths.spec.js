@@ -98,10 +98,28 @@ test.describe('Intro interactivity and Atlas relation colors', () => {
   });
 
   test('the root previews and enters the profile on the first click once Atlas is ready', async ({ page }) => {
-    await page.addInitScript(() => sessionStorage.removeItem('profileIntroSeen'));
+    await page.addInitScript(() => {
+      sessionStorage.removeItem('profileIntroSeen');
+      sessionStorage.removeItem('profileRootReached');
+    });
     await blockAnalytics(page);
     await page.goto('/', { waitUntil: 'domcontentloaded' });
+    // Exercise the historical race explicitly: force the Profile Root
+    // synchronizer while the intro still owns the transient Overview shell.
+    await page.waitForFunction(() => Boolean(window.ProfileRootOverview && window.ProfilePostEntry));
+    await page.evaluate(() => window.ProfileRootOverview.refresh());
     await page.waitForFunction(() => window.ProfileIntro?.snapshot?.().state === 'ATLAS_READY', null, { timeout: 20_000 });
+
+    const retirement = await page.evaluate(() => ({
+      postEntry: window.ProfilePostEntry.snapshot(),
+      retiredClass: document.body.classList.contains('is-root-entry-retired'),
+      rootReadyClass: document.body.classList.contains('is-profile-root-ready'),
+      entryState: document.body.dataset.entryState
+    }));
+    expect(retirement.postEntry.retired).toBe(false);
+    expect(retirement.retiredClass).toBe(false);
+    expect(retirement.rootReadyClass).toBe(false);
+    expect(retirement.entryState).toBe('ready');
 
     const root = page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]').first();
     const portraitOpacity = () => page.evaluate(() => Number(getComputedStyle(

@@ -30,7 +30,19 @@
   };
   const lateReveal = () =>
     introState() === 'ATLAS_REVEAL' && document.body?.classList.contains('is-atlas-reveal-late');
-  const overviewActive = () => mode() === 'overview' && rootLanding() === 'false';
+  const introOwnsEntry = () => {
+    if (!window.__PROFILE_INTRO_BOOTSTRAP__?.eligible) return false;
+    const state = introState();
+    const marker = document.documentElement.dataset.profileIntro || '';
+    return !['ATLAS_READY', 'BYPASSED'].includes(state || '') &&
+      !['ready', 'complete', 'bypass'].includes(marker);
+  };
+  // The app briefly renders an Overview-shaped graph while the first-session
+  // intro is bootstrapping. That is not the Profile Root. Treating it as such
+  // emitted profile-root-settled, retired the portrait, and persisted the bad
+  // state in sessionStorage before the opening Atlas had even appeared.
+  const overviewActive = () =>
+    mode() === 'overview' && rootLanding() === 'false' && !introOwnsEntry();
   const quickAvailable = () => {
     if (!mode() || !(introStable() || lateReveal())) return false;
     return mode() !== 'overview' || rootLanding() === 'false' || lateReveal();

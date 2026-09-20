@@ -149,9 +149,49 @@ test.describe('Phase 6 cross-link travel - desktop', () => {
 
     await page.waitForFunction(() => window.ProfileCrossLinkTravel?.snapshot().travelling === true);
     await expect(page.locator('.profile-crosslink-travel-overlay')).toBeVisible();
-    await expect(page.locator('.profile-crosslink-trace.is-departure')).toHaveCount(1);
+    const departure = page.locator('.profile-crosslink-trace.is-departure');
+    await expect(departure).toHaveCount(1);
+    const sourceColors = await page.evaluate(() => {
+      const root = getComputedStyle(document.documentElement);
+      const normalise = value => {
+        const probe = document.createElement('span');
+        probe.style.color = value;
+        document.body.appendChild(probe);
+        const result = getComputedStyle(probe).color;
+        probe.remove();
+        return result;
+      };
+      return {
+        work: normalise(root.getPropertyValue('--branch-work').trim()),
+        brown: normalise(root.getPropertyValue('--brown').trim()),
+        departure: getComputedStyle(document.querySelector('.profile-crosslink-trace.is-departure')).stroke
+      };
+    });
+    expect(sourceColors.departure).toBe(sourceColors.work);
+    expect(sourceColors.departure).not.toBe(sourceColors.brown);
+
     await page.waitForFunction(() => document.body.dataset.crossLinkTravel === 'arrive');
-    await expect(page.locator('.profile-crosslink-trace.is-arrival')).toHaveCount(1);
+    const arrival = page.locator('.profile-crosslink-trace.is-arrival');
+    await expect(arrival).toHaveCount(1);
+    const targetColors = await page.evaluate(() => {
+      const root = getComputedStyle(document.documentElement);
+      const normalise = value => {
+        const probe = document.createElement('span');
+        probe.style.color = value;
+        document.body.appendChild(probe);
+        const result = getComputedStyle(probe).color;
+        probe.remove();
+        return result;
+      };
+      return {
+        experience: normalise(root.getPropertyValue('--branch-experience').trim()),
+        brown: normalise(root.getPropertyValue('--brown').trim()),
+        arrival: getComputedStyle(document.querySelector('.profile-crosslink-trace.is-arrival')).stroke
+      };
+    });
+    expect(targetColors.arrival).toBe(targetColors.experience);
+    expect(targetColors.arrival).not.toBe(targetColors.brown);
+
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'experience/ceske-priority');
     const snapshot = await waitTravelComplete(page);
 

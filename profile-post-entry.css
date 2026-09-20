@@ -31,3 +31,15 @@ body[data-graph-mode="overview"][data-root-landing="false"] .root-entry-action{
 body[data-entry-state="ready"][data-graph-mode="atlas"] .quick-overview-global-trigger{
   display:none!important
 }
+
+
+/* Opening Atlas is the canonical owner of root-entry material. This invariant
+   deliberately outranks post-entry retirement so a stale class/session marker
+   can never suppress the portrait hover again. */
+body[data-entry-state="ready"][data-graph-mode="atlas"]:not(.is-root-entry-committing) .root-entry-portrait,
+body[data-entry-state="reveal"][data-graph-mode="atlas"]:not(.is-root-entry-committing) .root-entry-portrait,
+body[data-entry-state="ready"][data-graph-mode="atlas"]:not(.is-root-entry-committing) .root-entry-action,
+body[data-entry-state="reveal"][data-graph-mode="atlas"]:not(.is-root-entry-committing) .root-entry-action{
+  display:inline!important;
+  visibility:visible!important
+}

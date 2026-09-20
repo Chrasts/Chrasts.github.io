@@ -46,11 +46,15 @@
     document.head.appendChild(guard);
   }
 
+  const releaseRevision = '20260920-entrycolors1';
+  const versionedResource = resource =>
+    `${resource}${resource.includes('?') ? '&' : '?'}v=${releaseRevision}`;
+
   const ensureStylesheet = (href, marker) => {
-    if (document.querySelector(`link[href="${href}"]`)) return;
+    if (marker && document.querySelector(`link[${marker}]`)) return;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = href;
+    link.href = versionedResource(href);
     if (marker) link.setAttribute(marker, 'true');
     document.head.appendChild(link);
   };
@@ -152,7 +156,7 @@
   const ensureScript = (src, marker) => {
     if (document.querySelector(`script[${marker}]`)) return;
     const script = document.createElement('script');
-    script.src = src;
+    script.src = versionedResource(src);
     script.async = false;
     script.setAttribute(marker, 'true');
     document.head.appendChild(script);

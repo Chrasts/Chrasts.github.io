@@ -12,10 +12,13 @@
     .sort((a,b) => (b.prominence || 0) - (a.prominence || 0))[0]
     || byParent('experience').sort((a,b) => (b.timelineOrder || 0) - (a.timelineOrder || 0))[0];
 
+  const cleanText = value => String(value ?? '')
+    .replace(/\s*—\s*/g, ': ')
+    .replace(/;\s*/g, '. ');
   const el = (tag, cls, text) => {
     const node = document.createElement(tag);
     if (cls) node.className = cls;
-    if (text) node.textContent = text;
+    if (text) node.textContent = cleanText(text);
     return node;
   };
   const link = (label, href) => {
@@ -53,7 +56,7 @@
     .forEach(project => {
       const article = el('article', 'cv-item cv-project');
       const h = el('h3', '', project.title);
-      const meta = el('p', 'cv-meta', [project.type, ...(project.contexts || [])].filter(Boolean).join(' · '));
+      const meta = el('p', 'cv-meta', project.type || '');
       const oneLine = el('p', 'cv-item-summary', project.caseStudy?.oneLine || project.description || '');
       article.append(h, meta, oneLine);
       const details = [
@@ -111,11 +114,16 @@
 
   const areas = section('Core Areas');
   const areaList = el('ul', 'cv-area-list');
-  byParent('knowledge').slice(0, 3).forEach(item => {
-    const li = el('li');
-    li.append(el('strong', '', item.label), document.createTextNode(item.summary ? ` — ${item.summary}` : ''));
-    areaList.append(li);
-  });
+  byParent('knowledge')
+    .filter(item => item.id !== 'research-practice')
+    .forEach(item => {
+      const li = el('li');
+      li.append(
+        el('strong', '', item.label),
+        document.createTextNode(item.summary ? `: ${cleanText(item.summary)}` : '')
+      );
+      areaList.append(li);
+    });
   areas.append(areaList);
 
   host.replaceChildren(header, work, experience, education, areas);

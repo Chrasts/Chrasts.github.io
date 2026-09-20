@@ -382,3 +382,27 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-read
     animation:none!important
   }
 }
+
+
+/* Recruiter fast path: primary actions are visually distinct from utilities. */
+.profile-root-action.is-primary{
+  border-color:color-mix(in srgb,var(--teal) 55%,transparent);
+  color:var(--ink);
+  font-weight:720
+}
+.profile-root-action.is-secondary{
+  color:var(--muted)
+}
+.quick-overview-project{
+  display:grid;
+  gap:3px
+}
+.quick-overview-project-summary{
+  margin:0;
+  max-width:42ch;
+  color:var(--muted);
+  font:500 10px/1.4 var(--sans)
+}
+@media(max-width:900px){
+  .quick-overview-project-summary{font-size:11px}
+}

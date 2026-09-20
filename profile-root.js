@@ -54,16 +54,10 @@
     .sort((a, b) => newestFirst
       ? (b.timelineOrder || 0) - (a.timelineOrder || 0)
       : (a.layoutOrder || a.timelineOrder || 99) - (b.layoutOrder || b.timelineOrder || 99));
-  const selectedTools = () => {
-    const counts = new Map();
-    (work?.projects || []).forEach(project => (project.tech || []).forEach(tool => {
-      counts.set(tool, (counts.get(tool) || 0) + 1);
-    }));
-    return [...counts]
-      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-      .slice(0, 6)
-      .map(([tool]) => tool);
-  };
+  const featuredProjects = () => [...(work?.projects || [])]
+    .filter(project => Number.isFinite(project.featuredRank))
+    .sort((a, b) => projectRank(a) - projectRank(b));
+  const projectRank = project => project?.featuredRank ?? 999;
 
   const routeTo = target => {
     const next = String(target || 'overview').replace(/^#/, '');
@@ -81,10 +75,10 @@
   };
 
   const makeCvLink = className => {
-    const cv = element('a', className, 'CV on request');
-    cv.href = `mailto:${profile.email}?subject=${encodeURIComponent('CV request')}`;
-    cv.title = 'Request a CV by email.';
-    cv.dataset.cvState = 'request';
+    const cv = element('a', className, 'CV');
+    cv.href = '/cv/';
+    cv.title = 'Open conventional CV view.';
+    cv.dataset.cvState = 'html';
     return cv;
   };
 
@@ -109,27 +103,36 @@
     const intro = element('p', 'profile-root-summary', (profile.intro || '').replace(/^\s*Junior\s+/i, ''));
     const actions = element('div', 'profile-root-actions');
 
-    const email = element('a', 'profile-root-action', 'Email');
-    email.href = `mailto:${profile.email}`;
-    actions.appendChild(email);
+    const selectedWork = makeRouteButton('Selected Work', 'work');
+    selectedWork.className = 'profile-root-action is-primary';
+    actions.appendChild(selectedWork);
 
-    for (const label of ['GitHub', 'LinkedIn']) {
-      const data = profileLink(label);
-      if (!data?.href) continue;
-      const link = element('a', 'profile-root-action', `${label} ↗`);
-      link.href = data.href;
-      link.target = '_blank';
-      link.rel = 'noreferrer';
-      actions.appendChild(link);
-    }
+    const cv = makeCvLink('profile-root-action profile-root-cv is-primary');
+    actions.appendChild(cv);
 
-    actions.appendChild(makeCvLink('profile-root-action profile-root-cv'));
+    const atlas = makeRouteButton('Explore Atlas', 'atlas');
+    atlas.className = 'profile-root-action is-primary';
+    actions.appendChild(atlas);
 
     const quick = element('button', 'profile-root-action profile-root-quick-trigger', 'Quick overview');
     quick.type = 'button';
     quick.setAttribute('aria-haspopup', 'dialog');
     quick.addEventListener('click', () => openQuickOverview('profile-root'));
     actions.appendChild(quick);
+
+    const email = element('a', 'profile-root-action is-secondary', 'Email');
+    email.href = `mailto:${profile.email}`;
+    actions.appendChild(email);
+
+    for (const label of ['GitHub', 'LinkedIn']) {
+      const data = profileLink(label);
+      if (!data?.href) continue;
+      const link = element('a', 'profile-root-action is-secondary', `${label} ↗`);
+      link.href = data.href;
+      link.target = '_blank';
+      link.rel = 'noreferrer';
+      actions.appendChild(link);
+    }
 
     brief.append(identity, intro, actions);
     heading.appendChild(brief);
@@ -195,50 +198,42 @@
     const facts = element('dl', 'quick-overview-facts');
     const current = currentExperience();
     appendFact(facts, 'Current', current ? [current.role, current.label].filter(Boolean).join(' · ') : null);
-    appendFact(facts, 'Focus', profile.label || null);
-    appendFact(facts, 'Selected tools', selectedTools().join(' · '));
+    appendFact(facts, 'Profile', profile.label || null);
 
     const grid = element('div', 'quick-overview-grid');
 
     const workSection = element('section', 'quick-overview-section');
     workSection.append(element('h3', '', 'Selected work'));
-    const workList = element('ul', 'quick-overview-list');
-    [...(work?.projects || [])].sort((a, b) => (a.order || 99) - (b.order || 99)).slice(0, 4).forEach(project => {
-      const li = element('li');
+    const workList = element('ul', 'quick-overview-list quick-overview-work-list');
+    featuredProjects().slice(0, 4).forEach(project => {
+      const li = element('li', 'quick-overview-project');
       li.append(makeRouteButton(project.graphLabel || project.title, `work/project/${project.id}`));
+      const summary = project.caseStudy?.oneLine || project.description;
+      if (summary) li.append(element('p', 'quick-overview-project-summary', summary));
       workList.appendChild(li);
     });
     workSection.append(workList, makeRouteButton('Open Work', 'work'));
 
     const knowledgeSection = element('section', 'quick-overview-section');
-    knowledgeSection.append(element('h3', '', 'Working areas'));
+    knowledgeSection.append(element('h3', '', 'Core areas'));
     const knowledgeList = element('ul', 'quick-overview-list');
-    directChildren('knowledge').slice(0, 4).forEach(node => {
+    directChildren('knowledge').slice(0, 3).forEach(node => {
       const li = element('li');
       li.append(makeRouteButton(node.label, node.route || 'knowledge'));
       knowledgeList.appendChild(li);
     });
     knowledgeSection.append(knowledgeList, makeRouteButton('Open Knowledge', 'knowledge'));
 
-    const experienceSection = element('section', 'quick-overview-section');
-    experienceSection.append(element('h3', '', 'Experience'));
-    const experienceList = element('ul', 'quick-overview-list');
-    directChildren('experience', { newestFirst: true }).slice(0, 3).forEach(node => {
-      const li = element('li', '', `${node.label}${node.role ? ` - ${node.role}` : ''}`);
-      experienceList.appendChild(li);
-    });
-    experienceSection.append(experienceList, makeRouteButton('Open Experience', 'experience'));
-
     const educationSection = element('section', 'quick-overview-section');
     educationSection.append(element('h3', '', 'Education'));
     const educationList = element('ul', 'quick-overview-list');
-    directChildren('education').slice(0, 4).forEach(node => {
+    directChildren('education').slice(0, 3).forEach(node => {
       const li = element('li', '', `${node.label}${node.meta ? ` · ${node.meta}` : ''}`);
       educationList.appendChild(li);
     });
     educationSection.append(educationList, makeRouteButton('Open Education', 'education'));
 
-    grid.append(workSection, knowledgeSection, experienceSection, educationSection);
+    grid.append(workSection, knowledgeSection, educationSection);
 
     const footer = element('footer', 'quick-overview-footer');
     footer.append(makeRouteButton('About', 'about'));
@@ -248,6 +243,15 @@
     const contact = element('a', 'profile-root-route', 'Email');
     contact.href = `mailto:${profile.email}`;
     footer.append(contact, makeCvLink('profile-root-route quick-overview-cv'));
+    for (const label of ['GitHub', 'LinkedIn']) {
+      const data = profileLink(label);
+      if (!data?.href) continue;
+      const link = element('a', 'profile-root-route', `${label} ↗`);
+      link.href = data.href;
+      link.target = '_blank';
+      link.rel = 'noreferrer';
+      footer.append(link);
+    }
 
     shell.append(header, lead, facts, grid, footer);
     quickDialog.appendChild(shell);

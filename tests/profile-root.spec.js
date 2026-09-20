@@ -26,7 +26,7 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
     const state = await page.evaluate(() => window.ProfileRootOverview.snapshot());
     expect(state.branchCount).toBe(5);
     expect(state.rootPresent).toBe(true);
-    expect(state.cvState).toBe('request');
+    expect(state.cvState).toBe('html');
     expect(state.professionalLinkCount).toBeGreaterThanOrEqual(4);
 
     await expect(page.locator('.profile-app > .hero')).toBeHidden();
@@ -35,8 +35,8 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
     await expect(page.locator('.profile-root-name')).toContainText('Štěpán Chrast');
     await expect(page.locator('.profile-root-brief')).toContainText('Data analysis');
     await expect(page.locator('.profile-root-quick-trigger')).toContainText('Quick overview');
-    await expect(page.locator('.profile-root-cv')).toContainText('CV on request');
-    await expect(page.locator('.profile-root-cv')).toHaveAttribute('href', /^mailto:/);
+    await expect(page.locator('.profile-root-cv')).toContainText('CV');
+    await expect(page.locator('.profile-root-cv')).toHaveAttribute('href', '/cv/');
     await expect(page.locator('.profile-root-cv')).not.toHaveAttribute('download', /.*/);
 
     for (const id of firstLevel) {
@@ -61,11 +61,11 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
     expect(await page.evaluate(() => window.ProfileRootOverview.snapshot().quickOpen)).toBe(true);
 
     await expect(page.locator('.quick-overview-dialog')).toContainText('Selected work');
-    await expect(page.locator('.quick-overview-dialog')).toContainText('Working areas');
-    await expect(page.locator('.quick-overview-dialog')).toContainText('Experience');
+    await expect(page.locator('.quick-overview-dialog')).toContainText('Core areas');
     await expect(page.locator('.quick-overview-dialog')).toContainText('Education');
     await expect(page.locator('.quick-overview-dialog')).toContainText('České priority');
-    await expect(page.locator('.quick-overview-dialog')).toContainText('CV on request');
+    await expect(page.locator('.quick-overview-dialog')).toContainText('Survey Analysis');
+    await expect(page.locator('.quick-overview-dialog')).toContainText('CV');
 
     const during = {
       route: await page.evaluate(() => document.body.dataset.graphRoute),

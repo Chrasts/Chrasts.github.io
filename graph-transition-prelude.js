@@ -7,28 +7,6 @@
     (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
   const routeForNode = node => node?.route || 'overview';
 
-  const patchWorkData = data => {
-    if (!data) return;
-    const research = data.attributes?.find(attribute => attribute.id === 'research');
-    if (research) research.label = 'Research';
-    const insolvency = data.projects?.find(project => project.id === 'insolvency');
-    if (insolvency) {
-      insolvency.graphLabel = 'Insolvency Analysis';
-      insolvency.title = 'Insolvency Analysis';
-    }
-  };
-
-  patchWorkData(site?.work);
-  patchWorkData(window.PORTFOLIO_DATA);
-
-  if (site?.graph?.nodes) {
-    const insolvencyNode = site.graph.nodes.find(node => node.id === 'project-insolvency');
-    if (insolvencyNode) {
-      insolvencyNode.label = 'Insolvency Analysis';
-      insolvencyNode.detailLabel = 'Insolvency Analysis';
-    }
-  }
-
   const mobileViewport = window.matchMedia('(max-width: 900px)');
   const ensureMobileStyles = () => {
     if (!mobileViewport.matches) return;

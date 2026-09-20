@@ -8,14 +8,6 @@
 
     const collapsedIds = new Set();
 
-    const modalLogicLab = site.work?.projects?.find(project => project.id === 'modal-logic-lab');
-    if (modalLogicLab) {
-      modalLogicLab.links = [
-        { label: 'Play ↗', href: 'https://chrasts.github.io/Modal_Logic_Lab/' },
-        { label: 'GitHub ↗', href: 'https://github.com/Chrasts/Modal_Logic_Lab' }
-      ];
-    }
-
     window.ProfileContentIntegrity = Object.freeze({
       collapsedNodeIds: Object.freeze([...collapsedIds]),
       collapseInto: Object.freeze({})

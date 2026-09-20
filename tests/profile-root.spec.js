@@ -95,7 +95,7 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
     expect(await page.evaluate(() => window.ProfileRootOverview.snapshot().visible)).toBe(false);
   });
 
-  test('ATLAS_READY keeps recruiter chrome latent until Profile entry', async ({ page }) => {
+  test('ATLAS_READY exposes the recruiter fast path without changing Atlas state', async ({ page }) => {
     await page.addInitScript(() => sessionStorage.removeItem('profileIntroSeen'));
     await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
     await page.goto('/');
@@ -112,6 +112,22 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
     await expect(page.locator('.profile-root-brief')).toBeHidden();
     await expect(page.locator('.quick-overview-global-trigger')).toBeHidden();
 
+    const fastPath = page.locator('.entry-fast-path');
+    await expect(fastPath).toBeVisible();
+    await expect(fastPath.getByRole('button', { name: 'Quick overview' })).toBeVisible();
+    await expect(fastPath.getByRole('link', { name: 'CV' })).toHaveAttribute('href', '/cv/');
+    await expect(fastPath.getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', 'https://github.com/Chrasts');
+    await expect(fastPath.getByRole('link', { name: 'LinkedIn' })).toHaveAttribute('href', 'https://www.linkedin.com/in/stepan-chrast');
+    await expect(fastPath.getByRole('link', { name: 'Email' })).toHaveAttribute('href', /^mailto:/);
+
+    const quick = fastPath.getByRole('button', { name: 'Quick overview' });
+    await quick.focus();
+    await quick.click();
+    await expect(page.locator('.quick-overview-dialog')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.quick-overview-dialog')).toBeHidden();
+    await expect(quick).toBeFocused();
+
     await page.waitForTimeout(220);
     const after = await page.evaluate(() => ({
       route: document.body.dataset.graphRoute,
@@ -127,6 +143,9 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
       expect(after.camera.y).toBeCloseTo(before.camera.y, 4);
       expect(after.camera.scale).toBeCloseTo(before.camera.scale, 4);
     }
+    const recruiterState = await page.evaluate(() => window.ProfileRootOverview.snapshot());
+    expect(recruiterState.entryFastPathVisible).toBe(true);
+    expect(recruiterState.entryFastPathLinkCount).toBeGreaterThanOrEqual(4);
   });
 });
 

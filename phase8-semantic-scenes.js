@@ -65,7 +65,10 @@
       return button;
     }
     button.dataset.route = route;
-    if (options.crossLink) button.dataset.crosslinkTarget = nodeId;
+    if (options.crossLink) {
+      button.dataset.crosslinkTarget = nodeId;
+      button.dataset.crosslinkType = options.crossLink;
+    }
     button.addEventListener('click', event => {
       event.preventDefault();
       event.stopPropagation();

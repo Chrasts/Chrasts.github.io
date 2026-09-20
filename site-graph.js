@@ -1847,6 +1847,9 @@
         button.textContent = node.detailLabel || node.label;
         button.dataset.nodeId = node.id;
         button.dataset.detailGroup = label;
+        if (['Connected in the profile', 'Related Work'].includes(label)) {
+          button.dataset.crosslinkTarget = node.id;
+        }
         button.addEventListener('click', () => {
           if (state.mode === 'atlas') {
             atlasPinnedId = node.id;
@@ -1923,6 +1926,14 @@
           links.appendChild(anchor);
         });
         detail.append(heading, links);
+      }
+      const projectNode = nodeMap.get(`project-${project.id}`);
+      if (projectNode) {
+        appendNodeButtons('Connected in the profile', graph.edges
+          .filter(edge => edge.source === projectNode.id || edge.target === projectNode.id)
+          .filter(edge => !['hierarchy', 'hierarchy-alt', 'work-lattice', 'skill-metadata'].includes(edge.type))
+          .map(edge => nodeMap.get(edge.source === projectNode.id ? edge.target : edge.source))
+          .filter(Boolean));
       }
       dispatchEvent(new CustomEvent('profile:detail-rendered', { detail: { kind: 'work-project', id: project.id } }));
     };

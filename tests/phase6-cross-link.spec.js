@@ -137,6 +137,52 @@ test.describe('Phase 6 cross-link travel - desktop', () => {
     await expect(page.locator('.profile-crosslink-travel-overlay')).toHaveCount(0);
   });
 
+  test('Work connected-node control uses the visible two-stage bridge into Experience', async ({ page }) => {
+    await prepare(page);
+    await page.goto('/#work/project/social-workers-survey');
+    await page.waitForFunction(() => document.body.dataset.graphRoute === 'work/project/social-workers-survey');
+    await page.waitForFunction(() => Boolean(window.ProfileCrossLinkTravel));
+
+    const connected = page.locator('#site-detail-panel [data-crosslink-target="ceske-priority"]');
+    await expect(connected).toBeVisible();
+    await connected.click();
+
+    await page.waitForFunction(() => window.ProfileCrossLinkTravel?.snapshot().travelling === true);
+    await expect(page.locator('.profile-crosslink-travel-overlay')).toBeVisible();
+    await expect(page.locator('.profile-crosslink-trace.is-departure')).toHaveCount(1);
+    await page.waitForFunction(() => document.body.dataset.crossLinkTravel === 'arrive');
+    await expect(page.locator('.profile-crosslink-trace.is-arrival')).toHaveCount(1);
+    await page.waitForFunction(() => document.body.dataset.graphRoute === 'experience/ceske-priority');
+    const snapshot = await waitTravelComplete(page);
+
+    expect(snapshot.sourceId).toBe('project-social-workers-survey');
+    expect(snapshot.targetId).toBe('ceske-priority');
+    expect(snapshot.relationType).toBe('role-project');
+  });
+
+  test('Experience Related Work control uses the same visible bridge back into Work', async ({ page }) => {
+    await prepare(page);
+    await page.goto('/#experience/ceske-priority');
+    await page.waitForFunction(() => document.body.dataset.graphRoute === 'experience/ceske-priority');
+    await page.waitForFunction(() => Boolean(window.ProfileCrossLinkTravel && window.ProfilePhase8));
+
+    const connected = page.locator('[data-phase8-object="current-role-inspector"] [data-crosslink-target="project-social-workers-survey"]');
+    await expect(connected).toBeVisible();
+    await connected.click();
+
+    await page.waitForFunction(() => window.ProfileCrossLinkTravel?.snapshot().travelling === true);
+    await expect(page.locator('.profile-crosslink-travel-overlay')).toBeVisible();
+    await expect(page.locator('.profile-crosslink-trace.is-departure')).toHaveCount(1);
+    await page.waitForFunction(() => document.body.dataset.crossLinkTravel === 'arrive');
+    await expect(page.locator('.profile-crosslink-trace.is-arrival')).toHaveCount(1);
+    await page.waitForFunction(() => document.body.dataset.graphRoute === 'work/project/social-workers-survey');
+    const snapshot = await waitTravelComplete(page);
+
+    expect(snapshot.sourceId).toBe('ceske-priority');
+    expect(snapshot.targetId).toBe('project-social-workers-survey');
+    expect(snapshot.relationType).toBe('role-project');
+  });
+
   test('cross-section travel offers both a visible return action and Ctrl/Cmd+Z', async ({ page }) => {
     await prepare(page);
     await page.goto('/#experience/ceske-priority');

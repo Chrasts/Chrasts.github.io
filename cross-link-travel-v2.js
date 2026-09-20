@@ -526,6 +526,8 @@
 
     overlay.shell.dataset.phase = 'travel';
     document.body.dataset.crossLinkTravel = 'travel';
+    await wait(reducedMotion.matches ? 0 : 90);
+    if (id !== sequence || !state.travelling) return false;
     const destinationRoute = routeForNode(relation.target);
     location.hash = `#${normaliseRoute(destinationRoute)}`;
     const routeReady = await waitFor(() => normaliseRoute(document.body?.dataset.graphRoute) === normaliseRoute(destinationRoute), 3200);
@@ -625,14 +627,39 @@
     navigate(relationFromElement(anchor));
   });
 
+  const relationFromCrossLinkControl = control => {
+    const sourceId = control?.dataset?.crosslinkSource || currentSourceId();
+    const targetId = control?.dataset?.crosslinkTarget;
+    const type = control?.dataset?.crosslinkType || null;
+    if (!sourceId || !targetId) return null;
+    return relationsFor(sourceId).find(item =>
+      item.targetId === targetId &&
+      !['hierarchy', 'hierarchy-alt', 'work-lattice'].includes(item.type) &&
+      (!type || item.type === type)
+    ) || null;
+  };
+
+  document.addEventListener('click', event => {
+    if (document.body.dataset.graphMode === 'atlas' || state.travelling) return;
+    const control = event.target.closest?.('[data-crosslink-target]');
+    if (!control) return;
+    const relation = relationFromCrossLinkControl(control);
+    if (!relation) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    navigate(relation);
+  }, true);
+
+  // Compatibility fallback for older detail buttons which may survive in a
+  // cached DOM during a same-session renderer handoff.
   detail?.addEventListener('click', event => {
     if (document.body.dataset.graphMode === 'atlas' || state.travelling) return;
     const button = event.target.closest?.('.detail-node-list.is-secondary button[data-node-id]');
-    if (!button) return;
+    if (!button || button.dataset.crosslinkTarget) return;
     const sourceId = currentSourceId();
     const targetId = button.dataset.nodeId;
     const relation = relationsFor(sourceId).find(item =>
-      item.targetId === targetId && !['hierarchy', 'hierarchy-alt'].includes(item.type));
+      item.targetId === targetId && !['hierarchy', 'hierarchy-alt', 'work-lattice'].includes(item.type));
     if (!relation) return;
     event.preventDefault();
     event.stopImmediatePropagation();

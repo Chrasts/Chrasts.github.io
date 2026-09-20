@@ -156,20 +156,51 @@ test.describe('Education and Experience semantic geometry', () => {
     expect(safety).toBe(true);
     await expect(constellation.getByRole('button', { name: 'Open BSc thesis' })).toBeVisible();
     await expect(page.locator('.scene-detail')).toBeHidden();
-    const hudSafety = await page.evaluate(() => {
-      const routebar = document.querySelector('.graph-routebar')?.getBoundingClientRect();
-      const panel = document.querySelector('[data-phase8-object="bsc-course-constellation"]')?.getBoundingClientRect();
-      return routebar && panel ? panel.top - routebar.bottom : null;
+    const collisionState = await page.evaluate(() => {
+      const rect = selector => document.querySelector(selector)?.getBoundingClientRect()?.toJSON?.() || null;
+      const intersects = (a, b) => Boolean(a && b && a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top);
+      const panel = rect('[data-phase8-object="bsc-course-constellation"]');
+      const routebar = rect('.graph-routebar');
+      const quick = rect('.quick-overview-global-trigger:not([hidden])');
+      const atlas = rect('.atlas-button');
+      const root = rect('#site-graph .site-graph-node[data-node-id="stepan-chrast"]');
+      const breadcrumb = rect('#graph-breadcrumb');
+      return {
+        panelGap: routebar && panel ? panel.top - routebar.bottom : null,
+        panelQuick: intersects(panel, quick),
+        panelAtlas: intersects(panel, atlas),
+        rootBreadcrumb: intersects(root, breadcrumb)
+      };
     });
-    expect(hudSafety).not.toBeNull();
-    expect(hudSafety).toBeGreaterThanOrEqual(12);
+    expect(collisionState.panelGap).not.toBeNull();
+    expect(collisionState.panelGap).toBeGreaterThanOrEqual(12);
+    expect(collisionState.panelQuick).toBe(false);
+    expect(collisionState.panelAtlas).toBe(false);
+    expect(collisionState.rootBreadcrumb).toBe(false);
     await expect(page.locator('#graph-breadcrumb .graph-crumb').filter({ hasText: 'Education' })).toHaveAccessibleName('Return to Education overview');
 
-    // SVG evidence is a real keyboard control. It selects the matching BSc
-    // study area in the inspector without replacing the local BSc scene.
+    // All four SVG thematic nodes must respond to an ordinary pointer click,
+    // keep the BSc route stable, and reveal their own description/details.
+    const thematic = [
+      ['Logic & metalogic', /Formal languages, semantics, proof systems/i],
+      ['Mathematics & algebra', /Mathematical foundations supporting logic/i],
+      ['Computing & data', /Programming, algorithms, relational databases/i],
+      ['AI & philosophy', /Conceptual work around AI, cognition/i]
+    ];
+    for (let index = 0; index < thematic.length; index += 1) {
+      await graphEvidence.nth(index).click();
+      const active = constellation.locator('.phase8-bsc-cluster.is-active');
+      await expect(active).toHaveCount(1);
+      await expect(active).toContainText(thematic[index][0]);
+      await expect(active.locator('.phase8-bsc-cluster-description')).toBeVisible();
+      await expect(active.locator('.phase8-bsc-cluster-description')).toContainText(thematic[index][1]);
+      await expect(graphEvidence.nth(index)).toHaveClass(/is-evidence-active/);
+      await expect(page).toHaveURL(/#education\/charles-university$/);
+    }
+
+    // Keyboard activation retains the same contract and restores focus.
     await graphEvidence.first().focus();
     await page.keyboard.press('Enter');
-    await expect(constellation.locator('.phase8-bsc-cluster.is-active')).toHaveCount(1);
     await expect(constellation.locator('.phase8-bsc-cluster.is-active')).toContainText('Logic & metalogic');
     await expect(page).toHaveURL(/#education\/charles-university$/);
   });

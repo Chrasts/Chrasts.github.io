@@ -171,6 +171,9 @@
       select.addEventListener('click', event => {
         event.stopPropagation();
         selectBscEvidence(cluster.id);
+        window.dispatchEvent(new CustomEvent('profile:education-evidence-highlight', {
+          detail: { evidenceId: cluster.id }
+        }));
       });
       clusterElement.appendChild(select);
       if (cluster.description) clusterElement.appendChild(element('p', 'phase8-bsc-cluster-description', cluster.description));

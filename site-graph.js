@@ -1252,9 +1252,13 @@
           group.dataset.evidenceId = item.id;
           group.setAttribute('role', 'button');
           group.setAttribute('tabindex', '0');
-          const hit = document.createElementNS(svgNS, 'circle');
+          const hit = document.createElementNS(svgNS, 'rect');
           hit.classList.add('site-graph-evidence-hit');
-          hit.setAttribute('r', '14');
+          hit.setAttribute('x', '-14');
+          hit.setAttribute('y', '-16');
+          hit.setAttribute('width', '184');
+          hit.setAttribute('height', '40');
+          hit.setAttribute('rx', '8');
           hit.setAttribute('fill', 'transparent');
           hit.setAttribute('pointer-events', 'all');
           const dot = document.createElementNS(svgNS, 'circle');
@@ -1270,7 +1274,10 @@
           meta.setAttribute('x', '11'); meta.setAttribute('y', '16');
           const title = document.createElementNS(svgNS, 'title');
           group.append(hit, dot, label, meta, title);
-          const highlight = active => group.classList.toggle('is-evidence-active', active);
+          const highlight = active => {
+            const selected = group.dataset.evidenceSelected === 'true';
+            group.classList.toggle('is-evidence-active', Boolean(active || selected));
+          };
           group.addEventListener('mouseenter', () => highlight(true));
           group.addEventListener('mouseleave', () => highlight(false));
           group.addEventListener('focus', () => highlight(true));
@@ -1280,7 +1287,10 @@
             // Selecting one keeps the learner in the BSc fragment and makes
             // its corresponding inspector section explicit on the right.
             if (item.programmeId === 'charles-university') {
-              highlight(true);
+              renderer.semanticEvidence.forEach(candidate => {
+                candidate.dataset.evidenceSelected = candidate === group ? 'true' : 'false';
+                candidate.classList.toggle('is-evidence-active', candidate === group);
+              });
               window.dispatchEvent(new CustomEvent('profile:education-evidence-select', {
                 detail: { evidenceId: item.id, restoreFocus: Boolean(restoreFocus) }
               }));
@@ -1324,6 +1334,18 @@
         element.remove();
         renderer.semanticEvidence.delete(id);
       });
+
+      if (!renderer.__educationEvidenceHighlightBound) {
+        renderer.__educationEvidenceHighlightBound = true;
+        window.addEventListener('profile:education-evidence-highlight', event => {
+          const evidenceId = event.detail?.evidenceId || '';
+          renderer.semanticEvidence.forEach((candidate, id) => {
+            const selected = id === evidenceId;
+            candidate.dataset.evidenceSelected = selected ? 'true' : 'false';
+            candidate.classList.toggle('is-evidence-active', selected);
+          });
+        });
+      }
 
       const visibleIds = new Set(nodes.map(node => node.id));
       const edgeIds = new Set(edges.map(edgeKey));

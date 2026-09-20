@@ -360,8 +360,11 @@
     const semanticNodePriorities = new Map();
     const evidenceConstellation = [];
 
-    positions.set(rootId, mobile ? point(600, 78) : point(178, 108));
-    if (visible.has('education')) positions.set('education', mobile ? point(410, 204) : point(274, 278));
+    // Reserve the entire top HUD/breadcrumb lane. The root label extends
+    // above/right of its dot, so the desktop anchor needs materially more
+    // vertical clearance than a bare point collision test would suggest.
+    positions.set(rootId, mobile ? point(600, 78) : point(178, 176));
+    if (visible.has('education')) positions.set('education', mobile ? point(410, 204) : point(286, 300));
 
     const focal = mobile ? point(570, 360) : point(466, 332);
     if (selectedId !== 'education' && visible.has(selectedId)) {

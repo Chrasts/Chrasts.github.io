@@ -73,7 +73,9 @@
     const semanticNodeVariants = new Map();
     const semanticNodePriorities = new Map();
 
-    positions.set(rootId, mobile ? point(600, 78) : point(178, 108));
+    // The persistent ancestor root stays below the graph HUD/breadcrumb lane.
+    // This keeps the node and its halo from competing with route context.
+    positions.set(rootId, mobile ? point(600, 78) : point(178, 180));
     if (includes(nodes, 'experience')) positions.set('experience', mobile ? point(410, 204) : point(274, 278));
     if (roleId) {
       positions.set(roleId, mobile ? point(560, 354) : point(474, 338));

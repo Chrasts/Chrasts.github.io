@@ -39,7 +39,12 @@
 .phase8-experience-role{font-size:10px;line-height:1.2;color:var(--ink)}
 .phase8-experience-org{font-size:8px;line-height:1.15;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-.phase8-coursework[data-scene-placement="semantic-right-document"],.phase8-credentials[data-scene-placement="semantic-right-stack"],.phase8-esslli[data-scene-placement="semantic-right-timetable"],.phase8-prg-ai[data-scene-placement="semantic-right-route"],.phase8-bsc-evidence[data-scene-placement="semantic-right-evidence"],.phase8-current-role[data-scene-placement="semantic-right-role"],.phase8-msc-progress[data-scene-placement="semantic-right-msc"]{right:18px;top:106px!important;width:min(410px,36%);max-height:calc(100% - 132px);padding:17px;overflow:auto}
+@media (min-width:901px){
+  /* Permanent graph HUD safe zone: semantic side-stage objects must start below
+     the breadcrumb, Quick Overview and the enlarged Atlas affordance even before
+     SceneManager has applied a placement attribute. */
+  .phase8-coursework,.phase8-credentials,.phase8-esslli,.phase8-prg-ai,.phase8-bsc-evidence,.phase8-current-role,.phase8-msc-progress{right:24px;top:126px!important;width:min(410px,36%);max-height:calc(100% - 152px);padding:17px;overflow:auto}
+}
 
 .phase8-document-shelf{display:grid;gap:10px}
 .phase8-document{display:grid;grid-template-columns:minmax(0,1fr);gap:7px}
@@ -76,14 +81,23 @@
 .phase8-course-links{display:flex;flex-wrap:wrap;gap:4px 7px;margin-top:2px}
 .phase8-topic-link{font-size:7.5px;font-weight:700;color:var(--muted)}
 
-.phase8-bsc-evidence[data-scene-placement="semantic-right-evidence"]{width:min(470px,41%)}
+.phase8-bsc-evidence{width:min(470px,41%)}
+.phase8-bsc-overview{margin:-2px 0 15px;padding:0 7px 14px;border-bottom:1px solid color-mix(in srgb,var(--line) 82%,transparent)}
+.phase8-bsc-overview-meta{margin:0 0 7px;color:var(--teal);font:760 8px/1.3 var(--sans);letter-spacing:.055em;text-transform:uppercase}
+.phase8-bsc-overview-copy{margin:0;color:var(--text-soft);font-size:10px;line-height:1.55}
+.phase8-bsc-theme-heading{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:0 7px 7px}
+.phase8-bsc-theme-note{margin:0;max-width:245px;color:var(--muted);font-size:7.8px;line-height:1.35;text-align:right}
 .phase8-bsc-clusters{display:grid;grid-template-columns:1fr;gap:5px}
-.phase8-bsc-cluster{min-width:0;border-top:1px solid color-mix(in srgb,var(--line) 76%,transparent);padding:8px 7px}
+.phase8-bsc-cluster{min-width:0;border-top:1px solid color-mix(in srgb,var(--line) 76%,transparent);padding:9px 7px}
 .phase8-bsc-cluster-select{width:100%;border:0;padding:0;background:transparent;color:var(--brown);font:800 8px/1.3 var(--sans);letter-spacing:.08em;text-align:left;text-transform:uppercase;cursor:pointer}
 .phase8-bsc-cluster-select:hover,.phase8-bsc-cluster-select:focus-visible,.phase8-bsc-cluster.is-active .phase8-bsc-cluster-select{color:var(--teal);outline:none}
 .phase8-bsc-cluster.is-active{border-top-color:var(--teal);background:linear-gradient(90deg,color-mix(in srgb,var(--teal) 9%,transparent),transparent)}
-.phase8-bsc-course-list{display:none;margin:7px 0 8px;color:var(--text-soft);font-size:8.3px;line-height:1.52}
+.phase8-bsc-cluster-description{margin:5px 0 0;color:var(--muted);font-size:8.3px;line-height:1.45}
+.phase8-bsc-detail-label{display:none;margin:9px 0 3px;color:var(--brown);font:800 7px/1.2 var(--sans);letter-spacing:.08em;text-transform:uppercase}
+.phase8-bsc-related-label{margin-top:8px}
+.phase8-bsc-course-list{display:none;margin:0 0 7px;color:var(--text-soft);font-size:8.3px;line-height:1.52}
 .phase8-bsc-cluster .phase8-course-links{display:none}
+.phase8-bsc-cluster.is-active .phase8-bsc-detail-label{display:block}
 .phase8-bsc-cluster.is-active .phase8-bsc-course-list{display:block}
 .phase8-bsc-cluster.is-active .phase8-course-links{display:flex}
 
@@ -115,6 +129,11 @@
   .phase8-semantic-layer{z-index:12}
   .phase8-object[data-scene-placement="semantic-mobile-tray"]{left:10px;right:10px;top:auto;bottom:64px;width:auto;max-height:43vh;padding:12px 13px;overflow:hidden;transform:none}
   .phase8-object-header{margin-bottom:8px}
+  .phase8-object.phase8-bsc-evidence[data-scene-placement="semantic-mobile-tray"]{overflow:auto}
+  .phase8-bsc-theme-heading{align-items:flex-start;flex-direction:column;gap:3px}
+  .phase8-bsc-theme-note{max-width:none;text-align:left}
+  .phase8-bsc-overview-copy{font-size:8.5px}
+  .phase8-bsc-cluster-description{font-size:7.5px}
   .phase8-object-title{font-size:15px}
   .phase8-experience-rail{gap:6px;padding-top:12px}
   .phase8-experience-item{padding:7px 5px}

@@ -144,6 +144,9 @@ test.describe('Education and Experience semantic geometry', () => {
     const constellation = page.locator('[data-phase8-object="bsc-course-constellation"]');
     await expect(constellation).toBeVisible();
     await expect(constellation.locator('.phase8-bsc-cluster')).toHaveCount(4);
+    await expect(constellation.locator('.phase8-bsc-overview-copy')).toContainText('Mathematical logic');
+    await expect(constellation.locator('.phase8-bsc-cluster-description')).toHaveCount(4);
+    await expect(constellation.locator('.phase8-bsc-cluster.is-active')).toHaveCount(0);
     const graphEvidence = page.locator('#site-graph .site-graph-evidence-object');
     await expect(graphEvidence).toHaveCount(4);
     await expect(page.locator('#site-graph [data-semantic-guide="education-trajectory"]')).toHaveCount(0);
@@ -153,6 +156,13 @@ test.describe('Education and Experience semantic geometry', () => {
     expect(safety).toBe(true);
     await expect(constellation.getByRole('button', { name: 'Open BSc thesis' })).toBeVisible();
     await expect(page.locator('.scene-detail')).toBeHidden();
+    const hudSafety = await page.evaluate(() => {
+      const routebar = document.querySelector('.graph-routebar')?.getBoundingClientRect();
+      const panel = document.querySelector('[data-phase8-object="bsc-course-constellation"]')?.getBoundingClientRect();
+      return routebar && panel ? panel.top - routebar.bottom : null;
+    });
+    expect(hudSafety).not.toBeNull();
+    expect(hudSafety).toBeGreaterThanOrEqual(12);
     await expect(page.locator('#graph-breadcrumb .graph-crumb').filter({ hasText: 'Education' })).toHaveAccessibleName('Return to Education overview');
 
     // SVG evidence is a real keyboard control. It selects the matching BSc

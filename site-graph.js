@@ -1411,6 +1411,13 @@
         }
       });
 
+      // New local nodes can be appended during the same render. Re-append the
+      // thematic controls afterwards so they remain the final/topmost SVG
+      // interaction plane for ordinary pointer input.
+      renderer.semanticEvidence.forEach(element => {
+        if (desiredEvidence.has(element.dataset.evidenceId)) renderer.nodes.appendChild(element);
+      });
+
       const leavingNodes = [...renderer.nodeElements].filter(([id]) => !visibleIds.has(id));
       const edgeStarts = new Map(), edgeTargets = new Map(), enteringEdges = new Set();
 

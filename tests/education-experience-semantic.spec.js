@@ -154,7 +154,7 @@ test.describe('Education and Experience semantic geometry', () => {
       await expect(graphEvidence.nth(index).locator('.site-graph-evidence-hit')).toHaveAttribute('width', '220');
     }
     await expect(page.locator('#site-graph [data-semantic-guide="education-trajectory"]')).toHaveCount(0);
-    await expect(graphEvidence.first()).toHaveAttribute('aria-label', /Verified completed coursework group/);
+    await expect(graphEvidence.first()).toHaveAttribute('aria-label', /BSc thematic area/);
     const safety = await page.evaluate(() => window.SITE_DATA.semantics.education.courseEvidence
       .every(course => ['completed', 'recognized'].includes(course.status)));
     expect(safety).toBe(true);

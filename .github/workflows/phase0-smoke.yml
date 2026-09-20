@@ -89,7 +89,7 @@ jobs:
             tests/phase-k-checkpoint.spec.js tests/motion-polish.spec.js tests/intro-unfold.spec.js \
             tests/phase6-cross-link.spec.js tests/interaction-consolidation.spec.js tests/interaction-contracts.spec.js \
             tests/phase7-atlas-drag.spec.js tests/pre-phase8-mobile.spec.js tests/mobile-device-matrix.spec.js \
-            tests/phase8-semantic-scenes.spec.js tests/artifact-scenes.spec.js tests/artifact-viewer-v2.spec.js \
+            tests/phase8-semantic-scenes.spec.js tests/education-experience-semantic.spec.js tests/artifact-scenes.spec.js tests/artifact-viewer-v2.spec.js \
             tests/post-profile-root-artifact-open.spec.js tests/object-focus.spec.js \
             tests/object-focus-fit.spec.js tests/camera-composition.spec.js tests/camera-composition-local.spec.js \
             tests/graph-feel.spec.js tests/node-dynamics.spec.js tests/camera-materiality.spec.js

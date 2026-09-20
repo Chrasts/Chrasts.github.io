@@ -195,7 +195,11 @@ test.describe('Education and Experience semantic geometry', () => {
       ['AI & philosophy', /Conceptual work around AI, cognition/i]
     ];
     for (let index = 0; index < thematic.length; index += 1) {
-      await graphEvidence.nth(index).click();
+      const box = await graphEvidence.nth(index).boundingBox();
+      expect(box).not.toBeNull();
+      await page.mouse.move(box.x + Math.min(28, box.width / 3), box.y + box.height / 2);
+      await page.mouse.down();
+      await page.mouse.up();
       const active = constellation.locator('.phase8-bsc-cluster.is-active');
       await expect(active).toHaveCount(1);
       await expect(active).toContainText(thematic[index][0]);

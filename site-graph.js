@@ -993,6 +993,11 @@
 
       renderer.svg.addEventListener('pointerdown', event => {
         if (event.button !== 0) return;
+        // Semantic evidence objects are real controls. Pointer capture on the
+        // parent SVG retargets the click on physical mouse/touch input, which
+        // made the four BSc thematic nodes look hoverable but not selectable.
+        // Never start graph panning from an interactive evidence control.
+        if (event.target.closest?.('.site-graph-evidence-object')) return;
         const atlasDrag = state.mode === 'atlas' && !window.ProfileAtlasLOD?.ownsDesktopInput?.();
         const localDrag = state.mode === 'focus' && Boolean(renderer.lastLayout?.semanticKind);
         if (!atlasDrag && !localDrag) return;
@@ -1282,6 +1287,13 @@
           group.addEventListener('mouseleave', () => highlight(false));
           group.addEventListener('focus', () => highlight(true));
           group.addEventListener('blur', () => highlight(false));
+          group.addEventListener('pointerdown', event => {
+            if (event.button !== 0) return;
+            // Keep this gesture owned by the thematic control rather than the
+            // local graph camera. Do not preventDefault: the subsequent click
+            // remains the canonical activation event.
+            event.stopPropagation();
+          });
           const activate = restoreFocus => {
             // BSc evidence objects name course areas, not separate routes.
             // Selecting one keeps the learner in the BSc fragment and makes

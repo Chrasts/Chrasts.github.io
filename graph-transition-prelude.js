@@ -1,6 +1,7 @@
 (() => {
   const site = window.SITE_DATA;
   const graphNodes = site?.graph?.nodes || [];
+  const graphEdges = site?.graph?.edges || [];
   const graphNodeMap = new Map(graphNodes.map(node => [node.id, node]));
   const childrenFor = id => graphNodes.filter(node => node.parentIds?.includes(id));
   const normaliseRoute = value =>
@@ -245,6 +246,34 @@
         links.appendChild(anchor);
       });
       panel.append(linksHeading, links);
+    }
+
+    const projectNodeId = `project-${project.id}`;
+    const connected = graphEdges
+      .filter(edge => edge.source === projectNodeId || edge.target === projectNodeId)
+      .filter(edge => !['hierarchy', 'hierarchy-alt', 'work-lattice', 'skill-metadata'].includes(edge.type))
+      .map(edge => {
+        const targetId = edge.source === projectNodeId ? edge.target : edge.source;
+        return { edge, node: graphNodeMap.get(targetId) };
+      })
+      .filter(entry => entry.node?.route);
+    if (connected.length) {
+      const connectedHeading = document.createElement('p');
+      connectedHeading.className = 'detail-list-title';
+      connectedHeading.textContent = 'Connected in the profile';
+      const connectedList = document.createElement('div');
+      connectedList.className = 'detail-node-list is-secondary';
+      connected.forEach(({ edge, node }) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = node.detailLabel || node.label;
+        button.dataset.nodeId = node.id;
+        button.dataset.crosslinkTarget = node.id;
+        button.dataset.crosslinkType = edge.type;
+        button.dataset.route = node.route;
+        connectedList.appendChild(button);
+      });
+      panel.append(connectedHeading, connectedList);
     }
 
     const route = `work/project/${project.id}`;

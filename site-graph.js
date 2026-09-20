@@ -2136,7 +2136,7 @@
       title.textContent = state.mode === 'overview'
         ? 'Explore the profile'
         : state.mode === 'atlas'
-          ? 'Full profile graph'
+          ? 'Atlas'
           : state.mode === 'work'
             ? 'Work'
             : target.label;

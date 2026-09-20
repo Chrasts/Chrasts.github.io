@@ -13,7 +13,6 @@
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let brief = null;
   let globalQuickTrigger = null;
-  let entryFastPath = null;
   let quickDialog = null;
   let lastFocus = null;
   let pendingFocusRestore = null;
@@ -48,11 +47,6 @@
     if (!mode() || !(introStable() || lateReveal())) return false;
     return mode() !== 'overview' || rootLanding() === 'false' || lateReveal();
   };
-  const entryFastPathActive = () =>
-    mode() === 'atlas' &&
-    document.body?.dataset.entryState === 'ready' &&
-    introState() === 'ATLAS_READY' &&
-    !document.body?.classList.contains('is-root-entry-committing');
   const legacyRootNeedsRetirement = () => mode() === 'overview' && rootLanding() === 'true' && introStable();
   const track = name => { try { window.umami?.track?.(name); } catch (_) {} };
 
@@ -170,43 +164,6 @@
     if (atlas) routebar.insertBefore(globalQuickTrigger, atlas);
     else routebar.appendChild(globalQuickTrigger);
     return globalQuickTrigger;
-  };
-
-  const ensureEntryFastPath = () => {
-    if (entryFastPath?.isConnected) return entryFastPath;
-    const host = document.querySelector('.scene-canvas') || document.querySelector('#site-explorer');
-    if (!host) return null;
-
-    entryFastPath = element('nav', 'entry-fast-path');
-    entryFastPath.hidden = true;
-    entryFastPath.dataset.entryFastPath = 'true';
-    entryFastPath.setAttribute('aria-label', 'Professional shortcuts');
-
-    const quick = element('button', 'entry-fast-path-quick', 'Quick overview');
-    quick.type = 'button';
-    quick.setAttribute('aria-haspopup', 'dialog');
-    quick.addEventListener('click', () => openQuickOverview('entry-atlas'));
-    entryFastPath.appendChild(quick);
-
-    const cv = makeCvLink('entry-fast-path-link entry-fast-path-cv');
-    entryFastPath.appendChild(cv);
-
-    for (const label of ['GitHub', 'LinkedIn']) {
-      const data = profileLink(label);
-      if (!data?.href) continue;
-      const link = element('a', 'entry-fast-path-link', label);
-      link.href = data.href;
-      link.target = '_blank';
-      link.rel = 'noreferrer';
-      entryFastPath.appendChild(link);
-    }
-
-    const email = element('a', 'entry-fast-path-link', 'Email');
-    email.href = `mailto:${profile.email}`;
-    entryFastPath.appendChild(email);
-
-    host.appendChild(entryFastPath);
-    return entryFastPath;
   };
 
   const appendFact = (container, label, value) => {
@@ -330,7 +287,7 @@
     if (!dialog || !quickAvailable()) return false;
     lastFocus = document.activeElement instanceof HTMLElement
       ? document.activeElement
-      : (entryFastPath?.querySelector('.entry-fast-path-quick') || globalQuickTrigger || brief?.querySelector('.profile-root-quick-trigger'));
+      : (globalQuickTrigger || brief?.querySelector('.profile-root-quick-trigger'));
     pendingFocusRestore = null;
     if (!dialog.open) dialog.showModal();
     document.body.classList.add('is-quick-overview-open');
@@ -376,19 +333,6 @@
         exit: 'utility-out'
       });
     }
-    if (!scene.registry.has('profile-entry-fast-path')) {
-      scene.registry.register({
-        id: 'profile-entry-fast-path',
-        selector: '.entry-fast-path',
-        managedVisibility: false,
-        visible: () => entryFastPathActive(),
-        anchorNodeId: rootId,
-        placement: 'entry-fast-path',
-        composition: { zone: 'unmanaged', role: 'professional-shortcuts' },
-        enter: 'utility-in',
-        exit: 'utility-out'
-      });
-    }
     if (!scene.registry.has('profile-quick-overview')) {
       scene.registry.register({
         id: 'profile-quick-overview',
@@ -426,7 +370,6 @@
   const sync = (reason = 'sync') => {
     ensureBrief();
     ensureGlobalQuickTrigger();
-    ensureEntryFastPath();
     ensureQuickDialog();
     registerSceneObjects();
     markBranches();
@@ -435,7 +378,6 @@
     const profileVisible = overviewActive();
     if (brief) brief.hidden = !profileVisible;
     if (globalQuickTrigger) globalQuickTrigger.hidden = !quickAvailable() || profileVisible;
-    if (entryFastPath) entryFastPath.hidden = !entryFastPathActive();
     document.body.classList.toggle('is-profile-root-ready', profileVisible);
     if (profileVisible) {
       document.body.dataset.entryState = 'profile';
@@ -490,7 +432,7 @@
   function snapshot() {
     const root = document.querySelector(`#site-graph .site-graph-node[data-node-id="${CSS.escape(rootId)}"]`);
     return {
-      ready: Boolean(brief?.isConnected && globalQuickTrigger?.isConnected && entryFastPath?.isConnected && quickDialog?.isConnected),
+      ready: Boolean(brief?.isConnected && globalQuickTrigger?.isConnected && quickDialog?.isConnected),
       visible: overviewActive() && !brief?.hidden,
       quickAvailable: quickAvailable(),
       route: route(),
@@ -501,8 +443,6 @@
       legacyRetiredByPhaseH,
       quickOpen: Boolean(quickDialog?.open),
       globalQuickVisible: Boolean(globalQuickTrigger?.isConnected && !globalQuickTrigger.hidden),
-      entryFastPathVisible: Boolean(entryFastPath?.isConnected && !entryFastPath.hidden),
-      entryFastPathLinkCount: entryFastPath?.querySelectorAll('a').length || 0,
       branchCount: sections.filter(id => document.querySelector(`#site-graph .site-graph-node[data-node-id="${CSS.escape(id)}"][data-profile-root-branch="true"]`)).length,
       rootPresent: Boolean(root),
       rootMaterial: root?.dataset.rootEntryMaterial || null,

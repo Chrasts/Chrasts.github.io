@@ -46,7 +46,7 @@
     document.head.appendChild(guard);
   }
 
-  const releaseRevision = '20260920-fastpath1';
+  const releaseRevision = '20260920-header1';
   const versionedResource = resource =>
     `${resource}${resource.includes('?') ? '&' : '?'}v=${releaseRevision}`;
 
@@ -93,12 +93,10 @@
       atlas.className = 'root-atlas-affordance';
       atlas.dataset.route = 'atlas';
       atlas.disabled = true;
-      atlas.setAttribute('aria-label', 'Explore Atlas, the full profile graph');
+      atlas.setAttribute('aria-label', 'Explore Atlas');
       const label = document.createElement('span');
       label.textContent = 'Explore Atlas';
-      const note = document.createElement('small');
-      note.textContent = 'Full graph';
-      atlas.append(label, note);
+      atlas.append(label);
       links.after(atlas);
     }
   };

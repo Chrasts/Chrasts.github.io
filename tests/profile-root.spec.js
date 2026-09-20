@@ -95,57 +95,33 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
     expect(await page.evaluate(() => window.ProfileRootOverview.snapshot().visible)).toBe(false);
   });
 
-  test('ATLAS_READY exposes the recruiter fast path without changing Atlas state', async ({ page }) => {
+  test('ATLAS_READY keeps professional shortcuts in the persistent header only', async ({ page }) => {
     await page.addInitScript(() => sessionStorage.removeItem('profileIntroSeen'));
     await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
     await page.goto('/');
     await page.waitForFunction(() => window.ProfileIntro?.snapshot?.().state === 'ATLAS_READY', null, { timeout: 8_000 });
-    await page.waitForFunction(() => window.ProfileRootOverview?.snapshot?.().quickAvailable === true);
 
-    const before = await page.evaluate(() => ({
-      route: document.body.dataset.graphRoute,
-      mode: document.body.dataset.graphMode,
-      camera: window.ProfileAtlasLOD?.snapshot?.().camera || null,
-      condensation: window.ProfileAtlasCondensation?.snapshot?.().state || null
-    }));
-    expect(before.mode).toBe('atlas');
-    await expect(page.locator('.profile-root-brief')).toBeHidden();
+    expect(await page.evaluate(() => document.body.dataset.graphMode)).toBe('atlas');
+    await expect(page.locator('.entry-fast-path')).toHaveCount(0);
     await expect(page.locator('.quick-overview-global-trigger')).toBeHidden();
 
-    const fastPath = page.locator('.entry-fast-path');
-    await expect(fastPath).toBeVisible();
-    await expect(fastPath.getByRole('button', { name: 'Quick overview' })).toBeVisible();
-    await expect(fastPath.getByRole('link', { name: 'CV' })).toHaveAttribute('href', '/cv/');
-    await expect(fastPath.getByRole('link', { name: 'GitHub' })).toHaveAttribute('href', 'https://github.com/Chrasts');
-    await expect(fastPath.getByRole('link', { name: 'LinkedIn' })).toHaveAttribute('href', 'https://www.linkedin.com/in/stepan-chrast');
-    await expect(fastPath.getByRole('link', { name: 'Email' })).toHaveAttribute('href', /^mailto:/);
+    const header = page.locator('body > .site-header.app-header');
+    await expect(header).toBeVisible();
+    await expect(header.getByRole('link', { name: 'CV' })).toHaveAttribute('href', '/cv/');
+    await expect(header.getByRole('link', { name: 'GitHub ↗' })).toHaveAttribute('href', 'https://github.com/Chrasts');
+    await expect(header.getByRole('link', { name: 'LinkedIn ↗' })).toHaveAttribute('href', 'https://www.linkedin.com/in/stepan-chrast');
+    await expect(header.getByRole('link', { name: 'Email' })).toHaveAttribute('href', /^mailto:/);
 
-    const quick = fastPath.getByRole('button', { name: 'Quick overview' });
-    await quick.focus();
-    await quick.click();
-    await expect(page.locator('.quick-overview-dialog')).toBeVisible();
-    await page.keyboard.press('Escape');
-    await expect(page.locator('.quick-overview-dialog')).toBeHidden();
-    await expect(quick).toBeFocused();
-
-    await page.waitForTimeout(220);
-    const after = await page.evaluate(() => ({
-      route: document.body.dataset.graphRoute,
-      mode: document.body.dataset.graphMode,
-      camera: window.ProfileAtlasLOD?.snapshot?.().camera || null,
-      condensation: window.ProfileAtlasCondensation?.snapshot?.().state || null
+    const headerStyle = await header.evaluate(element => ({
+      background: getComputedStyle(element).backgroundColor,
+      shadow: getComputedStyle(element).boxShadow
     }));
-    expect(after.route).toBe(before.route);
-    expect(after.mode).toBe('atlas');
-    expect(after.condensation).toBe(before.condensation);
-    if (before.camera && after.camera) {
-      expect(after.camera.x).toBeCloseTo(before.camera.x, 4);
-      expect(after.camera.y).toBeCloseTo(before.camera.y, 4);
-      expect(after.camera.scale).toBeCloseTo(before.camera.scale, 4);
-    }
-    const recruiterState = await page.evaluate(() => window.ProfileRootOverview.snapshot());
-    expect(recruiterState.entryFastPathVisible).toBe(true);
-    expect(recruiterState.entryFastPathLinkCount).toBeGreaterThanOrEqual(4);
+    expect(headerStyle.background).not.toBe('rgba(0, 0, 0, 0)');
+    expect(headerStyle.shadow).not.toBe('none');
+
+    await expect(page.locator('#site-graph-title')).toHaveText('Atlas');
+    await expect(page.locator('.atlas-button')).toHaveText('Atlas');
+    await expect(page.locator('.atlas-button')).toHaveAttribute('aria-label', 'Open Atlas');
   });
 });
 

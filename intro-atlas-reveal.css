@@ -391,3 +391,50 @@ body.is-atlas-reveal #site-graph .atlas-territory-label-layer{
     transition:none!important
   }
 }
+
+
+/* The opening Atlas uses the persistent header as its only professional
+   shortcut surface. Keep CV/contact/social links visible and give that single
+   navigation surface more visual authority instead of duplicating it below. */
+body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header.app-header{
+  width:min(1460px,calc(100% - 28px));
+  padding-inline:10px;
+  border-bottom-color:color-mix(in srgb,var(--brown) 28%,var(--line));
+  background:color-mix(in srgb,var(--paper) 96%,transparent);
+  box-shadow:0 8px 26px color-mix(in srgb,var(--ink) 7%,transparent);
+  backdrop-filter:blur(14px)
+}
+body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .brand{
+  font-weight:820
+}
+body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header nav a{
+  font-weight:700
+}
+body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header nav a[aria-current="page"]{
+  font-weight:820
+}
+body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-utility{
+  min-height:32px;
+  display:inline-flex;
+  align-items:center;
+  padding:0 9px;
+  border:1px solid color-mix(in srgb,var(--teal) 28%,var(--line));
+  border-radius:999px;
+  background:color-mix(in srgb,var(--teal) 4%,var(--paper));
+  font-weight:760
+}
+body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-utility:hover,
+body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-utility:focus-visible{
+  border-color:color-mix(in srgb,var(--teal) 62%,var(--line));
+  background:color-mix(in srgb,var(--teal) 9%,var(--paper))
+}
+@media(max-width:900px){
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-utility{
+    display:none
+  }
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .menu-button{
+    border-color:color-mix(in srgb,var(--teal) 55%,var(--line));
+    background:color-mix(in srgb,var(--teal) 7%,var(--paper));
+    font-weight:760
+  }
+}

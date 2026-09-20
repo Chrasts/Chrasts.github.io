@@ -136,11 +136,6 @@
     element('p', 'phase8-bsc-overview-meta', bscNode?.meta || 'Completed degree'),
     element('p', 'phase8-bsc-overview-copy', bscNode?.programmeOverview || bscNode?.summary || '')
   );
-  const bscThemeHeading = element('div', 'phase8-bsc-theme-heading');
-  bscThemeHeading.append(
-    element('p', 'phase8-eyebrow', 'Thematic areas'),
-    element('p', 'phase8-bsc-theme-note', 'Select an area to inspect completed courses and related Knowledge.')
-  );
   const bscClusters = element('div', 'phase8-bsc-clusters');
   let activeBscEvidenceId = null;
   const selectBscEvidence = (evidenceId, { restoreFocus = false } = {}) => {
@@ -202,7 +197,7 @@
   if (bscData?.thesisNodeId && nodeMap.has(bscData.thesisNodeId)) {
     bscActions.appendChild(routeControl('Open BSc thesis', bscData.thesisNodeId, 'phase8-route-link', { crossLink: 'thesis-of' }));
   }
-  bsc.append(bscOverview, bscThemeHeading, bscClusters, bscActions);
+  bsc.append(bscOverview, bscClusters, bscActions);
   layer.appendChild(bsc);
   window.addEventListener('profile:education-evidence-select', event => {
     selectBscEvidence(event.detail?.evidenceId, { restoreFocus: Boolean(event.detail?.restoreFocus) });

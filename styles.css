@@ -1811,17 +1811,19 @@ html.is-theme-transitioning body *::after{
 /* Active primary navigation borrows a single graph terminal. Inactive nav
    remains plain text to keep the graph vocabulary sparse rather than decorative. */
 .site-header #main-nav > a{
-  position:relative
+  position:relative;
+  padding-left:0;
+  font-weight:650
 }
 .site-header #main-nav > a[aria-current="page"]{
-  padding-left:18px;
+  padding-left:0;
   color:var(--ink);
-  font-weight:790
+  font-weight:650
 }
 .site-header #main-nav > a[aria-current="page"]::before{
   content:"";
   position:absolute;
-  left:0;
+  left:-15px;
   top:50%;
   width:6px;
   height:6px;
@@ -1832,12 +1834,23 @@ html.is-theme-transitioning body *::after{
 .site-header #main-nav > a[aria-current="page"]::after{
   content:"";
   position:absolute;
-  left:7px;
+  left:-8px;
   top:50%;
-  width:7px;
+  width:6px;
   height:1px;
   background:var(--ink);
   transform:translateY(-50%)
+}
+@media(max-width:1180px) and (min-width:901px){
+  .site-header #main-nav > a[aria-current="page"]::before{
+    left:-8px;
+    width:4px;
+    height:4px
+  }
+  .site-header #main-nav > a[aria-current="page"]::after{
+    left:-3px;
+    width:3px
+  }
 }
 
 .header-topology-marker{
@@ -2294,5 +2307,11 @@ body[data-graph-mode="overview"] .detail-node-list button{
 }
 .site-header #main-nav > a[aria-current="page"]:hover::after,
 .site-header #main-nav > a[aria-current="page"]:focus-visible::after{
-  width:11px
+  width:8px
+}
+@media(max-width:1180px) and (min-width:901px){
+  .site-header #main-nav > a[aria-current="page"]:hover::after,
+  .site-header #main-nav > a[aria-current="page"]:focus-visible::after{
+    width:3px
+  }
 }

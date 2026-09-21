@@ -297,3 +297,25 @@ test('Profile overview keeps one identity name and separates prominent Profile b
   expect(quickBox.height).toBeGreaterThanOrEqual(54);
   expect(quickBox.y + quickBox.height).toBeLessThanOrEqual(actionsBox.y + 2);
 });
+
+
+test('top navigation active marker never shifts the route labels', async ({ page }) => {
+  await bootOverview(page);
+  const positions = async () => page.locator('#main-nav > a[data-route]').evaluateAll(items =>
+    Object.fromEntries(items.map(item => [item.dataset.route, {
+      x: item.getBoundingClientRect().x,
+      width: item.getBoundingClientRect().width
+    }]))
+  );
+
+  const before = await positions();
+  await page.locator('#main-nav > a[data-route="work"]').click();
+  await page.waitForFunction(() => document.body.dataset.graphRoute === 'work');
+  await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
+  const after = await positions();
+
+  for (const route of Object.keys(before)) {
+    expect(Math.abs(after[route].x - before[route].x)).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(after[route].width - before[route].width)).toBeLessThanOrEqual(0.5);
+  }
+});

@@ -95,6 +95,26 @@ test('focused CV keeps the established compact graph-native visual language', as
   expect(positioningColor).not.toBe(linkColor);
 });
 
+test('focused CV separates sections and entries with restrained structural rules', async ({ page }) => {
+  await page.goto('/cv/?view=data-analysis');
+
+  const sectionStyle = await page.locator('.cv-section-projects').evaluate(element => ({
+    borderTopWidth: parseFloat(getComputedStyle(element).borderTopWidth),
+    borderTopColor: getComputedStyle(element).borderTopColor
+  }));
+  expect(sectionStyle.borderTopWidth).toBeGreaterThan(0);
+  expect(sectionStyle.borderTopColor).not.toBe('rgba(0, 0, 0, 0)');
+
+  const itemStyle = await page.locator('.cv-section-projects > .cv-item').first().evaluate(element => ({
+    borderLeftWidth: parseFloat(getComputedStyle(element).borderLeftWidth),
+    backgroundColor: getComputedStyle(element).backgroundColor,
+    paddingLeft: parseFloat(getComputedStyle(element).paddingLeft)
+  }));
+  expect(itemStyle.borderLeftWidth).toBeGreaterThan(0);
+  expect(itemStyle.backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+  expect(itemStyle.paddingLeft).toBeGreaterThanOrEqual(13);
+});
+
 test('CV top utilities expose visible graph-native hover feedback', async ({ page }) => {
   await page.goto('/cv/?view=data-analysis');
   const portfolio = page.getByRole('link', { name: 'Interactive portfolio' });

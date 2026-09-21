@@ -29,7 +29,7 @@
       key: 'data-analysis',
       name: 'Data Analysis CV',
       positioning: 'Data analysis · Applied research · Reproducible workflows',
-      summary: 'Data analyst and researcher working with Python-based analysis, data validation, survey research, visualisation and reproducible reporting.',
+      summary: 'Data analyst and researcher working with Python-based analysis, data validation, visualisation and reproducible reporting.',
       projectIds: ['social-workers-survey', 'insolvency', 'film-splitter', 'sql-schema'],
       experienceIds: ['ceske-priority'],
       areaIds: ['data-analysis', 'statistics', 'survey-analysis', 'data-qa', 'visualisation', 'programming-automation', 'data-modelling'],

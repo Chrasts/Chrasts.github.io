@@ -87,6 +87,69 @@ test.describe('Intro entry experience master contract', () => {
     expect(Math.abs(reveal.actionsRight - ready.actionsRight)).toBeLessThan(2);
   });
 
+  test('opening Atlas header gives every text item its own empty terminal lane', async ({ page }) => {
+    await bootFreshReady(page);
+
+    const state = await page.evaluate(() => {
+      const navItems = [...document.querySelectorAll('#main-nav > a')];
+      const utilityItems = [...document.querySelectorAll('.header-practical-actions .graph-control')]
+        .filter(item => getComputedStyle(item).display !== 'none');
+      const all = [...navItems, ...utilityItems];
+
+      const terminal = element => {
+        const before = getComputedStyle(element, '::before');
+        const after = getComputedStyle(element, '::after');
+        const style = getComputedStyle(element);
+        return {
+          text: element.textContent.trim(),
+          paddingLeft: parseFloat(style.paddingLeft),
+          nodeWidth: parseFloat(before.width),
+          nodeBorder: parseFloat(before.borderLeftWidth),
+          nodeBackground: before.backgroundColor,
+          lineWidth: parseFloat(after.width),
+          lineLeft: parseFloat(after.left)
+        };
+      };
+
+      const atlas = navItems.find(item => item.dataset.route === 'atlas');
+      const brief = utilityItems.find(item => item.classList.contains('header-quick-overview'));
+      const atlasBox = atlas.getBoundingClientRect();
+      const briefBox = brief.getBoundingClientRect();
+
+      return {
+        terminals: all.map(terminal),
+        atlasRight: atlasBox.right,
+        briefLeft: briefBox.left,
+        paper: getComputedStyle(document.documentElement).getPropertyValue('--paper').trim(),
+        atlasCurrent: atlas.getAttribute('aria-current')
+      };
+    });
+
+    expect(state.terminals.length).toBeGreaterThanOrEqual(9);
+    state.terminals.forEach(item => {
+      expect(item.paddingLeft).toBeGreaterThanOrEqual(22);
+      expect(item.nodeWidth).toBeGreaterThanOrEqual(6);
+      expect(item.nodeBorder).toBeGreaterThan(0);
+      expect(item.lineWidth).toBeGreaterThanOrEqual(7);
+      expect(item.lineLeft).toBeGreaterThan(item.nodeWidth);
+    });
+    expect(state.briefLeft - state.atlasRight).toBeGreaterThanOrEqual(5);
+
+    const work = page.locator('#main-nav > a[data-route="work"]');
+    const before = await work.evaluate(element => ({
+      node: getComputedStyle(element, '::before').backgroundColor,
+      line: parseFloat(getComputedStyle(element, '::after').width)
+    }));
+    await work.hover();
+    const after = await work.evaluate(element => ({
+      node: getComputedStyle(element, '::before').backgroundColor,
+      line: parseFloat(getComputedStyle(element, '::after').width)
+    }));
+
+    expect(after.node).not.toBe(before.node);
+    expect(after.line).toBeGreaterThan(before.line);
+  });
+
   test('fresh reveal retains one bounds-driven camera and the full topology through ATLAS_READY', async ({ page }) => {
     await bootFreshReady(page);
     const state = await page.evaluate(() => {

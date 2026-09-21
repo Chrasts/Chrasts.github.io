@@ -18,7 +18,7 @@
       if (document.querySelector(`link[${marker}]`)) return;
       const link = document.createElement('link');
       link.rel = 'stylesheet';
-      link.href = href;
+      link.href = `${href}?v=20260921-dossier2`;
       link.media = '(max-width: 900px)';
       link.setAttribute(marker, 'true');
       document.head.appendChild(link);
@@ -31,7 +31,7 @@
       if (!mobileViewport.matches) return;
       if (!document.querySelector('script[data-profile-mobile-app]')) {
         const script = document.createElement('script');
-        script.src = 'mobile-app.js';
+        script.src = 'mobile-app.js?v=20260921-dossier2';
         script.dataset.profileMobileApp = 'true';
         document.body.appendChild(script);
       }
@@ -221,7 +221,7 @@
 
     const tech = document.createElement('p');
     tech.className = 'detail-meta';
-    tech.textContent = project.tech.join(' · ');
+    tech.textContent = project.tech.join(' / ');
     panel.appendChild(tech);
 
     if (project.note) {

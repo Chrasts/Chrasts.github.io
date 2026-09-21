@@ -8,7 +8,7 @@
     if (!button || button.dataset.phase7V2Decorated === 'true') return false;
     button.dataset.phase7V2Decorated = 'true';
     button.classList.add('atlas-entry-v7');
-    button.setAttribute('aria-label', 'Open Atlas, the full profile map');
+    button.setAttribute('aria-label', 'Open Atlas');
     button.replaceChildren();
     const glyph = document.createElementNS(svgNS, 'svg');
     glyph.classList.add('atlas-entry-glyph');

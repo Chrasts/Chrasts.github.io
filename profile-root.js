@@ -170,7 +170,7 @@
     if (globalQuickTrigger?.isConnected) return globalQuickTrigger;
     const routebar = document.querySelector('.graph-routebar');
     if (!routebar) return null;
-    globalQuickTrigger = element('button', 'quick-overview-global-trigger', 'Quick overview');
+    globalQuickTrigger = element('button', 'quick-overview-global-trigger graph-control graph-control--primary', 'Quick overview');
     globalQuickTrigger.type = 'button';
     globalQuickTrigger.hidden = true;
     globalQuickTrigger.setAttribute('aria-haspopup', 'dialog');

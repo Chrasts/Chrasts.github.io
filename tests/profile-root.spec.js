@@ -157,6 +157,19 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
     await expect(page.locator('#site-graph-title')).toHaveText('Atlas');
     await expect(page.locator('.atlas-button')).toHaveText('Atlas');
     await expect(page.locator('.atlas-button')).toHaveAttribute('aria-label', 'Open Atlas');
+
+    const routebarStyle = await page.locator('.graph-breadcrumb').evaluate(element => ({
+      borderBottom: getComputedStyle(element).borderBottomWidth,
+      background: getComputedStyle(element).backgroundColor
+    }));
+    expect(routebarStyle.borderBottom).toBe('0px');
+
+    const atlasControlStyle = await page.locator('.atlas-button').evaluate(element => ({
+      radius: parseFloat(getComputedStyle(element).borderRadius),
+      shadow: getComputedStyle(element).boxShadow
+    }));
+    expect(atlasControlStyle.radius).toBeLessThanOrEqual(3);
+    expect(atlasControlStyle.shadow).toBe('none');
   });
 });
 

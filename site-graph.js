@@ -1873,7 +1873,7 @@
       // Upstream trio duplicated one relation, while a descendant count was
       // redundant when the direct children are listed below.
       const uniqueParents = [...new Map(parents.map(parent => [parent.id, parent])).values()];
-      const parentLabel = uniqueParents.map(parent => parent.detailLabel || parent.label).join(' · ');
+      const parentLabel = uniqueParents.map(parent => parent.detailLabel || parent.label).join(' / ');
       const pairs = parentLabel ? [[uniqueParents.length > 1 ? 'Parents' : 'Parent', parentLabel]] : [];
       pairs.forEach(([key, value]) => {
         const dt = document.createElement('dt'); dt.textContent = key;
@@ -1903,7 +1903,7 @@
       showDetailShell(project.type, project.title, project.description);
       const tech = document.createElement('p');
       tech.className = 'detail-meta';
-      tech.textContent = project.tech.join(' · ');
+      tech.textContent = project.tech.join(' / ');
       detail.appendChild(tech);
       if (project.note) {
         const note = document.createElement('p');

@@ -26,7 +26,7 @@
 .profile-root-name{
   margin:0;
   color:var(--ink);
-  font:760 clamp(28px,3.2vw,44px)/.94 var(--serif);
+  font:760 clamp(28px,3.2vw,44px)/.94 var(--font-ui);
   letter-spacing:-.025em
 }
 
@@ -208,7 +208,7 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-read
 
 .quick-overview-header h2{
   margin:0;
-  font:760 clamp(30px,4vw,48px)/.96 var(--serif)
+  font:760 clamp(30px,4vw,48px)/.96 var(--font-ui)
 }
 
 .quick-overview-close{
@@ -281,7 +281,7 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-read
 
 .quick-overview-section h3{
   margin:0 0 10px;
-  font:730 16px/1.2 var(--serif)
+  font:730 16px/1.2 var(--font-ui)
 }
 
 .quick-overview-list{

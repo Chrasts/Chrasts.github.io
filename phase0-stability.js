@@ -342,7 +342,7 @@
     button.removeAttribute('aria-hidden');
     button.removeAttribute('tabindex');
     button.dataset.route = 'atlas';
-    button.setAttribute('aria-label', 'Open Atlas, the full profile map');
+    button.setAttribute('aria-label', 'Open Atlas');
     const title = button.querySelector('.atlas-entry-copy strong')?.textContent;
     const hasGraphGlyph = Boolean(button.querySelector('svg.atlas-entry-glyph'));
     if (title !== 'Atlas' || !hasGraphGlyph) button.replaceChildren(...atlasMarkup());

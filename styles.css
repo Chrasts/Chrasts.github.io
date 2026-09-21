@@ -1886,3 +1886,87 @@ html.is-theme-transitioning body *::after{
 .detail-meta{
   border-radius:var(--radius-ui)
 }
+
+
+/* ==========================================================================
+   Atlas / dossier pass 2 — route context and shared Overview surfaces
+   ========================================================================== */
+
+.graph-routebar{
+  align-items:center
+}
+.graph-breadcrumb{
+  padding:4px 0;
+  border-bottom:0;
+  background:transparent
+}
+.graph-crumb{
+  min-height:32px;
+  color:var(--muted);
+  font-family:var(--font-meta);
+  font-variation-settings:"MONO" 1,"CASL" 0,"slnt" 0,"CRSV" .5;
+  font-size:9px;
+  font-weight:560;
+  letter-spacing:.015em
+}
+.graph-crumb:hover,
+.graph-crumb:focus-visible{
+  color:var(--ink)
+}
+.graph-crumb[aria-current="true"]{
+  color:var(--ink);
+  font-weight:720
+}
+.graph-crumb-edge{
+  flex-basis:26px;
+  margin:0 6px;
+  background:var(--line)
+}
+.graph-crumb-edge::before,
+.graph-crumb-edge::after{
+  width:5px;
+  height:5px;
+  border-color:var(--muted);
+  background:var(--paper)
+}
+
+/* The small Atlas entry keeps its actual mini-graph glyph. The surrounding
+   control no longer behaves like a rounded promo card. */
+.atlas-button{
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:var(--text-soft)
+}
+.atlas-button:hover,
+.atlas-button:focus-visible{
+  color:var(--ink)
+}
+
+body[data-graph-mode="overview"] .scene-detail{
+  border:1px solid var(--line);
+  border-radius:var(--radius-panel);
+  background:var(--paper);
+  box-shadow:none
+}
+
+.detail-status,
+.detail-meta{
+  width:auto;
+  max-width:100%;
+  margin-top:10px;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:var(--muted);
+  font-family:var(--font-meta);
+  font-variation-settings:"MONO" 1,"CASL" 0,"slnt" 0,"CRSV" .5;
+  font-size:9px;
+  line-height:1.35
+}
+
+body[data-graph-mode="overview"] .detail-node-list button{
+  border-radius:var(--radius-ui);
+  background:transparent
+}

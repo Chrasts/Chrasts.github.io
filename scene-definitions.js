@@ -46,7 +46,7 @@
     document.head.appendChild(guard);
   }
 
-  const releaseRevision = '20260921-dossier1';
+  const releaseRevision = '20260921-dossier2';
   const versionedResource = resource =>
     `${resource}${resource.includes('?') ? '&' : '?'}v=${releaseRevision}`;
 

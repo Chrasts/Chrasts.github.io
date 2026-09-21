@@ -327,7 +327,8 @@
     mobileAtlasCentered: false,
     viewportFrame: 0,
     orientationTimer: 0,
-    registeredObjects: new Map()
+    registeredObjects: new Map(),
+    atlasBranchFrame: 0
   };
 
   const svg = () => $('#site-graph .site-graph-svg');
@@ -340,7 +341,21 @@
   /* A phone never presents the full Atlas as a tiny, untappable thumbnail.
      The root plus five sections form a real spatial branch chooser; local
      routes carry the user into the rich graph behind each branch. */
+  const applyMobileAtlasBranches = () => {
+    if (modeNow() !== 'atlas') return;
+    document.body.dataset.mobileAtlasView = 'branches';
+    const visible = new Set([rootId, ...atlasSections.map(section => section.id)]);
+    baseNodes().forEach(node => node.classList.toggle('is-mobile-atlas-hidden', !visible.has(node.dataset.nodeId)));
+    baseEdges().forEach(edge => {
+      const structuralBranch = edge.dataset.source === rootId && visible.has(edge.dataset.target);
+      edge.classList.toggle('is-mobile-atlas-live', structuralBranch);
+    });
+  };
+
   const syncMobileAtlasBranches = () => {
+    cancelAnimationFrame(state.atlasBranchFrame);
+    state.atlasBranchFrame = 0;
+
     if (modeNow() !== 'atlas') {
       delete document.body.dataset.mobileAtlasView;
       baseNodes().forEach(node => node.classList.remove('is-mobile-atlas-hidden'));
@@ -349,12 +364,16 @@
       return;
     }
 
-    document.body.dataset.mobileAtlasView = 'branches';
-    const visible = new Set([rootId, ...atlasSections.map(section => section.id)]);
-    baseNodes().forEach(node => node.classList.toggle('is-mobile-atlas-hidden', !visible.has(node.dataset.nodeId)));
-    baseEdges().forEach(edge => {
-      const structuralBranch = edge.dataset.source === rootId && visible.has(edge.dataset.target);
-      edge.classList.toggle('is-mobile-atlas-live', structuralBranch);
+    applyMobileAtlasBranches();
+
+    // Other renderer listeners may replace Atlas nodes later in the same event
+    // turn. Re-apply the semantic six-node mobile projection after the DOM has
+    // settled so the branch view cannot transiently expose all Atlas labels.
+    state.atlasBranchFrame = requestAnimationFrame(() => {
+      state.atlasBranchFrame = requestAnimationFrame(() => {
+        state.atlasBranchFrame = 0;
+        applyMobileAtlasBranches();
+      });
     });
 
     if (state.mobileAtlasCentered || introOwnsAtlas()) return;

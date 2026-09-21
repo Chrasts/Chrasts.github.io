@@ -52,8 +52,8 @@
     bottom:calc(58px + env(safe-area-inset-bottom))!important;
     max-height:min(48dvh,390px)!important;
     padding:14px 14px calc(14px + env(safe-area-inset-bottom))!important;
-    border-radius:12px!important;
-    box-shadow:0 -6px 24px color-mix(in srgb,var(--ink) 11%,transparent)!important;
+    border-radius:var(--radius-panel)!important;
+    box-shadow:none!important;
   }
   .scene-detail .detail-close{top:6px!important;right:6px!important;width:44px!important;height:44px!important}
   .scene-detail h2{font-size:19px!important;line-height:1.1!important;margin-top:2px!important;padding-right:40px!important}
@@ -104,11 +104,11 @@
 
   .mobile-atlas-branch-picker{display:grid;gap:8px}
   .mobile-atlas-branch-picker p{margin:0 0 3px;color:var(--muted);font-size:12px;line-height:1.4}
-  .mobile-atlas-branch-picker button{min-height:48px;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:transparent;color:var(--ink);font:760 13px/1.15 var(--sans);text-align:left}
+  .mobile-atlas-branch-picker button{min-height:48px;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-ui);background:transparent;color:var(--ink);font:760 13px/1.15 var(--sans);text-align:left}
   .mobile-atlas-branch-picker button:active,.mobile-atlas-branch-picker button:focus-visible{border-color:var(--teal);color:var(--teal);background:color-mix(in srgb,var(--teal) 8%,transparent)}
   .mobile-work-project-picker{display:grid;gap:8px;margin-bottom:14px;padding-bottom:13px;border-bottom:1px solid var(--line)}
   .mobile-work-project-picker p{margin:0 0 3px;color:var(--muted);font-size:12px;line-height:1.4}
-  .mobile-work-project-picker button{min-height:48px;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:transparent;color:var(--ink);font:760 13px/1.15 var(--sans);text-align:left}
+  .mobile-work-project-picker button{min-height:48px;width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-ui);background:transparent;color:var(--ink);font:760 13px/1.15 var(--sans);text-align:left}
   .mobile-atlas-branch-picker button,
   .mobile-work-project-picker button,
   .scene-detail button{touch-action:manipulation}

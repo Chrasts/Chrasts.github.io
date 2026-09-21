@@ -2349,3 +2349,118 @@ body[data-graph-mode="overview"] .detail-node-list button{
     width:3px
   }
 }
+
+/* Mobile entry gate: the interactive portfolio is desktop-only. Phones receive
+   a minimal access surface with the two focused CV variants. */
+@media(max-width:900px){
+  html[data-mobile-gate="active"] .mobile-construction-gate{
+    display:grid!important;
+    place-items:center;
+    overflow:auto;
+    padding:max(24px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(28px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));
+    background:var(--paper);
+    color:var(--ink)
+  }
+
+  .mobile-gate-choice-shell{
+    width:min(100%,520px);
+    margin:0 auto;
+    padding:0
+  }
+
+  .mobile-gate-choice-header{
+    padding:0 0 22px
+  }
+
+  .mobile-gate-choice-header h1{
+    margin:0;
+    font-size:30px;
+    font-weight:760;
+    line-height:1.05;
+    letter-spacing:-.035em
+  }
+
+  .mobile-gate-desktop-note{
+    max-width:48ch;
+    margin:15px 0 0;
+    color:var(--text-soft);
+    font-size:14px;
+    line-height:1.55
+  }
+
+  .mobile-gate-cv-intro{
+    max-width:48ch;
+    margin:10px 0 0;
+    color:var(--muted);
+    font-size:12.5px;
+    line-height:1.5
+  }
+
+  .mobile-cv-choice-grid{
+    display:grid;
+    gap:12px
+  }
+
+  .mobile-cv-choice{
+    position:relative;
+    display:grid;
+    gap:5px;
+    min-height:104px;
+    padding:17px 18px 16px 48px;
+    border:1px solid var(--line);
+    border-radius:var(--radius-ui);
+    background:transparent;
+    color:var(--ink);
+    text-decoration:none
+  }
+
+  .mobile-cv-choice::before{
+    content:"";
+    position:absolute;
+    left:18px;
+    top:24px;
+    width:8px;
+    height:8px;
+    border:1.4px solid currentColor;
+    border-radius:50%;
+    background:var(--paper)
+  }
+
+  .mobile-cv-choice::after{
+    content:"";
+    position:absolute;
+    left:27px;
+    top:28px;
+    width:12px;
+    height:1px;
+    background:currentColor;
+    opacity:.58
+  }
+
+  .mobile-cv-choice:is(:active,:focus-visible)::before{
+    background:currentColor
+  }
+
+  .mobile-cv-choice:is(:active,:focus-visible)::after{
+    width:16px;
+    opacity:1
+  }
+
+  .mobile-cv-choice:focus-visible{
+    outline:2px solid var(--ink);
+    outline-offset:3px
+  }
+
+  .mobile-cv-choice-title{
+    font-size:15px;
+    font-weight:760;
+    line-height:1.25
+  }
+
+  .mobile-cv-choice-description{
+    color:var(--text-soft);
+    font-size:12px;
+    line-height:1.45
+  }
+}
+

@@ -655,3 +655,20 @@ html[data-theme="dark"] .quick-overview-dialog::backdrop{
 @media(max-width:900px){
   .quick-overview-header h2{font-size:22px}
 }
+
+
+/* Practical Profile owns the identity copy outside the SVG. Keep the canonical
+   root node interactive, but suppress its duplicate drifting text label. */
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready
+#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-label,
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready
+#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-meta{
+  display:none!important
+}
+
+/* Secondary text follows the existing semantic colour channel: identity brown
+   in Profile and the relevant branch colour inside a focused branch. */
+.profile-root-role,
+.quick-overview-kicker{
+  color:var(--profile-accent)
+}

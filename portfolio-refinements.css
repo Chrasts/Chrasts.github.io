@@ -300,3 +300,20 @@ body[data-graph-mode="overview"] #site-graph .site-graph-node[data-node-id="work
     font-weight:800
   }
 }
+
+
+@media(min-width:901px){
+  .atlas-button.atlas-entry-v7{
+    min-width:276px;
+    min-height:100px;
+    grid-template-columns:132px minmax(96px,1fr);
+    gap:15px;
+    padding:4px 3px!important
+  }
+  .atlas-entry-glyph{width:132px;height:76px}
+  .atlas-entry-copy strong{
+    font-size:21px;
+    font-weight:820;
+    letter-spacing:-.02em
+  }
+}

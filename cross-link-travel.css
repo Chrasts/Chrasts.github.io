@@ -404,3 +404,43 @@ body:has(.crosslink-return-control:not([hidden])) #site-explorer .site-graph-hea
     border-radius:0
   }
 }
+
+
+/* Persistent Back HUD: destination remains in the accessible name/title, while
+   the visible control stays inside the header's reserved collision-free lane. */
+.header-back-slot .crosslink-return-control{
+  position:static!important;
+  top:auto!important;
+  left:auto!important;
+  z-index:auto!important;
+  width:auto;
+  max-width:100%;
+  min-width:0;
+  min-height:24px;
+  margin:0;
+  padding:0 2px 0 25px;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:var(--ink);
+  transform:none!important
+}
+.header-back-slot .crosslink-return-control:hover,
+.header-back-slot .crosslink-return-control:focus-visible{
+  background:transparent!important;
+  color:var(--profile-accent);
+  transform:none!important
+}
+.header-back-slot .crosslink-return-target{display:none}
+.header-back-slot .crosslink-return-prefix{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap
+}
+body:has(.header-back-slot .crosslink-return-control:not([hidden])) #site-explorer .graph-routebar{
+  top:18px!important
+}
+body:has(.header-back-slot .crosslink-return-control:not([hidden])) #site-explorer .site-graph-heading{
+  top:88px!important
+}

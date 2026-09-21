@@ -598,6 +598,10 @@
       }
       const positions = new Map();
       const path = primaryPath(state.node);
+      const knowledgeFocus = profileBranchFor(state.node) === 'knowledge';
+      const focusSafe = knowledgeFocus
+        ? { top: 118, right: 96, bottom: 142, left: 96 }
+        : SAFE;
 
       if (state.node.id === 'experience') {
         path.forEach((node, index) => {
@@ -627,14 +631,17 @@
           y: 112 + 138 * t
         });
       });
-      positions.set(state.node.id, { x: state.node.id === profileRoot.id ? 600 : 610, y: state.node.id === profileRoot.id ? 150 : 250 });
+      positions.set(state.node.id, {
+        x: state.node.id === profileRoot.id ? 600 : 610,
+        y: state.node.id === profileRoot.id ? 150 : (knowledgeFocus ? 235 : 250)
+      });
 
       const children = childrenFor(state.node.id).filter(node => nodes.some(item => item.id === node.id));
       children.forEach((child, index) => {
         const t = children.length <= 1 ? .5 : index / (children.length - 1);
         positions.set(child.id, {
           x: 160 + t * 880,
-          y: 432 - Math.sin(t * Math.PI) * 58 + (index % 2 ? 18 : -8)
+          y: (knowledgeFocus ? 402 : 432) - Math.sin(t * Math.PI) * 58 + (index % 2 ? 18 : -8)
         });
       });
 
@@ -645,12 +652,12 @@
           .forEach((grandchild, index) => {
             positions.set(grandchild.id, {
               x: parent.x + (index % 2 ? 1 : -1) * (105 + 30 * index),
-              y: parent.y + 128 + ((stableNumber(grandchild.id) % 25) - 12)
+              y: parent.y + (knowledgeFocus ? 104 : 128) + ((stableNumber(grandchild.id) % 25) - 12)
             });
           });
       });
 
-      return { width, height, positions: resolveCollisions(nodes, positions, width, height) };
+      return { width, height, positions: resolveCollisions(nodes, positions, width, height, focusSafe) };
     };
 
     const layoutWork = nodes => {
@@ -2099,7 +2106,10 @@
       element.dataset.graphRouteBound = 'true';
       element.addEventListener('click', event => {
         event.preventDefault();
-        updateHash(element.dataset.route || normaliseRoute(element.getAttribute('href')));
+        const requested = normaliseRoute(element.dataset.route || element.getAttribute('href'));
+        const current = normaliseRoute(document.body.dataset.graphRoute || state.route || location.hash);
+        if (element.closest('.site-header') && requested === current) return;
+        updateHash(requested);
       });
     };
     document.querySelectorAll('[data-route]').forEach(bindRoute);

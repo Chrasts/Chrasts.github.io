@@ -4,6 +4,7 @@
   const themeButton = document.querySelector('.theme-toggle');
   const themeIcon = themeButton?.querySelector('span');
   const themeMeta = document.querySelector('meta[name="theme-color"]');
+  const locationLabel = document.querySelector('.header-location-label');
   const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let themeTransitionTimer = 0;
@@ -53,6 +54,24 @@
     applyTheme(event.matches ? 'dark' : 'light');
   });
   updateThemeControl();
+
+  const normaliseRoute = value => (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
+  const contextLabelFor = () => {
+    const mode = document.body?.dataset.graphMode || '';
+    const route = normaliseRoute(document.body?.dataset.graphRoute || location.hash);
+    if (mode === 'atlas' || route === 'atlas') return 'Atlas';
+    if (mode === 'overview' || route === 'overview') return 'Profile';
+    if (mode === 'work' || route === 'work' || route.startsWith('work/')) return 'Work';
+    const branch = route.split('/')[0];
+    return ({ knowledge:'Knowledge', experience:'Experience', education:'Education', about:'About' })[branch] || 'Profile';
+  };
+  const syncHeaderContext = () => {
+    if (locationLabel) locationLabel.textContent = contextLabelFor();
+  };
+  ['profile:graph-state-committed','profile:scene-state','profile:transition-finish','profile:transition-cancel']
+    .forEach(name => addEventListener(name, syncHeaderContext));
+  addEventListener('hashchange', () => requestAnimationFrame(syncHeaderContext));
+  syncHeaderContext();
 
   const setMenuOpen = open => {
     if (!navigation || !menuButton) return;

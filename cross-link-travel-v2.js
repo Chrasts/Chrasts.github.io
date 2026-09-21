@@ -194,7 +194,8 @@
   const returnTarget = document.createElement('span');
   returnTarget.className = 'crosslink-return-target';
   returnControl.append(returnPrefix, returnTarget);
-  routebar.prepend(returnControl);
+  const backSlot = document.querySelector('.header-back-slot');
+  (backSlot || routebar).appendChild(returnControl);
 
   const introOwnsScreen = () => ['pending', 'waiting', 'running', 'identity', 'expanding', 'handoff']
     .includes(document.documentElement.dataset.profileIntro);

@@ -33,6 +33,8 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
     await expect(page.locator('#site-explorer')).toBeVisible();
     await expect(page.locator('.profile-root-brief')).toBeVisible();
     await expect(page.locator('.profile-root-name')).toContainText('Štěpán Chrast');
+    await expect(page.locator('.profile-root-kicker')).toHaveCount(0);
+    await expect(page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-label')).toBeHidden();
     await expect(page.locator('.profile-root-brief')).toContainText('Data analysis');
     await expect(page.locator('.profile-root-quick-trigger')).toContainText('Profile brief');
     await expect(page.locator('.profile-root-cv')).toHaveCount(0);
@@ -219,4 +221,27 @@ test.describe('V3.1 Phase H mobile and reduced motion', () => {
     expect(state.animation === '0s' || state.animation === '0.001ms').toBe(true);
     expect(state.transition === '0s' || state.transition === '0.001ms').toBe(true);
   });
+});
+
+
+test('desktop header owns stable Profile context and same-route Overview is a no-op', async ({ page }) => {
+  await bootOverview(page);
+  await expect(page.locator('.header-location-label')).toHaveText('Profile');
+
+  const before = await page.evaluate(() => ({
+    viewBox: document.querySelector('#site-graph .site-graph-svg')?.getAttribute('viewBox'),
+    root: document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"]')?.getAttribute('transform')
+  }));
+  await page.locator('#main-nav [data-route="overview"]').click();
+  await page.waitForTimeout(260);
+  const after = await page.evaluate(() => ({
+    route: document.body.dataset.graphRoute,
+    transitioning: document.body.classList.contains('is-v9-transitioning'),
+    viewBox: document.querySelector('#site-graph .site-graph-svg')?.getAttribute('viewBox'),
+    root: document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"]')?.getAttribute('transform')
+  }));
+  expect(after.route).toBe('overview');
+  expect(after.transitioning).toBe(false);
+  expect(after.viewBox).toBe(before.viewBox);
+  expect(after.root).toBe(before.root);
 });

@@ -113,7 +113,6 @@
 
     const identity = element('div', 'profile-root-identity-copy');
     identity.append(
-      element('p', 'profile-root-kicker', 'Profile'),
       element('h1', 'profile-root-name', profile.name || 'Štěpán Chrast'),
       element('p', 'profile-root-role meta-technical', compactMeta(profile.label || 'Data analysis / Research / Mathematical logic'))
     );

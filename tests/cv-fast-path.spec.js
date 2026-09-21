@@ -76,7 +76,7 @@ test('focused CV keeps the established compact graph-native visual language', as
 
   const nameSize = await page.getByRole('heading', { level: 1, name: 'Štěpán Chrast' })
     .evaluate(element => parseFloat(getComputedStyle(element).fontSize));
-  expect(nameSize).toBeLessThanOrEqual(30);
+  expect(nameSize).toBeLessThanOrEqual(21);
 
   const cvFont = await page.locator('body').evaluate(element => getComputedStyle(element).fontFamily);
   expect(cvFont).toContain('Recursive');

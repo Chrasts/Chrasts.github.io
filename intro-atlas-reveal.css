@@ -827,3 +827,108 @@ body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-st
     width:7px!important
   }
 }
+
+/* Opening Atlas header terminals.
+   Every textual control owns its terminal lane. The empty node and short
+   connector therefore never borrow space from the previous label. Hover,
+   keyboard focus, active press and the current route fill the node and extend
+   the connector to the label. */
+@media(min-width:901px){
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-actions{
+    gap:8px
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav,
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions{
+    gap:8px
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a,
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control{
+    position:relative;
+    display:inline-flex;
+    align-items:center;
+    min-height:38px;
+    padding-left:26px!important;
+    padding-right:1px;
+    white-space:nowrap
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a::before,
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::before{
+    content:"";
+    position:absolute;
+    left:1px!important;
+    top:50%;
+    width:7px!important;
+    height:7px!important;
+    box-sizing:border-box;
+    border:1.3px solid currentColor!important;
+    border-radius:50%;
+    background:var(--paper)!important;
+    transform:translateY(-50%);
+    transition:background-color .14s ease,border-color .14s ease
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a::after,
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::after{
+    content:"";
+    position:absolute;
+    left:9px!important;
+    top:50%;
+    width:8px!important;
+    height:1px;
+    background:currentColor!important;
+    opacity:.58;
+    transform:translateY(-50%);
+    transition:width .14s ease,opacity .14s ease,background-color .14s ease
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a:is(:hover,:focus-visible,:active,[aria-current="page"])::before,
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control:is(:hover,:focus-visible,:active,[aria-expanded="true"])::before{
+    background:currentColor!important
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a:is(:hover,:focus-visible,:active,[aria-current="page"])::after,
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control:is(:hover,:focus-visible,:active,[aria-expanded="true"])::after{
+    width:14px!important;
+    opacity:1!important
+  }
+
+  /* The old graph-control hover translated whole controls. In this header the
+     terminal itself carries the feedback, so labels remain geometrically fixed. */
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control:is(:hover,:focus-visible){
+    transform:none
+  }
+}
+
+@media(max-width:1280px) and (min-width:901px){
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-actions,
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav,
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions{
+    gap:6px
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a,
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control{
+    padding-left:23px!important
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a::before,
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::before{
+    width:6px!important;
+    height:6px!important
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a::after,
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::after{
+    left:8px!important;
+    width:7px!important
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a:is(:hover,:focus-visible,:active,[aria-current="page"])::after,
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control:is(:hover,:focus-visible,:active,[aria-expanded="true"])::after{
+    width:12px!important
+  }
+}
+

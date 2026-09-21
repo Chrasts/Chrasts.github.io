@@ -92,8 +92,9 @@ test('focused CV keeps the established compact graph-native visual language', as
   expect(['none', 'normal', '""']).toContain(sectionHeading.afterContent);
   expect(sectionHeading.paddingLeft).toBe(0);
 
-  const areas = await page.locator('.cv-area-list-compact').innerText();
-  expect(areas).toContain(',');
+  const firstAreaSeparator = await page.locator('.cv-area-list-compact li').first()
+    .evaluate(element => getComputedStyle(element, '::after').content);
+  expect(firstAreaSeparator).toContain(',');
 
   const positioningColor = await page.locator('.cv-positioning').evaluate(element => getComputedStyle(element).color);
   const linkColor = await page.locator('.cv-contact a').first().evaluate(element => getComputedStyle(element).color);

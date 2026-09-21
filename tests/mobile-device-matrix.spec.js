@@ -1,22 +1,32 @@
 const { test, expect } = require('@playwright/test');
 
-test.describe('temporary mobile construction gate', () => {
+test.describe('mobile profile brief', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
 
-  test('fresh mobile visitors see Quick overview before the unfinished graph', async ({ page }) => {
+  test('fresh mobile visitors land directly on a compact useful portfolio', async ({ page }) => {
     await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
     const gate = page.locator('#mobile-construction-gate');
     await expect(gate).toBeVisible();
-    await expect(gate).toContainText('desktop browser');
-    await expect(page.locator('.mobile-gate-quick')).toBeVisible();
+    await expect(gate.getByRole('heading', { name: 'Štěpán Chrast' })).toBeVisible();
+    await expect(gate).toContainText('Selected work');
+    await expect(gate).toContainText('Core areas');
+    await expect(gate).toContainText('Education');
+    await expect(gate).toContainText('desktop');
+    await expect(gate.getByRole('link', { name: 'CV', exact: true })).toBeVisible();
+    await expect(gate.getByRole('link', { name: 'GitHub' })).toBeVisible();
+    await expect(gate.getByRole('link', { name: 'LinkedIn' })).toBeVisible();
     await expect(page.locator('.mobile-gate-preview')).toBeVisible();
 
-    await page.locator('.mobile-gate-quick').click();
-    await expect(page.locator('.quick-overview-dialog')).toBeVisible({ timeout: 8_000 });
-    await page.locator('.quick-overview-close').click();
-    await expect(gate).toBeVisible();
+    const health = await gate.evaluate(element => ({
+      scrollWidth: element.scrollWidth,
+      clientWidth: element.clientWidth,
+      bodyScrollWidth: document.scrollingElement.scrollWidth,
+      innerWidth
+    }));
+    expect(health.scrollWidth).toBeLessThanOrEqual(health.clientWidth + 2);
+    expect(health.bodyScrollWidth).toBeLessThanOrEqual(health.innerWidth + 2);
 
     await page.locator('.mobile-gate-preview').click();
     await page.waitForLoadState('domcontentloaded');

@@ -166,7 +166,7 @@
     }
   </style>
   <script defer src="https://cloud.umami.is/script.js" data-website-id="8dd5c849-df0f-40a5-b4e1-3fbcb38f425b"></script>
-  <link rel="stylesheet" href="styles.css?v=20260921-navstable1">
+  <link rel="stylesheet" href="styles.css?v=20260921-mobilebrief1">
   <!-- Graph base followed by narrowly scoped transition refinements. Keeping
        their cascade in the document makes the visual result deterministic. -->
   <link rel="stylesheet" href="graph-v5.css?v=20260920-bsc3">
@@ -206,18 +206,41 @@
       <span class="entry-loading-core"></span>
     </div>
   </div>
-  <section class="mobile-construction-gate" id="mobile-construction-gate" role="dialog" aria-modal="true" aria-labelledby="mobile-gate-title" aria-describedby="mobile-gate-copy" hidden>
+  <section class="mobile-construction-gate" id="mobile-construction-gate" aria-labelledby="mobile-brief-title" hidden>
     <div class="mobile-gate-shell">
-      <div class="mobile-gate-mark" aria-hidden="true"><span></span><span></span><span></span></div>
-      <p class="mobile-gate-kicker">Mobile status</p>
-      <h1 id="mobile-gate-title">The interactive atlas is being rebuilt for smaller screens.</h1>
-      <p class="mobile-gate-copy" id="mobile-gate-copy">The full graph experience is not yet reliable on phones. For the complete site, please use a desktop browser. A compact profile summary is available here in the meantime.</p>
-      <div class="mobile-gate-actions">
-        <button class="mobile-gate-quick graph-control graph-control--primary" type="button" aria-haspopup="dialog">Profile brief</button>
-        <button class="mobile-gate-preview graph-control graph-control--secondary" type="button">Open unfinished mobile preview</button>
-      </div>
-      <p class="mobile-gate-note">The preview remains available for inspection, but layout and interaction issues are expected.</p>
-      <p class="mobile-gate-status" role="status" aria-live="polite"></p>
+      <header class="mobile-brief-header">
+        <p class="mobile-gate-kicker">Mobile profile</p>
+        <h1 id="mobile-brief-title">Štěpán Chrast</h1>
+        <p class="mobile-brief-positioning" data-mobile-profile-positioning>Data analysis / Research / Mathematical logic</p>
+        <p class="mobile-brief-intro" data-mobile-profile-intro></p>
+        <nav class="mobile-brief-links" data-mobile-profile-links aria-label="Profile links"></nav>
+        <p class="mobile-brief-notice"><strong>Interactive atlas:</strong> the phone version is still being rebuilt. The complete graph experience currently works best on desktop.</p>
+      </header>
+
+      <main class="mobile-brief-body">
+        <section class="mobile-brief-section mobile-brief-current">
+          <h2>Current</h2>
+          <div data-mobile-current></div>
+        </section>
+        <section class="mobile-brief-section">
+          <h2>Selected work</h2>
+          <div class="mobile-brief-list" data-mobile-work></div>
+        </section>
+        <section class="mobile-brief-section">
+          <h2>Core areas</h2>
+          <div class="mobile-brief-list" data-mobile-areas></div>
+        </section>
+        <section class="mobile-brief-section">
+          <h2>Education</h2>
+          <div class="mobile-brief-list" data-mobile-education></div>
+        </section>
+      </main>
+
+      <footer class="mobile-brief-footer">
+        <a class="mobile-brief-cv" href="/cv/">Open full CV</a>
+        <button class="mobile-gate-preview" type="button">Open unfinished interactive preview</button>
+        <p class="mobile-gate-note">The preview is available for inspection, but some mobile layouts and interactions are still incomplete.</p>
+      </footer>
     </div>
   </section>
 
@@ -351,6 +374,6 @@
   <script src="cross-link-travel-v2.js?v=20260921-desktoprefine2"></script>
   <script src="scene-legacy-bridge.js?v=20260921-educationaxis1"></script>
   <script src="site-shell.js?v=20260921-desktoprefine2"></script>
-  <script src="mobile-construction-gate.js?v=20260921-mobilegate1"></script>
+  <script src="mobile-construction-gate.js?v=20260921-mobilebrief1"></script>
 </body>
 </html>

@@ -67,6 +67,21 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
     await expect(page.locator('.quick-overview-dialog')).toContainText('Survey Analysis');
     await expect(page.locator('.quick-overview-dialog')).toContainText('CV');
 
+    const dossierStyle = await page.locator('.quick-overview-dialog').evaluate(element => ({
+      shadow: getComputedStyle(element).boxShadow,
+      blur: getComputedStyle(element).backdropFilter,
+      radius: parseFloat(getComputedStyle(element).borderRadius)
+    }));
+    expect(dossierStyle.shadow).toBe('none');
+    expect(dossierStyle.blur === 'none' || dossierStyle.blur === '').toBe(true);
+    expect(dossierStyle.radius).toBeLessThanOrEqual(7);
+    const sectionStyle = await page.locator('.quick-overview-section').first().evaluate(element => ({
+      background: getComputedStyle(element).backgroundColor,
+      radius: parseFloat(getComputedStyle(element).borderRadius)
+    }));
+    expect(sectionStyle.background === 'rgba(0, 0, 0, 0)' || sectionStyle.background === 'transparent').toBe(true);
+    expect(sectionStyle.radius).toBe(0);
+
     const during = {
       route: await page.evaluate(() => document.body.dataset.graphRoute),
       mode: await page.evaluate(() => document.body.dataset.graphMode),
@@ -117,11 +132,21 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
     const headerStyle = await header.evaluate(element => ({
       background: getComputedStyle(element).backgroundColor,
       shadow: getComputedStyle(element).boxShadow,
+      blur: getComputedStyle(element).backdropFilter,
       height: parseFloat(getComputedStyle(element).height)
     }));
     expect(headerStyle.background).not.toBe('rgba(0, 0, 0, 0)');
-    expect(headerStyle.shadow).not.toBe('none');
+    expect(headerStyle.shadow).toBe('none');
+    expect(headerStyle.blur === 'none' || headerStyle.blur === '').toBe(true);
     expect(headerStyle.height).toBeGreaterThanOrEqual(76);
+
+    const quickStyle = await quick.evaluate(element => ({
+      radius: parseFloat(getComputedStyle(element).borderRadius),
+      background: getComputedStyle(element).backgroundColor,
+      beforeRadius: getComputedStyle(element, '::before').borderRadius
+    }));
+    expect(quickStyle.radius).toBeLessThanOrEqual(3);
+    expect(quickStyle.beforeRadius).not.toBe('0px');
 
     await quick.click();
     await expect(page.locator('.quick-overview-dialog')).toBeVisible();

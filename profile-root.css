@@ -409,3 +409,222 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-read
 @media(max-width:900px){
   .quick-overview-project-summary{font-size:11px}
 }
+
+
+/* ==========================================================================
+   Atlas / dossier redesign — flat Overview and Quick Overview
+   ========================================================================== */
+
+.profile-root-role{
+  color:var(--muted);
+  text-transform:none;
+  letter-spacing:.025em
+}
+
+.profile-root-actions{
+  gap:5px 16px
+}
+.profile-root-action,
+.profile-root-route{
+  min-height:34px;
+  border:0;
+  padding-top:0;
+  padding-bottom:0;
+  color:var(--text-soft);
+  text-decoration:none
+}
+.profile-root-action.is-primary,
+.profile-root-action.is-secondary{
+  color:inherit;
+  border:0
+}
+
+.quick-overview-global-trigger{
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  backdrop-filter:none
+}
+
+.quick-overview-dialog{
+  width:min(900px,calc(100vw - 40px));
+  max-height:min(780px,calc(100dvh - 40px));
+  border:1px solid var(--line);
+  border-radius:var(--radius-panel);
+  background:var(--paper);
+  box-shadow:none;
+  overflow:auto
+}
+.quick-overview-dialog::backdrop{
+  background:color-mix(in srgb,var(--ink) 54%,transparent);
+  backdrop-filter:none
+}
+.quick-overview-shell{
+  padding:30px 32px 28px
+}
+.quick-overview-header{
+  align-items:center;
+  gap:20px
+}
+.quick-overview-kicker{
+  color:var(--muted);
+  letter-spacing:.08em
+}
+.quick-overview-header h2{
+  font-family:var(--font-ui);
+  font-variation-settings:"MONO" 0,"CASL" .12,"slnt" 0,"CRSV" .5;
+  font-size:clamp(30px,4vw,44px);
+  font-weight:680;
+  letter-spacing:-.035em
+}
+.quick-overview-close{
+  width:34px;
+  height:34px;
+  flex-basis:34px;
+  border:1px solid var(--line);
+  border-radius:var(--radius-ui);
+  background:transparent;
+  box-shadow:none
+}
+.quick-overview-close:hover,
+.quick-overview-close:focus-visible{
+  border-color:var(--ink);
+  color:var(--ink)
+}
+.quick-overview-lead{
+  max-width:710px;
+  margin:14px 0 18px;
+  color:var(--text-soft);
+  font-size:13px
+}
+.quick-overview-facts{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px 28px;
+  margin:0 0 28px;
+  padding:0;
+  border:0
+}
+.quick-overview-fact{
+  display:grid;
+  grid-template-columns:max-content minmax(0,1fr);
+  gap:9px;
+  align-items:baseline
+}
+.quick-overview-fact dt{
+  color:var(--muted);
+  letter-spacing:.06em
+}
+.quick-overview-fact dd{
+  color:var(--ink);
+  font-family:var(--font-ui);
+  font-variation-settings:"MONO" 0,"CASL" .06,"slnt" 0,"CRSV" .5;
+  font-weight:560
+}
+
+.quick-overview-grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:0
+}
+.quick-overview-section{
+  display:grid;
+  grid-template-columns:150px minmax(0,1fr) max-content;
+  column-gap:24px;
+  align-items:start;
+  min-width:0;
+  padding:18px 0;
+  border:0;
+  border-radius:0;
+  background:transparent
+}
+.quick-overview-section + .quick-overview-section{
+  margin-top:5px
+}
+.quick-overview-section h3{
+  position:relative;
+  margin:2px 0 0;
+  padding-left:26px;
+  color:var(--ink);
+  font-family:var(--font-ui);
+  font-variation-settings:"MONO" 0,"CASL" .08,"slnt" 0,"CRSV" .5;
+  font-size:13px;
+  font-weight:720
+}
+.graph-local-anchor::before{
+  content:"";
+  position:absolute;
+  left:1px;
+  top:.58em;
+  width:6px;
+  height:6px;
+  border:1.3px solid var(--muted);
+  border-radius:50%;
+  background:var(--paper);
+  transform:translateY(-50%)
+}
+.graph-local-anchor::after{
+  content:"";
+  position:absolute;
+  left:8px;
+  top:.58em;
+  width:12px;
+  height:1px;
+  background:var(--line)
+}
+.quick-overview-list{
+  grid-column:2;
+  display:grid;
+  gap:8px;
+  margin:0;
+  padding:0;
+  color:var(--text-soft);
+  font-size:11px;
+  line-height:1.45
+}
+.quick-overview-section > .profile-root-route{
+  grid-column:3;
+  align-self:start
+}
+.quick-overview-project{
+  gap:2px
+}
+.quick-overview-project-summary{
+  max-width:58ch;
+  color:var(--muted);
+  font-size:10.5px
+}
+.quick-overview-footer{
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px 16px;
+  align-items:center;
+  margin-top:22px;
+  padding-top:4px
+}
+.quick-overview-footer .is-atlas{
+  font-weight:780
+}
+
+@media(max-width:700px){
+  .quick-overview-dialog{
+    width:calc(100vw - 18px);
+    max-height:calc(100dvh - 18px)
+  }
+  .quick-overview-shell{padding:22px 18px 20px}
+  .quick-overview-facts{grid-template-columns:1fr;gap:8px}
+  .quick-overview-section{
+    grid-template-columns:1fr;
+    gap:10px;
+    padding:15px 0
+  }
+  .quick-overview-section h3,
+  .quick-overview-list,
+  .quick-overview-section > .profile-root-route{
+    grid-column:1
+  }
+  .quick-overview-section > .profile-root-route{
+    justify-self:start
+  }
+}

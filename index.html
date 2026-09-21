@@ -27,6 +27,9 @@
   <link rel="icon" type="image/png" href="/favicon-48x48.png" sizes="48x48">
   <link rel="icon" type="image/png" href="/favicon-192x192.png" sizes="192x192">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Recursive:slnt,wght,CASL,CRSV,MONO@-15..0,300..1000,0..1,0..1,0..1&display=swap" rel="stylesheet">
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -141,7 +144,7 @@
     }
   </style>
   <script defer src="https://cloud.umami.is/script.js" data-website-id="8dd5c849-df0f-40a5-b4e1-3fbcb38f425b"></script>
-  <link rel="stylesheet" href="styles.css?v=20260920-bsc3">
+  <link rel="stylesheet" href="styles.css?v=20260921-dossier1">
   <!-- Graph base followed by narrowly scoped transition refinements. Keeping
        their cascade in the document makes the visual result deterministic. -->
   <link rel="stylesheet" href="graph-v5.css?v=20260920-bsc3">
@@ -193,21 +196,32 @@
         <a href="#education" data-route="education">Education</a>
         <a href="#about" data-route="about">About</a>
         <a href="#atlas" data-route="atlas">Atlas</a>
+        <div class="mobile-nav-utilities" aria-label="Profile links">
+          <a href="/cv/">CV</a>
+          <a href="mailto:chraststepan@gmail.com">Email</a>
+          <a href="https://github.com/Chrasts" target="_blank" rel="noreferrer">GitHub ↗</a>
+          <a href="https://www.linkedin.com/in/stepan-chrast" target="_blank" rel="noreferrer">LinkedIn ↗</a>
+        </div>
       </nav>
-      <button class="header-quick-overview" type="button" hidden aria-haspopup="dialog">Quick overview</button>
-      <a class="header-utility" href="/cv/">CV</a>
-      <a class="header-utility" href="mailto:chraststepan@gmail.com">Email</a>
-      <a class="header-utility" href="https://github.com/Chrasts" target="_blank" rel="noreferrer">GitHub ↗</a>
-      <a class="header-utility" href="https://www.linkedin.com/in/stepan-chrast" target="_blank" rel="noreferrer">LinkedIn ↗</a>
+      <span class="header-topology-marker" aria-hidden="true"></span>
+      <div class="header-practical-actions">
+        <button class="header-quick-overview graph-control graph-control--primary" type="button" hidden aria-haspopup="dialog">Quick overview</button>
+        <a class="header-utility graph-control graph-control--secondary" href="/cv/">CV</a>
+        <a class="header-utility graph-control graph-control--secondary" href="mailto:chraststepan@gmail.com">Email</a>
+        <a class="header-utility graph-control graph-control--secondary graph-control--external" href="https://github.com/Chrasts" target="_blank" rel="noreferrer">GitHub ↗</a>
+        <a class="header-utility graph-control graph-control--secondary graph-control--external" href="https://www.linkedin.com/in/stepan-chrast" target="_blank" rel="noreferrer">LinkedIn ↗</a>
+      </div>
       <button class="theme-toggle" type="button" aria-label="Switch to dark mode" title="Switch to dark mode"><span aria-hidden="true">☾</span></button>
       <button class="menu-button" type="button" aria-expanded="false" aria-controls="main-nav">Menu</button>
     </div>
+    <span class="header-boundary-mark header-boundary-mark--left" aria-hidden="true"></span>
+    <span class="header-boundary-mark header-boundary-mark--right" aria-hidden="true"></span>
   </header>
 
   <main id="main-content" class="profile-app" tabindex="-1">
     <section class="hero wrap">
       <div class="hero-copy">
-        <p class="eyebrow">Data analysis · Research · Mathematical logic</p>
+        <p class="eyebrow">Data analysis / Research / Mathematical logic</p>
         <h1>Štěpán<br>Chrast</h1>
         <p class="intro">Data analyst and researcher in Prague, working with data, reproducible analysis and applied research alongside a background in mathematical logic.</p>
         <nav class="inline-links" aria-label="Primary links">
@@ -287,7 +301,7 @@
   <script src="site-data.js?v=20260920-bsc6"></script>
   <script src="scene-system.js?v=20260918-r2"></script>
   <script src="transition-coordination.js?v=20260918-r2"></script>
-  <script src="scene-definitions.js?v=20260921-hackathon1"></script>
+  <script src="scene-definitions.js?v=20260921-dossier1"></script>
   <script src="phase0-stability.js?v=20260918-r2"></script>
   <script src="graph-transition-prelude.js?v=20260920-xlink2"></script>
   <script src="radial-geometry.js?v=20260919-content9"></script>
@@ -295,7 +309,7 @@
   <script src="site-graph.js?v=20260920-header1"></script>
   <script src="graph-transitions-v6.js?v=20260919-fix11"></script>
   <script src="cross-link-travel-v2.js?v=20260920-entrycolors1"></script>
-  <script src="scene-legacy-bridge.js?v=20260921-hackathon1"></script>
+  <script src="scene-legacy-bridge.js?v=20260921-dossier1"></script>
   <script src="site-shell.js?v=20260918-r2"></script>
 </body>
 </html>

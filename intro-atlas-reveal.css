@@ -393,104 +393,119 @@ body.is-atlas-reveal #site-graph .atlas-territory-label-layer{
 }
 
 
-/* Opening Atlas recruiter surface. The top header is deliberately much more
-   prominent here, so practical navigation is obvious without duplicating a
-   second shortcut bar inside the graph. */
+/* Opening Atlas Atlas-index surface. The header is intentionally strong but
+   flat: no glass, pills, soft shadows or decorative accent fill. */
 .header-quick-overview[hidden]{display:none!important}
 
 body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header.app-header{
   width:min(1480px,calc(100% - 20px));
   height:80px;
   padding-inline:14px;
-  border-bottom:2px solid color-mix(in srgb,var(--teal) 26%,var(--line));
-  background:color-mix(in srgb,var(--paper) 98%,transparent);
-  box-shadow:0 12px 34px color-mix(in srgb,var(--ink) 11%,transparent);
-  backdrop-filter:blur(16px)
+  border:0;
+  background:var(--paper);
+  box-shadow:none;
+  backdrop-filter:none
 }
 body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .brand{
-  font-size:24px;
-  font-weight:850
+  color:var(--ink);
+  font-size:23px;
+  font-weight:820
 }
 body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-actions{
   gap:9px
 }
 body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header nav{
-  gap:17px
+  gap:15px
 }
 body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header nav a{
-  font-size:12.5px;
-  font-weight:710
+  color:var(--text-soft);
+  font-size:12px;
+  font-weight:650
 }
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header nav a[aria-current="page"]{
-  font-weight:850
+body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header nav a:hover,
+body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header nav a:focus-visible{
+  color:var(--ink)
+}
+body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions{
+  gap:8px
 }
 body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-quick-overview,
 body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-utility{
   min-height:38px;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  border-radius:999px;
-  font:760 11.5px/1 var(--sans);
-  white-space:nowrap
+  padding-right:3px;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  backdrop-filter:none;
+  transform:none;
+  color:var(--muted);
+  font-size:10.5px
 }
 body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-quick-overview{
-  padding:0 15px;
-  border:1px solid var(--teal);
-  background:var(--teal);
-  color:var(--on-color);
-  cursor:pointer;
-  box-shadow:0 6px 18px color-mix(in srgb,var(--teal) 22%,transparent)
+  color:var(--ink)
 }
 body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-quick-overview:hover,
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-quick-overview:focus-visible{
-  transform:translateY(-1px);
-  box-shadow:0 8px 22px color-mix(in srgb,var(--teal) 30%,transparent)
-}
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-utility{
-  padding:0 11px;
-  border:1px solid color-mix(in srgb,var(--teal) 38%,var(--line));
-  background:color-mix(in srgb,var(--teal) 4%,var(--paper));
-  font-weight:760
-}
+body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-quick-overview:focus-visible,
 body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-utility:hover,
 body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-utility:focus-visible{
-  border-color:color-mix(in srgb,var(--teal) 72%,var(--line));
-  background:color-mix(in srgb,var(--teal) 10%,var(--paper))
+  border:0;
+  background:transparent;
+  box-shadow:none;
+  transform:none;
+  color:var(--ink)
 }
+body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .theme-toggle{
+  border-radius:var(--radius-ui);
+  border-color:var(--line)
+}
+body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-boundary-mark{
+  opacity:.92
+}
+
 @media(max-width:1180px) and (min-width:901px){
   body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header.app-header{
     height:74px;
     padding-inline:8px
   }
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-actions{gap:6px}
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header nav{gap:10px}
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-actions{gap:5px}
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header nav{gap:9px}
   body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header nav a{font-size:10.5px}
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-quick-overview,
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-utility{
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-topology-marker{flex-basis:16px;width:16px}
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions{gap:5px}
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .graph-control{
     min-height:34px;
-    padding-inline:8px;
-    font-size:10px
+    padding-left:21px;
+    font-size:9.5px
   }
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .graph-control::after{width:8px}
 }
+
 @media(max-width:900px){
   body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header.app-header{
-    width:calc(100% - 16px);
-    height:72px;
-    padding-inline:8px
+    width:100%;
+    height:calc(60px + env(safe-area-inset-top));
+    min-height:calc(60px + env(safe-area-inset-top));
+    padding:env(safe-area-inset-top) max(12px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left))
   }
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-utility{
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-topology-marker,
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .header-utility{
     display:none
   }
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions{
+    display:flex
+  }
   body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-quick-overview{
-    min-height:40px;
-    padding-inline:13px;
+    min-height:44px;
+    padding-left:25px;
     font-size:10px
   }
   body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .menu-button{
     min-height:40px;
-    border-color:color-mix(in srgb,var(--teal) 60%,var(--line));
-    background:color-mix(in srgb,var(--teal) 8%,var(--paper));
-    font-weight:780
+    border:1px solid var(--line);
+    border-radius:var(--radius-ui);
+    background:transparent;
+    color:var(--ink);
+    font-weight:700
   }
 }

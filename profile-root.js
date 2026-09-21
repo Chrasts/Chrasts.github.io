@@ -56,6 +56,7 @@
   const legacyRootNeedsRetirement = () => mode() === 'overview' && rootLanding() === 'true' && introStable();
   const track = name => { try { window.umami?.track?.(name); } catch (_) {} };
 
+  const compactMeta = value => String(value || '').replace(/\s*·\s*/g, ' / ');
   const element = (tag, className = '', text = '') => {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -85,7 +86,7 @@
   };
 
   const makeRouteButton = (label, target) => {
-    const button = element('button', 'profile-root-route', label);
+    const button = element('button', 'profile-root-route graph-control', label);
     button.type = 'button';
     button.dataset.routeTarget = target;
     button.addEventListener('click', () => routeTo(target));
@@ -114,7 +115,7 @@
     identity.append(
       element('p', 'profile-root-kicker', 'Profile'),
       element('h1', 'profile-root-name', profile.name || 'Štěpán Chrast'),
-      element('p', 'profile-root-role', profile.label || 'Data analysis · Research · Mathematical logic')
+      element('p', 'profile-root-role meta-technical', compactMeta(profile.label || 'Data analysis / Research / Mathematical logic'))
     );
     // The compact graph-native root uses the professional statement directly;
     // its junior-career qualifier is already represented by the Experience
@@ -123,30 +124,30 @@
     const actions = element('div', 'profile-root-actions');
 
     const selectedWork = makeRouteButton('Selected Work', 'work');
-    selectedWork.className = 'profile-root-action is-primary';
+    selectedWork.className = 'profile-root-action graph-control graph-control--primary';
     actions.appendChild(selectedWork);
 
-    const cv = makeCvLink('profile-root-action profile-root-cv is-primary');
+    const cv = makeCvLink('profile-root-action profile-root-cv graph-control graph-control--primary');
     actions.appendChild(cv);
 
     const atlas = makeRouteButton('Explore Atlas', 'atlas');
-    atlas.className = 'profile-root-action is-primary';
+    atlas.className = 'profile-root-action graph-control graph-control--primary';
     actions.appendChild(atlas);
 
-    const quick = element('button', 'profile-root-action profile-root-quick-trigger', 'Quick overview');
+    const quick = element('button', 'profile-root-action profile-root-quick-trigger graph-control graph-control--primary', 'Quick overview');
     quick.type = 'button';
     quick.setAttribute('aria-haspopup', 'dialog');
     quick.addEventListener('click', () => openQuickOverview('profile-root'));
     actions.appendChild(quick);
 
-    const email = element('a', 'profile-root-action is-secondary', 'Email');
+    const email = element('a', 'profile-root-action graph-control graph-control--secondary', 'Email');
     email.href = `mailto:${profile.email}`;
     actions.appendChild(email);
 
     for (const label of ['GitHub', 'LinkedIn']) {
       const data = profileLink(label);
       if (!data?.href) continue;
-      const link = element('a', 'profile-root-action is-secondary', `${label} ↗`);
+      const link = element('a', 'profile-root-action graph-control graph-control--secondary graph-control--external', `${label} ↗`);
       link.href = data.href;
       link.target = '_blank';
       link.rel = 'noreferrer';
@@ -223,13 +224,13 @@
     const lead = element('p', 'quick-overview-lead', profile.intro || '');
     const facts = element('dl', 'quick-overview-facts');
     const current = currentExperience();
-    appendFact(facts, 'Current', current ? [current.role, current.label].filter(Boolean).join(' · ') : null);
-    appendFact(facts, 'Profile', profile.label || null);
+    appendFact(facts, 'Current', current ? [current.role, current.label].filter(Boolean).join(' / ') : null);
+    appendFact(facts, 'Profile', compactMeta(profile.label || null));
 
     const grid = element('div', 'quick-overview-grid');
 
     const workSection = element('section', 'quick-overview-section');
-    workSection.append(element('h3', '', 'Selected work'));
+    workSection.append(element('h3', 'graph-local-anchor', 'Selected work'));
     const workList = element('ul', 'quick-overview-list quick-overview-work-list');
     featuredProjects().slice(0, 4).forEach(project => {
       const li = element('li', 'quick-overview-project');
@@ -241,7 +242,7 @@
     workSection.append(workList, makeRouteButton('Open Work', 'work'));
 
     const knowledgeSection = element('section', 'quick-overview-section');
-    knowledgeSection.append(element('h3', '', 'Core areas'));
+    knowledgeSection.append(element('h3', 'graph-local-anchor', 'Core areas'));
     const knowledgeList = element('ul', 'quick-overview-list');
     directChildren('knowledge').slice(0, 3).forEach(node => {
       const li = element('li');
@@ -251,10 +252,10 @@
     knowledgeSection.append(knowledgeList, makeRouteButton('Open Knowledge', 'knowledge'));
 
     const educationSection = element('section', 'quick-overview-section');
-    educationSection.append(element('h3', '', 'Education'));
+    educationSection.append(element('h3', 'graph-local-anchor', 'Education'));
     const educationList = element('ul', 'quick-overview-list');
     directChildren('education').slice(0, 3).forEach(node => {
-      const li = element('li', '', `${node.label}${node.meta ? ` · ${node.meta}` : ''}`);
+      const li = element('li', '', `${node.label}${node.meta ? ` / ${compactMeta(node.meta)}` : ''}`);
       educationList.appendChild(li);
     });
     educationSection.append(educationList, makeRouteButton('Open Education', 'education'));
@@ -266,13 +267,13 @@
     const atlas = makeRouteButton('Open Atlas', 'atlas');
     atlas.classList.add('is-atlas');
     footer.append(atlas);
-    const contact = element('a', 'profile-root-route', 'Email');
+    const contact = element('a', 'profile-root-route graph-control graph-control--secondary', 'Email');
     contact.href = `mailto:${profile.email}`;
-    footer.append(contact, makeCvLink('profile-root-route quick-overview-cv'));
+    footer.append(contact, makeCvLink('profile-root-route quick-overview-cv graph-control graph-control--secondary'));
     for (const label of ['GitHub', 'LinkedIn']) {
       const data = profileLink(label);
       if (!data?.href) continue;
-      const link = element('a', 'profile-root-route', `${label} ↗`);
+      const link = element('a', 'profile-root-route graph-control graph-control--secondary graph-control--external', `${label} ↗`);
       link.href = data.href;
       link.target = '_blank';
       link.rel = 'noreferrer';

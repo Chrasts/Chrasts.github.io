@@ -185,17 +185,16 @@
   // visible in Work, local semantic fragments and mobile navigation alike.
   const returnControl = document.createElement('button');
   returnControl.type = 'button';
-  returnControl.className = 'crosslink-return-control';
+  returnControl.className = 'crosslink-return-control graph-control graph-control--secondary';
   returnControl.hidden = true;
   returnControl.dataset.crosslinkReturn = 'true';
   const returnPrefix = document.createElement('span');
   returnPrefix.className = 'crosslink-return-prefix';
-  returnPrefix.textContent = '← Back';
+  returnPrefix.textContent = 'Back';
   const returnTarget = document.createElement('span');
   returnTarget.className = 'crosslink-return-target';
   returnControl.append(returnPrefix, returnTarget);
-  const header = document.querySelector('.site-header');
-  (header || routebar).appendChild(returnControl);
+  routebar.prepend(returnControl);
 
   const introOwnsScreen = () => ['pending', 'waiting', 'running', 'identity', 'expanding', 'handoff']
     .includes(document.documentElement.dataset.profileIntro);

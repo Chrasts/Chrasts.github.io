@@ -350,3 +350,57 @@ body.is-crosslink-travelling{
     filter:none!important
   }
 }
+
+
+/* Return navigation belongs to the graph route context, not a floating header
+   capsule. Keeping it in normal routebar flow removes recurring collisions. */
+.crosslink-return-control{
+  position:static!important;
+  top:auto!important;
+  left:auto!important;
+  z-index:auto;
+  flex:0 0 auto;
+  min-height:34px;
+  max-width:min(300px,30vw);
+  margin:0 8px 0 0;
+  padding:0 2px 0 25px;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:var(--muted);
+  box-shadow:none;
+  overflow:hidden;
+  transform:none
+}
+.crosslink-return-control:hover,
+.crosslink-return-control:focus-visible{
+  border:0;
+  background:transparent;
+  color:var(--ink);
+  transform:none
+}
+.crosslink-return-target{
+  color:var(--ink);
+  font-weight:660
+}
+body:has(.crosslink-return-control:not([hidden])) #site-explorer .graph-routebar{
+  top:auto!important
+}
+body:has(.crosslink-return-control:not([hidden])) #site-explorer .site-graph-heading{
+  top:auto!important
+}
+.graph-routebar:has(.crosslink-return-control:not([hidden])) .graph-breadcrumb{
+  flex:1 1 auto
+}
+
+@media(max-width:900px){
+  .crosslink-return-control{
+    position:static!important;
+    min-width:44px;
+    min-height:44px;
+    max-width:110px;
+    margin-right:4px;
+    padding:0 2px 0 25px;
+    border-radius:0
+  }
+}

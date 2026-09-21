@@ -628,3 +628,30 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-read
     justify-self:start
   }
 }
+
+
+/* Desktop refinement: compact profile dossier and unambiguous graph controls. */
+.quick-overview-header h2{
+  font-size:clamp(21px,2.1vw,27px);
+  line-height:1.05;
+  font-weight:720;
+  letter-spacing:-.025em
+}
+
+.profile-root-route.graph-control,
+.profile-root-action.graph-control{
+  padding-left:25px
+}
+
+.quick-overview-section > .profile-root-route.graph-control,
+.quick-overview-footer .profile-root-route.graph-control{
+  padding-left:25px
+}
+
+html[data-theme="dark"] .quick-overview-dialog::backdrop{
+  background:color-mix(in srgb,#000 18%,transparent)
+}
+
+@media(max-width:900px){
+  .quick-overview-header h2{font-size:22px}
+}

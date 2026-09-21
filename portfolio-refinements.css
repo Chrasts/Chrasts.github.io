@@ -281,3 +281,22 @@ body[data-graph-mode="overview"] #site-graph .site-graph-node[data-node-id="work
   .atlas-entry-glyph-edges line,
   .atlas-entry-glyph-nodes circle{animation:none!important}
 }
+
+
+@media(min-width:901px){
+  .atlas-button.atlas-entry-v7{
+    min-width:210px;
+    min-height:72px;
+    grid-template-columns:88px minmax(78px,1fr);
+    gap:12px;
+    padding:4px 2px!important
+  }
+  .atlas-entry-glyph{
+    width:88px;
+    height:54px
+  }
+  .atlas-entry-copy strong{
+    font-size:17px;
+    font-weight:800
+  }
+}

@@ -136,6 +136,7 @@ test.describe('Final graph interaction consolidation', () => {
     await expect(page.locator('.profile-root-inspector')).toHaveClass(/is-open/);
     await expect(page.locator('.profile-root-inspector')).not.toContainText('Profile root');
     await expect(page.locator('.profile-root-inspector h2')).toHaveText('Štěpán Chrast');
+    await expect(page.locator('.profile-root-inspector-links a[href="/cv/"]')).toHaveText('CV');
     await expect(page.locator('.profile-root-inspector-label')).not.toContainText('·');
     await expect(page.locator('.profile-root-inspector-label')).toContainText('/');
 

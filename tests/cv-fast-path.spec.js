@@ -27,10 +27,18 @@ test('conventional CV fast path renders from canonical portfolio data', async ({
 
   const nameSize = await page.getByRole('heading', { level: 1, name: 'Štěpán Chrast' })
     .evaluate(element => parseFloat(getComputedStyle(element).fontSize));
-  expect(nameSize).toBeLessThanOrEqual(42);
+  expect(nameSize).toBeLessThanOrEqual(30);
 
   const cvFont = await page.locator('body').evaluate(element => getComputedStyle(element).fontFamily);
   expect(cvFont).toContain('Recursive');
+  const cvBackground = await page.locator('body').evaluate(element => getComputedStyle(element).backgroundColor);
+  expect(cvBackground).not.toBe('rgb(255, 255, 255)');
+  const sectionAnchor = await page.locator('.cv-section > h2').first().evaluate(element => ({
+    beforeRadius: getComputedStyle(element, '::before').borderRadius,
+    afterWidth: parseFloat(getComputedStyle(element, '::after').width)
+  }));
+  expect(sectionAnchor.beforeRadius).not.toBe('0px');
+  expect(sectionAnchor.afterWidth).toBeGreaterThan(0);
 
   const positioningColor = await page.locator('.cv-positioning').evaluate(element => getComputedStyle(element).color);
   const linkColor = await page.locator('.cv-contact a').first().evaluate(element => getComputedStyle(element).color);

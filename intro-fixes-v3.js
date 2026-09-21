@@ -267,6 +267,10 @@
     const links = document.createElement('nav');
     links.className = 'profile-root-inspector-links';
     links.setAttribute('aria-label', 'Profile links');
+    const cv = document.createElement('a');
+    cv.href = '/cv/';
+    cv.textContent = 'CV';
+    links.appendChild(cv);
     if (profile.email) {
       const anchor = document.createElement('a');
       anchor.href = `mailto:${profile.email}`;

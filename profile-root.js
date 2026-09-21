@@ -127,32 +127,15 @@
     selectedWork.className = 'profile-root-action graph-control graph-control--primary';
     actions.appendChild(selectedWork);
 
-    const cv = makeCvLink('profile-root-action profile-root-cv graph-control graph-control--primary');
-    actions.appendChild(cv);
-
     const atlas = makeRouteButton('Explore Atlas', 'atlas');
     atlas.className = 'profile-root-action graph-control graph-control--primary';
     actions.appendChild(atlas);
 
-    const quick = element('button', 'profile-root-action profile-root-quick-trigger graph-control graph-control--primary', 'Quick overview');
+    const quick = element('button', 'profile-root-action profile-root-quick-trigger graph-control graph-control--primary', 'Profile brief');
     quick.type = 'button';
     quick.setAttribute('aria-haspopup', 'dialog');
     quick.addEventListener('click', () => openQuickOverview('profile-root'));
     actions.appendChild(quick);
-
-    const email = element('a', 'profile-root-action graph-control graph-control--secondary', 'Email');
-    email.href = `mailto:${profile.email}`;
-    actions.appendChild(email);
-
-    for (const label of ['GitHub', 'LinkedIn']) {
-      const data = profileLink(label);
-      if (!data?.href) continue;
-      const link = element('a', 'profile-root-action graph-control graph-control--secondary graph-control--external', `${label} ↗`);
-      link.href = data.href;
-      link.target = '_blank';
-      link.rel = 'noreferrer';
-      actions.appendChild(link);
-    }
 
     brief.append(identity, intro, actions);
     heading.appendChild(brief);
@@ -170,7 +153,7 @@
     if (globalQuickTrigger?.isConnected) return globalQuickTrigger;
     const routebar = document.querySelector('.graph-routebar');
     if (!routebar) return null;
-    globalQuickTrigger = element('button', 'quick-overview-global-trigger graph-control graph-control--primary', 'Quick overview');
+    globalQuickTrigger = element('button', 'quick-overview-global-trigger graph-control graph-control--primary', 'Profile brief');
     globalQuickTrigger.type = 'button';
     globalQuickTrigger.hidden = true;
     globalQuickTrigger.setAttribute('aria-haspopup', 'dialog');
@@ -211,13 +194,13 @@
     const header = element('header', 'quick-overview-header');
     const titleWrap = element('div');
     titleWrap.append(
-      element('p', 'quick-overview-kicker', 'Quick overview'),
+      element('p', 'quick-overview-kicker', 'Profile brief'),
       element('h2', '', profile.name || 'Štěpán Chrast')
     );
     titleWrap.querySelector('h2').id = 'quick-overview-title';
     const close = element('button', 'quick-overview-close', '×');
     close.type = 'button';
-    close.setAttribute('aria-label', 'Close quick overview');
+    close.setAttribute('aria-label', 'Close profile brief');
     close.addEventListener('click', () => closeQuickOverview('button'));
     header.append(titleWrap, close);
 
@@ -464,8 +447,8 @@
       branchCount: sections.filter(id => document.querySelector(`#site-graph .site-graph-node[data-node-id="${CSS.escape(id)}"][data-profile-root-branch="true"]`)).length,
       rootPresent: Boolean(root),
       rootMaterial: root?.dataset.rootEntryMaterial || null,
-      cvState: brief?.querySelector('[data-cv-state]')?.dataset.cvState || null,
-      professionalLinkCount: brief?.querySelectorAll('a.profile-root-action').length || 0,
+      cvState: document.querySelector('a.header-utility[href="/cv/"]') ? 'html' : null,
+      profileActionCount: brief?.querySelectorAll('.profile-root-action').length || 0,
       reducedMotion: reducedMotion.matches
     };
   }

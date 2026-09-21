@@ -27,17 +27,16 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
     expect(state.branchCount).toBe(5);
     expect(state.rootPresent).toBe(true);
     expect(state.cvState).toBe('html');
-    expect(state.professionalLinkCount).toBeGreaterThanOrEqual(4);
+    expect(state.profileActionCount).toBe(3);
 
     await expect(page.locator('.profile-app > .hero')).toBeHidden();
     await expect(page.locator('#site-explorer')).toBeVisible();
     await expect(page.locator('.profile-root-brief')).toBeVisible();
     await expect(page.locator('.profile-root-name')).toContainText('Štěpán Chrast');
     await expect(page.locator('.profile-root-brief')).toContainText('Data analysis');
-    await expect(page.locator('.profile-root-quick-trigger')).toContainText('Quick overview');
-    await expect(page.locator('.profile-root-cv')).toContainText('CV');
-    await expect(page.locator('.profile-root-cv')).toHaveAttribute('href', '/cv/');
-    await expect(page.locator('.profile-root-cv')).not.toHaveAttribute('download', /.*/);
+    await expect(page.locator('.profile-root-quick-trigger')).toContainText('Profile brief');
+    await expect(page.locator('.profile-root-cv')).toHaveCount(0);
+    await expect(page.locator('.profile-root-actions a')).toHaveCount(0);
 
     for (const id of firstLevel) {
       await expect(page.locator(`#site-graph .site-graph-node[data-node-id="${id}"][data-profile-root-branch="true"]`)).toBeVisible();
@@ -66,6 +65,24 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
     await expect(page.locator('.quick-overview-dialog')).toContainText('České priority');
     await expect(page.locator('.quick-overview-dialog')).toContainText('Survey Analysis');
     await expect(page.locator('.quick-overview-dialog')).toContainText('CV');
+    await expect(page.locator('.quick-overview-kicker')).toHaveText('Profile brief');
+
+    const briefNameSize = await page.locator('.quick-overview-header h2').evaluate(element => parseFloat(getComputedStyle(element).fontSize));
+    expect(briefNameSize).toBeLessThanOrEqual(27);
+
+    const openWorkGeometry = await page.locator('.quick-overview-section').filter({ hasText: 'Selected work' })
+      .getByRole('button', { name: 'Open Work' }).evaluate(element => {
+        const rect = element.getBoundingClientRect();
+        const before = getComputedStyle(element, '::before');
+        return {
+          paddingLeft: parseFloat(getComputedStyle(element).paddingLeft),
+          nodeLeft: parseFloat(before.left),
+          nodeWidth: parseFloat(before.width),
+          textLeft: rect.left + parseFloat(getComputedStyle(element).paddingLeft)
+        };
+      });
+    expect(openWorkGeometry.paddingLeft).toBeGreaterThanOrEqual(24);
+    expect(openWorkGeometry.nodeLeft + openWorkGeometry.nodeWidth).toBeLessThan(openWorkGeometry.paddingLeft);
 
     const dossierStyle = await page.locator('.quick-overview-dialog').evaluate(element => ({
       shadow: getComputedStyle(element).boxShadow,
@@ -122,7 +139,7 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
 
     const header = page.locator('body > .site-header.app-header');
     await expect(header).toBeVisible();
-    const quick = header.getByRole('button', { name: 'Quick overview' });
+    const quick = header.getByRole('button', { name: 'Profile brief' });
     await expect(quick).toBeVisible();
     await expect(header.getByRole('link', { name: 'CV' })).toHaveAttribute('href', '/cv/');
     await expect(header.getByRole('link', { name: 'GitHub ↗' })).toHaveAttribute('href', 'https://github.com/Chrasts');

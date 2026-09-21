@@ -1982,3 +1982,156 @@ body[data-graph-mode="overview"] .detail-node-list button{
 .scene-detail .detail-close{
   border-radius:var(--radius-ui)
 }
+
+
+/* ==========================================================================
+   Temporary mobile construction gate
+   The desktop portfolio is untouched. Fresh phone visitors get a stable,
+   conventional entry surface while the interactive mobile graph is rebuilt.
+   ========================================================================== */
+
+.mobile-construction-gate{display:none}
+
+@media(max-width:900px){
+  html[data-mobile-gate="active"] body{
+    overflow:hidden!important
+  }
+
+  html[data-mobile-gate="active"] .mobile-construction-gate{
+    display:flex;
+    position:fixed;
+    z-index:2147483000;
+    inset:0;
+    align-items:center;
+    justify-content:center;
+    padding:max(22px,env(safe-area-inset-top)) max(18px,env(safe-area-inset-right)) max(22px,env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));
+    overflow:auto;
+    background:var(--paper);
+    color:var(--ink)
+  }
+
+  .mobile-gate-shell{
+    width:min(100%,560px);
+    margin:auto;
+    padding:4px 2px;
+    border:0;
+    border-radius:0;
+    background:transparent;
+    box-shadow:none
+  }
+
+  .mobile-gate-mark{
+    width:54px;
+    height:32px;
+    position:relative;
+    margin:0 0 28px
+  }
+  .mobile-gate-mark::before,
+  .mobile-gate-mark::after{
+    content:"";
+    position:absolute;
+    top:15px;
+    height:1px;
+    background:var(--line)
+  }
+  .mobile-gate-mark::before{left:6px;width:18px;transform:rotate(-18deg);transform-origin:right center}
+  .mobile-gate-mark::after{left:29px;width:18px;transform:rotate(18deg);transform-origin:left center}
+  .mobile-gate-mark span{
+    position:absolute;
+    width:8px;
+    height:8px;
+    border:1.4px solid var(--muted);
+    border-radius:50%;
+    background:var(--paper)
+  }
+  .mobile-gate-mark span:nth-child(1){left:0;top:16px}
+  .mobile-gate-mark span:nth-child(2){left:23px;top:5px;background:var(--ink);border-color:var(--ink)}
+  .mobile-gate-mark span:nth-child(3){right:0;top:16px}
+
+  .mobile-gate-kicker{
+    margin:0 0 10px;
+    color:var(--muted);
+    font-family:var(--font-meta);
+    font-variation-settings:"MONO" 1,"CASL" 0,"slnt" 0,"CRSV" .5;
+    font-size:10px;
+    font-weight:650;
+    letter-spacing:.07em;
+    text-transform:uppercase
+  }
+
+  .mobile-gate-shell h1{
+    max-width:17ch;
+    margin:0;
+    font-family:var(--font-ui);
+    font-variation-settings:"MONO" 0,"CASL" .08,"slnt" 0,"CRSV" .5;
+    font-size:clamp(31px,9vw,47px);
+    font-weight:670;
+    line-height:.98;
+    letter-spacing:-.045em
+  }
+
+  .mobile-gate-copy{
+    max-width:52ch;
+    margin:20px 0 0;
+    color:var(--text-soft);
+    font-size:14px;
+    line-height:1.58
+  }
+
+  .mobile-gate-actions{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:6px;
+    margin-top:25px
+  }
+
+  .mobile-gate-actions .graph-control{
+    min-height:44px;
+    padding-right:4px;
+    font-size:12px
+  }
+
+  .mobile-gate-note{
+    max-width:48ch;
+    margin:18px 0 0 25px;
+    color:var(--muted);
+    font-size:10.5px;
+    line-height:1.45
+  }
+
+  .mobile-gate-status{
+    min-height:1.3em;
+    margin:8px 0 0 25px;
+    color:var(--muted);
+    font-family:var(--font-meta);
+    font-variation-settings:"MONO" 1,"CASL" 0,"slnt" 0,"CRSV" .5;
+    font-size:9px
+  }
+}
+
+@media(max-width:900px) and (orientation:landscape) and (max-height:520px){
+  html[data-mobile-gate="active"] .mobile-construction-gate{
+    align-items:flex-start
+  }
+  .mobile-gate-shell{
+    width:min(720px,100%);
+    padding-block:12px
+  }
+  .mobile-gate-mark{margin-bottom:14px}
+  .mobile-gate-shell h1{
+    max-width:28ch;
+    font-size:30px
+  }
+  .mobile-gate-copy{
+    margin-top:12px;
+    font-size:12px
+  }
+  .mobile-gate-actions{
+    flex-direction:row;
+    flex-wrap:wrap;
+    gap:8px 18px;
+    margin-top:12px
+  }
+  .mobile-gate-note{margin-top:8px}
+}

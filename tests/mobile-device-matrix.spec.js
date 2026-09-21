@@ -1,5 +1,29 @@
 const { test, expect } = require('@playwright/test');
 
+test.describe('temporary mobile construction gate', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+
+  test('fresh mobile visitors see Quick overview before the unfinished graph', async ({ page }) => {
+    await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+    const gate = page.locator('#mobile-construction-gate');
+    await expect(gate).toBeVisible();
+    await expect(gate).toContainText('desktop browser');
+    await expect(page.locator('.mobile-gate-quick')).toBeVisible();
+    await expect(page.locator('.mobile-gate-preview')).toBeVisible();
+
+    await page.locator('.mobile-gate-quick').click();
+    await expect(page.locator('.quick-overview-dialog')).toBeVisible({ timeout: 8_000 });
+    await page.locator('.quick-overview-close').click();
+    await expect(gate).toBeVisible();
+
+    await page.locator('.mobile-gate-preview').click();
+    await page.waitForLoadState('domcontentloaded');
+    await expect(gate).toBeHidden();
+  });
+});
+
 const devices = [
   { name: 'small-phone', width: 375, height: 667 },
   { name: 'baseline-phone', width: 390, height: 844 },

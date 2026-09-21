@@ -70,7 +70,13 @@
       try {
         const route = (location.hash || '#overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
         const seen = sessionStorage.getItem('profileIntroSeen') === 'true';
-        document.documentElement.dataset.profileIntro = route === 'overview' && !seen ? 'pending' : 'bypass';
+        const mobile = matchMedia('(max-width: 900px)').matches;
+        const mobilePreview = sessionStorage.getItem('mobileConstructionPreview') === 'true';
+        const mobileGate = mobile && !seen && !mobilePreview;
+        document.documentElement.dataset.mobileGate = mobileGate ? 'active' : (mobile ? 'preview' : 'off');
+        document.documentElement.dataset.profileIntro = mobileGate
+          ? 'bypass'
+          : (route === 'overview' && !seen ? 'pending' : 'bypass');
         if (document.documentElement.dataset.profileIntro === 'pending') {
           window.__PROFILE_ENTRY_FAILOPEN__ = setTimeout(() => {
             if (!['pending', 'preparing', 'running'].includes(document.documentElement.dataset.profileIntro || '')) return;
@@ -123,6 +129,22 @@
     html[data-profile-intro="pending"] body > :not(.entry-loading-shell),
     html[data-profile-intro="preparing"] body > :not(.entry-loading-shell){visibility:hidden!important}
     .entry-loading-shell{display:none}
+    .mobile-construction-gate{display:none}
+    @media(max-width:900px){
+      html[data-mobile-gate="active"] body{overflow:hidden}
+      html[data-mobile-gate="active"] .mobile-construction-gate{
+        display:flex;
+        position:fixed;
+        z-index:2147483000;
+        inset:0;
+        background:#efe6d9;
+        color:#242522
+      }
+      html[data-theme="dark"][data-mobile-gate="active"] .mobile-construction-gate{
+        background:#11191c;
+        color:#f1eadf
+      }
+    }
     html[data-profile-intro="pending"] .entry-loading-shell,
     html[data-profile-intro="preparing"] .entry-loading-shell,
     html[data-profile-intro="running"] .entry-loading-shell{
@@ -184,6 +206,21 @@
       <span class="entry-loading-core"></span>
     </div>
   </div>
+  <section class="mobile-construction-gate" id="mobile-construction-gate" role="dialog" aria-modal="true" aria-labelledby="mobile-gate-title" aria-describedby="mobile-gate-copy" hidden>
+    <div class="mobile-gate-shell">
+      <div class="mobile-gate-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+      <p class="mobile-gate-kicker">Mobile status</p>
+      <h1 id="mobile-gate-title">The interactive atlas is being rebuilt for smaller screens.</h1>
+      <p class="mobile-gate-copy" id="mobile-gate-copy">The full graph experience is not yet reliable on phones. For the complete site, please use a desktop browser. A compact profile summary is available here in the meantime.</p>
+      <div class="mobile-gate-actions">
+        <button class="mobile-gate-quick graph-control graph-control--primary" type="button" aria-haspopup="dialog">Quick overview</button>
+        <button class="mobile-gate-preview graph-control graph-control--secondary" type="button">Open unfinished mobile preview</button>
+      </div>
+      <p class="mobile-gate-note">The preview remains available for inspection, but layout and interaction issues are expected.</p>
+      <p class="mobile-gate-status" role="status" aria-live="polite"></p>
+    </div>
+  </section>
+
   <a class="skip-link" href="#main-content">Skip to content</a>
   <header class="site-header app-header wrap">
     <a class="brand" href="#overview" data-route="overview" aria-label="Overview">ŠC</a>
@@ -311,5 +348,6 @@
   <script src="cross-link-travel-v2.js?v=20260920-entrycolors1"></script>
   <script src="scene-legacy-bridge.js?v=20260921-dossier4"></script>
   <script src="site-shell.js?v=20260918-r2"></script>
+  <script src="mobile-construction-gate.js?v=20260921-mobilegate1"></script>
 </body>
 </html>

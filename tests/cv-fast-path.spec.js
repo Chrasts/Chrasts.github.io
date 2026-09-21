@@ -46,3 +46,25 @@ test('conventional CV fast path renders from canonical portfolio data', async ({
 
   await expect(page.getByRole('button', { name: 'Print / Save PDF' })).toBeVisible();
 });
+
+
+test('CV top utilities expose visible graph-native hover feedback', async ({ page }) => {
+  await page.goto('/cv/');
+  const portfolio = page.getByRole('link', { name: 'Interactive portfolio' });
+  const print = page.getByRole('button', { name: 'Print / Save PDF' });
+
+  const before = await portfolio.evaluate(element => ({
+    transform: getComputedStyle(element).transform,
+    nodeBackground: getComputedStyle(element, '::before').backgroundColor
+  }));
+  await portfolio.hover();
+  const after = await portfolio.evaluate(element => ({
+    transform: getComputedStyle(element).transform,
+    nodeBackground: getComputedStyle(element, '::before').backgroundColor
+  }));
+  expect(after.transform).not.toBe(before.transform);
+  expect(after.nodeBackground).not.toBe(before.nodeBackground);
+
+  await print.hover();
+  expect(await print.evaluate(element => getComputedStyle(element).transform)).not.toBe('none');
+});

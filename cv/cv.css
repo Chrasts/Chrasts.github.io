@@ -295,3 +295,30 @@ h1{
   .cv-item{break-inside:avoid}
   a{color:var(--accent)}
 }
+
+
+/* Portfolio and PDF utilities visibly acknowledge pointer hover while retaining
+   the same flat graph-control language. */
+.cv-toolbar a,
+.cv-toolbar button{
+  transition:color .14s ease,transform .14s ease
+}
+.cv-toolbar a::before,
+.cv-toolbar button::before,
+.cv-toolbar a::after,
+.cv-toolbar button::after{
+  transition:background-color .14s ease,width .14s ease,opacity .14s ease
+}
+.cv-toolbar a:hover,
+.cv-toolbar button:hover{
+  transform:translateX(2px)
+}
+.cv-toolbar a:hover::before,
+.cv-toolbar button:hover::before{
+  background:currentColor
+}
+.cv-toolbar a:hover::after,
+.cv-toolbar button:hover::after{
+  width:15px;
+  opacity:1
+}

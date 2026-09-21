@@ -47,6 +47,46 @@ test.describe('Intro entry experience master contract', () => {
     }
   });
 
+  test('opening Atlas header keeps its right edge stable when reveal becomes ready', async ({ page }) => {
+    await page.addInitScript(() => sessionStorage.removeItem('profileIntroSeen'));
+    await blockAnalytics(page);
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => window.ProfileIntro?.snapshot?.().state === 'ATLAS_REVEAL', null, { timeout: 8_000 });
+
+    const reveal = await page.evaluate(() => {
+      const header = document.querySelector('body > .site-header.app-header');
+      const actions = header?.querySelector('.header-actions');
+      const context = header?.querySelector('.header-context-slot');
+      return {
+        headerRight: header?.getBoundingClientRect().right,
+        actionsRight: actions?.getBoundingClientRect().right,
+        justifySelf: actions ? getComputedStyle(actions).justifySelf : null,
+        contextDisplay: context ? getComputedStyle(context).display : null
+      };
+    });
+
+    await page.waitForFunction(() => window.ProfileIntro?.snapshot?.().state === 'ATLAS_READY', null, { timeout: 30_000 });
+
+    const ready = await page.evaluate(() => {
+      const header = document.querySelector('body > .site-header.app-header');
+      const actions = header?.querySelector('.header-actions');
+      const context = header?.querySelector('.header-context-slot');
+      return {
+        headerRight: header?.getBoundingClientRect().right,
+        actionsRight: actions?.getBoundingClientRect().right,
+        justifySelf: actions ? getComputedStyle(actions).justifySelf : null,
+        contextDisplay: context ? getComputedStyle(context).display : null
+      };
+    });
+
+    expect(reveal.justifySelf).toBe('end');
+    expect(ready.justifySelf).toBe('end');
+    expect(reveal.contextDisplay).not.toBe('none');
+    expect(ready.contextDisplay).not.toBe('none');
+    expect(Math.abs(reveal.headerRight - ready.headerRight)).toBeLessThan(2);
+    expect(Math.abs(reveal.actionsRight - ready.actionsRight)).toBeLessThan(2);
+  });
+
   test('fresh reveal retains one bounds-driven camera and the full topology through ATLAS_READY', async ({ page }) => {
     await bootFreshReady(page);
     const state = await page.evaluate(() => {

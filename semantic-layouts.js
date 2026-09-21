@@ -61,6 +61,7 @@
     return lanes;
   };
   const rangeFor = (node, present) => ({ start: node.startDate, end: node.ongoing ? present : node.endDate || node.startDate, ongoing: Boolean(node.ongoing) });
+  const educationYearBoundary = year => `${year}-01`;
   const experienceConfig = () => site.semantics?.experience?.timeline || ({ careerFocusStart: '2026-07', earlierStart: '2019-01', earlierEnd: '2023-12', present: '2026-10' });
 
   // A role detail changes semantic mode: dates remain in its inspector, while
@@ -259,9 +260,12 @@
     };
 
     if (mobile) {
-      const axisX = 600, scale = TemporalScale({ present, segments: [{ from: '2021', to: present, positionStart: 246, positionEnd: 650 }] });
+      const axisX = 600, scale = TemporalScale({ present, segments: [{ from: educationYearBoundary('2021'), to: present, positionStart: 246, positionEnd: 650 }] });
       guides.push({ id: 'education-trajectory', kind: 'timeline-axis', x1: axisX, y1: 230, x2: axisX, y2: 670 });
-      ['2021', '2022', '2024', '2026'].forEach(year => { const y = scale.position(year); guides.push({ id: `education-tick-${year}`, kind: 'timeline-tick', x1: axisX - 7, y1: y, x2: axisX + 7, y2: y, label: year, labelX: axisX - 30, labelY: y + 3 }); });
+      ['2021', '2022', '2024', '2026'].forEach(year => {
+        const y = scale.position(educationYearBoundary(year));
+        guides.push({ id: `education-tick-${year}`, kind: 'timeline-tick', x1: axisX - 7, y1: y, x2: axisX + 7, y2: y, label: year, labelX: axisX - 30, labelY: y + 3 });
+      });
       const bscProgramme = programme(bsc, scale, 520, true), mscProgramme = programme(msc, scale, 666, true);
       programme('esslli', scale, 780, true); const prgProgramme = programme('prg-ai', scale, 820, true);
       if (bscProgramme && mscProgramme) guides.push({ id: 'education-degree-continuation', kind: 'trajectory-continuation', x1: 520, y1: bscProgramme.interval.end, x2: 666, y2: mscProgramme.interval.start });
@@ -287,9 +291,12 @@
       });
       guides.push({ id: 'education-present', kind: 'present', x1: axisX - 14, y1: 670, x2: axisX + 14, y2: 670, label: 'Present', labelX: 686, labelY: 674 });
     } else {
-      const axisY = 380, scale = TemporalScale({ present, segments: [{ from: '2021', to: present, positionStart: 220, positionEnd: 1080 }] });
+      const axisY = 380, scale = TemporalScale({ present, segments: [{ from: educationYearBoundary('2021'), to: present, positionStart: 220, positionEnd: 1080 }] });
       guides.push({ id: 'education-trajectory', kind: 'timeline-axis', x1: 220, y1: axisY, x2: 1080, y2: axisY });
-      ['2021', '2022', '2024', '2026'].forEach(year => { const x = scale.position(year); guides.push({ id: `education-tick-${year}`, kind: 'timeline-tick', x1: x, y1: axisY - 7, x2: x, y2: axisY + 7, label: year, labelY: axisY + 27 }); });
+      ['2021', '2022', '2024', '2026'].forEach(year => {
+        const x = scale.position(educationYearBoundary(year));
+        guides.push({ id: `education-tick-${year}`, kind: 'timeline-tick', x1: x, y1: axisY - 7, x2: x, y2: axisY + 7, label: year, labelY: axisY + 27 });
+      });
       const bscProgramme = programme(bsc, scale, 430, false), mscProgramme = programme(msc, scale, 492, false);
       // Both programmes occur close to the 2026 boundary. Their time x
       // remains exact, while deliberately separated lanes keep their labels

@@ -316,3 +316,28 @@ test('deep Knowledge focus keeps rendered nodes inside the visible graph viewpor
     expect(node.bottom).toBeLessThanOrEqual(geometry.viewport.bottom + 2);
   });
 });
+
+
+test('Education axis is calendar-proportional from 2024 through the 2026 present tail', async ({ page }) => {
+  await bypassIntro(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/#education');
+  await page.waitForFunction(() => document.body.dataset.graphRoute === 'education');
+  await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
+
+  const points = await page.evaluate(() => {
+    const guide = id => document.querySelector(`#site-graph [data-semantic-guide="${id}"] .site-graph-semantic-guide-line`);
+    const x = id => Number(guide(id)?.getAttribute('x1'));
+    return {
+      y2024: x('education-tick-2024'),
+      y2026: x('education-tick-2026'),
+      present: x('education-present')
+    };
+  });
+
+  const twoYears = points.y2026 - points.y2024;
+  const current2026 = points.present - points.y2026;
+  expect(twoYears).toBeGreaterThan(0);
+  expect(current2026).toBeGreaterThan(twoYears * 0.30);
+  expect(current2026).toBeLessThan(twoYears * 0.45);
+});

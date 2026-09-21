@@ -6,7 +6,9 @@
   --line:#d9dddc;
   --accent:#146c72;
   --paper:#fff;
-  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
+  --font-ui:"Recursive",ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-family:var(--font-ui);
+  font-variation-settings:"MONO" 0,"CASL" .06,"slnt" 0,"CRSV" .5
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);line-height:1.45}

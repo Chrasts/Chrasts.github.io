@@ -136,6 +136,19 @@ test.describe('Final graph interaction consolidation', () => {
     await expect(page.locator('.profile-root-inspector')).toHaveClass(/is-open/);
     await expect(page.locator('.profile-root-inspector')).not.toContainText('Profile root');
     await expect(page.locator('.profile-root-inspector h2')).toHaveText('Štěpán Chrast');
+    await expect(page.locator('.profile-root-inspector-label')).not.toContainText('·');
+    await expect(page.locator('.profile-root-inspector-label')).toContainText('/');
+
+    const inspectorStyle = await page.locator('.profile-root-inspector-panel').evaluate(element => ({
+      radius: parseFloat(getComputedStyle(element).borderRadius),
+      shadow: getComputedStyle(element).boxShadow,
+      background: getComputedStyle(element).backgroundColor
+    }));
+    const backdropStyle = await page.locator('.profile-root-inspector-backdrop').evaluate(element => getComputedStyle(element).backdropFilter);
+    expect(inspectorStyle.radius).toBeLessThanOrEqual(5);
+    expect(inspectorStyle.shadow).toBe('none');
+    expect(inspectorStyle.background).not.toBe('rgba(0, 0, 0, 0)');
+    expect(backdropStyle === 'none' || backdropStyle === '').toBe(true);
   });
 
   test('Profile to Atlas uses root-collapse/full-unfold instead of the retired snapshot handoff', async ({ page }) => {

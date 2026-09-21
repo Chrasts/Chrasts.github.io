@@ -83,12 +83,17 @@ test('focused CV keeps the established compact graph-native visual language', as
   const cvBackground = await page.locator('body').evaluate(element => getComputedStyle(element).backgroundColor);
   expect(cvBackground).not.toBe('rgb(255, 255, 255)');
 
-  const sectionAnchor = await page.locator('.cv-section > h2').first().evaluate(element => ({
-    beforeRadius: getComputedStyle(element, '::before').borderRadius,
-    afterWidth: parseFloat(getComputedStyle(element, '::after').width)
+  const sectionHeading = await page.locator('.cv-section > h2').first().evaluate(element => ({
+    beforeContent: getComputedStyle(element, '::before').content,
+    afterContent: getComputedStyle(element, '::after').content,
+    paddingLeft: parseFloat(getComputedStyle(element).paddingLeft)
   }));
-  expect(sectionAnchor.beforeRadius).not.toBe('0px');
-  expect(sectionAnchor.afterWidth).toBeGreaterThan(0);
+  expect(['none', 'normal', '""']).toContain(sectionHeading.beforeContent);
+  expect(['none', 'normal', '""']).toContain(sectionHeading.afterContent);
+  expect(sectionHeading.paddingLeft).toBe(0);
+
+  const areas = await page.locator('.cv-area-list-compact').innerText();
+  expect(areas).toContain(',');
 
   const positioningColor = await page.locator('.cv-positioning').evaluate(element => getComputedStyle(element).color);
   const linkColor = await page.locator('.cv-contact a').first().evaluate(element => getComputedStyle(element).color);
@@ -113,6 +118,38 @@ test('focused CV separates sections and entries with restrained structural rules
   expect(itemStyle.borderLeftWidth).toBeGreaterThan(0);
   expect(itemStyle.backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
   expect(itemStyle.paddingLeft).toBeGreaterThanOrEqual(13);
+});
+
+test('only top CV utilities retain the node-link hover motif', async ({ page }) => {
+  await page.goto('/cv/?view=academic');
+
+  const staticSurfaces = await page.evaluate(() => {
+    const header = document.querySelector('.cv-header');
+    const sectionHeading = document.querySelector('.cv-section > h2');
+    const areaItem = document.querySelector('.cv-area-list-compact li');
+    const read = element => ({
+      before: getComputedStyle(element, '::before').content,
+      after: getComputedStyle(element, '::after').content
+    });
+    return {
+      header: read(header),
+      sectionHeading: read(sectionHeading),
+      areaItem: read(areaItem)
+    };
+  });
+
+  for (const surface of Object.values(staticSurfaces)) {
+    expect(['none', 'normal', '""']).toContain(surface.before);
+  }
+  expect(staticSurfaces.areaItem.after).not.toBe('none');
+
+  const toolbar = page.getByRole('link', { name: 'Interactive portfolio' });
+  const toolbarPseudo = await toolbar.evaluate(element => ({
+    before: getComputedStyle(element, '::before').content,
+    after: getComputedStyle(element, '::after').content
+  }));
+  expect(toolbarPseudo.before).not.toBe('none');
+  expect(toolbarPseudo.after).not.toBe('none');
 });
 
 test('CV top utilities expose visible graph-native hover feedback', async ({ page }) => {

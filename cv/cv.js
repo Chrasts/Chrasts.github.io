@@ -27,8 +27,8 @@
     if (/^https?:/.test(href)) { a.target = '_blank'; a.rel = 'noreferrer'; }
     return a;
   };
-  const section = title => {
-    const s = el('section', 'cv-section');
+  const section = (title, key) => {
+    const s = el('section', `cv-section cv-section-${key}`);
     s.append(el('h2', '', title));
     return s;
   };
@@ -49,7 +49,7 @@
     header.append(currentLine);
   }
 
-  const work = section('Selected Projects');
+  const work = section('Selected Projects', 'projects');
   projects
     .filter(project => Number.isFinite(project.featuredRank))
     .sort((a,b) => a.featuredRank - b.featuredRank)
@@ -84,7 +84,7 @@
       work.append(article);
     });
 
-  const experience = section('Experience');
+  const experience = section('Experience', 'experience');
   byParent('experience')
     .sort((a,b) => (b.startDate || b.meta || '').localeCompare(a.startDate || a.meta || ''))
     .forEach(item => {
@@ -100,7 +100,7 @@
       experience.append(article);
     });
 
-  const education = section('Education');
+  const education = section('Education', 'education');
   byParent('education')
     .filter(item => item.type === 'education' || ['charles-university','charles-university-masters-logic','esslli','prg-ai'].includes(item.id))
     .sort((a,b) => (a.layoutOrder || 99) - (b.layoutOrder || 99))
@@ -112,7 +112,7 @@
       education.append(article);
     });
 
-  const areas = section('Core Areas');
+  const areas = section('Core Areas', 'areas');
   const areaList = el('ul', 'cv-area-list');
   byParent('knowledge')
     .filter(item => item.id !== 'research-practice')

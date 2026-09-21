@@ -526,7 +526,7 @@ body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav
   [data-route="education"],
   [data-route="about"]
 ):is(:hover,:focus-visible){
-  color:var(--brown)!important
+  color:var(--profile-accent)!important
 }
 body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-quick-overview,
 body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-quick-overview:is(:hover,:focus-visible){

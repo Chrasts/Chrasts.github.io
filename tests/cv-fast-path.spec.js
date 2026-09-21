@@ -68,3 +68,17 @@ test('CV top utilities expose visible graph-native hover feedback', async ({ pag
   await print.hover();
   expect(await print.evaluate(element => getComputedStyle(element).transform)).not.toBe('none');
 });
+
+
+test('CV section headings sit above a wide multi-column body', async ({ page }) => {
+  await page.goto('/cv/');
+  const section = page.locator('.cv-section-projects');
+  const heading = section.locator(':scope > h2');
+  const first = section.locator(':scope > .cv-item').first();
+  const second = section.locator(':scope > .cv-item').nth(1);
+  const h = await heading.boundingBox();
+  const a = await first.boundingBox();
+  const b = await second.boundingBox();
+  expect(a.y).toBeGreaterThan(h.y + h.height - 1);
+  expect(Math.abs(a.y - b.y)).toBeLessThan(8);
+});

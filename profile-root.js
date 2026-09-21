@@ -120,6 +120,13 @@
     // its junior-career qualifier is already represented by the Experience
     // branch and otherwise consumes scarce left-column space.
     const intro = element('p', 'profile-root-summary', (profile.intro || '').replace(/^\s*Junior\s+/i, ''));
+    const quickRow = element('div', 'profile-root-quick-row');
+    const quick = element('button', 'profile-root-action profile-root-quick-trigger graph-control graph-control--primary', 'Profile brief');
+    quick.type = 'button';
+    quick.setAttribute('aria-haspopup', 'dialog');
+    quick.addEventListener('click', () => openQuickOverview('profile-root'));
+    quickRow.appendChild(quick);
+
     const actions = element('div', 'profile-root-actions');
 
     const selectedWork = makeRouteButton('Selected Work', 'work');
@@ -130,13 +137,7 @@
     atlas.className = 'profile-root-action graph-control graph-control--primary';
     actions.appendChild(atlas);
 
-    const quick = element('button', 'profile-root-action profile-root-quick-trigger graph-control graph-control--primary', 'Profile brief');
-    quick.type = 'button';
-    quick.setAttribute('aria-haspopup', 'dialog');
-    quick.addEventListener('click', () => openQuickOverview('profile-root'));
-    actions.appendChild(quick);
-
-    brief.append(identity, intro, actions);
+    brief.append(identity, intro, quickRow, actions);
     heading.appendChild(brief);
     return brief;
   };

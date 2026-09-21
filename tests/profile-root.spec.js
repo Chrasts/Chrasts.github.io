@@ -281,3 +281,19 @@ test('desktop header owns stable Profile context and same-route Overview is a no
   expect(after.viewBox).toBe(before.viewBox);
   expect(after.root).toBe(before.root);
 });
+
+
+test('Profile overview keeps one identity name and separates prominent Profile brief from secondary routes', async ({ page }) => {
+  await bootOverview(page);
+  await expect(page.locator('.profile-root-name')).toHaveCount(1);
+  await expect(page.locator('.graph-breadcrumb')).toBeHidden();
+  const size = await page.locator('.profile-root-name').evaluate(element => parseFloat(getComputedStyle(element).fontSize));
+  expect(size).toBeLessThanOrEqual(24);
+
+  const quick = page.locator('.profile-root-quick-row .profile-root-quick-trigger');
+  await expect(quick).toBeVisible();
+  const quickBox = await quick.boundingBox();
+  const actionsBox = await page.locator('.profile-root-actions').boundingBox();
+  expect(quickBox.height).toBeGreaterThanOrEqual(54);
+  expect(quickBox.y + quickBox.height).toBeLessThanOrEqual(actionsBox.y + 2);
+});

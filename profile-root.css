@@ -672,3 +672,63 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-read
 .quick-overview-kicker{
   color:var(--profile-accent)
 }
+
+
+/* Overview hierarchy refinement. The breadcrumb would duplicate the identity
+   name, so Profile owns a single visible name in the left dossier. */
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready .graph-breadcrumb{
+  display:none!important
+}
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready .graph-routebar{
+  justify-content:flex-end
+}
+.profile-root-name{
+  font-size:clamp(20px,1.75vw,24px)!important;
+  line-height:1.02!important;
+  letter-spacing:-.02em!important
+}
+.profile-root-quick-row{
+  margin-top:15px;
+  pointer-events:none
+}
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready .profile-root-quick-row{
+  pointer-events:auto
+}
+.profile-root-quick-trigger.graph-control{
+  min-width:224px;
+  min-height:58px;
+  padding:0 18px 0 52px;
+  border:1px solid color-mix(in srgb,var(--ink) 38%,var(--line));
+  border-radius:var(--radius-ui);
+  background:color-mix(in srgb,var(--ink) 4%,var(--paper));
+  color:var(--ink);
+  font-size:15px;
+  font-weight:860;
+  letter-spacing:-.01em
+}
+.profile-root-quick-trigger.graph-control::before{
+  left:15px;
+  width:10px;
+  height:10px;
+  border-width:1.5px;
+  border-color:var(--ink);
+  background:var(--ink)
+}
+.profile-root-quick-trigger.graph-control::after{
+  left:26px;
+  width:20px;
+  height:2px;
+  background:var(--ink)
+}
+.profile-root-quick-trigger.graph-control:hover,
+.profile-root-quick-trigger.graph-control:focus-visible{
+  background:color-mix(in srgb,var(--ink) 8%,var(--paper));
+  transform:translateX(3px)
+}
+.profile-root-quick-trigger.graph-control:hover::after,
+.profile-root-quick-trigger.graph-control:focus-visible::after{
+  width:24px
+}
+.profile-root-actions{
+  margin-top:9px!important
+}

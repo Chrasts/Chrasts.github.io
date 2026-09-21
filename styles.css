@@ -2144,27 +2144,27 @@ body[data-graph-mode="overview"] .detail-node-list button{
 @media(min-width:901px){
   .app-header{
     display:grid;
-    grid-template-columns:118px minmax(0,1fr);
+    grid-template-columns:182px minmax(0,1fr);
     align-items:center;
     column-gap:14px
   }
   .header-context-slot{
     grid-column:1;
-    width:118px;
+    width:182px;
     min-width:0;
     height:52px;
-    display:grid;
-    grid-template-rows:26px 18px;
-    align-content:center;
+    display:flex;
     align-items:center
   }
   .header-back-slot{
     min-width:0;
-    height:26px;
+    height:32px;
     display:flex;
-    align-items:center
+    align-items:center;
+    flex:0 1 auto
   }
   .header-location-label{
+    position:relative;
     min-width:0;
     overflow:hidden;
     text-overflow:ellipsis;
@@ -2175,6 +2175,20 @@ body[data-graph-mode="overview"] .detail-node-list button{
     font-size:9px;
     font-weight:720;
     letter-spacing:.045em
+  }
+  .header-context-slot:has(.crosslink-return-control:not([hidden])) .header-location-label{
+    margin-left:11px;
+    padding-left:12px
+  }
+  .header-context-slot:has(.crosslink-return-control:not([hidden])) .header-location-label::before{
+    content:"";
+    position:absolute;
+    left:0;
+    top:50%;
+    width:1px;
+    height:12px;
+    background:var(--line);
+    transform:translateY(-50%)
   }
   .header-actions{
     grid-column:2;
@@ -2187,10 +2201,10 @@ body[data-graph-mode="overview"] .detail-node-list button{
 }
 @media(max-width:1180px) and (min-width:901px){
   .app-header{
-    grid-template-columns:92px minmax(0,1fr);
+    grid-template-columns:148px minmax(0,1fr);
     column-gap:8px
   }
-  .header-context-slot{width:92px}
+  .header-context-slot{width:148px}
   .header-location-label{font-size:8px}
 }
 
@@ -2221,7 +2235,7 @@ body[data-graph-mode="overview"] .detail-node-list button{
   [data-route="education"],
   [data-route="about"]
 ){
-  color:var(--brown)!important
+  color:var(--profile-accent)!important
 }
 .site-header #main-nav > a:is(
   [data-route="work"],
@@ -2237,7 +2251,7 @@ body[data-graph-mode="overview"] .detail-node-list button{
   [data-route="education"],
   [data-route="about"]
 )[aria-current="page"]::after{
-  background:var(--brown)!important
+  background:var(--profile-accent)!important
 }
 
 .graph-crumb[aria-current="true"]{color:var(--profile-accent)}

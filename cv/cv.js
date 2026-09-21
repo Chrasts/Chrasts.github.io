@@ -19,7 +19,7 @@
       key: 'academic',
       name: 'Academic CV',
       positioning: 'Mathematical logic · Algebraic logic · Research',
-      summary: 'Master's student in Logic focused on algebraic and non-classical logic, universal algebra and computational support for formal research.',
+      summary: "Master's student in Logic focused on algebraic and non-classical logic, universal algebra and computational support for formal research.",
       projectIds: ['bachelor-thesis', 'arol-lab', 'clp-survey', 'modal-logic-lab'],
       experienceIds: ['ceske-priority'],
       areaIds: ['mathematical-logic', 'algebraic-logic', 'universal-algebra', 'lattice-theory', 'computational-logic'],

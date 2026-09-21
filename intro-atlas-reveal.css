@@ -830,3 +830,33 @@ body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .graph-co
     width:7px!important
   }
 }
+
+
+/* Final opening-Atlas alignment: the terminal pass must not reserve an empty
+   HUD column or right-anchor the complete navigation strip. */
+@media(min-width:901px){
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header.app-header{
+    grid-template-columns:minmax(0,1fr)
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-context-slot{
+    display:none
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-actions{
+    grid-column:1;
+    justify-self:start;
+    justify-content:flex-start;
+    width:100%
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav{
+    margin-left:22px
+  }
+}
+
+@media(max-width:1280px) and (min-width:901px){
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav{
+    margin-left:18px
+  }
+}

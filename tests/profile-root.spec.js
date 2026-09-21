@@ -360,6 +360,7 @@ test('opening Atlas header keeps persistent terminals without label collisions',
     expect(item.paddingLeft).toBeLessThanOrEqual(1);
     expect(item.nodeContent).not.toBe('none');
   });
+  expect(geometry[0].left).toBeLessThan(70);
   for (let i = 1; i < geometry.length; i += 1) {
     expect(geometry[i].left - geometry[i - 1].right).toBeGreaterThanOrEqual(18);
   }

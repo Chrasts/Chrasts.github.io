@@ -1242,37 +1242,6 @@ body{min-height:100%;overflow-x:hidden}
   backdrop-filter:none
 }
 .app-header::after{content:none}
-.header-boundary-mark{
-  position:absolute;
-  bottom:0;
-  width:30px;
-  height:7px;
-  pointer-events:none
-}
-.header-boundary-mark::before{
-  content:"";
-  position:absolute;
-  top:3px;
-  width:24px;
-  height:1px;
-  background:var(--line)
-}
-.header-boundary-mark::after{
-  content:"";
-  position:absolute;
-  top:0;
-  width:6px;
-  height:6px;
-  border:1px solid var(--muted);
-  border-radius:50%;
-  background:var(--paper)
-}
-.header-boundary-mark--left{left:0}
-.header-boundary-mark--left::before{left:5px}
-.header-boundary-mark--left::after{left:0}
-.header-boundary-mark--right{right:0}
-.header-boundary-mark--right::before{right:5px}
-.header-boundary-mark--right::after{right:0}
 .profile-app{
   position:relative;
   width:100%;

@@ -459,9 +459,6 @@ body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .theme-to
   border-radius:var(--radius-ui);
   border-color:var(--line)
 }
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-boundary-mark{
-  opacity:.92
-}
 
 @media(max-width:1180px) and (min-width:901px){
   body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header.app-header{

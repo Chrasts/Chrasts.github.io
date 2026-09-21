@@ -32,7 +32,7 @@
     left:16px!important;
     bottom:calc(58px + env(safe-area-inset-bottom))!important;
     max-height:min(48dvh,390px)!important;
-    border-radius:13px!important;
+    border-radius:var(--radius-panel)!important;
   }
   .mobile-control-sheet-head{min-height:48px!important;padding:4px 5px 4px 12px!important}
   .mobile-control-sheet-body{padding:8px 10px calc(9px + env(safe-area-inset-bottom))!important}
@@ -134,5 +134,23 @@
     right:max(12px,env(safe-area-inset-right))!important;
     left:max(12px,env(safe-area-inset-left))!important;
     max-height:62dvh!important;
+  }
+}
+
+
+@media (max-width:900px){
+  body[data-graph-mode="atlas"][data-mobile-atlas-view="branches"] #site-graph
+  .site-graph-node[data-node-id]:not([data-node-id="stepan-chrast"]):not([data-node-id="work"]):not([data-node-id="knowledge"]):not([data-node-id="experience"]):not([data-node-id="education"]):not([data-node-id="about"]){
+    display:none!important;
+    pointer-events:none!important
+  }
+
+  .mobile-atlas-branch-picker button:active,
+  .mobile-atlas-branch-picker button:focus-visible,
+  .mobile-work-project-picker button:active,
+  .mobile-work-project-picker button:focus-visible{
+    border-color:var(--ink);
+    color:var(--ink);
+    background:var(--cream)
   }
 }

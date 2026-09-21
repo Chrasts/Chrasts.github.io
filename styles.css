@@ -96,13 +96,14 @@ button:focus-visible{
   display:grid;
   place-items:center;
   border:1px solid var(--line);
-  border-radius:50%;
+  border-radius:var(--radius-ui);
   background:transparent;
   color:var(--ink);
-  font:500 17px/1 var(--sans);
+  font:500 17px/1 var(--font-ui);
   cursor:pointer
 }
-.theme-toggle:hover{border-color:var(--teal);color:var(--teal)}
+.theme-toggle:hover,
+.theme-toggle:focus-visible{border-color:var(--ink);color:var(--ink)}
 .menu-button{
   display:none;
   border:1px solid var(--line);
@@ -1236,6 +1237,7 @@ body{min-height:100%;overflow-x:hidden}
   width:min(1440px,calc(100% - 40px));
   height:62px;
   margin:0 auto;
+  border-bottom:0;
   background:transparent;
   backdrop-filter:none
 }
@@ -1969,4 +1971,14 @@ body[data-graph-mode="overview"] .scene-detail{
 body[data-graph-mode="overview"] .detail-node-list button{
   border-radius:var(--radius-ui);
   background:transparent
+}
+
+
+/* Final Overview header / control invariants. */
+.site-header #main-nav > a:hover,
+.site-header #main-nav > a:focus-visible{
+  color:var(--ink)
+}
+.scene-detail .detail-close{
+  border-radius:var(--radius-ui)
 }

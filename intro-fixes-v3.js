@@ -260,7 +260,7 @@
     name.textContent = profile.name || 'Štěpán Chrast';
     const label = document.createElement('p');
     label.className = 'profile-root-inspector-label';
-    label.textContent = profile.label || '';
+    label.textContent = String(profile.label || '').replace(/\s*·\s*/g, ' / ');
     const intro = document.createElement('p');
     intro.className = 'profile-root-inspector-intro';
     intro.textContent = profile.intro || '';

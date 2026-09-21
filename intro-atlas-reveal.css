@@ -539,3 +539,169 @@ body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .graph-co
   width:15px!important;
   opacity:1!important
 }
+
+
+/* --------------------------------------------------------------------------
+   Opening Atlas header: persistent node -> edge -> label grammar
+   Every option owns its terminal at rest. Hover/focus/current only changes the
+   terminal state, so the marker never appears from nowhere and labels never
+   shift when the active route changes.
+   -------------------------------------------------------------------------- */
+@media(min-width:901px){
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header.app-header{
+    width:min(1540px,calc(100% - 12px));
+    grid-template-columns:76px minmax(0,1fr);
+    padding-inline:10px
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-context-slot{
+    width:76px
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-actions{
+    width:100%;
+    gap:12px
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav{
+    gap:14px
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a{
+    position:relative;
+    min-height:38px;
+    display:inline-flex;
+    align-items:center;
+    padding:0 1px 0 25px!important;
+    white-space:nowrap
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a::before{
+    content:"";
+    position:absolute;
+    left:2px;
+    top:50%;
+    width:7px;
+    height:7px;
+    border:1.35px solid currentColor;
+    border-radius:50%;
+    background:var(--paper);
+    transform:translateY(-50%);
+    transition:background-color .14s ease,border-color .14s ease
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a::after{
+    content:"";
+    position:absolute;
+    left:10px;
+    top:50%;
+    width:8px;
+    height:1px;
+    background:currentColor;
+    opacity:.58;
+    transform:translateY(-50%);
+    transition:width .14s ease,opacity .14s ease,background-color .14s ease
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a:is(:hover,:focus-visible,[aria-current="page"])::before{
+    background:currentColor
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a:is(:hover,:focus-visible,[aria-current="page"])::after{
+    width:13px;
+    opacity:1
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions{
+    gap:11px
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control{
+    min-height:38px;
+    padding-left:25px!important
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::before{
+    left:2px;
+    width:7px;
+    height:7px;
+    background:var(--paper)!important
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::after{
+    left:10px;
+    width:8px!important;
+    opacity:.58
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control:is(:hover,:focus-visible)::before{
+    background:var(--graph-control-node)!important
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control:is(:hover,:focus-visible)::after{
+    width:13px!important;
+    opacity:1!important
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-topology-marker{
+    flex-basis:10px;
+    width:10px;
+    min-width:10px
+  }
+}
+
+/* Keep the same reserved node lane on medium desktops instead of collapsing
+   back to the old tight header that caused About / Atlas collisions. */
+@media(max-width:1280px) and (min-width:901px){
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header.app-header{
+    grid-template-columns:58px minmax(0,1fr);
+    padding-inline:6px
+  }
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-context-slot{
+    width:58px
+  }
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-actions{
+    gap:7px
+  }
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav{
+    gap:9px
+  }
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a{
+    padding-left:22px!important;
+    font-size:10px
+  }
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a::before{
+    left:1px;
+    width:6px;
+    height:6px
+  }
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a::after{
+    left:8px;
+    width:7px
+  }
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a:is(:hover,:focus-visible,[aria-current="page"])::after{
+    width:11px
+  }
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions{
+    gap:7px
+  }
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control{
+    padding-left:22px!important;
+    font-size:9.25px
+  }
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::before{
+    left:1px;
+    width:6px;
+    height:6px
+  }
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::after{
+    left:8px;
+    width:7px!important
+  }
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control:is(:hover,:focus-visible)::after{
+    width:11px!important
+  }
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-topology-marker{
+    display:none
+  }
+}

@@ -330,3 +330,54 @@ test('Profile brief keeps ESSLLI last in Education', async ({ page }) => {
   const items = await page.locator('.quick-overview-section').filter({ hasText: /^Education/ }).locator('li').allTextContents();
   expect(items.at(-1)).toContain('ESSLLI 2026');
 });
+
+
+test('opening Atlas header keeps persistent terminals without label collisions', async ({ page }) => {
+  await page.addInitScript(() => sessionStorage.removeItem('profileIntroSeen'));
+  await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
+  await page.goto('/');
+  await page.waitForFunction(() => window.ProfileIntro?.snapshot?.().state === 'ATLAS_READY', null, { timeout: 8_000 });
+
+  const routes = page.locator('#main-nav > a[data-route]');
+  await expect(routes).toHaveCount(7);
+
+  const geometry = await routes.evaluateAll(items => items.map(item => {
+    const rect = item.getBoundingClientRect();
+    const before = getComputedStyle(item, '::before');
+    const after = getComputedStyle(item, '::after');
+    return {
+      route: item.dataset.route,
+      left: rect.left,
+      right: rect.right,
+      paddingLeft: parseFloat(getComputedStyle(item).paddingLeft),
+      nodeContent: before.content,
+      nodeBackground: before.backgroundColor,
+      lineWidth: parseFloat(after.width)
+    };
+  }));
+
+  geometry.forEach(item => {
+    expect(item.paddingLeft).toBeGreaterThanOrEqual(21);
+    expect(item.nodeContent).not.toBe('none');
+  });
+  for (let i = 1; i < geometry.length; i += 1) {
+    expect(geometry[i].left - geometry[i - 1].right).toBeGreaterThanOrEqual(7);
+  }
+
+  const atlas = page.locator('#main-nav > a[data-route="atlas"]');
+  const work = page.locator('#main-nav > a[data-route="work"]');
+  const atlasFill = await atlas.evaluate(element => getComputedStyle(element, '::before').backgroundColor);
+  const workBefore = await work.evaluate(element => ({
+    fill: getComputedStyle(element, '::before').backgroundColor,
+    line: parseFloat(getComputedStyle(element, '::after').width)
+  }));
+  expect(atlasFill).not.toBe(workBefore.fill);
+
+  await work.hover();
+  const workAfter = await work.evaluate(element => ({
+    fill: getComputedStyle(element, '::before').backgroundColor,
+    line: parseFloat(getComputedStyle(element, '::after').width)
+  }));
+  expect(workAfter.fill).not.toBe(workBefore.fill);
+  expect(workAfter.line).toBeGreaterThan(workBefore.line);
+});

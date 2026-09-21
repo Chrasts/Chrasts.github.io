@@ -46,7 +46,7 @@
     document.head.appendChild(guard);
   }
 
-  const releaseRevision = '20260920-header1';
+  const releaseRevision = '20260921-hackathon1';
   const versionedResource = resource =>
     `${resource}${resource.includes('?') ? '&' : '?'}v=${releaseRevision}`;
 
@@ -87,6 +87,12 @@
       heading.after(trigger);
     }
 
+    const rootTrigger = copy.querySelector('[data-root-activate]');
+    if (rootTrigger) {
+      rootTrigger.hidden = !initialRootLanding;
+      rootTrigger.style.pointerEvents = initialRootLanding ? '' : 'none';
+    }
+
     if (!copy.querySelector('.root-atlas-affordance')) {
       const atlas = document.createElement('button');
       atlas.type = 'button';
@@ -98,6 +104,12 @@
       label.textContent = 'Explore Atlas';
       atlas.append(label);
       links.after(atlas);
+    }
+
+    const atlasAffordance = copy.querySelector('.root-atlas-affordance');
+    if (atlasAffordance) {
+      atlasAffordance.hidden = !initialRootLanding;
+      atlasAffordance.style.pointerEvents = initialRootLanding ? '' : 'none';
     }
   };
 

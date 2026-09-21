@@ -107,6 +107,8 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
 
     const header = page.locator('body > .site-header.app-header');
     await expect(header).toBeVisible();
+    const quick = header.getByRole('button', { name: 'Quick overview' });
+    await expect(quick).toBeVisible();
     await expect(header.getByRole('link', { name: 'CV' })).toHaveAttribute('href', '/cv/');
     await expect(header.getByRole('link', { name: 'GitHub ↗' })).toHaveAttribute('href', 'https://github.com/Chrasts');
     await expect(header.getByRole('link', { name: 'LinkedIn ↗' })).toHaveAttribute('href', 'https://www.linkedin.com/in/stepan-chrast');
@@ -114,10 +116,18 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
 
     const headerStyle = await header.evaluate(element => ({
       background: getComputedStyle(element).backgroundColor,
-      shadow: getComputedStyle(element).boxShadow
+      shadow: getComputedStyle(element).boxShadow,
+      height: parseFloat(getComputedStyle(element).height)
     }));
     expect(headerStyle.background).not.toBe('rgba(0, 0, 0, 0)');
     expect(headerStyle.shadow).not.toBe('none');
+    expect(headerStyle.height).toBeGreaterThanOrEqual(76);
+
+    await quick.click();
+    await expect(page.locator('.quick-overview-dialog')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.quick-overview-dialog')).toBeHidden();
+    await expect(quick).toBeFocused();
 
     await expect(page.locator('#site-graph-title')).toHaveText('Atlas');
     await expect(page.locator('.atlas-button')).toHaveText('Atlas');

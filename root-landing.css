@@ -275,3 +275,16 @@ body.is-root-unfolding #site-graph .site-graph-edges path{
     animation:none!important;
   }
 }
+
+/* Ownership guard. Once rootLanding is false, compatibility root controls are
+   not merely animating out: they are non-interactive and non-rendered. This
+   prevents a stale exit frame from sitting above the practical graph root. */
+body[data-root-landing="false"] [data-root-activate],
+body[data-root-landing="false"] .root-atlas-affordance,
+body[data-root-landing="false"] [data-root-portrait-activate]{
+  pointer-events:none!important
+}
+body[data-root-landing="false"] [data-root-activate],
+body[data-root-landing="false"] .root-atlas-affordance{
+  display:none!important
+}

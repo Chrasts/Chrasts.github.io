@@ -13,6 +13,7 @@
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let brief = null;
   let globalQuickTrigger = null;
+  const headerQuickTrigger = document.querySelector('.header-quick-overview');
   let quickDialog = null;
   let lastFocus = null;
   let pendingFocusRestore = null;
@@ -47,6 +48,11 @@
     if (!mode() || !(introStable() || lateReveal())) return false;
     return mode() !== 'overview' || rootLanding() === 'false' || lateReveal();
   };
+  const openingAtlasHeaderActive = () =>
+    mode() === 'atlas' &&
+    document.body?.dataset.entryState === 'ready' &&
+    introState() === 'ATLAS_READY' &&
+    !document.body?.classList.contains('is-root-entry-committing');
   const legacyRootNeedsRetirement = () => mode() === 'overview' && rootLanding() === 'true' && introStable();
   const track = name => { try { window.umami?.track?.(name); } catch (_) {} };
 
@@ -100,6 +106,7 @@
     if (!heading) return null;
 
     brief = element('section', 'profile-root-brief');
+    brief.hidden = true;
     brief.dataset.profileRootBrief = 'true';
     brief.setAttribute('aria-label', 'Professional profile overview');
 
@@ -149,6 +156,13 @@
     brief.append(identity, intro, actions);
     heading.appendChild(brief);
     return brief;
+  };
+
+  const ensureHeaderQuickTrigger = () => {
+    if (!headerQuickTrigger || headerQuickTrigger.dataset.quickOverviewBound === 'true') return headerQuickTrigger;
+    headerQuickTrigger.dataset.quickOverviewBound = 'true';
+    headerQuickTrigger.addEventListener('click', () => openQuickOverview('opening-atlas-header'));
+    return headerQuickTrigger;
   };
 
   const ensureGlobalQuickTrigger = () => {
@@ -369,6 +383,7 @@
 
   const sync = (reason = 'sync') => {
     ensureBrief();
+    ensureHeaderQuickTrigger();
     ensureGlobalQuickTrigger();
     ensureQuickDialog();
     registerSceneObjects();
@@ -378,6 +393,7 @@
     const profileVisible = overviewActive();
     if (brief) brief.hidden = !profileVisible;
     if (globalQuickTrigger) globalQuickTrigger.hidden = !quickAvailable() || profileVisible;
+    if (headerQuickTrigger) headerQuickTrigger.hidden = !openingAtlasHeaderActive();
     document.body.classList.toggle('is-profile-root-ready', profileVisible);
     if (profileVisible) {
       document.body.dataset.entryState = 'profile';
@@ -443,6 +459,7 @@
       legacyRetiredByPhaseH,
       quickOpen: Boolean(quickDialog?.open),
       globalQuickVisible: Boolean(globalQuickTrigger?.isConnected && !globalQuickTrigger.hidden),
+      headerQuickVisible: Boolean(headerQuickTrigger?.isConnected && !headerQuickTrigger.hidden),
       branchCount: sections.filter(id => document.querySelector(`#site-graph .site-graph-node[data-node-id="${CSS.escape(id)}"][data-profile-root-branch="true"]`)).length,
       rootPresent: Boolean(root),
       rootMaterial: root?.dataset.rootEntryMaterial || null,

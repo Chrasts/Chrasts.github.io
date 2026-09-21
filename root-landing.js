@@ -7,6 +7,7 @@
   const normaliseRoute = value =>
     (value || 'overview').replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
   const explorer = document.querySelector('#site-explorer');
+  const hero = document.querySelector('.profile-app > .hero');
   const status = document.querySelector('#site-graph-status');
   const trigger = document.querySelector('[data-root-activate]');
   const portraitTrigger = document.querySelector('.hero-visual.profile-identity');
@@ -48,6 +49,23 @@
     active = Boolean(next);
     document.body.dataset.rootLanding = active ? 'true' : 'false';
     document.body.classList.toggle('is-root-landing', active);
+
+    // Root ownership must switch synchronously. Scene exit animations and
+    // dynamically loaded CSS may continue visually for a frame, but obsolete
+    // root controls must never remain hit-testable once the graph owns input.
+    if (hero) hero.hidden = !active;
+    if (trigger) {
+      trigger.hidden = !active;
+      trigger.style.pointerEvents = active ? '' : 'none';
+    }
+    if (atlasTrigger) {
+      atlasTrigger.hidden = !active;
+      atlasTrigger.style.pointerEvents = active ? '' : 'none';
+    }
+    if (portraitTrigger) {
+      portraitTrigger.style.pointerEvents = active ? '' : 'none';
+    }
+
     guardExplorer(active);
     manager.setGraphState({ rootLanding: active }, { reason });
     manager.scheduleRefresh(reason);

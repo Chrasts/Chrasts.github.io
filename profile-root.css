@@ -51,6 +51,9 @@
   align-items:center;
   gap:7px 13px;
   margin-top:12px;
+  pointer-events:none
+}
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready .profile-root-actions{
   pointer-events:auto
 }
 

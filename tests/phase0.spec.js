@@ -36,11 +36,15 @@ const expectHealthyGraph = async page => {
 };
 
 const unfoldRoot = async page => {
-  if (await page.locator('[data-root-activate]').isVisible().catch(() => false)) {
-    await page.locator('[data-root-activate]').click();
-    await page.waitForFunction(() => document.body.dataset.rootLanding === 'false');
-    await page.waitForTimeout(120);
+  const rootLandingActive = await page.evaluate(() => document.body.dataset.rootLanding === 'true');
+  if (!rootLandingActive) {
+    await expect(page.locator('[data-root-activate]')).toBeHidden();
+    return;
   }
+  await page.locator('[data-root-activate]').click();
+  await page.waitForFunction(() => document.body.dataset.rootLanding === 'false');
+  await expect(page.locator('[data-root-activate]')).toBeHidden();
+  await page.waitForTimeout(120);
 };
 
 const goRoute = async (page, route) => {

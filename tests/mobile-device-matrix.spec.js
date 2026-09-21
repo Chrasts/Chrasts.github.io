@@ -1,30 +1,26 @@
 const { test, expect } = require('@playwright/test');
 
-test.describe('mobile profile brief', () => {
+test.describe('mobile entry gate', () => {
   test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
 
-  test('fresh mobile visitors land directly on a compact useful portfolio', async ({ page }) => {
+  test('mobile visitors get a desktop-only notice and direct choice of two CV variants', async ({ page }) => {
     await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
     const gate = page.locator('#mobile-construction-gate');
     await expect(gate).toBeVisible();
     await expect(gate.getByRole('heading', { name: 'Štěpán Chrast' })).toBeVisible();
-    await expect(gate).toContainText('Selected work');
-    await expect(gate).toContainText('Core areas');
-    await expect(gate).toContainText('Education');
-    await expect(gate).toContainText('Certifications');
-    await expect(gate).toContainText('Ethics of AI');
-    await expect(gate).not.toContainText('Mobile profile');
-    await expect(gate).not.toContainText('Interactive atlas:');
-    await expect(gate).not.toContainText('Open full CV');
-    await expect(gate.getByRole('link', { name: 'CV', exact: true })).toBeVisible();
-    await expect(gate.getByRole('link', { name: 'GitHub' })).toBeVisible();
-    await expect(gate.getByRole('link', { name: 'LinkedIn' })).toBeVisible();
-    await expect(page.locator('.mobile-gate-preview')).toBeVisible();
+    await expect(gate).toContainText('The main interactive portfolio is designed for desktop browsers and is available there only.');
+    await expect(gate).toContainText('On mobile, you can still open one of the two focused CV versions:');
 
-    const educationTitles = await gate.locator('[data-mobile-education] .mobile-brief-item h3').allTextContents();
-    expect(educationTitles.at(-1)).toContain('ESSLLI 2026');
+    const academic = gate.getByRole('link', { name: /Academic CV/ });
+    const data = gate.getByRole('link', { name: /Data Analysis CV/ });
+    await expect(academic).toHaveAttribute('href', '/cv/?view=academic');
+    await expect(data).toHaveAttribute('href', '/cv/?view=data-analysis');
+
+    await expect(gate).not.toContainText('Selected work');
+    await expect(gate).not.toContainText('Core areas');
+    await expect(gate).not.toContainText('Open unfinished interactive preview');
 
     const health = await gate.evaluate(element => ({
       scrollWidth: element.scrollWidth,
@@ -35,9 +31,10 @@ test.describe('mobile profile brief', () => {
     expect(health.scrollWidth).toBeLessThanOrEqual(health.clientWidth + 2);
     expect(health.bodyScrollWidth).toBeLessThanOrEqual(health.innerWidth + 2);
 
-    await page.locator('.mobile-gate-preview').click();
+    await academic.click();
     await page.waitForLoadState('domcontentloaded');
-    await expect(gate).toBeHidden();
+    await expect(page).toHaveURL(/\/cv\/\?view=academic$/);
+    await expect(page.getByText('Mathematical logic · Algebraic logic · Research')).toBeVisible();
   });
 });
 
@@ -50,7 +47,10 @@ const devices = [
 ];
 
 const bypassIntro = async page => {
-  await page.addInitScript(() => sessionStorage.setItem('profileIntroSeen', 'true'));
+  await page.addInitScript(() => {
+    sessionStorage.setItem('profileIntroSeen', 'true');
+    sessionStorage.setItem('mobileConstructionPreview', 'true');
+  });
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
 };
 

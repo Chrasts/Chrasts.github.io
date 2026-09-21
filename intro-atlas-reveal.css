@@ -705,3 +705,128 @@ body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .graph-co
     display:none
   }
 }
+
+
+/* Opening Atlas alignment correction.
+   Keep the header content anchored where it was before the terminal pass.
+   Persistent terminals occupy the gaps to the LEFT of each label, so adding
+   them cannot translate the navigation group horizontally. */
+@media(min-width:901px){
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header.app-header{
+    width:min(1480px,calc(100% - 20px));
+    grid-template-columns:182px minmax(0,1fr);
+    padding-inline:14px
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-context-slot{
+    width:182px
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-actions{
+    width:auto;
+    justify-self:end;
+    gap:9px
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav{
+    gap:28px
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a{
+    padding-left:0!important
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a::before{
+    left:-21px
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a::after{
+    left:-13px;
+    width:8px
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a:is(:hover,:focus-visible,[aria-current="page"])::after{
+    width:11px
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-topology-marker{
+    display:none
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions{
+    gap:26px
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control{
+    padding-left:0!important
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::before{
+    left:-21px
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::after{
+    left:-13px;
+    width:8px!important
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control:is(:hover,:focus-visible)::after{
+    width:11px!important
+  }
+}
+
+@media(max-width:1280px) and (min-width:901px){
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header.app-header{
+    width:min(1480px,calc(100% - 20px));
+    grid-template-columns:148px minmax(0,1fr);
+    padding-inline:10px
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-context-slot{
+    width:148px
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav{
+    gap:20px
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a{
+    padding-left:0!important;
+    font-size:10px
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a::before{
+    left:-15px
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a::after{
+    left:-8px;
+    width:5px
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a:is(:hover,:focus-visible,[aria-current="page"])::after{
+    width:7px
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions{
+    gap:18px
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control{
+    padding-left:0!important;
+    font-size:9.25px
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::before{
+    left:-15px
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::after{
+    left:-8px;
+    width:5px!important
+  }
+
+  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control:is(:hover,:focus-visible)::after{
+    width:7px!important
+  }
+}

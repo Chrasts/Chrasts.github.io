@@ -357,11 +357,11 @@ test('opening Atlas header keeps persistent terminals without label collisions',
   }));
 
   geometry.forEach(item => {
-    expect(item.paddingLeft).toBeGreaterThanOrEqual(21);
+    expect(item.paddingLeft).toBeLessThanOrEqual(1);
     expect(item.nodeContent).not.toBe('none');
   });
   for (let i = 1; i < geometry.length; i += 1) {
-    expect(geometry[i].left - geometry[i - 1].right).toBeGreaterThanOrEqual(7);
+    expect(geometry[i].left - geometry[i - 1].right).toBeGreaterThanOrEqual(18);
   }
 
   const atlas = page.locator('#main-nav > a[data-route="atlas"]');

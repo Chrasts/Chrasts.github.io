@@ -64,6 +64,9 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
     await expect(page.locator('.quick-overview-dialog')).toContainText('Selected work');
     await expect(page.locator('.quick-overview-dialog')).toContainText('Core areas');
     await expect(page.locator('.quick-overview-dialog')).toContainText('Education');
+    await expect(page.locator('.quick-overview-dialog')).toContainText('Certifications');
+    await expect(page.locator('.quick-overview-dialog')).toContainText('Ethics of AI');
+    await expect(page.locator('.quick-overview-dialog')).toContainText('B2 First');
     await expect(page.locator('.quick-overview-dialog')).toContainText('České priority');
     await expect(page.locator('.quick-overview-dialog')).toContainText('Survey Analysis');
     await expect(page.locator('.quick-overview-dialog')).toContainText('CV');
@@ -318,4 +321,12 @@ test('top navigation active marker never shifts the route labels', async ({ page
     expect(Math.abs(after[route].x - before[route].x)).toBeLessThanOrEqual(0.5);
     expect(Math.abs(after[route].width - before[route].width)).toBeLessThanOrEqual(0.5);
   }
+});
+
+
+test('Profile brief keeps ESSLLI last in Education', async ({ page }) => {
+  await bootOverview(page);
+  await page.locator('.profile-root-quick-trigger').click();
+  const items = await page.locator('.quick-overview-section').filter({ hasText: /^Education/ }).locator('li').allTextContents();
+  expect(items.at(-1)).toContain('ESSLLI 2026');
 });

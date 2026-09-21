@@ -102,14 +102,28 @@
 
   const education = section('Education', 'education');
   byParent('education')
-    .filter(item => item.type === 'education' || ['charles-university','charles-university-masters-logic','esslli','prg-ai'].includes(item.id))
-    .sort((a,b) => (a.layoutOrder || 99) - (b.layoutOrder || 99))
+    .filter(item => ['charles-university','charles-university-masters-logic','prg-ai','esslli'].includes(item.id))
+    .sort((a,b) => {
+      if (a.id === 'esslli') return 1;
+      if (b.id === 'esslli') return -1;
+      return (a.layoutOrder || 99) - (b.layoutOrder || 99);
+    })
     .forEach(item => {
       const article = el('article', 'cv-item');
       article.append(el('h3', '', item.detailLabel || item.label));
       article.append(el('p', 'cv-meta', [item.organisation, item.meta].filter(Boolean).join(' · ')));
       if (item.summary) article.append(el('p', 'cv-item-summary', item.summary));
       education.append(article);
+    });
+
+  const certifications = section('Certifications', 'certifications');
+  byParent('credentials')
+    .sort((a,b) => (a.meta || '').localeCompare(b.meta || '') || a.label.localeCompare(b.label))
+    .forEach(item => {
+      const article = el('article', 'cv-item cv-certificate');
+      article.append(el('h3', '', item.detailLabel || item.label));
+      article.append(el('p', 'cv-meta', [item.organisation, item.meta].filter(Boolean).join(' · ')));
+      certifications.append(article);
     });
 
   const areas = section('Core Areas', 'areas');
@@ -126,6 +140,6 @@
     });
   areas.append(areaList);
 
-  host.replaceChildren(header, work, experience, education, areas);
+  host.replaceChildren(header, work, experience, education, certifications, areas);
   document.getElementById('cv-print')?.addEventListener('click', () => window.print());
 })();

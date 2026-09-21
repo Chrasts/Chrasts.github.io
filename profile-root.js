@@ -237,13 +237,30 @@
     const educationSection = element('section', 'quick-overview-section');
     educationSection.append(element('h3', 'graph-local-anchor', 'Education'));
     const educationList = element('ul', 'quick-overview-list');
-    directChildren('education').slice(0, 3).forEach(node => {
-      const li = element('li', '', `${node.label}${node.meta ? ` / ${compactMeta(node.meta)}` : ''}`);
-      educationList.appendChild(li);
-    });
+    directChildren('education')
+      .filter(node => node.id !== 'credentials')
+      .sort((a, b) => {
+        if (a.id === 'esslli') return 1;
+        if (b.id === 'esslli') return -1;
+        return (a.layoutOrder || 99) - (b.layoutOrder || 99);
+      })
+      .slice(0, 4)
+      .forEach(node => {
+        const li = element('li', '', `${node.label}${node.meta ? ` / ${compactMeta(node.meta)}` : ''}`);
+        educationList.appendChild(li);
+      });
     educationSection.append(educationList, makeRouteButton('Open Education', 'education'));
 
-    grid.append(workSection, knowledgeSection, educationSection);
+    const certificationsSection = element('section', 'quick-overview-section quick-overview-certifications');
+    certificationsSection.append(element('h3', 'graph-local-anchor', 'Certifications'));
+    const certificationsList = element('ul', 'quick-overview-list');
+    directChildren('credentials').forEach(node => {
+      const meta = [node.organisation, node.meta].filter(Boolean).join(' / ');
+      certificationsList.appendChild(element('li', '', `${node.detailLabel || node.label}${meta ? ` / ${compactMeta(meta)}` : ''}`));
+    });
+    certificationsSection.append(certificationsList);
+
+    grid.append(workSection, knowledgeSection, educationSection, certificationsSection);
 
     const footer = element('footer', 'quick-overview-footer');
     footer.append(makeRouteButton('About', 'about'));

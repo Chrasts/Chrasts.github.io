@@ -13,11 +13,18 @@ test.describe('mobile profile brief', () => {
     await expect(gate).toContainText('Selected work');
     await expect(gate).toContainText('Core areas');
     await expect(gate).toContainText('Education');
-    await expect(gate).toContainText('desktop');
+    await expect(gate).toContainText('Certifications');
+    await expect(gate).toContainText('Ethics of AI');
+    await expect(gate).not.toContainText('Mobile profile');
+    await expect(gate).not.toContainText('Interactive atlas:');
+    await expect(gate).not.toContainText('Open full CV');
     await expect(gate.getByRole('link', { name: 'CV', exact: true })).toBeVisible();
     await expect(gate.getByRole('link', { name: 'GitHub' })).toBeVisible();
     await expect(gate.getByRole('link', { name: 'LinkedIn' })).toBeVisible();
     await expect(page.locator('.mobile-gate-preview')).toBeVisible();
+
+    const educationTitles = await gate.locator('[data-mobile-education] .mobile-brief-item h3').allTextContents();
+    expect(educationTitles.at(-1)).toContain('ESSLLI 2026');
 
     const health = await gate.evaluate(element => ({
       scrollWidth: element.scrollWidth,

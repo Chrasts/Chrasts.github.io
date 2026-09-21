@@ -117,9 +117,12 @@
     if (!host) return;
     host.replaceChildren();
     byParent('education')
-      .filter(node => node.type === 'education' || ['charles-university','charles-university-masters-logic','esslli','prg-ai'].includes(node.id))
-      .sort((a, b) => (a.layoutOrder || 99) - (b.layoutOrder || b.timelineOrder || 99))
-      .slice(0, 4)
+      .filter(node => ['charles-university','charles-university-masters-logic','prg-ai','esslli'].includes(node.id))
+      .sort((a, b) => {
+        if (a.id === 'esslli') return 1;
+        if (b.id === 'esslli') return -1;
+        return (a.layoutOrder || 99) - (b.layoutOrder || 99);
+      })
       .forEach(node => {
         const article = element('article', 'mobile-brief-item');
         article.append(element('h3', '', node.detailLabel || node.label));
@@ -130,11 +133,27 @@
       });
   };
 
+  const renderCertifications = () => {
+    const host = gate.querySelector('[data-mobile-certifications]');
+    if (!host) return;
+    host.replaceChildren();
+    byParent('credentials')
+      .sort((a, b) => (a.meta || '').localeCompare(b.meta || '') || a.label.localeCompare(b.label))
+      .forEach(node => {
+        const article = element('article', 'mobile-brief-item');
+        article.append(element('h3', '', node.detailLabel || node.label));
+        const meta = [node.organisation, node.meta].filter(Boolean).join(' / ');
+        if (meta) article.append(element('p', 'mobile-brief-meta', meta));
+        host.append(article);
+      });
+  };
+
   renderHeader();
   renderCurrent();
   renderWork();
   renderAreas();
   renderEducation();
+  renderCertifications();
 
   gate.hidden = false;
   gate.tabIndex = -1;

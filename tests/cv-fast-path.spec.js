@@ -82,3 +82,15 @@ test('CV section headings sit above a wide multi-column body', async ({ page }) 
   expect(a.y).toBeGreaterThan(h.y + h.height - 1);
   expect(Math.abs(a.y - b.y)).toBeLessThan(8);
 });
+
+
+test('CV includes concise certifications and keeps ESSLLI last in Education', async ({ page }) => {
+  await page.goto('/cv/');
+  await expect(page.getByRole('heading', { name: 'Certifications' })).toBeVisible();
+  await expect(page.locator('.cv-section-certifications')).toContainText('Ethics of AI');
+  await expect(page.locator('.cv-section-certifications')).toContainText('Introduction to Artificial Intelligence');
+  await expect(page.locator('.cv-section-certifications')).toContainText('B2 First');
+
+  const education = await page.locator('.cv-section-education > .cv-item h3').allTextContents();
+  expect(education.at(-1)).toContain('ESSLLI 2026');
+});

@@ -72,7 +72,7 @@
         const seen = sessionStorage.getItem('profileIntroSeen') === 'true';
         const mobile = matchMedia('(max-width: 900px)').matches;
         const mobilePreview = sessionStorage.getItem('mobileConstructionPreview') === 'true';
-        const mobileGate = mobile && !seen && !mobilePreview;
+        const mobileGate = mobile && !mobilePreview;
         document.documentElement.dataset.mobileGate = mobileGate ? 'active' : (mobile ? 'preview' : 'off');
         document.documentElement.dataset.profileIntro = mobileGate
           ? 'bypass'
@@ -166,7 +166,7 @@
     }
   </style>
   <script defer src="https://cloud.umami.is/script.js" data-website-id="8dd5c849-df0f-40a5-b4e1-3fbcb38f425b"></script>
-  <link rel="stylesheet" href="styles.css?v=20260921-noboundary1">
+  <link rel="stylesheet" href="styles.css?v=20260921-mobilecvgate1">
   <!-- Graph base followed by narrowly scoped transition refinements. Keeping
        their cascade in the document makes the visual result deterministic. -->
   <link rel="stylesheet" href="graph-v5.css?v=20260920-bsc3">
@@ -206,42 +206,25 @@
       <span class="entry-loading-core"></span>
     </div>
   </div>
-  <section class="mobile-construction-gate" id="mobile-construction-gate" aria-labelledby="mobile-brief-title" hidden>
-    <div class="mobile-gate-shell">
-      <header class="mobile-brief-header">
-        <h1 id="mobile-brief-title">Štěpán Chrast</h1>
-        <p class="mobile-brief-positioning" data-mobile-profile-positioning>Data analysis / Research / Mathematical logic</p>
-        <p class="mobile-brief-intro" data-mobile-profile-intro></p>
-        <nav class="mobile-brief-links" data-mobile-profile-links aria-label="Profile links"></nav>
+  <section class="mobile-construction-gate" id="mobile-construction-gate" aria-labelledby="mobile-gate-title" hidden>
+    <div class="mobile-gate-shell mobile-gate-choice-shell">
+      <header class="mobile-gate-choice-header">
+        <p class="mobile-gate-kicker">Mobile access</p>
+        <h1 id="mobile-gate-title">Štěpán Chrast</h1>
+        <p class="mobile-gate-desktop-note">The main interactive portfolio is designed for desktop browsers and is available there only.</p>
+        <p class="mobile-gate-cv-intro">On mobile, you can still open one of the two focused CV versions:</p>
       </header>
 
-      <main class="mobile-brief-body">
-        <section class="mobile-brief-section mobile-brief-current">
-          <h2>Current</h2>
-          <div data-mobile-current></div>
-        </section>
-        <section class="mobile-brief-section">
-          <h2>Selected work</h2>
-          <div class="mobile-brief-list" data-mobile-work></div>
-        </section>
-        <section class="mobile-brief-section">
-          <h2>Core areas</h2>
-          <div class="mobile-brief-list" data-mobile-areas></div>
-        </section>
-        <section class="mobile-brief-section">
-          <h2>Education</h2>
-          <div class="mobile-brief-list" data-mobile-education></div>
-        </section>
-        <section class="mobile-brief-section">
-          <h2>Certifications</h2>
-          <div class="mobile-brief-list" data-mobile-certifications></div>
-        </section>
-      </main>
-
-      <footer class="mobile-brief-footer">
-        <button class="mobile-gate-preview" type="button">Open unfinished interactive preview</button>
-        <p class="mobile-gate-note">The preview is available for inspection, but some mobile layouts and interactions are still incomplete.</p>
-      </footer>
+      <nav class="mobile-cv-choice-grid" aria-label="CV versions">
+        <a class="mobile-cv-choice" href="/cv/?view=academic">
+          <span class="mobile-cv-choice-title">Academic CV</span>
+          <span class="mobile-cv-choice-description">Mathematical logic, research, thesis work and computational logic.</span>
+        </a>
+        <a class="mobile-cv-choice" href="/cv/?view=data-analysis">
+          <span class="mobile-cv-choice-title">Data Analysis CV</span>
+          <span class="mobile-cv-choice-description">Data analysis, applied research, reproducible workflows and data modelling.</span>
+        </a>
+      </nav>
     </div>
   </section>
 
@@ -373,6 +356,6 @@
   <script src="cross-link-travel-v2.js?v=20260921-desktoprefine2"></script>
   <script src="scene-legacy-bridge.js?v=20260921-atlasheadterm3"></script>
   <script src="site-shell.js?v=20260921-desktoprefine2"></script>
-  <script src="mobile-construction-gate.js?v=20260921-certbrief1"></script>
+  <script src="mobile-construction-gate.js?v=20260921-mobilecvgate1"></script>
 </body>
 </html>

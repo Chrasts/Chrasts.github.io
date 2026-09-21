@@ -227,3 +227,24 @@ body.has-artifact-focus .site-detail-panel{pointer-events:none}
   .artifact-object,.artifact-tilt,.artifact-folio-page,.artifact-deck-card,.artifact-focus-viewer,.artifact-focus-shell,.artifact-tether-layer{transition:none!important;animation:none!important}
   .artifact-tether-path{animation:none!important}
 }
+
+
+/* Algebraic Logic reuses only the subclass hierarchy as a single left-hand
+   evidence object. Work / SQL and Data Modelling keep the original two-card
+   diagram deck. */
+.artifact-object[data-artifact-variant="diagram-single"]{
+  width:min(350px,31%)
+}
+.artifact-object[data-artifact-variant="diagram-single"] .artifact-media-deck{
+  height:236px
+}
+.artifact-object[data-artifact-variant="diagram-single"] .artifact-deck-card{
+  left:50%;
+  top:10px;
+  width:260px;
+  height:210px;
+  transform:translateX(-50%) translateY(0) rotate(0deg)
+}
+.artifact-object[data-artifact-variant="diagram-single"] .artifact-deck-card.is-active{
+  transform:translateX(-50%) translateY(-2px) rotate(0deg)
+}

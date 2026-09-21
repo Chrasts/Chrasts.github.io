@@ -78,8 +78,19 @@
       artifactIds: ['sql-schema-er-diagram', 'sql-schema-subclass-hierarchy'],
       targets: [
         { route: 'work/project/sql-schema', anchorNodeId: 'project-sql-schema', side: 'left' },
-        { route: 'knowledge/data-computing/data-management/data-modelling', anchorNodeId: 'data-modelling', side: 'right' },
-        { route: 'knowledge/logic-math/mathematical-logic/algebraic-logic', anchorNodeId: 'algebraic-logic', side: 'right' }
+        { route: 'knowledge/data-computing/data-management/data-modelling', anchorNodeId: 'data-modelling', side: 'right' }
+      ]
+    },
+    {
+      id: 'algebraic-logic-subclass-hierarchy',
+      recipe: 'media-deck',
+      variant: 'diagram-single',
+      eyebrow: 'Algebraic logic',
+      title: 'Subclass hierarchy',
+      description: 'The subclass hierarchy from the SQL schema is retained here as the algebraic-structure artifact.',
+      artifactIds: ['sql-schema-subclass-hierarchy'],
+      targets: [
+        { route: 'knowledge/logic-math/mathematical-logic/algebraic-logic', anchorNodeId: 'algebraic-logic', side: 'left' }
       ]
     },
     {

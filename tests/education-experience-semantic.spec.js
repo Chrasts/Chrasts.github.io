@@ -281,3 +281,38 @@ test.describe('Education and Experience semantic geometry', () => {
     await expect(rail).toBeHidden();
   });
 });
+
+
+test('BSc thematic coursework includes finance and orders AI and Cognition before Can Machines Think', async ({ page }) => {
+  await bypassIntro(page);
+  const evidence = await page.evaluate(() => window.SITE_DATA.semantics.education.courseEvidence);
+  const mathematics = evidence.find(item => item.id === 'bsc-mathematics');
+  const ai = evidence.find(item => item.id === 'bsc-ai-philosophy');
+  expect(mathematics.courses).toContain('Úvod do teorie financí');
+  expect(ai.courses.indexOf('AI and Cognition')).toBeGreaterThanOrEqual(0);
+  expect(ai.courses.indexOf('AI and Cognition')).toBeLessThan(ai.courses.indexOf('Can Machines Think?'));
+});
+
+test('deep Knowledge focus keeps rendered nodes inside the visible graph viewport vertically', async ({ page }) => {
+  await bypassIntro(page);
+  await page.setViewportSize({ width: 1440, height: 800 });
+  await page.goto('/#knowledge/logic-math/mathematical-logic');
+  await page.waitForFunction(() => document.body.dataset.graphRoute === 'knowledge/logic-math/mathematical-logic');
+  await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
+  await page.waitForTimeout(160);
+
+  const geometry = await page.locator('#site-graph .site-graph-node').evaluateAll(nodes => {
+    const viewport = document.querySelector('.site-graph-viewport').getBoundingClientRect();
+    return {
+      viewport: { top: viewport.top, bottom: viewport.bottom },
+      nodes: nodes.filter(node => !node.closest('.v9-transition-overlay')).map(node => {
+        const rect = node.getBoundingClientRect();
+        return { id: node.dataset.nodeId, top: rect.top, bottom: rect.bottom };
+      })
+    };
+  });
+  geometry.nodes.forEach(node => {
+    expect(node.top).toBeGreaterThanOrEqual(geometry.viewport.top - 2);
+    expect(node.bottom).toBeLessThanOrEqual(geometry.viewport.bottom + 2);
+  });
+});

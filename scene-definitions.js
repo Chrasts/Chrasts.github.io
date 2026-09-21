@@ -46,7 +46,7 @@
     document.head.appendChild(guard);
   }
 
-  const releaseRevision = '20260921-desktoprefine2';
+  const releaseRevision = '20260921-desktoprefine3';
   const versionedResource = resource =>
     `${resource}${resource.includes('?') ? '&' : '?'}v=${releaseRevision}`;
 

@@ -315,3 +315,24 @@ test('artifact object clusters remain viewport-contained on mobile without a tra
   expect(metrics.scrollHeight).toBeLessThanOrEqual(metrics.viewportHeight + 2);
   expect(metrics.scrollY).toBe(0);
 });
+
+
+test('Algebraic Logic shows only subclass hierarchy on the left while SQL keeps both diagrams', async ({ page }) => {
+  await bypassIntro(page);
+  await page.goto('/#knowledge/logic-math/mathematical-logic/algebraic-logic');
+  await waitArtifactScenes(page);
+
+  const knowledgeDeck = page.locator('[data-artifact-scene="algebraic-logic-subclass-hierarchy"]');
+  await expect(knowledgeDeck).toBeVisible();
+  await expect(knowledgeDeck).toHaveAttribute('data-artifact-side', 'left');
+  await expect(knowledgeDeck.locator('.artifact-deck-card')).toHaveCount(1);
+  await expect(knowledgeDeck.locator('[data-artifact-id="sql-schema-subclass-hierarchy"]')).toHaveCount(1);
+  await expect(knowledgeDeck.locator('[data-artifact-id="sql-schema-er-diagram"]')).toHaveCount(0);
+  await expect(page.locator('[data-artifact-scene="sql-schema-er-diagrams"]')).toHaveCount(0);
+
+  await page.goto('/#work/project/sql-schema');
+  await waitArtifactScenes(page);
+  const workDeck = page.locator('[data-artifact-scene="sql-schema-er-diagrams"]');
+  await expect(workDeck).toBeVisible();
+  await expect(workDeck.locator('.artifact-deck-card')).toHaveCount(2);
+});

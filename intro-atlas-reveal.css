@@ -509,3 +509,33 @@ body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-b
     font-weight:700
   }
 }
+
+
+/* Header colour + hover contract shared with the ordinary profile shell. */
+body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a:is(
+  [data-route="work"],
+  [data-route="knowledge"],
+  [data-route="experience"],
+  [data-route="education"],
+  [data-route="about"]
+),
+body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a:is(
+  [data-route="work"],
+  [data-route="knowledge"],
+  [data-route="experience"],
+  [data-route="education"],
+  [data-route="about"]
+):is(:hover,:focus-visible){
+  color:var(--brown)!important
+}
+body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-quick-overview,
+body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-quick-overview:is(:hover,:focus-visible){
+  color:var(--ink)!important
+}
+body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .graph-control:is(:hover,:focus-visible)::before{
+  background:var(--graph-control-node)!important
+}
+body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .graph-control:is(:hover,:focus-visible)::after{
+  width:15px!important;
+  opacity:1!important
+}

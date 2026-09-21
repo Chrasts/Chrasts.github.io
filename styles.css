@@ -2144,13 +2144,12 @@ body[data-graph-mode="overview"] .detail-node-list button{
 @media(min-width:901px){
   .app-header{
     display:grid;
-    grid-template-columns:auto 118px minmax(0,1fr);
+    grid-template-columns:118px minmax(0,1fr);
     align-items:center;
     column-gap:14px
   }
-  .brand{grid-column:1}
   .header-context-slot{
-    grid-column:2;
+    grid-column:1;
     width:118px;
     min-width:0;
     height:52px;
@@ -2178,7 +2177,7 @@ body[data-graph-mode="overview"] .detail-node-list button{
     letter-spacing:.045em
   }
   .header-actions{
-    grid-column:3;
+    grid-column:2;
     justify-self:end;
     min-width:0
   }
@@ -2188,26 +2187,98 @@ body[data-graph-mode="overview"] .detail-node-list button{
 }
 @media(max-width:1180px) and (min-width:901px){
   .app-header{
-    grid-template-columns:auto 92px minmax(0,1fr);
+    grid-template-columns:92px minmax(0,1fr);
     column-gap:8px
   }
   .header-context-slot{width:92px}
   .header-location-label{font-size:8px}
 }
+
+/* Profile brief is the deliberately bright fast path. It stays neutral white/
+   ink instead of inheriting the branch accent. */
 .header-quick-overview.graph-control{
-  --graph-control-node:var(--profile-accent);
-  --graph-control-line:var(--profile-accent);
-  color:var(--profile-accent)!important;
+  --graph-control-node:var(--ink);
+  --graph-control-line:var(--ink);
+  color:var(--ink)!important;
   font-weight:850!important;
   letter-spacing:.01em
 }
 .header-quick-overview.graph-control::before{
-  background:var(--profile-accent)!important;
-  border-color:var(--profile-accent)!important
+  background:var(--ink)!important;
+  border-color:var(--ink)!important
 }
 .header-quick-overview.graph-control::after{
   height:2px;
-  background:var(--profile-accent)!important
+  background:var(--ink)!important
 }
+
+/* The five semantic section names use the stable profile brown in the header.
+   Overview and Atlas retain their neutral navigation treatment. */
+.site-header #main-nav > a:is(
+  [data-route="work"],
+  [data-route="knowledge"],
+  [data-route="experience"],
+  [data-route="education"],
+  [data-route="about"]
+){
+  color:var(--brown)!important
+}
+.site-header #main-nav > a:is(
+  [data-route="work"],
+  [data-route="knowledge"],
+  [data-route="experience"],
+  [data-route="education"],
+  [data-route="about"]
+)[aria-current="page"]::before,
+.site-header #main-nav > a:is(
+  [data-route="work"],
+  [data-route="knowledge"],
+  [data-route="experience"],
+  [data-route="education"],
+  [data-route="about"]
+)[aria-current="page"]::after{
+  background:var(--brown)!important
+}
+
 .graph-crumb[aria-current="true"]{color:var(--profile-accent)}
-@media(max-width:900px){.header-context-slot{display:none!important}}
+
+@media(max-width:900px){
+  .header-context-slot{display:none!important}
+  .app-header{justify-content:flex-end!important}
+}
+
+
+/* Shared node-link hover grammar. Any existing graph-control now responds like
+   the CV utilities: terminal fills, connector reaches toward the label, and
+   the control advances by two pixels. No new node symbols are introduced. */
+.graph-control{
+  transition:color .14s ease,transform .14s ease
+}
+.graph-control::before,
+.graph-control::after{
+  transition:background-color .14s ease,border-color .14s ease,width .14s ease,opacity .14s ease
+}
+.graph-control:hover,
+.graph-control:focus-visible{
+  transform:translateX(2px)
+}
+.graph-control:hover::before,
+.graph-control:focus-visible::before{
+  background:var(--graph-control-node)
+}
+.graph-control:hover::after,
+.graph-control:focus-visible::after{
+  width:15px;
+  opacity:1
+}
+
+/* Active top-nav routes already own a graph terminal. Give that existing
+   terminal the same connector response without adding symbols to inactive nav. */
+.site-header #main-nav > a[aria-current="page"]::before,
+.site-header #main-nav > a[aria-current="page"]::after{
+  transition:background-color .14s ease,width .14s ease,transform .14s ease
+}
+.site-header #main-nav > a[aria-current="page"]:hover::after,
+.site-header #main-nav > a[aria-current="page"]:focus-visible::after{
+  width:11px
+}

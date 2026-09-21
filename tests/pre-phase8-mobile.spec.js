@@ -51,7 +51,8 @@ test.describe('Pre-Phase 8 mobile parity', () => {
     await waitSettled(page);
 
     await expect(page.locator('.profile-crosslinks')).toBeHidden();
-    await page.locator('.brand').click();
+    await page.locator('.menu-button').click();
+    await page.locator('#main-nav [data-route="overview"]').click();
     await page.waitForFunction(() => document.body.dataset.graphMode === 'overview');
     await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
 

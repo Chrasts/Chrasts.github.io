@@ -141,6 +141,7 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
 
     const header = page.locator('body > .site-header.app-header');
     await expect(header).toBeVisible();
+    await expect(header.locator('.brand')).toHaveCount(0);
     const quick = header.getByRole('button', { name: 'Profile brief' });
     await expect(quick).toBeVisible();
     await expect(header.getByRole('link', { name: 'CV' })).toHaveAttribute('href', '/cv/');
@@ -162,10 +163,45 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
     const quickStyle = await quick.evaluate(element => ({
       radius: parseFloat(getComputedStyle(element).borderRadius),
       background: getComputedStyle(element).backgroundColor,
+      color: getComputedStyle(element).color,
+      ink: getComputedStyle(document.documentElement).getPropertyValue('--ink').trim(),
       beforeRadius: getComputedStyle(element, '::before').borderRadius
     }));
     expect(quickStyle.radius).toBeLessThanOrEqual(3);
     expect(quickStyle.beforeRadius).not.toBe('0px');
+    expect(quickStyle.color).toBe(await page.evaluate(() => {
+      const probe = document.createElement('span');
+      probe.style.color = 'var(--ink)';
+      document.body.appendChild(probe);
+      const value = getComputedStyle(probe).color;
+      probe.remove();
+      return value;
+    }));
+
+    const brownNav = header.locator('#main-nav > a[data-route="work"], #main-nav > a[data-route="knowledge"], #main-nav > a[data-route="experience"], #main-nav > a[data-route="education"], #main-nav > a[data-route="about"]');
+    await expect(brownNav).toHaveCount(5);
+    const brown = await page.evaluate(() => {
+      const probe = document.createElement('span');
+      probe.style.color = 'var(--brown)';
+      document.body.appendChild(probe);
+      const value = getComputedStyle(probe).color;
+      probe.remove();
+      return value;
+    });
+    for (const link of await brownNav.all()) expect(await link.evaluate(element => getComputedStyle(element).color)).toBe(brown);
+
+    const utility = header.getByRole('link', { name: 'CV' });
+    const utilityBefore = await utility.evaluate(element => ({
+      fill: getComputedStyle(element, '::before').backgroundColor,
+      width: parseFloat(getComputedStyle(element, '::after').width)
+    }));
+    await utility.hover();
+    const utilityAfter = await utility.evaluate(element => ({
+      fill: getComputedStyle(element, '::before').backgroundColor,
+      width: parseFloat(getComputedStyle(element, '::after').width)
+    }));
+    expect(utilityAfter.fill).not.toBe(utilityBefore.fill);
+    expect(utilityAfter.width).toBeGreaterThan(utilityBefore.width);
 
     await quick.click();
     await expect(page.locator('.quick-overview-dialog')).toBeVisible();

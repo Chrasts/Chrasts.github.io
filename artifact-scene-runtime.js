@@ -71,6 +71,8 @@
   const lifecycle = new Map(bindings.map(binding => [binding.id, 'notLoaded']));
   const definitions = [];
   const issues = [];
+  const dismissedBindings = new Set();
+  let dismissalRoute = currentSceneRoute();
 
   const targetForRoute = (binding, routeValue) => {
     const route = normaliseRoute(routeValue);
@@ -337,7 +339,7 @@
       placement: 'artifact-contextual',
       enter: 'artifact-rise',
       exit: 'artifact-fade',
-      visible: context => Boolean(targetForRoute(binding, context.route)),
+      visible: context => Boolean(targetForRoute(binding, context.route)) && !dismissedBindings.has(binding.id),
       mount: context => syncPlacement(binding, context.element, context),
       update: context => syncPlacement(binding, context.element, context),
       unmount: context => releaseRoot(binding, context.element),
@@ -393,6 +395,10 @@
 
   window.addEventListener('profile:scene-state', event => {
     const route = normaliseRoute(event.detail?.current?.route || currentSceneRoute());
+    if (route !== dismissalRoute) {
+      dismissedBindings.clear();
+      dismissalRoute = route;
+    }
     if (viewerBindingId) {
       const binding = bindings.find(item => item.id === viewerBindingId);
       if (!binding || !targetForRoute(binding, route)) closeFocus({ restoreFocus: false });
@@ -417,6 +423,38 @@
     requestAnimationFrame(() => binding && root && drawTether(binding, root));
   });
 
+  const dismissVisible = () => {
+    let changed = false;
+    roots.forEach((root, bindingId) => {
+      if (!root || root.hidden) return;
+      dismissedBindings.add(bindingId);
+      changed = true;
+    });
+    if (!changed) return false;
+    closeFocus({ restoreFocus: false });
+    clearNodeHighlight();
+    scene.manager.scheduleRefresh('artifact-scenes-dismissed');
+    return true;
+  };
+
+  const restoreForNode = nodeId => {
+    let changed = false;
+    bindings.forEach(binding => {
+      if (!dismissedBindings.has(binding.id)) return;
+      if (!currentTarget(binding) || !bindingNodeIds(binding).has(nodeId)) return;
+      dismissedBindings.delete(binding.id);
+      changed = true;
+    });
+    if (changed) scene.manager.scheduleRefresh('artifact-scenes-node-reactivated');
+    return changed;
+  };
+
+  document.addEventListener('click', event => {
+    const node = event.target?.closest?.('#site-graph .site-graph-node[data-node-id]');
+    if (!node || node.closest('.v9-transition-overlay')) return;
+    restoreForNode(node.dataset.nodeId);
+  }, true);
+
   scene.manager.scheduleRefresh('artifact-scenes-ready');
 
   const snapshot = () => ({
@@ -429,7 +467,8 @@
     }).map(binding => binding.id),
     mountedBindings: [...roots.keys()],
     lifecycle: Object.fromEntries(lifecycle),
-    viewer: viewer.hidden ? null : { bindingId: viewerBindingId, artifactId: viewerArtifactId }
+    viewer: viewer.hidden ? null : { bindingId: viewerBindingId, artifactId: viewerArtifactId },
+    dismissedBindings: [...dismissedBindings]
   });
 
   window.ProfileArtifactScenes = Object.freeze({
@@ -442,6 +481,8 @@
       const binding = bindings.find(item => item.id === bindingId);
       return binding ? openFocus(binding, artifactId) : false;
     },
+    dismissVisible,
+    restoreForNode,
     closeFocus
   });
   window.dispatchEvent(new CustomEvent('profile:artifact-scenes-ready', { detail: snapshot() }));

@@ -336,3 +336,33 @@ test('Algebraic Logic shows only subclass hierarchy on the left while SQL keeps 
   await expect(workDeck).toBeVisible();
   await expect(workDeck.locator('.artifact-deck-card')).toHaveCount(2);
 });
+
+
+test('outside click dismisses floating artifacts with the inspector and node activation restores them', async ({ page }) => {
+  await bypassIntro(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/#about/woodworking/hedgehog-house');
+  await waitArtifactScenes(page);
+  await page.waitForFunction(() => Boolean(window.ProfileNodeDetailDismiss));
+
+  const gallery = page.locator('[data-artifact-scene="hedgehog-house-gallery"]');
+  const node = page.locator('#site-graph .site-graph-node[data-node-id="hedgehog-house"]');
+  await expect(gallery).toBeVisible();
+
+  await node.click();
+  const detail = page.locator('#site-detail-panel');
+  if (await detail.count()) await expect(detail).toBeVisible();
+
+  const point = await page.evaluate(() => {
+    const canvas = document.querySelector('.scene-canvas').getBoundingClientRect();
+    return { x: canvas.left + canvas.width * .52, y: canvas.top + 16 };
+  });
+  await page.mouse.click(point.x, point.y);
+
+  await expect(gallery).toBeHidden();
+  if (await detail.count()) await expect(detail).toBeHidden();
+  expect((await page.evaluate(() => window.ProfileArtifactScenes.snapshot().dismissedBindings))).toContain('hedgehog-house-gallery');
+
+  await node.click();
+  await expect(gallery).toBeVisible();
+});

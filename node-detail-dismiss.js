@@ -5,6 +5,7 @@
   if (!detail) return;
 
   const isOpen = () => !detail.hidden;
+  const artifactsOpen = () => Boolean(window.ProfileArtifactScenes?.snapshot?.().visibleBindings?.length);
   let pendingDismiss = 0;
   let dispatchingCanonicalAtlasClear = false;
 
@@ -35,7 +36,7 @@
   };
 
   document.addEventListener('click', event => {
-    if (dispatchingCanonicalAtlasClear || !isOpen()) return;
+    if (dispatchingCanonicalAtlasClear || (!isOpen() && !artifactsOpen())) return;
     const target = event.target;
     if (!(target instanceof Element)) return;
     if (detail.contains(target)) return;
@@ -50,11 +51,12 @@
     pendingDismiss = setTimeout(() => {
       pendingDismiss = 0;
       if (isOpen()) dismiss();
+      window.ProfileArtifactScenes?.dismissVisible?.();
     }, 0);
   }, true);
 
   window.ProfileNodeDetailDismiss = Object.freeze({
     dismiss,
-    snapshot: () => ({ open: isOpen(), pending: Boolean(pendingDismiss) })
+    snapshot: () => ({ open: isOpen(), artifactsOpen: artifactsOpen(), pending: Boolean(pendingDismiss) })
   });
 })();

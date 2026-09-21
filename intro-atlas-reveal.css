@@ -397,7 +397,7 @@ body.is-atlas-reveal #site-graph .atlas-territory-label-layer{
    flat: no glass, pills, soft shadows or decorative accent fill. */
 .header-quick-overview[hidden]{display:none!important}
 
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header.app-header{
+body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header.app-header{
   width:min(1480px,calc(100% - 20px));
   height:80px;
   padding-inline:14px;
@@ -406,31 +406,31 @@ body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header.app-heade
   box-shadow:none;
   backdrop-filter:none
 }
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .brand{
+body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .brand{
   color:var(--ink);
   font-size:23px;
   font-weight:820
 }
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-actions{
+body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-actions{
   gap:9px
 }
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header nav{
+body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header nav{
   gap:15px
 }
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header nav a{
+body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header nav a{
   color:var(--text-soft);
   font-size:12px;
   font-weight:650
 }
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header nav a:hover,
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header nav a:focus-visible{
+body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header nav a:hover,
+body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header nav a:focus-visible{
   color:var(--ink)
 }
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions{
+body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions{
   gap:8px
 }
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-quick-overview,
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-utility{
+body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-quick-overview,
+body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-utility{
   min-height:38px;
   padding-right:3px;
   border:0;
@@ -442,62 +442,62 @@ body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-u
   color:var(--muted);
   font-size:10.5px
 }
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-quick-overview{
+body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-quick-overview{
   color:var(--ink)
 }
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-quick-overview:hover,
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-quick-overview:focus-visible,
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-utility:hover,
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-utility:focus-visible{
+body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-quick-overview:hover,
+body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-quick-overview:focus-visible,
+body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-utility:hover,
+body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-utility:focus-visible{
   border:0;
   background:transparent;
   box-shadow:none;
   transform:none;
   color:var(--ink)
 }
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .theme-toggle{
+body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .theme-toggle{
   border-radius:var(--radius-ui);
   border-color:var(--line)
 }
 
 @media(max-width:1180px) and (min-width:901px){
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header.app-header{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header.app-header{
     height:74px;
     padding-inline:8px
   }
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-actions{gap:5px}
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header nav{gap:9px}
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header nav a{font-size:10.5px}
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-topology-marker{flex-basis:16px;width:16px}
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions{gap:5px}
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .graph-control{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-actions{gap:5px}
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header nav{gap:9px}
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header nav a{font-size:10.5px}
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-topology-marker{flex-basis:16px;width:16px}
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions{gap:5px}
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .graph-control{
     min-height:34px;
     padding-left:21px;
     font-size:9.5px
   }
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .graph-control::after{width:8px}
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .graph-control::after{width:8px}
 }
 
 @media(max-width:900px){
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header.app-header{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header.app-header{
     width:100%;
     height:calc(60px + env(safe-area-inset-top));
     min-height:calc(60px + env(safe-area-inset-top));
     padding:env(safe-area-inset-top) max(12px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left))
   }
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-topology-marker,
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .header-utility{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-topology-marker,
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .header-utility{
     display:none
   }
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions{
     display:flex
   }
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-quick-overview{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-quick-overview{
     min-height:44px;
     padding-left:25px;
     font-size:10px
   }
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .menu-button{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .menu-button{
     min-height:40px;
     border:1px solid var(--line);
     border-radius:var(--radius-ui);
@@ -509,14 +509,14 @@ body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .theme-to
 
 
 /* Header colour + hover contract shared with the ordinary profile shell. */
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a:is(
+body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a:is(
   [data-route="work"],
   [data-route="knowledge"],
   [data-route="experience"],
   [data-route="education"],
   [data-route="about"]
 ),
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a:is(
+body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a:is(
   [data-route="work"],
   [data-route="knowledge"],
   [data-route="experience"],
@@ -525,14 +525,14 @@ body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav
 ):is(:hover,:focus-visible){
   color:var(--profile-accent)!important
 }
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-quick-overview,
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-quick-overview:is(:hover,:focus-visible){
+body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-quick-overview,
+body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-quick-overview:is(:hover,:focus-visible){
   color:var(--ink)!important
 }
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .graph-control:is(:hover,:focus-visible)::before{
+body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .graph-control:is(:hover,:focus-visible)::before{
   background:var(--graph-control-node)!important
 }
-body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .graph-control:is(:hover,:focus-visible)::after{
+body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .graph-control:is(:hover,:focus-visible)::after{
   width:15px!important;
   opacity:1!important
 }
@@ -545,26 +545,26 @@ body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .graph-co
    shift when the active route changes.
    -------------------------------------------------------------------------- */
 @media(min-width:901px){
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header.app-header{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header.app-header{
     width:min(1540px,calc(100% - 12px));
     grid-template-columns:76px minmax(0,1fr);
     padding-inline:10px
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-context-slot{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-context-slot{
     width:76px
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-actions{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-actions{
     width:100%;
     gap:12px
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav{
     gap:14px
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a{
     position:relative;
     min-height:38px;
     display:inline-flex;
@@ -573,7 +573,7 @@ body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .graph-co
     white-space:nowrap
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a::before{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a::before{
     content:"";
     position:absolute;
     left:2px;
@@ -587,7 +587,7 @@ body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .graph-co
     transition:background-color .14s ease,border-color .14s ease
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a::after{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a::after{
     content:"";
     position:absolute;
     left:10px;
@@ -600,47 +600,47 @@ body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .graph-co
     transition:width .14s ease,opacity .14s ease,background-color .14s ease
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a:is(:hover,:focus-visible,[aria-current="page"])::before{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a:is(:hover,:focus-visible,[aria-current="page"])::before{
     background:currentColor
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a:is(:hover,:focus-visible,[aria-current="page"])::after{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a:is(:hover,:focus-visible,[aria-current="page"])::after{
     width:13px;
     opacity:1
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions{
     gap:11px
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control{
     min-height:38px;
     padding-left:25px!important
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::before{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::before{
     left:2px;
     width:7px;
     height:7px;
     background:var(--paper)!important
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::after{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::after{
     left:10px;
     width:8px!important;
     opacity:.58
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control:is(:hover,:focus-visible)::before{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control:is(:hover,:focus-visible)::before{
     background:var(--graph-control-node)!important
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control:is(:hover,:focus-visible)::after{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control:is(:hover,:focus-visible)::after{
     width:13px!important;
     opacity:1!important
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-topology-marker{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-topology-marker{
     flex-basis:10px;
     width:10px;
     min-width:10px
@@ -650,55 +650,55 @@ body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .graph-co
 /* Keep the same reserved node lane on medium desktops instead of collapsing
    back to the old tight header that caused About / Atlas collisions. */
 @media(max-width:1280px) and (min-width:901px){
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header.app-header{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header.app-header{
     grid-template-columns:58px minmax(0,1fr);
     padding-inline:6px
   }
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-context-slot{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-context-slot{
     width:58px
   }
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-actions{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-actions{
     gap:7px
   }
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav{
     gap:9px
   }
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a{
     padding-left:22px!important;
     font-size:10px
   }
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a::before{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a::before{
     left:1px;
     width:6px;
     height:6px
   }
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a::after{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a::after{
     left:8px;
     width:7px
   }
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a:is(:hover,:focus-visible,[aria-current="page"])::after{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a:is(:hover,:focus-visible,[aria-current="page"])::after{
     width:11px
   }
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions{
     gap:7px
   }
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control{
     padding-left:22px!important;
     font-size:9.25px
   }
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::before{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::before{
     left:1px;
     width:6px;
     height:6px
   }
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::after{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::after{
     left:8px;
     width:7px!important
   }
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control:is(:hover,:focus-visible)::after{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control:is(:hover,:focus-visible)::after{
     width:11px!important
   }
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-topology-marker{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-topology-marker{
     display:none
   }
 }
@@ -709,151 +709,121 @@ body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .graph-co
    Persistent terminals occupy the gaps to the LEFT of each label, so adding
    them cannot translate the navigation group horizontally. */
 @media(min-width:901px){
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header.app-header{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header.app-header{
     width:min(1480px,calc(100% - 20px));
     grid-template-columns:182px minmax(0,1fr);
     padding-inline:14px
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-context-slot{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-context-slot{
     width:182px
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-actions{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-actions{
     width:auto;
     justify-self:end;
     gap:9px
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav{
     gap:28px
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a{
     padding-left:0!important
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a::before{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a::before{
     left:-21px
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a::after{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a::after{
     left:-13px;
     width:8px
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a:is(:hover,:focus-visible,[aria-current="page"])::after{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a:is(:hover,:focus-visible,[aria-current="page"])::after{
     width:11px
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-topology-marker{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-topology-marker{
     display:none
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions{
     gap:26px
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control{
     padding-left:0!important
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::before{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::before{
     left:-21px
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::after{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::after{
     left:-13px;
     width:8px!important
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control:is(:hover,:focus-visible)::after{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control:is(:hover,:focus-visible)::after{
     width:11px!important
   }
 }
 
 @media(max-width:1280px) and (min-width:901px){
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header.app-header{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header.app-header{
     width:min(1480px,calc(100% - 20px));
     grid-template-columns:148px minmax(0,1fr);
     padding-inline:10px
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-context-slot{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-context-slot{
     width:148px
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav{
     gap:20px
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a{
     padding-left:0!important;
     font-size:10px
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a::before{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a::before{
     left:-15px
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a::after{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a::after{
     left:-8px;
     width:5px
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav > a:is(:hover,:focus-visible,[aria-current="page"])::after{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a:is(:hover,:focus-visible,[aria-current="page"])::after{
     width:7px
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions{
     gap:18px
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control{
     padding-left:0!important;
     font-size:9.25px
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::before{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::before{
     left:-15px
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::after{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::after{
     left:-8px;
     width:5px!important
   }
 
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control:is(:hover,:focus-visible)::after{
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control:is(:hover,:focus-visible)::after{
     width:7px!important
-  }
-}
-
-
-/* Final opening-Atlas alignment: the terminal pass must not reserve an empty
-   HUD column or right-anchor the complete navigation strip. */
-@media(min-width:901px){
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header.app-header{
-    grid-template-columns:minmax(0,1fr)
-  }
-
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-context-slot{
-    display:none
-  }
-
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header .header-actions{
-    grid-column:1;
-    justify-self:start;
-    justify-content:flex-start;
-    width:100%
-  }
-
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav{
-    margin-left:22px
-  }
-}
-
-@media(max-width:1280px) and (min-width:901px){
-  body[data-entry-state="ready"][data-graph-mode="atlas"] > .site-header #main-nav{
-    margin-left:18px
   }
 }

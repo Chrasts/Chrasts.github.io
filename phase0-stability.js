@@ -302,7 +302,6 @@
     .profile-crosslinks{display:none!important}
     body[data-graph-mode="atlas"] #site-graph .site-graph-node.is-project .site-graph-meta{display:none!important}
     body[data-graph-mode="atlas"] #site-graph-help{display:none!important}
-    body[data-graph-mode="atlas"] .atlas-button.atlas-entry-v7{display:none!important}
     html:has(body[data-root-landing="false"]),
     body[data-root-landing="false"]{overflow:hidden!important;height:100%!important}
     body[data-root-landing="false"] .profile-app{
@@ -331,18 +330,18 @@
     button.classList.add('atlas-entry-v7');
     button.dataset.phase7V2Decorated = 'true';
 
-    if (atlas) {
-      button.hidden = true;
-      button.setAttribute('aria-hidden', 'true');
-      button.tabIndex = -1;
-      return;
-    }
-
     button.hidden = false;
     button.removeAttribute('aria-hidden');
     button.removeAttribute('tabindex');
     button.dataset.route = 'atlas';
-    button.setAttribute('aria-label', 'Open Atlas');
+    button.classList.toggle('is-current', atlas);
+    if (atlas) {
+      button.setAttribute('aria-current', 'page');
+      button.setAttribute('aria-label', 'Atlas, current view');
+    } else {
+      button.removeAttribute('aria-current');
+      button.setAttribute('aria-label', 'Open Atlas');
+    }
     const title = button.querySelector('.atlas-entry-copy strong')?.textContent;
     const hasGraphGlyph = Boolean(button.querySelector('svg.atlas-entry-glyph'));
     if (title !== 'Atlas' || !hasGraphGlyph) button.replaceChildren(...atlasMarkup());

@@ -732,3 +732,22 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-read
 .profile-root-actions{
   margin-top:9px!important
 }
+
+/* Overview primary controls use empty graph nodes at rest. Interaction fills
+   the node instead of presenting a permanently selected-looking state. */
+.profile-root-quick-trigger.graph-control::before,
+.profile-root-action.graph-control::before{
+  background:var(--paper)!important;
+  border-color:var(--ink)!important
+}
+
+.profile-root-quick-trigger.graph-control:hover::before,
+.profile-root-quick-trigger.graph-control:focus-visible::before,
+.profile-root-quick-trigger.graph-control:active::before,
+.profile-root-action.graph-control:hover::before,
+.profile-root-action.graph-control:focus-visible::before,
+.profile-root-action.graph-control:active::before{
+  background:var(--ink)!important;
+  border-color:var(--ink)!important
+}
+

@@ -109,6 +109,24 @@ test('Work projects have primary hit targets and concept inspector promotes proj
   expect(await page.evaluate(() => document.body.classList.contains('is-v9-transitioning'))).toBe(false);
   expect(after).toEqual(before);
   await expect(page.locator('#site-detail-panel')).toHaveClass(/is-open/);
+
+  await page.locator('#site-detail-panel .detail-close').click();
+  await page.waitForFunction(() => location.hash === '#work');
+
+  const multiThemeConcept = page.locator(
+    '#site-graph .site-graph-node[data-node-id^="work-concept:"][data-node-id*="|"]'
+  ).first();
+  await expect(multiThemeConcept).toBeVisible();
+  await multiThemeConcept.locator('.site-graph-dot').click({ force: true });
+
+  const multiPanel = page.locator('#site-detail-panel.is-work-concept-detail');
+  await expect(multiPanel).toBeVisible();
+  const themeLines = multiPanel.locator('.work-concept-heading-line');
+  expect(await themeLines.count()).toBeGreaterThan(1);
+  const lineDisplays = await themeLines.evaluateAll(elements =>
+    elements.map(element => getComputedStyle(element).display)
+  );
+  lineDisplays.forEach(display => expect(display).toBe('block'));
 });
 
 test('focus transitions crossfade persistent label geometry before handoff', async ({ page }) => {

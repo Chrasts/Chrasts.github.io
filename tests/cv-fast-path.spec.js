@@ -38,6 +38,23 @@ test('data-analysis CV is compact and contains only data-relevant selected proje
   await expect(page.locator('.cv-section-areas')).toContainText('Data Analysis');
   await expect(page.locator('.cv-section-areas')).toContainText('Data Validation & QA');
   await expect(page.locator('.cv-section-areas')).not.toContainText('Universal Algebra');
+  await expect(page.locator('.cv-tech-stack')).toContainText('Python, pandas, SQL, MySQL, openpyxl, Matplotlib');
+  await expect(page.locator('.cv-section-projects')).toContainText('Private professional work:');
+  await expect(page.locator('.cv-header')).not.toContainText('Current:');
+
+  const dataSections = await page.locator('.cv-section > h2').allTextContents();
+  expect(dataSections).toEqual([
+    'Experience',
+    'Selected Projects',
+    'Core Data Skills',
+    'Education',
+    'Additional Credentials'
+  ]);
+
+  const experience = page.locator('.cv-section-experience > .cv-item').first();
+  await expect(experience.locator('h3')).toHaveText('Junior Researcher and Data Analyst');
+  await expect(experience.locator('.cv-experience-meta')).toContainText('České priority');
+  await expect(experience.locator('.cv-experience-meta')).toContainText('2026 - present');
 
   await expect(page.getByRole('button', { name: 'Print / Save PDF' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'CV versions' })).toBeVisible();
@@ -47,6 +64,7 @@ test('academic CV foregrounds logic and research projects while keeping shared e
   await page.goto('/cv/?view=academic');
 
   await expect(page.getByText('Mathematical logic · Algebraic logic · Research')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Selected Research & Projects' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Bachelor Thesis - Quantum Logic & A-ROL' })).toBeVisible();
   await expect(page.getByRole('heading', { name: /A-ROL Lab/ })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'The Congruence Lattice Problem - Historical Survey' })).toBeVisible();
@@ -62,13 +80,25 @@ test('academic CV foregrounds logic and research projects while keeping shared e
   await expect(page.locator('.cv-section-areas')).toContainText('Universal Algebra');
   await expect(page.locator('.cv-section-areas')).not.toContainText('Survey Analysis');
 
-  await expect(page.getByRole('heading', { name: 'Certifications' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Additional Credentials' })).toBeVisible();
   await expect(page.locator('.cv-section-certifications')).toContainText('Ethics of AI');
   await expect(page.locator('.cv-section-certifications')).toContainText('Introduction to Artificial Intelligence');
   await expect(page.locator('.cv-section-certifications')).toContainText('B2 First');
 
   const education = await page.locator('.cv-section-education > .cv-item h3').allTextContents();
   expect(education.at(-1)).toContain('ESSLLI 2026');
+
+  const academicSections = await page.locator('.cv-section > h2').allTextContents();
+  expect(academicSections).toEqual([
+    'Education',
+    'Selected Research & Projects',
+    'Academic Focus',
+    'Experience',
+    'Additional Credentials'
+  ]);
+  await expect(page.locator('.cv-section-projects')).toContainText('Private research materials:');
+  await expect(page.locator('.cv-tech-stack')).toHaveCount(0);
+  await expect(page.locator('.cv-header')).not.toContainText('Current:');
 });
 
 test('focused CV keeps the established compact graph-native visual language', async ({ page }) => {
@@ -185,6 +215,26 @@ test('CV section headings sit above a wide multi-column body', async ({ page }) 
   const b = await second.boundingBox();
   expect(a.y).toBeGreaterThan(h.y + h.height - 1);
   expect(Math.abs(a.y - b.y)).toBeLessThan(8);
+});
+
+test('focused CV remains readable as conventional plain text for ATS-style scanning', async ({ page }) => {
+  await page.goto('/cv/?view=data-analysis');
+
+  const text = await page.locator('#cv-content').innerText();
+  const experienceIndex = text.indexOf('Experience');
+  const roleIndex = text.indexOf('Junior Researcher and Data Analyst');
+  const employerIndex = text.indexOf('České priority');
+  const dateIndex = text.indexOf('2026 - present');
+  const toolsIndex = text.indexOf('Technical tools:');
+
+  expect(experienceIndex).toBeGreaterThanOrEqual(0);
+  expect(roleIndex).toBeGreaterThan(experienceIndex);
+  expect(employerIndex).toBeGreaterThan(roleIndex);
+  expect(dateIndex).toBeGreaterThan(employerIndex);
+  expect(toolsIndex).toBeGreaterThan(dateIndex);
+  expect(text).toContain('Python');
+  expect(text).toContain('SQL');
+  expect(text).toContain('Matplotlib');
 });
 
 test('print CV uses a denser A4-oriented layout without hiding content', async ({ page }) => {

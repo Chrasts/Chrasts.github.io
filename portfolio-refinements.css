@@ -381,19 +381,19 @@ body[data-graph-mode="overview"] #site-graph .site-graph-node[data-node-id="work
 @keyframes atlas-entry-node-breathe-strong{to{transform:scale(1.34)}}
 
 /* Unified-header Atlas endpoint.
-   The glyph is the primary control, its label sits below it, and branch colour
-   only occupies secondary topology. The central identity node stays brown. */
+   The whole glyph + label is one control. All topology nodes stay identity
+   brown, while all edges inherit the current branch accent. */
 @media(min-width:901px){
   .graph-routebar .atlas-button.atlas-entry-v7,
   body[data-graph-mode="overview"] .graph-routebar .atlas-button.atlas-entry-v7{
     width:228px;
     min-width:228px;
-    min-height:142px;
+    min-height:140px;
     display:flex!important;
     flex-direction:column!important;
     align-items:center!important;
     justify-content:flex-start!important;
-    gap:3px!important;
+    gap:0!important;
     padding:0!important;
     overflow:visible;
     text-align:center!important
@@ -403,7 +403,7 @@ body[data-graph-mode="overview"] #site-graph .site-graph-node[data-node-id="work
   body[data-graph-mode="overview"] .graph-routebar .atlas-entry-glyph{
     order:0!important;
     width:214px!important;
-    height:118px!important;
+    height:116px!important;
     overflow:visible
   }
 
@@ -413,41 +413,33 @@ body[data-graph-mode="overview"] #site-graph .site-graph-node[data-node-id="work
     min-height:20px!important;
     display:flex!important;
     align-items:flex-start!important;
-    justify-content:center!important
+    justify-content:center!important;
+    margin-top:-5px!important;
+    pointer-events:none
   }
 
   .graph-routebar .atlas-entry-copy strong,
   body[data-graph-mode="overview"] .graph-routebar .atlas-entry-copy strong{
     color:var(--profile-accent)!important;
-    font-size:13px!important;
-    font-weight:820!important;
+    font-size:17px!important;
+    font-weight:850!important;
     line-height:1!important;
-    letter-spacing:.045em!important
+    letter-spacing:.035em!important;
+    transition:transform .16s ease,font-weight .16s ease,color .16s ease
   }
 
   .graph-routebar .atlas-entry-glyph-edges line,
   body[data-graph-mode="overview"] .graph-routebar .atlas-entry-glyph-edges line{
     stroke:var(--profile-accent)!important;
-    stroke-width:1.2!important;
-    opacity:.82
-  }
-
-  .graph-routebar .atlas-entry-glyph-edges line:nth-child(3n),
-  body[data-graph-mode="overview"] .graph-routebar .atlas-entry-glyph-edges line:nth-child(3n){
-    stroke:var(--brown)!important;
-    opacity:.92
+    stroke-width:1.25!important;
+    opacity:.86
   }
 
   .graph-routebar .atlas-entry-glyph-nodes circle,
   body[data-graph-mode="overview"] .graph-routebar .atlas-entry-glyph-nodes circle{
     fill:var(--paper)!important;
-    stroke:var(--profile-accent)!important;
-    stroke-width:1.35!important
-  }
-
-  .graph-routebar .atlas-entry-glyph-nodes circle:nth-child(even),
-  body[data-graph-mode="overview"] .graph-routebar .atlas-entry-glyph-nodes circle:nth-child(even){
-    stroke:var(--brown)!important
+    stroke:var(--brown)!important;
+    stroke-width:1.4!important
   }
 
   .graph-routebar .atlas-entry-glyph-nodes circle:first-child,
@@ -455,12 +447,22 @@ body[data-graph-mode="overview"] #site-graph .site-graph-node[data-node-id="work
   .graph-routebar .atlas-button.atlas-entry-v7.is-current .atlas-entry-glyph-nodes circle:first-child{
     fill:var(--brown)!important;
     stroke:var(--brown)!important;
-    stroke-width:1.7!important
+    stroke-width:1.75!important
   }
 
   .graph-routebar .atlas-button.atlas-entry-v7:hover .atlas-entry-copy strong,
   .graph-routebar .atlas-button.atlas-entry-v7:focus-visible .atlas-entry-copy strong{
-    color:var(--profile-accent)!important
+    color:var(--profile-accent)!important;
+    font-weight:920!important;
+    transform:translateY(-1px)
+  }
+
+  .graph-routebar .atlas-button.atlas-entry-v7:active .atlas-entry-copy strong{
+    transform:translateY(0) scale(.97)
+  }
+
+  .graph-routebar .atlas-button.atlas-entry-v7:active .atlas-entry-glyph{
+    transform:scale(1.02)
   }
 }
 

@@ -87,67 +87,56 @@ test.describe('Intro entry experience master contract', () => {
     expect(Math.abs(reveal.actionsRight - ready.actionsRight)).toBeLessThan(2);
   });
 
-  test('opening Atlas header gives every text item its own empty terminal lane', async ({ page }) => {
+  test('opening Atlas uses the same linear graph header as the rest of the site', async ({ page }) => {
     await bootFreshReady(page);
+    await page.waitForFunction(() => {
+      const graph = document.querySelector('.header-linear-graph-line');
+      return Boolean(graph?.getAttribute('d'));
+    });
 
     const state = await page.evaluate(() => {
-      const navItems = [...document.querySelectorAll('#main-nav > a')];
-      const utilityItems = [...document.querySelectorAll('.header-practical-actions .graph-control')]
-        .filter(item => getComputedStyle(item).display !== 'none');
-      const all = [...navItems, ...utilityItems];
-
-      const terminal = element => {
-        const before = getComputedStyle(element, '::before');
-        const after = getComputedStyle(element, '::after');
-        const style = getComputedStyle(element);
-        return {
-          text: element.textContent.trim(),
-          paddingLeft: parseFloat(style.paddingLeft),
-          nodeWidth: parseFloat(before.width),
-          nodeBorder: parseFloat(before.borderLeftWidth),
-          nodeBackground: before.backgroundColor,
-          lineWidth: parseFloat(after.width),
-          lineLeft: parseFloat(after.left)
-        };
-      };
-
-      const atlas = navItems.find(item => item.dataset.route === 'atlas');
-      const brief = utilityItems.find(item => item.classList.contains('header-quick-overview'));
-      const atlasBox = atlas.getBoundingClientRect();
-      const briefBox = brief.getBoundingClientRect();
-
+      const navItems = [...document.querySelectorAll('#main-nav > a[data-route]')];
+      const utilities = [...document.querySelectorAll('.header-practical-actions .graph-control')]
+        .filter(item => !item.hidden && getComputedStyle(item).display !== 'none');
+      const nodes = [...document.querySelectorAll('.header-linear-graph-nodes circle')];
+      const atlas = document.querySelector('.graph-routebar .atlas-button');
+      const theme = document.querySelector('.theme-toggle');
       return {
-        terminals: all.map(terminal),
-        atlasRight: atlasBox.right,
-        briefLeft: briefBox.left,
-        paper: getComputedStyle(document.documentElement).getPropertyValue('--paper').trim(),
-        atlasCurrent: atlas.getAttribute('aria-current')
+        routes: navItems.map(item => item.dataset.route),
+        itemCount: navItems.length + utilities.length,
+        nodeCount: nodes.length,
+        line: document.querySelector('.header-linear-graph-line')?.getAttribute('d') || '',
+        atlasLink: document.querySelector('.header-linear-graph-atlas-link')?.getAttribute('d') || '',
+        atlasVisible: Boolean(atlas?.getClientRects().length),
+        atlasCurrent: atlas?.getAttribute('aria-current'),
+        themeRadius: getComputedStyle(theme).borderRadius,
+        pseudo: [...navItems, ...utilities].map(item => ({
+          before: getComputedStyle(item, '::before').content,
+          after: getComputedStyle(item, '::after').content
+        }))
       };
     });
 
-    expect(state.terminals.length).toBeGreaterThanOrEqual(9);
-    state.terminals.forEach(item => {
-      expect(item.paddingLeft).toBeGreaterThanOrEqual(22);
-      expect(item.nodeWidth).toBeGreaterThanOrEqual(6);
-      expect(item.nodeBorder).toBeGreaterThan(0);
-      expect(item.lineWidth).toBeGreaterThanOrEqual(7);
-      expect(item.lineLeft).toBeGreaterThan(item.nodeWidth);
+    expect(state.routes).toEqual(['overview', 'work', 'knowledge', 'experience', 'education', 'about']);
+    expect(state.nodeCount).toBe(state.itemCount);
+    expect(state.line.length).toBeGreaterThan(20);
+    expect(state.atlasLink.length).toBeGreaterThan(20);
+    expect(state.atlasVisible).toBe(true);
+    expect(state.atlasCurrent).toBe('page');
+    expect(state.themeRadius).toBe('50%');
+    state.pseudo.forEach(item => {
+      expect(['none', 'normal', '""']).toContain(item.before);
+      expect(['none', 'normal', '""']).toContain(item.after);
     });
-    expect(state.briefLeft - state.atlasRight).toBeGreaterThanOrEqual(5);
 
     const work = page.locator('#main-nav > a[data-route="work"]');
-    const before = await work.evaluate(element => ({
-      node: getComputedStyle(element, '::before').backgroundColor,
-      line: parseFloat(getComputedStyle(element, '::after').width)
-    }));
+    const key = await work.getAttribute('data-header-graph-key');
+    const node = page.locator(`.header-linear-graph-nodes circle[data-header-graph-key="${key}"]`);
+    const before = await node.evaluate(element => getComputedStyle(element).fill);
     await work.hover();
-    const after = await work.evaluate(element => ({
-      node: getComputedStyle(element, '::before').backgroundColor,
-      line: parseFloat(getComputedStyle(element, '::after').width)
-    }));
-
-    expect(after.node).not.toBe(before.node);
-    expect(after.line).toBeGreaterThan(before.line);
+    await expect(node).toHaveClass(/is-hot/);
+    const after = await node.evaluate(element => getComputedStyle(element).fill);
+    expect(after).not.toBe(before);
   });
 
   test('fresh reveal retains one bounds-driven camera and the full topology through ATLAS_READY', async ({ page }) => {
@@ -251,10 +240,10 @@ test.describe('Intro entry experience master contract', () => {
       controls: getComputedStyle(document.querySelector('#atlas-controls')).display,
       brief: getComputedStyle(document.querySelector('.profile-root-brief')).display
     }));
-    expect(await chromeDisplay()).toEqual({ routebar: 'none', controls: 'none', brief: 'none' });
+    expect(await chromeDisplay()).toEqual({ routebar: 'flex', controls: 'none', brief: 'none' });
 
     await page.waitForFunction(() => document.body.classList.contains('is-profile-root-emerging'), null, { timeout: 6_000 });
-    expect(await chromeDisplay()).toEqual({ routebar: 'none', controls: 'none', brief: 'none' });
+    expect(await chromeDisplay()).toEqual({ routebar: 'flex', controls: 'none', brief: 'none' });
 
     await page.waitForFunction(() => window.ProfileAtlasCondensation.snapshot().state === 'COMPLETE', null, { timeout: 7_000 });
     expect(await page.evaluate(() => document.body.classList.contains('is-entry-atlas-condensation'))).toBe(false);
@@ -287,8 +276,8 @@ test.describe('Intro entry experience master contract', () => {
     });
     expect(settled.graph.width).toBeGreaterThanOrEqual(settled.viewport.width - 1);
     expect(settled.graph.height).toBeGreaterThanOrEqual(settled.viewport.height - 1);
-    expect(settled.profileButtonVisible).toBe(false);
-    expect(settled.routebar).toBe('none');
+    expect(settled.profileButtonVisible).toBe(true);
+    expect(settled.routebar).toBe('flex');
     expect(settled.quickOverview).toBe('none');
     expect(settled.controls).toBe('none');
     // The slow feathered light field may remain visible after semantic entry

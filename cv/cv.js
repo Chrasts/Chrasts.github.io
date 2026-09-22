@@ -9,11 +9,6 @@
   const byParent = id => nodes.filter(node => node.parentIds?.includes(id));
   const byId = id => nodes.find(node => node.id === id);
   const projectById = id => projects.find(project => project.id === id);
-  const current = byParent('experience')
-    .filter(node => node.ongoing || node.status === 'ongoing')
-    .sort((a,b) => (b.prominence || 0) - (a.prominence || 0))[0]
-    || byParent('experience').sort((a,b) => (b.timelineOrder || 0) - (a.timelineOrder || 0))[0];
-
   const views = {
     academic: {
       key: 'academic',
@@ -23,7 +18,10 @@
       projectIds: ['bachelor-thesis', 'arol-lab', 'clp-survey', 'modal-logic-lab'],
       experienceIds: ['ceske-priority'],
       areaIds: ['mathematical-logic', 'algebraic-logic', 'universal-algebra', 'lattice-theory', 'computational-logic'],
-      areaTitle: 'Academic Focus'
+      areaTitle: 'Academic Focus',
+      projectsTitle: 'Selected Research & Projects',
+      credentialsTitle: 'Additional Credentials',
+      sectionOrder: ['education', 'projects', 'areas', 'experience', 'credentials']
     },
     'data-analysis': {
       key: 'data-analysis',
@@ -33,7 +31,11 @@
       projectIds: ['social-workers-survey', 'insolvency', 'film-splitter', 'sql-schema'],
       experienceIds: ['ceske-priority'],
       areaIds: ['data-analysis', 'statistics', 'survey-analysis', 'data-qa', 'visualisation', 'programming-automation', 'data-modelling'],
-      areaTitle: 'Core Data Skills'
+      areaTitle: 'Core Data Skills',
+      tools: ['Python', 'pandas', 'SQL', 'MySQL', 'openpyxl', 'Matplotlib'],
+      projectsTitle: 'Selected Projects',
+      credentialsTitle: 'Additional Credentials',
+      sectionOrder: ['experience', 'projects', 'areas', 'education', 'credentials']
     }
   };
 
@@ -123,20 +125,11 @@
     contacts.append(link('Interactive portfolio', '/'));
     header.append(title, intro, contacts);
 
-    if (current) {
-      const currentLine = el('p', 'cv-current');
-      currentLine.append(
-        el('strong', '', 'Current: '),
-        document.createTextNode([current.role, current.label].filter(Boolean).join(' · '))
-      );
-      header.append(currentLine);
-    }
-
     return header;
   };
 
   const renderProjects = selected => {
-    const work = section('Selected Projects', 'projects');
+    const work = section(selected.projectsTitle || 'Selected Projects', 'projects');
 
     selected.projectIds
       .map(projectById)
@@ -169,7 +162,18 @@
             links.append(link(item.label.replace(/\s*↗\s*$/, ''), item.href));
           });
           article.append(links);
-        } else if (project.note) {
+        }
+
+        if (project.facets?.visibility === 'private') {
+          const privateLabel = project.contexts?.includes('professional')
+            ? 'Private professional work'
+            : 'Private research materials';
+          article.append(el(
+            'p',
+            'cv-note cv-private-note',
+            `${privateLabel}: ${project.note || 'Underlying materials are not public.'}`
+          ));
+        } else if (!project.links?.length && project.note) {
           article.append(el('p', 'cv-note', project.note));
         }
 
@@ -186,8 +190,10 @@
       .filter(Boolean)
       .forEach(item => {
         const article = el('article', 'cv-item');
-        article.append(el('h3', '', item.role ? `${item.role} · ${item.label}` : item.label));
-        article.append(el('p', 'cv-meta', item.meta || ''));
+        article.append(el('h3', 'cv-role', item.role || item.label));
+        const metaParts = [item.role ? item.label : null, item.organisation, item.meta]
+          .filter((value, index, values) => value && values.indexOf(value) === index);
+        article.append(el('p', 'cv-meta cv-experience-meta', metaParts.join(' · ')));
         if (item.summary) article.append(el('p', 'cv-item-summary', item.summary));
         if (item.highlights?.length) {
           const ul = el('ul', 'cv-compact-list');
@@ -218,8 +224,8 @@
     return education;
   };
 
-  const renderCertifications = () => {
-    const certifications = section('Certifications', 'certifications');
+  const renderCertifications = selected => {
+    const certifications = section(selected.credentialsTitle || 'Additional Credentials', 'certifications');
     byParent('credentials')
       .sort((a,b) => (a.meta || '').localeCompare(b.meta || '') || a.label.localeCompare(b.label))
       .forEach(item => {
@@ -239,19 +245,31 @@
       .filter(Boolean)
       .forEach(item => areaList.append(el('li', '', item.label)));
     areas.append(areaList);
+    if (selected.tools?.length) {
+      const tools = el('p', 'cv-tech-stack');
+      tools.append(
+        el('strong', '', 'Technical tools: '),
+        document.createTextNode(selected.tools.join(', '))
+      );
+      areas.append(tools);
+    }
     return areas;
   };
 
   const renderCv = selected => {
     setDocumentState(selected);
-    host.replaceChildren(
-      renderHeader(selected),
-      renderProjects(selected),
-      renderExperience(selected),
-      renderEducation(),
-      renderCertifications(),
-      renderAreas(selected)
-    );
+    const renderers = {
+      projects: () => renderProjects(selected),
+      experience: () => renderExperience(selected),
+      education: () => renderEducation(),
+      credentials: () => renderCertifications(selected),
+      areas: () => renderAreas(selected)
+    };
+    const sections = selected.sectionOrder
+      .map(key => renderers[key]?.())
+      .filter(Boolean);
+
+    host.replaceChildren(renderHeader(selected), ...sections);
   };
 
   if (view) renderCv(view);

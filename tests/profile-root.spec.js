@@ -140,7 +140,7 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
 
     expect(await page.evaluate(() => document.body.dataset.graphMode)).toBe('atlas');
     await expect(page.locator('.entry-fast-path')).toHaveCount(0);
-    await expect(page.locator('.quick-overview-global-trigger')).toBeHidden();
+    await expect(page.locator('.quick-overview-global-trigger')).toHaveCount(0);
 
     const header = page.locator('body > .site-header.app-header');
     await expect(header).toBeVisible();

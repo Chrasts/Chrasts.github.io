@@ -932,3 +932,142 @@ body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-st
   }
 }
 
+/* Unified-header handoff.
+   Opening Atlas no longer owns a structurally different top bar. These final
+   rules deliberately neutralise the older entry-only header geometry and the
+   retired per-label terminal motif so the same header composition is used
+   before, during and after the Atlas reveal. */
+@media(min-width:901px){
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header.app-header{
+    width:min(1440px,calc(100% - 40px))!important;
+    height:62px!important;
+    padding:0!important;
+    grid-template-columns:182px minmax(0,1fr)!important;
+    column-gap:14px!important;
+    border:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    backdrop-filter:none!important
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-context-slot{
+    width:182px!important;
+    height:52px!important
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-actions{
+    width:auto!important;
+    min-height:52px!important;
+    gap:0!important;
+    justify-self:end!important
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav{
+    gap:16px!important
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a{
+    min-height:38px!important;
+    padding:0!important;
+    color:var(--brown)!important;
+    font-size:11px!important;
+    font-weight:650!important
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a:is(:hover,:focus-visible,[aria-current="page"]){
+    color:var(--profile-accent)!important;
+    font-weight:790!important
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a::before,
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a::after,
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::before,
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control::after{
+    content:none!important;
+    display:none!important
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions{
+    gap:11px!important;
+    margin-left:25px!important
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control{
+    min-height:38px!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    color:color-mix(in srgb,var(--brown) 74%,var(--muted))!important;
+    font-size:9.8px!important;
+    font-weight:650!important;
+    transform:none!important
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .header-quick-overview.graph-control{
+    color:var(--brown)!important;
+    font-weight:760!important
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control:is(:hover,:focus-visible,[aria-expanded="true"]){
+    color:var(--profile-accent)!important;
+    font-weight:790!important;
+    transform:none!important
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .theme-toggle{
+    width:34px!important;
+    height:34px!important;
+    margin-left:15px!important;
+    border:1px solid color-mix(in srgb,var(--profile-accent) 38%,var(--line))!important;
+    border-radius:50%!important;
+    background:var(--paper)!important;
+    color:var(--brown)!important
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .theme-toggle:is(:hover,:focus-visible){
+    border-color:var(--profile-accent)!important;
+    color:var(--profile-accent)!important
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-linear-graph{
+    display:block!important;
+    height:62px!important
+  }
+}
+
+@media(max-width:1280px) and (min-width:901px){
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header.app-header{
+    grid-template-columns:148px minmax(0,1fr)!important;
+    column-gap:8px!important
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-context-slot{
+    width:148px!important
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav{
+    gap:10px!important
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a{
+    font-size:10px!important
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions{
+    gap:8px!important;
+    margin-left:16px!important
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .graph-control{
+    font-size:9px!important
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .theme-toggle{
+    width:32px!important;
+    height:32px!important;
+    margin-left:10px!important
+  }
+}
+

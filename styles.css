@@ -19,7 +19,8 @@
   --radius-modal:7px;
   --radius-document:1px;
   --surface-ui:var(--paper);
-  --surface-border:var(--line)
+  --surface-border:var(--line);
+  --header-utility-contrast:#0b0b0a
 }
 html[data-theme="dark"]{
   color-scheme:dark;
@@ -31,7 +32,8 @@ html[data-theme="dark"]{
   --brown:#a08678;
   --teal:#f2f65a;
   --on-color:#fff8ec;
-  --line:#3d4d52
+  --line:#3d4d52;
+  --header-utility-contrast:#fff
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -2791,7 +2793,7 @@ body[data-graph-mode="overview"] .detail-node-list button{
   }
 
   .header-practical-actions .header-utility.graph-control{
-    color:var(--ink)!important;
+    color:var(--header-utility-contrast)!important;
     font-size:10.2px!important;
     font-weight:780!important;
     letter-spacing:.005em;
@@ -2800,7 +2802,7 @@ body[data-graph-mode="overview"] .detail-node-list button{
 
   .header-practical-actions .header-utility.graph-control:hover,
   .header-practical-actions .header-utility.graph-control:focus-visible{
-    color:var(--ink)!important;
+    color:var(--header-utility-contrast)!important;
     font-weight:880!important;
     text-decoration:underline;
     text-decoration-color:var(--profile-accent);

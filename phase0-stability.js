@@ -305,7 +305,7 @@
     html:has(body[data-root-landing="false"]),
     body[data-root-landing="false"]{overflow:hidden!important;height:100%!important}
     body[data-root-landing="false"] .profile-app{
-      height:calc(100dvh - 72px)!important;
+      height:calc(100dvh - 62px)!important;
       min-height:0!important;
       overflow:hidden!important
     }

@@ -99,6 +99,10 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
     await expect(page.locator('.quick-overview-dialog')).toContainText('B2 First');
     await expect(page.locator('.quick-overview-dialog')).toContainText('České priority');
     await expect(page.locator('.quick-overview-dialog')).toContainText('Survey Analysis');
+    await expect(page.locator('.quick-overview-dialog')).toContainText(
+      'Research on quantum logic, residuated ortholattices and the associative A-ROL fragment.'
+    );
+    await expect(page.locator('.quick-overview-dialog')).not.toContainText('Defended research thesis');
     await expect(page.locator('.quick-overview-dialog')).toContainText('CV');
     await expect(page.locator('.quick-overview-kicker')).toHaveText('Profile brief');
 

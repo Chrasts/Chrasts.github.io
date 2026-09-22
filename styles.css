@@ -2528,6 +2528,29 @@ body[data-graph-mode="overview"] .detail-node-list button{
     font-weight:790
   }
 
+  /* Override the older branch-link rule: location colour belongs to the
+     secondary graph and active/interactive state, not to every nav word. */
+  .site-header #main-nav > a:is(
+    [data-route="work"],
+    [data-route="knowledge"],
+    [data-route="experience"],
+    [data-route="education"],
+    [data-route="about"]
+  ){
+    color:var(--brown)!important
+  }
+
+  .site-header #main-nav > a:is(
+    [data-route="work"],
+    [data-route="knowledge"],
+    [data-route="experience"],
+    [data-route="education"],
+    [data-route="about"]
+  ):is(:hover,:focus-visible,[aria-current="page"]){
+    color:var(--profile-accent)!important;
+    font-weight:790
+  }
+
   /* Retire the old per-item terminal grammar. Nodes now belong to the one
      continuous SVG graph and no longer reserve layout space beside labels. */
   .site-header #main-nav > a::before,

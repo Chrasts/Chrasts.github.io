@@ -12,6 +12,164 @@
     try { return localStorage.getItem('theme'); } catch (_) { return null; }
   };
   const currentTheme = () => document.documentElement.dataset.theme || 'light';
+  const header = document.querySelector('.app-header');
+  const headerGraph = header?.querySelector('.header-linear-graph');
+  const headerGraphLine = headerGraph?.querySelector('.header-linear-graph-line');
+  const headerAtlasLink = headerGraph?.querySelector('.header-linear-graph-atlas-link');
+  const headerGraphNodes = headerGraph?.querySelector('.header-linear-graph-nodes');
+  let headerGraphFrame = 0;
+
+  const headerGraphItems = () => {
+    if (!header) return [];
+    const navItems = [...header.querySelectorAll('#main-nav > a[data-route]')];
+    const practical = [...header.querySelectorAll('.header-practical-actions .graph-control')]
+      .filter(item => !item.hidden && getComputedStyle(item).display !== 'none');
+    return [...navItems, ...practical];
+  };
+
+  const headerGraphKey = (element, index) => {
+    if (element.dataset.route) return `route-${element.dataset.route}`;
+    if (element.classList.contains('header-quick-overview')) return 'profile-brief';
+    if (element.matches('a[href="/cv/"]')) return 'cv';
+    if (element.matches('a[href^="mailto:"]')) return 'email';
+    if (element.href?.includes('github.com')) return 'github';
+    if (element.href?.includes('linkedin.com')) return 'linkedin';
+    return `header-item-${index}`;
+  };
+
+  const syncHeaderGraphStates = () => {
+    if (!headerGraphNodes) return;
+    headerGraphItems().forEach((item, index) => {
+      const key = headerGraphKey(item, index);
+      item.dataset.headerGraphKey = key;
+      const node = headerGraphNodes.querySelector(`[data-header-graph-key="${key}"]`);
+      node?.classList.toggle(
+        'is-current',
+        item.getAttribute('aria-current') === 'page' || item.getAttribute('aria-expanded') === 'true'
+      );
+    });
+  };
+
+  const drawHeaderGraph = () => {
+    headerGraphFrame = 0;
+    if (!header || !headerGraph || !headerGraphLine || !headerGraphNodes || !themeButton) return;
+    if (innerWidth <= 900) {
+      headerGraph.setAttribute('viewBox', '0 0 1 1');
+      headerGraphLine.setAttribute('d', '');
+      headerAtlasLink?.setAttribute('d', '');
+      headerGraphNodes.replaceChildren();
+      return;
+    }
+
+    const headerBox = header.getBoundingClientRect();
+    if (!headerBox.width || !headerBox.height) return;
+
+    const items = headerGraphItems();
+    const yPattern = [45, 50, 46, 52, 44, 49, 53, 47, 51, 45, 50];
+    const xPattern = [.34, .63, .43, .67, .37, .58, .46, .64, .35, .61, .42];
+    const points = [];
+
+    headerGraph.setAttribute('viewBox', `0 0 ${headerBox.width} ${headerBox.height}`);
+    headerGraph.setAttribute('preserveAspectRatio', 'none');
+    headerGraphNodes.replaceChildren();
+
+    items.forEach((item, index) => {
+      const box = item.getBoundingClientRect();
+      if (!box.width || !box.height) return;
+      const key = headerGraphKey(item, index);
+      item.dataset.headerGraphKey = key;
+      const x = Math.max(4, Math.min(
+        headerBox.width - 4,
+        box.left - headerBox.left + box.width * xPattern[index % xPattern.length]
+      ));
+      const y = Math.min(headerBox.height - 5, yPattern[index % yPattern.length]);
+      points.push({ x, y, key });
+
+      const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      circle.setAttribute('cx', x.toFixed(2));
+      circle.setAttribute('cy', y.toFixed(2));
+      circle.setAttribute('r', '3.15');
+      circle.dataset.headerGraphKey = key;
+      headerGraphNodes.append(circle);
+    });
+
+    const themeBox = themeButton.getBoundingClientRect();
+    const themePoint = {
+      x: Math.max(4, themeBox.left - headerBox.left + 1),
+      y: themeBox.top - headerBox.top + themeBox.height / 2
+    };
+
+    const pathPoints = [...points, themePoint];
+    headerGraphLine.setAttribute(
+      'd',
+      pathPoints.length
+        ? pathPoints.map((point, index) => `${index ? 'L' : 'M'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(' ')
+        : ''
+    );
+
+    const atlasButton = document.querySelector('.graph-routebar .atlas-button');
+    const atlasGlyph = atlasButton?.querySelector('.atlas-entry-glyph');
+    const atlasBox = (atlasGlyph || atlasButton)?.getBoundingClientRect();
+    if (headerAtlasLink && atlasBox?.width && getComputedStyle(atlasButton).display !== 'none') {
+      const targetX = atlasBox.left - headerBox.left + atlasBox.width * .52;
+      const targetY = atlasBox.top - headerBox.top + 4;
+      const kneeY = headerBox.height + 8;
+      const kneeX = themePoint.x + Math.min(18, Math.max(8, (targetX - themePoint.x) * .12));
+      headerAtlasLink.setAttribute(
+        'd',
+        `M ${themePoint.x.toFixed(2)} ${themePoint.y.toFixed(2)} L ${kneeX.toFixed(2)} ${kneeY.toFixed(2)} L ${targetX.toFixed(2)} ${(kneeY + 3).toFixed(2)} L ${targetX.toFixed(2)} ${targetY.toFixed(2)}`
+      );
+    } else {
+      headerAtlasLink?.setAttribute('d', '');
+    }
+
+    syncHeaderGraphStates();
+  };
+
+  const scheduleHeaderGraph = () => {
+    cancelAnimationFrame(headerGraphFrame);
+    headerGraphFrame = requestAnimationFrame(drawHeaderGraph);
+  };
+
+  const setHeaderGraphHot = (element, hot) => {
+    const key = element?.dataset?.headerGraphKey;
+    if (!key || !headerGraphNodes) return;
+    headerGraphNodes
+      .querySelector(`[data-header-graph-key="${key}"]`)
+      ?.classList.toggle('is-hot', hot);
+  };
+
+  header?.addEventListener('pointerover', event => {
+    const item = event.target.closest?.('[data-header-graph-key]');
+    if (item && header.contains(item)) setHeaderGraphHot(item, true);
+  });
+  header?.addEventListener('pointerout', event => {
+    const item = event.target.closest?.('[data-header-graph-key]');
+    if (!item || !header.contains(item)) return;
+    if (event.relatedTarget && item.contains(event.relatedTarget)) return;
+    setHeaderGraphHot(item, false);
+  });
+  header?.addEventListener('focusin', event => {
+    const item = event.target.closest?.('[data-header-graph-key]');
+    if (item && header.contains(item)) setHeaderGraphHot(item, true);
+  });
+  header?.addEventListener('focusout', event => {
+    const item = event.target.closest?.('[data-header-graph-key]');
+    if (item && header.contains(item)) setHeaderGraphHot(item, false);
+  });
+
+  if (header) {
+    const observer = new MutationObserver(() => {
+      syncHeaderGraphStates();
+      scheduleHeaderGraph();
+    });
+    observer.observe(header, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['aria-current', 'aria-expanded', 'hidden', 'class']
+    });
+  }
+
   const updateThemeControl = () => {
     if (!themeButton || !themeIcon) return;
     const dark = currentTheme() === 'dark';
@@ -36,6 +194,7 @@
 
     root.dataset.theme = theme;
     updateThemeControl();
+    scheduleHeaderGraph();
 
     if (shouldAnimate) {
       themeTransitionTimer = window.setTimeout(() => {
@@ -69,9 +228,18 @@
     if (locationLabel) locationLabel.textContent = contextLabelFor();
   };
   ['profile:graph-state-committed','profile:scene-state','profile:transition-finish','profile:transition-cancel']
-    .forEach(name => addEventListener(name, syncHeaderContext));
-  addEventListener('hashchange', () => requestAnimationFrame(syncHeaderContext));
+    .forEach(name => addEventListener(name, () => {
+      syncHeaderContext();
+      scheduleHeaderGraph();
+    }));
+  addEventListener('hashchange', () => requestAnimationFrame(() => {
+    syncHeaderContext();
+    scheduleHeaderGraph();
+  }));
+  addEventListener('resize', scheduleHeaderGraph);
+  addEventListener('load', scheduleHeaderGraph, { once: true });
   syncHeaderContext();
+  scheduleHeaderGraph();
 
   const setMenuOpen = open => {
     if (!navigation || !menuButton) return;

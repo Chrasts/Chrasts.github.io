@@ -120,9 +120,59 @@ test.describe('unified desktop header graph', () => {
     };
 
     await assertProfessionalLinksUseInk();
+    await expect(page.locator('.theme-toggle .theme-glyph')).toHaveClass(/theme-glyph--moon/);
+
     await page.locator('.theme-toggle').click();
     await page.waitForTimeout(360);
     await assertProfessionalLinksUseInk();
+    await expect(page.locator('.theme-toggle .theme-glyph')).toHaveClass(/theme-glyph--sun/);
+    await expect(page.locator('.theme-toggle .theme-glyph-orbit')).toBeVisible();
+  });
+
+  test('active header section node never drops during route animation or graph-node hover', async ({ page }) => {
+    await prepare(page);
+    await page.goto('/#overview', { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => document.body.dataset.graphMode === 'overview');
+    await waitHeader(page);
+
+    const workLink = page.locator('#main-nav > a[data-route="work"]');
+    await workLink.click();
+
+    await page.waitForFunction(() => {
+      const node = document.querySelector('.header-linear-graph-nodes circle[data-header-graph-key="route-work"]');
+      return node?.classList.contains('is-current');
+    });
+
+    const losses = await page.evaluate(async () => {
+      const misses = [];
+      const sample = label => {
+        const node = document.querySelector('.header-linear-graph-nodes circle[data-header-graph-key="route-work"]');
+        if (!node?.classList.contains('is-current')) misses.push(label);
+      };
+      const until = performance.now() + 900;
+      let frame = 0;
+      while (performance.now() < until) {
+        sample(`frame-${frame++}`);
+        await new Promise(resolve => requestAnimationFrame(resolve));
+      }
+      return misses;
+    });
+    expect(losses).toEqual([]);
+
+    await page.waitForFunction(() =>
+      document.body.dataset.graphMode === 'work' &&
+      !document.body.classList.contains('is-v9-transitioning')
+    );
+
+    const arbitraryNode = page.locator('#site-graph .site-graph-node[data-node-id]').filter({
+      hasNot: page.locator('[data-node-id="work"]')
+    }).first();
+    await arbitraryNode.hover();
+    await page.waitForTimeout(120);
+
+    await expect(
+      page.locator('.header-linear-graph-nodes circle[data-header-graph-key="route-work"]')
+    ).toHaveClass(/is-current/);
   });
 
   test('branch identity recolours the secondary graph and current word/node together', async ({ page }) => {

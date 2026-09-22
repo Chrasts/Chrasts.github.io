@@ -2464,3 +2464,253 @@ body[data-graph-mode="overview"] .detail-node-list button{
   }
 }
 
+/* ==========================================================================
+   Unified desktop header graph
+   --------------------------------------------------------------------------
+   The top bar is one stable navigation surface in Overview, every branch,
+   focus views and Atlas. Text remains the primary navigation layer. A single
+   irregular linear graph runs beneath it as secondary structure; its colour
+   follows --profile-accent, so the neutral profile is brown and focused
+   branches inherit their semantic territory colour.
+   ========================================================================== */
+@media(min-width:901px){
+  .app-header{
+    width:min(1440px,calc(100% - 40px));
+    height:62px;
+    padding:0;
+    grid-template-columns:182px minmax(0,1fr);
+    column-gap:14px;
+    background:transparent
+  }
+
+  .header-context-slot{
+    position:relative;
+    z-index:3;
+    width:182px;
+    height:52px
+  }
+
+  .header-actions{
+    position:relative;
+    z-index:3;
+    display:flex;
+    align-items:center;
+    justify-self:end;
+    gap:0;
+    min-width:0;
+    min-height:52px
+  }
+
+  .site-header #main-nav{
+    position:relative;
+    z-index:2;
+    display:flex;
+    align-items:center;
+    gap:16px
+  }
+
+  .site-header #main-nav > a{
+    display:inline-flex;
+    align-items:center;
+    min-height:38px;
+    padding:0!important;
+    color:var(--brown)!important;
+    font-size:11px;
+    font-weight:650;
+    white-space:nowrap;
+    transition:color .16s ease,font-weight .16s ease,opacity .16s ease
+  }
+
+  .site-header #main-nav > a:hover,
+  .site-header #main-nav > a:focus-visible,
+  .site-header #main-nav > a[aria-current="page"]{
+    color:var(--profile-accent)!important;
+    font-weight:790
+  }
+
+  /* Retire the old per-item terminal grammar. Nodes now belong to the one
+     continuous SVG graph and no longer reserve layout space beside labels. */
+  .site-header #main-nav > a::before,
+  .site-header #main-nav > a::after,
+  .site-header .header-practical-actions .graph-control::before,
+  .site-header .header-practical-actions .graph-control::after{
+    content:none!important;
+    display:none!important
+  }
+
+  .header-topology-marker{display:none!important}
+
+  .header-practical-actions{
+    position:relative;
+    z-index:2;
+    display:flex;
+    align-items:center;
+    gap:11px;
+    margin-left:25px
+  }
+
+  .header-practical-actions .graph-control{
+    min-height:38px;
+    padding:0!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    color:color-mix(in srgb,var(--brown) 74%,var(--muted))!important;
+    font-size:9.8px;
+    font-weight:650!important;
+    white-space:nowrap;
+    transform:none!important;
+    transition:color .16s ease,font-weight .16s ease
+  }
+
+  .header-practical-actions .header-quick-overview.graph-control{
+    color:var(--brown)!important;
+    font-weight:760!important
+  }
+
+  .header-practical-actions .graph-control:hover,
+  .header-practical-actions .graph-control:focus-visible,
+  .header-practical-actions .graph-control[aria-expanded="true"]{
+    color:var(--profile-accent)!important;
+    font-weight:790!important;
+    transform:none!important
+  }
+
+  .theme-toggle{
+    position:relative;
+    z-index:3;
+    flex:0 0 auto;
+    width:34px;
+    height:34px;
+    margin-left:15px;
+    border:1px solid color-mix(in srgb,var(--profile-accent) 38%,var(--line));
+    border-radius:50%!important;
+    background:var(--paper);
+    color:var(--brown);
+    transition:border-color .16s ease,color .16s ease,background-color .16s ease,transform .16s ease
+  }
+
+  .theme-toggle:hover,
+  .theme-toggle:focus-visible{
+    border-color:var(--profile-accent);
+    color:var(--profile-accent);
+    transform:scale(1.04)
+  }
+
+  .header-linear-graph{
+    position:absolute;
+    z-index:1;
+    inset:0;
+    width:100%;
+    height:62px;
+    overflow:visible;
+    pointer-events:none;
+    color:var(--profile-accent)
+  }
+
+  .header-linear-graph-line,
+  .header-linear-graph-atlas-link{
+    fill:none;
+    vector-effect:non-scaling-stroke;
+    transition:stroke .48s cubic-bezier(.22,.72,.22,1),opacity .18s ease
+  }
+
+  .header-linear-graph-line{
+    stroke:color-mix(in srgb,var(--profile-accent) 47%,var(--line));
+    stroke-width:1.05;
+    opacity:.9
+  }
+
+  .header-linear-graph-atlas-link{
+    stroke:color-mix(in srgb,var(--profile-accent) 40%,var(--line));
+    stroke-width:1;
+    stroke-dasharray:3 4;
+    opacity:.7
+  }
+
+  .header-linear-graph-nodes circle{
+    fill:var(--paper);
+    stroke:var(--profile-accent);
+    stroke-width:1.15;
+    vector-effect:non-scaling-stroke;
+    transform-box:fill-box;
+    transform-origin:center;
+    transition:
+      fill .16s ease,
+      stroke .48s cubic-bezier(.22,.72,.22,1),
+      transform .16s ease,
+      opacity .16s ease
+  }
+
+  .header-linear-graph-nodes circle.is-hot,
+  .header-linear-graph-nodes circle.is-current{
+    fill:var(--profile-accent);
+    transform:scale(1.34)
+  }
+
+  .header-linear-graph-nodes circle.is-current{
+    stroke-width:1.45
+  }
+
+  /* Atlas remains a separate spatial control below the bar. The dashed branch
+     drawn by the header SVG terminates at its animated glyph. */
+  .graph-routebar .atlas-button.atlas-entry-v7{
+    color:var(--profile-accent)
+  }
+
+  .graph-routebar .atlas-button.atlas-entry-v7.is-current .atlas-entry-copy strong{
+    color:var(--profile-accent)
+  }
+
+  .graph-routebar .atlas-button.atlas-entry-v7.is-current .atlas-entry-glyph-nodes circle:first-child{
+    fill:var(--profile-accent);
+    stroke:var(--profile-accent)
+  }
+}
+
+@media(max-width:1280px) and (min-width:901px){
+  .app-header{
+    grid-template-columns:148px minmax(0,1fr);
+    column-gap:8px
+  }
+
+  .header-context-slot{width:148px}
+
+  .site-header #main-nav{gap:10px}
+
+  .site-header #main-nav > a{
+    font-size:10px
+  }
+
+  .header-practical-actions{
+    gap:8px;
+    margin-left:16px
+  }
+
+  .header-practical-actions .graph-control{
+    font-size:9px
+  }
+
+  .theme-toggle{
+    width:32px;
+    height:32px;
+    margin-left:10px
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .header-linear-graph-line,
+  .header-linear-graph-atlas-link,
+  .header-linear-graph-nodes circle,
+  .site-header #main-nav > a,
+  .header-practical-actions .graph-control,
+  .theme-toggle{
+    transition:none!important
+  }
+}
+
+@media(max-width:900px){
+  .header-linear-graph{display:none!important}
+}
+

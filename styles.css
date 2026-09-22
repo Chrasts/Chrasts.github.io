@@ -2862,3 +2862,57 @@ body[data-graph-mode="overview"] .detail-node-list button{
   }
 }
 
+/* Celestial theme glyphs: custom line icons retain the familiar sun/moon
+   metaphor while avoiding platform emoji and adding a restrained orbital layer. */
+.theme-toggle > span{
+  width:22px;
+  height:22px;
+  display:grid;
+  place-items:center;
+  line-height:0
+}
+.theme-glyph{
+  width:22px;
+  height:22px;
+  display:block;
+  overflow:visible;
+  transition:transform .22s cubic-bezier(.2,.72,.2,1)
+}
+.theme-glyph-orbit{
+  fill:none;
+  stroke:currentColor;
+  stroke-width:.75;
+  stroke-dasharray:1.4 2.2;
+  opacity:.28
+}
+.theme-glyph--sun .theme-glyph-core{
+  fill:currentColor
+}
+.theme-glyph-rays{
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.15;
+  stroke-linecap:round
+}
+.theme-glyph--moon .theme-glyph-crescent{
+  fill:currentColor
+}
+.theme-glyph--moon .theme-glyph-star{
+  fill:currentColor;
+  opacity:.82
+}
+.theme-toggle:hover .theme-glyph,
+.theme-toggle:focus-visible .theme-glyph{
+  transform:rotate(8deg) scale(1.05)
+}
+.theme-toggle:active .theme-glyph{
+  transform:rotate(2deg) scale(.94)
+}
+
+@media(prefers-reduced-motion:reduce){
+  .theme-glyph{transition:none!important}
+  .theme-toggle:hover .theme-glyph,
+  .theme-toggle:focus-visible .theme-glyph,
+  .theme-toggle:active .theme-glyph{transform:none!important}
+}
+

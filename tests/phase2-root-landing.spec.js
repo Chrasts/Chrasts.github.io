@@ -84,7 +84,8 @@ test.describe('Phase H legacy root-landing retirement — desktop', () => {
     await expect(page.locator('.hero')).toBeHidden();
     expect(await page.evaluate(() => document.body.dataset.graphMode)).toBe('focus');
     expect(await page.evaluate(() => document.body.dataset.graphRoute)).toBe('knowledge');
-    await expect(page.locator('.quick-overview-global-trigger')).toBeVisible();
+    await expect(page.locator('.quick-overview-global-trigger')).toHaveCount(0);
+    await expect(page.locator('.header-quick-overview')).toBeVisible();
   });
 });
 

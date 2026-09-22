@@ -327,8 +327,18 @@
     const button = document.querySelector('.atlas-button');
     if (!button) return;
     const atlas = document.body?.dataset.graphMode === 'atlas';
+    const mobile = mobileBreakpoint.matches;
     button.classList.add('atlas-entry-v7');
     button.dataset.phase7V2Decorated = 'true';
+
+    if (atlas && mobile) {
+      button.hidden = true;
+      button.setAttribute('aria-hidden', 'true');
+      button.removeAttribute('aria-current');
+      button.classList.remove('is-current');
+      button.tabIndex = -1;
+      return;
+    }
 
     button.hidden = false;
     button.removeAttribute('aria-hidden');

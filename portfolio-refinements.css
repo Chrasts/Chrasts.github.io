@@ -415,7 +415,8 @@ body[data-graph-mode="overview"] #site-graph .site-graph-node[data-node-id="work
     align-items:flex-start!important;
     justify-content:center!important;
     margin-top:-5px!important;
-    pointer-events:none
+    pointer-events:auto;
+    cursor:pointer
   }
 
   .graph-routebar .atlas-entry-copy strong,

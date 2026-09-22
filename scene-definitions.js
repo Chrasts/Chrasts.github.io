@@ -120,7 +120,7 @@
   ensureStylesheet('intro-fixes-v3.css', 'data-profile-intro-fixes-v3-style');
   ensureStylesheet('profile-root.css', 'data-profile-root-overview-style');
   ensureStylesheet('graph-navigation-materiality.css', 'data-profile-graph-navigation-style');
-  ensureStylesheet('portfolio-refinements.css', 'data-profile-refinements-style');
+  ensureStylesheet('portfolio-refinements.css?v=20260922-headergraph4', 'data-profile-refinements-style');
   ensureStylesheet('profile-post-entry.css', 'data-profile-post-entry-style');
   ensureStylesheet('profile-motion-refinements.css', 'data-profile-motion-refinements-style');
   ensureStylesheet('branch-colors.css?v=20260919-contrast10', 'data-profile-branch-colors-style');
@@ -184,7 +184,7 @@
   ensureScript('motion-polish.js', 'data-profile-motion-polish');
   ensureScript('local-label-policy.js', 'data-profile-local-label-policy');
   ensureScript('intro-fixes-v3.js', 'data-profile-intro-fixes-v3');
-  ensureScript('profile-root.js', 'data-profile-root-overview');
+  ensureScript('profile-root.js?v=20260922-headergraph4', 'data-profile-root-overview');
   ensureScript('accessibility-runtime.js', 'data-profile-accessibility-runtime');
   ensureScript('portfolio-refinements.js', 'data-profile-refinements');
   ensureScript('profile-post-entry.js', 'data-profile-post-entry');

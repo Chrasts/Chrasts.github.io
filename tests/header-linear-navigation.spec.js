@@ -120,12 +120,17 @@ test.describe('unified desktop header graph', () => {
     };
 
     await assertProfessionalLinksUseInk();
-    await expect(page.locator('.theme-toggle .theme-glyph')).toHaveClass(/theme-glyph--moon/);
+    const initialTheme = await page.evaluate(() => document.documentElement.dataset.theme);
+    await expect(page.locator('.theme-toggle .theme-glyph')).toHaveClass(
+      initialTheme === 'dark' ? /theme-glyph--sun/ : /theme-glyph--moon/
+    );
 
     await page.locator('.theme-toggle').click();
     await page.waitForTimeout(360);
     await assertProfessionalLinksUseInk();
-    await expect(page.locator('.theme-toggle .theme-glyph')).toHaveClass(/theme-glyph--sun/);
+    await expect(page.locator('.theme-toggle .theme-glyph')).toHaveClass(
+      initialTheme === 'dark' ? /theme-glyph--moon/ : /theme-glyph--sun/
+    );
     await expect(page.locator('.theme-toggle .theme-glyph-orbit')).toBeVisible();
   });
 
@@ -164,9 +169,7 @@ test.describe('unified desktop header graph', () => {
       !document.body.classList.contains('is-v9-transitioning')
     );
 
-    const arbitraryNode = page.locator('#site-graph .site-graph-node[data-node-id]').filter({
-      hasNot: page.locator('[data-node-id="work"]')
-    }).first();
+    const arbitraryNode = page.locator('#site-graph .site-graph-node[data-node-id]:not([data-node-id="work"])').first();
     await arbitraryNode.hover();
     await page.waitForTimeout(120);
 

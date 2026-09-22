@@ -329,9 +329,9 @@
     if (!scene.registry.has('profile-quick-trigger')) {
       scene.registry.register({
         id: 'profile-quick-trigger',
-        selector: '.quick-overview-global-trigger',
+        selector: '.header-quick-overview',
         managedVisibility: false,
-        visible: () => quickAvailable() && !overviewActive(),
+        visible: () => quickAvailable(),
         anchorNodeId: rootId,
         placement: 'profile-utility',
         composition: { zone: 'unmanaged', role: 'profile-utility' },

@@ -158,28 +158,20 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
       blur: getComputedStyle(element).backdropFilter,
       height: parseFloat(getComputedStyle(element).height)
     }));
-    expect(headerStyle.background).not.toBe('rgba(0, 0, 0, 0)');
+    expect(headerStyle.background).toBe('rgba(0, 0, 0, 0)');
     expect(headerStyle.shadow).toBe('none');
     expect(headerStyle.blur === 'none' || headerStyle.blur === '').toBe(true);
-    expect(headerStyle.height).toBeGreaterThanOrEqual(76);
+    expect(headerStyle.height).toBeCloseTo(62, 0);
 
     const quickStyle = await quick.evaluate(element => ({
       radius: parseFloat(getComputedStyle(element).borderRadius),
       background: getComputedStyle(element).backgroundColor,
-      color: getComputedStyle(element).color,
-      ink: getComputedStyle(document.documentElement).getPropertyValue('--ink').trim(),
-      beforeRadius: getComputedStyle(element, '::before').borderRadius
+      before: getComputedStyle(element, '::before').content,
+      after: getComputedStyle(element, '::after').content
     }));
     expect(quickStyle.radius).toBeLessThanOrEqual(3);
-    expect(quickStyle.beforeRadius).not.toBe('0px');
-    expect(quickStyle.color).toBe(await page.evaluate(() => {
-      const probe = document.createElement('span');
-      probe.style.color = 'var(--ink)';
-      document.body.appendChild(probe);
-      const value = getComputedStyle(probe).color;
-      probe.remove();
-      return value;
-    }));
+    expect(['none', 'normal', '""']).toContain(quickStyle.before);
+    expect(['none', 'normal', '""']).toContain(quickStyle.after);
 
     const brownNav = header.locator('#main-nav > a[data-route="work"], #main-nav > a[data-route="knowledge"], #main-nav > a[data-route="experience"], #main-nav > a[data-route="education"], #main-nav > a[data-route="about"]');
     await expect(brownNav).toHaveCount(5);
@@ -194,17 +186,13 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
     for (const link of await brownNav.all()) expect(await link.evaluate(element => getComputedStyle(element).color)).toBe(brown);
 
     const utility = header.getByRole('link', { name: 'CV' });
-    const utilityBefore = await utility.evaluate(element => ({
-      fill: getComputedStyle(element, '::before').backgroundColor,
-      width: parseFloat(getComputedStyle(element, '::after').width)
-    }));
+    const utilityKey = await utility.getAttribute('data-header-graph-key');
+    const utilityNode = page.locator(`.header-linear-graph-nodes circle[data-header-graph-key="${utilityKey}"]`);
+    const utilityBefore = await utilityNode.evaluate(element => getComputedStyle(element).fill);
     await utility.hover();
-    const utilityAfter = await utility.evaluate(element => ({
-      fill: getComputedStyle(element, '::before').backgroundColor,
-      width: parseFloat(getComputedStyle(element, '::after').width)
-    }));
-    expect(utilityAfter.fill).not.toBe(utilityBefore.fill);
-    expect(utilityAfter.width).toBeGreaterThan(utilityBefore.width);
+    await expect(utilityNode).toHaveClass(/is-hot/);
+    const utilityAfter = await utilityNode.evaluate(element => getComputedStyle(element).fill);
+    expect(utilityAfter).not.toBe(utilityBefore);
 
     await quick.click();
     await expect(page.locator('.quick-overview-dialog')).toBeVisible();
@@ -332,53 +320,44 @@ test('Profile brief keeps ESSLLI last in Education', async ({ page }) => {
 });
 
 
-test('opening Atlas header keeps persistent terminals without label collisions', async ({ page }) => {
+test('opening Atlas header uses one continuous secondary graph without Atlas in the word row', async ({ page }) => {
   await page.addInitScript(() => sessionStorage.removeItem('profileIntroSeen'));
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
   await page.goto('/');
   await page.waitForFunction(() => window.ProfileIntro?.snapshot?.().state === 'ATLAS_READY', null, { timeout: 8_000 });
+  await page.waitForFunction(() => Boolean(document.querySelector('.header-linear-graph-line')?.getAttribute('d')));
 
   const routes = page.locator('#main-nav > a[data-route]');
-  await expect(routes).toHaveCount(7);
+  await expect(routes).toHaveCount(6);
+  await expect(page.locator('#main-nav > a[data-route="atlas"]')).toHaveCount(0);
 
-  const geometry = await routes.evaluateAll(items => items.map(item => {
-    const rect = item.getBoundingClientRect();
-    const before = getComputedStyle(item, '::before');
-    const after = getComputedStyle(item, '::after');
+  const state = await page.evaluate(() => {
+    const navItems = [...document.querySelectorAll('#main-nav > a[data-route]')];
+    const visibleUtilities = [...document.querySelectorAll('.header-practical-actions .graph-control')]
+      .filter(item => !item.hidden && getComputedStyle(item).display !== 'none');
+    const graphNodes = [...document.querySelectorAll('.header-linear-graph-nodes circle')];
+    const theme = document.querySelector('.theme-toggle');
     return {
-      route: item.dataset.route,
-      left: rect.left,
-      right: rect.right,
-      paddingLeft: parseFloat(getComputedStyle(item).paddingLeft),
-      nodeContent: before.content,
-      nodeBackground: before.backgroundColor,
-      lineWidth: parseFloat(after.width)
+      routes: navItems.map(item => item.dataset.route),
+      nodes: graphNodes.length,
+      controls: navItems.length + visibleUtilities.length,
+      line: document.querySelector('.header-linear-graph-line').getAttribute('d'),
+      atlasLink: document.querySelector('.header-linear-graph-atlas-link').getAttribute('d'),
+      themeRadius: getComputedStyle(theme).borderRadius,
+      staticTerminals: [...navItems, ...visibleUtilities].map(item => ({
+        before: getComputedStyle(item, '::before').content,
+        after: getComputedStyle(item, '::after').content
+      }))
     };
-  }));
-
-  geometry.forEach(item => {
-    expect(item.paddingLeft).toBeLessThanOrEqual(1);
-    expect(item.nodeContent).not.toBe('none');
   });
-  expect(geometry[0].left).toBeLessThan(70);
-  for (let i = 1; i < geometry.length; i += 1) {
-    expect(geometry[i].left - geometry[i - 1].right).toBeGreaterThanOrEqual(18);
-  }
 
-  const atlas = page.locator('#main-nav > a[data-route="atlas"]');
-  const work = page.locator('#main-nav > a[data-route="work"]');
-  const atlasFill = await atlas.evaluate(element => getComputedStyle(element, '::before').backgroundColor);
-  const workBefore = await work.evaluate(element => ({
-    fill: getComputedStyle(element, '::before').backgroundColor,
-    line: parseFloat(getComputedStyle(element, '::after').width)
-  }));
-  expect(atlasFill).not.toBe(workBefore.fill);
-
-  await work.hover();
-  const workAfter = await work.evaluate(element => ({
-    fill: getComputedStyle(element, '::before').backgroundColor,
-    line: parseFloat(getComputedStyle(element, '::after').width)
-  }));
-  expect(workAfter.fill).not.toBe(workBefore.fill);
-  expect(workAfter.line).toBeGreaterThan(workBefore.line);
+  expect(state.routes).toEqual(['overview', 'work', 'knowledge', 'experience', 'education', 'about']);
+  expect(state.nodes).toBe(state.controls);
+  expect(state.line.length).toBeGreaterThan(20);
+  expect(state.atlasLink.length).toBeGreaterThan(20);
+  expect(state.themeRadius).toBe('50%');
+  state.staticTerminals.forEach(item => {
+    expect(['none', 'normal', '""']).toContain(item.before);
+    expect(['none', 'normal', '""']).toContain(item.after);
+  });
 });

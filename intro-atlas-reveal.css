@@ -1128,13 +1128,13 @@ body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-st
   }
 
   body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .header-utility.graph-control{
-    color:var(--ink)!important;
+    color:var(--header-utility-contrast)!important;
     font-size:10.2px!important;
     font-weight:780!important
   }
 
   body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .header-utility.graph-control:is(:hover,:focus-visible){
-    color:var(--ink)!important;
+    color:var(--header-utility-contrast)!important;
     font-weight:880!important;
     text-decoration:underline;
     text-decoration-color:var(--profile-accent);

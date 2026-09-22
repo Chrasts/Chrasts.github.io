@@ -150,18 +150,9 @@
   };
 
   const ensureGlobalQuickTrigger = () => {
-    if (globalQuickTrigger?.isConnected) return globalQuickTrigger;
-    const routebar = document.querySelector('.graph-routebar');
-    if (!routebar) return null;
-    globalQuickTrigger = element('button', 'quick-overview-global-trigger graph-control graph-control--primary', 'Profile brief');
-    globalQuickTrigger.type = 'button';
-    globalQuickTrigger.hidden = true;
-    globalQuickTrigger.setAttribute('aria-haspopup', 'dialog');
-    globalQuickTrigger.addEventListener('click', () => openQuickOverview('routebar'));
-    const atlas = routebar.querySelector('.atlas-button');
-    if (atlas) routebar.insertBefore(globalQuickTrigger, atlas);
-    else routebar.appendChild(globalQuickTrigger);
-    return globalQuickTrigger;
+    document.querySelectorAll('.quick-overview-global-trigger').forEach(trigger => trigger.remove());
+    globalQuickTrigger = null;
+    return null;
   };
 
   const appendFact = (container, label, value) => {
@@ -393,8 +384,7 @@
 
     const profileVisible = overviewActive();
     if (brief) brief.hidden = !profileVisible;
-    if (globalQuickTrigger) globalQuickTrigger.hidden = !quickAvailable() || profileVisible;
-    if (headerQuickTrigger) headerQuickTrigger.hidden = !openingAtlasHeaderActive();
+    if (headerQuickTrigger) headerQuickTrigger.hidden = !quickAvailable();
     document.body.classList.toggle('is-profile-root-ready', profileVisible);
     if (profileVisible) {
       document.body.dataset.entryState = 'profile';
@@ -449,7 +439,7 @@
   function snapshot() {
     const root = document.querySelector(`#site-graph .site-graph-node[data-node-id="${CSS.escape(rootId)}"]`);
     return {
-      ready: Boolean(brief?.isConnected && globalQuickTrigger?.isConnected && quickDialog?.isConnected),
+      ready: Boolean(brief?.isConnected && headerQuickTrigger?.isConnected && quickDialog?.isConnected),
       visible: overviewActive() && !brief?.hidden,
       quickAvailable: quickAvailable(),
       route: route(),
@@ -459,7 +449,7 @@
       lateReveal: lateReveal(),
       legacyRetiredByPhaseH,
       quickOpen: Boolean(quickDialog?.open),
-      globalQuickVisible: Boolean(globalQuickTrigger?.isConnected && !globalQuickTrigger.hidden),
+      globalQuickVisible: false,
       headerQuickVisible: Boolean(headerQuickTrigger?.isConnected && !headerQuickTrigger.hidden),
       branchCount: sections.filter(id => document.querySelector(`#site-graph .site-graph-node[data-node-id="${CSS.escape(id)}"][data-profile-root-branch="true"]`)).length,
       rootPresent: Boolean(root),

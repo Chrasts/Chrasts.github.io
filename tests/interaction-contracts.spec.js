@@ -123,7 +123,7 @@ test('focus transitions crossfade persistent label geometry before handoff', asy
   expect(await page.evaluate(() => location.hash)).toBe('#education/charles-university');
 });
 
-test('Atlas entry control is unavailable inside Atlas', async ({ page }) => {
+test('Atlas entry control stays visible as the current spatial branch inside Atlas', async ({ page }) => {
   await activateOverview(page);
   const button = page.locator('.atlas-button');
 
@@ -133,7 +133,10 @@ test('Atlas entry control is unavailable inside Atlas', async ({ page }) => {
   await page.waitForFunction(() => document.body.dataset.graphMode === 'atlas');
   await page.waitForFunction(() => !document.body.classList.contains('is-atlas-handoff'));
 
-  await expect(button).toBeHidden();
+  await expect(button).toBeVisible();
+  await expect(button).toHaveAttribute('aria-current', 'page');
+  await expect(button).toHaveClass(/is-current/);
+  await expect(button).toHaveAttribute('aria-label', 'Atlas, current view');
   await expect(button).not.toContainText('Profile');
 });
 

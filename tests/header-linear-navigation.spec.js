@@ -73,17 +73,34 @@ test.describe('unified desktop header graph', () => {
       const quick = document.querySelector('.header-quick-overview');
       const overview = document.querySelector('#main-nav > a[data-route="overview"]');
       const firstNode = document.querySelector('.header-linear-graph-nodes circle[data-header-graph-key="profile-brief"]');
+      const probe = value => {
+        const el = document.createElement('span');
+        el.style.color = value;
+        document.body.appendChild(el);
+        const color = getComputedStyle(el).color;
+        el.remove();
+        return color;
+      };
       return {
         quick: quick.getBoundingClientRect().toJSON(),
         overview: overview.getBoundingClientRect().toJSON(),
         firstNodeFill: getComputedStyle(firstNode).fill,
+        firstNodeStroke: getComputedStyle(firstNode).stroke,
+        paper: probe('var(--paper)'),
+        contrast: probe('var(--header-utility-contrast)'),
         routebarQuickCount: document.querySelectorAll('.quick-overview-global-trigger').length
       };
     });
     expect(geometry.quick.right).toBeLessThan(geometry.overview.left);
     expect(geometry.overview.left - geometry.quick.right).toBeGreaterThanOrEqual(10);
     expect(geometry.routebarQuickCount).toBe(0);
-    expect(geometry.firstNodeFill).not.toBe('none');
+    expect(geometry.firstNodeFill).toBe(geometry.paper);
+    expect(geometry.firstNodeStroke).toBe(geometry.contrast);
+
+    const briefNode = page.locator('.header-linear-graph-nodes circle[data-header-graph-key="profile-brief"]');
+    await page.locator('.header-quick-overview').hover();
+    await expect(briefNode).toHaveClass(/is-hot/);
+    expect(await briefNode.evaluate(element => getComputedStyle(element).fill)).toBe(geometry.contrast);
 
     const assertProfessionalLinksUseInk = async () => {
       const colors = await page.evaluate(() => {
@@ -169,7 +186,8 @@ test.describe('unified desktop header graph', () => {
       const nums = (d.match(/-?\\d+(?:\\.\\d+)?/g) || []).map(Number);
       return {
         buttonRightGap: innerWidth - button.right,
-        labelBelowGlyph: copy.top >= glyph.bottom - 1,
+        labelGap: copy.top - glyph.bottom,
+        labelFontSize: parseFloat(getComputedStyle(document.querySelector('.graph-routebar .atlas-entry-copy strong')).fontSize),
         centralFill: getComputedStyle(document.querySelector('.graph-routebar .atlas-entry-glyph-nodes circle:first-child')).fill,
         brown: (() => {
           const probe = document.createElement('span');
@@ -190,7 +208,9 @@ test.describe('unified desktop header graph', () => {
 
     expect(state.buttonRightGap).toBeGreaterThanOrEqual(10);
     expect(state.buttonRightGap).toBeLessThanOrEqual(36);
-    expect(state.labelBelowGlyph).toBe(true);
+    expect(state.labelGap).toBeGreaterThanOrEqual(-8);
+    expect(state.labelGap).toBeLessThanOrEqual(2);
+    expect(state.labelFontSize).toBeGreaterThanOrEqual(16);
     expect(state.centralFill).toBe(state.brown);
     expect(state.connectorLength).toBeGreaterThan(20);
     expect(state.endpoint).not.toBeNull();
@@ -217,20 +237,30 @@ test.describe('unified desktop header graph', () => {
         el.remove();
         return color;
       };
-      const main = document.querySelector('.atlas-entry-glyph-nodes circle:first-child');
-      const accentEdge = document.querySelector('.atlas-entry-glyph-edges line:nth-child(1)');
+      const nodes = [...document.querySelectorAll('.atlas-entry-glyph-nodes circle')];
+      const edges = [...document.querySelectorAll('.atlas-entry-glyph-edges line')];
+      const main = nodes[0];
       return {
         brown: probe('var(--brown)'),
         accent: probe('var(--profile-accent)'),
         mainFill: getComputedStyle(main).fill,
-        mainStroke: getComputedStyle(main).stroke,
-        accentEdge: getComputedStyle(accentEdge).stroke
+        nodeStrokes: nodes.map(node => getComputedStyle(node).stroke),
+        edgeStrokes: edges.map(edge => getComputedStyle(edge).stroke)
       };
     });
 
     expect(colors.accent).not.toBe(colors.brown);
     expect(colors.mainFill).toBe(colors.brown);
-    expect(colors.mainStroke).toBe(colors.brown);
-    expect(colors.accentEdge).toBe(colors.accent);
+    colors.nodeStrokes.forEach(color => expect(color).toBe(colors.brown));
+    colors.edgeStrokes.forEach(color => expect(color).toBe(colors.accent));
+
+    const atlasLabel = page.locator('.graph-routebar .atlas-entry-copy');
+    const atlasButton = page.locator('.graph-routebar .atlas-button.atlas-entry-v7');
+    await atlasLabel.hover();
+    const hoveredWeight = await atlasLabel.locator('strong').evaluate(element => parseFloat(getComputedStyle(element).fontWeight));
+    expect(hoveredWeight).toBeGreaterThanOrEqual(850);
+    await atlasLabel.click();
+    await page.waitForFunction(() => document.body.dataset.graphMode === 'atlas');
+    await expect(atlasButton).toHaveAttribute('aria-current', 'page');
   });
 });

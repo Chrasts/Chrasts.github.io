@@ -2916,3 +2916,34 @@ body[data-graph-mode="overview"] .detail-node-list button{
   .theme-toggle:active .theme-glyph{transform:none!important}
 }
 
+/* Header context legibility: Back is an action, current location is status.
+   Give them a visibly separate reading group instead of one continuous label. */
+@media(min-width:901px){
+  .header-context-slot:has(.crosslink-return-control:not([hidden])) .header-back-slot{
+    flex:0 0 auto
+  }
+
+  .header-context-slot:has(.crosslink-return-control:not([hidden])) .header-back-slot .crosslink-return-control{
+    color:var(--muted)!important;
+    font-weight:650!important;
+    letter-spacing:.02em
+  }
+
+  .header-context-slot:has(.crosslink-return-control:not([hidden])) .header-location-label{
+    margin-left:18px!important;
+    padding-left:18px!important
+  }
+
+  .header-context-slot:has(.crosslink-return-control:not([hidden])) .header-location-label::before{
+    height:16px!important;
+    background:color-mix(in srgb,var(--ink) 30%,var(--line))!important
+  }
+}
+
+@media(max-width:1180px) and (min-width:901px){
+  .header-context-slot:has(.crosslink-return-control:not([hidden])) .header-location-label{
+    margin-left:14px!important;
+    padding-left:14px!important
+  }
+}
+

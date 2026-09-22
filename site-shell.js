@@ -230,7 +230,7 @@
   const syncHeaderContext = () => {
     if (locationLabel) locationLabel.textContent = contextLabelFor();
   };
-  ['profile:graph-state-committed','profile:scene-state','profile:transition-finish','profile:transition-cancel']
+  ['profile:graph-state-committed','profile:graph-render-settled','profile:scene-state','profile:transition-finish','profile:transition-cancel','profile:root-landing']
     .forEach(name => addEventListener(name, () => {
       syncHeaderContext();
       scheduleHeaderGraph();

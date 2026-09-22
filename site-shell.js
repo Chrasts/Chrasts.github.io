@@ -18,6 +18,29 @@
   const headerAtlasLink = headerGraph?.querySelector('.header-linear-graph-atlas-link');
   const headerGraphNodes = headerGraph?.querySelector('.header-linear-graph-nodes');
   let headerGraphFrame = 0;
+  const headerRoutes = new Set(['overview', 'work', 'knowledge', 'experience', 'education', 'about']);
+  const routeTopLevel = (routeValue, modeValue = '') => {
+    const route = String(routeValue || location.hash || '#overview')
+      .replace(/^#/, '')
+      .replace(/^\/+|\/+$/g, '') || 'overview';
+    const mode = String(modeValue || '');
+    if (mode === 'atlas' || route === 'atlas') return null;
+    if (mode === 'overview' || route === 'overview') return 'overview';
+    if (mode === 'work' || route === 'work' || route.startsWith('work/')) return 'work';
+    const branch = route.split('/')[0];
+    return headerRoutes.has(branch) ? branch : null;
+  };
+  let activeHeaderRoute = routeTopLevel(
+    document.body?.dataset.graphRoute || location.hash,
+    document.body?.dataset.graphMode
+  );
+
+  const setActiveHeaderRoute = route => {
+    const next = route && headerRoutes.has(route) ? route : null;
+    if (activeHeaderRoute === next) return false;
+    activeHeaderRoute = next;
+    return true;
+  };
 
   const headerGraphItems = () => {
     if (!header) return [];
@@ -45,9 +68,12 @@
       const key = headerGraphKey(item, index);
       item.dataset.headerGraphKey = key;
       const node = headerGraphNodes.querySelector(`[data-header-graph-key="${key}"]`);
+      const routeCurrent = item.dataset.route
+        ? item.dataset.route === activeHeaderRoute
+        : false;
       node?.classList.toggle(
         'is-current',
-        item.getAttribute('aria-current') === 'page' || item.getAttribute('aria-expanded') === 'true'
+        routeCurrent || item.getAttribute('aria-expanded') === 'true'
       );
     });
   };
@@ -141,6 +167,15 @@
       ?.classList.toggle('is-hot', hot);
   };
 
+  header?.addEventListener('click', event => {
+    const routeItem = event.target.closest?.('#main-nav > a[data-route]');
+    if (!routeItem || !header.contains(routeItem)) return;
+    if (setActiveHeaderRoute(routeTopLevel(routeItem.dataset.route))) {
+      syncHeaderGraphStates();
+      scheduleHeaderGraph();
+    }
+  });
+
   header?.addEventListener('pointerover', event => {
     const item = event.target.closest?.('[data-header-graph-key]');
     if (item && header.contains(item)) setHeaderGraphHot(item, true);
@@ -175,13 +210,28 @@
     }
   }
 
+  const themeGlyph = dark => dark
+    ? `<svg class="theme-glyph theme-glyph--sun" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <circle class="theme-glyph-orbit" cx="12" cy="12" r="9.25"></circle>
+        <circle class="theme-glyph-core" cx="12" cy="12" r="3.15"></circle>
+        <g class="theme-glyph-rays">
+          <path d="M12 2.1v2.1M12 19.8v2.1M2.1 12h2.1M19.8 12h2.1"></path>
+          <path d="M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"></path>
+        </g>
+      </svg>`
+    : `<svg class="theme-glyph theme-glyph--moon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <circle class="theme-glyph-orbit" cx="12" cy="12" r="9.25"></circle>
+        <path class="theme-glyph-crescent" d="M15.8 5.2a7.25 7.25 0 1 0 2.9 12.1A6.5 6.5 0 0 1 15.8 5.2Z"></path>
+        <circle class="theme-glyph-star" cx="17.9" cy="6.8" r=".85"></circle>
+      </svg>`;
+
   const updateThemeControl = () => {
     if (!themeButton || !themeIcon) return;
     const dark = currentTheme() === 'dark';
     const label = dark ? 'Switch to light mode' : 'Switch to dark mode';
     themeButton.setAttribute('aria-label', label);
     themeButton.title = label;
-    themeIcon.textContent = dark ? '☀' : '☾';
+    themeIcon.innerHTML = themeGlyph(dark);
     themeMeta?.setAttribute('content', dark ? '#11191c' : '#f7f3eb');
   };
 
@@ -232,12 +282,21 @@
   const syncHeaderContext = () => {
     if (locationLabel) locationLabel.textContent = contextLabelFor();
   };
-  ['profile:graph-state-committed','profile:graph-render-settled','profile:scene-state','profile:transition-finish','profile:transition-cancel','profile:root-landing']
+  addEventListener('profile:graph-state-committed', event => {
+    setActiveHeaderRoute(routeTopLevel(
+      event.detail?.route || document.body?.dataset.graphRoute || location.hash,
+      event.detail?.mode || document.body?.dataset.graphMode
+    ));
+    syncHeaderContext();
+    scheduleHeaderGraph();
+  });
+  ['profile:graph-render-settled','profile:scene-state','profile:transition-finish','profile:transition-cancel','profile:root-landing']
     .forEach(name => addEventListener(name, () => {
       syncHeaderContext();
       scheduleHeaderGraph();
     }));
   addEventListener('hashchange', () => requestAnimationFrame(() => {
+    setActiveHeaderRoute(routeTopLevel(location.hash));
     syncHeaderContext();
     scheduleHeaderGraph();
   }));

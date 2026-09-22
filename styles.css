@@ -2747,3 +2747,115 @@ body[data-graph-mode="overview"] .detail-node-list button{
   .header-linear-graph{display:none!important}
 }
 
+/* Header refinement: Profile brief leads the row, professional destinations
+   remain high-contrast, and the SVG owns all graph nodes. */
+@media(min-width:901px){
+  .site-header .header-quick-overview.graph-control{
+    order:0;
+    flex:0 0 auto;
+    min-height:38px;
+    margin:0 22px 0 0!important;
+    padding:0 22px 0 0!important;
+    border:0!important;
+    border-right:1px solid color-mix(in srgb,var(--ink) 28%,var(--line))!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    color:var(--ink)!important;
+    font-size:11px!important;
+    font-weight:870!important;
+    letter-spacing:.025em!important;
+    white-space:nowrap;
+    transform:none!important;
+    transition:opacity .16s ease,font-weight .16s ease,border-color .16s ease
+  }
+
+  .site-header .header-quick-overview.graph-control::before,
+  .site-header .header-quick-overview.graph-control::after{
+    content:none!important;
+    display:none!important
+  }
+
+  .site-header .header-quick-overview.graph-control:hover,
+  .site-header .header-quick-overview.graph-control:focus-visible,
+  .site-header .header-quick-overview.graph-control[aria-expanded="true"]{
+    color:var(--ink)!important;
+    font-weight:920!important;
+    border-right-color:var(--profile-accent)!important;
+    transform:none!important
+  }
+
+  .header-practical-actions{
+    gap:13px!important;
+    margin-left:26px!important
+  }
+
+  .header-practical-actions .header-utility.graph-control{
+    color:var(--ink)!important;
+    font-size:10.2px!important;
+    font-weight:780!important;
+    letter-spacing:.005em;
+    opacity:1
+  }
+
+  .header-practical-actions .header-utility.graph-control:hover,
+  .header-practical-actions .header-utility.graph-control:focus-visible{
+    color:var(--ink)!important;
+    font-weight:880!important;
+    text-decoration:underline;
+    text-decoration-color:var(--profile-accent);
+    text-decoration-thickness:1px;
+    text-underline-offset:4px
+  }
+
+  .header-practical-actions .header-quick-overview:not([hidden]) + .header-utility{
+    margin-left:0!important
+  }
+
+  .header-linear-graph-nodes circle[data-header-graph-key="profile-brief"]{
+    fill:var(--ink);
+    stroke:var(--ink);
+    transform:scale(1.32)
+  }
+
+  .header-linear-graph-nodes circle[data-header-graph-key="profile-brief"].is-hot,
+  .header-linear-graph-nodes circle[data-header-graph-key="profile-brief"].is-current{
+    fill:var(--ink);
+    stroke:var(--ink);
+    transform:scale(1.55)
+  }
+
+  .header-linear-graph-atlas-link{
+    stroke:color-mix(in srgb,var(--profile-accent) 58%,var(--brown));
+    stroke-width:1.1;
+    stroke-dasharray:none;
+    opacity:.88
+  }
+
+  /* The animated Atlas endpoint lives against the viewport's right side rather
+     than the centred graph-safe column. */
+  .graph-routebar .atlas-button.atlas-entry-v7{
+    position:absolute!important;
+    right:calc(24px - max(24px,calc((100vw - 1360px)/2)))!important;
+    top:0!important;
+    margin:0!important
+  }
+}
+
+@media(max-width:1280px) and (min-width:901px){
+  .site-header .header-quick-overview.graph-control{
+    margin-right:14px!important;
+    padding-right:14px!important;
+    font-size:9.8px!important
+  }
+
+  .header-practical-actions{
+    gap:8px!important;
+    margin-left:15px!important
+  }
+
+  .header-practical-actions .header-utility.graph-control{
+    font-size:8.8px!important
+  }
+}
+

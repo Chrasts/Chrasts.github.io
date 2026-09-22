@@ -264,7 +264,8 @@ test.describe('Intro entry experience master contract', () => {
         graph: graph.getBoundingClientRect().toJSON(),
         profileButtonVisible: Boolean(profileButton?.getClientRects().length),
         routebar: getComputedStyle(document.querySelector('.graph-routebar')).display,
-        quickOverview: getComputedStyle(document.querySelector('.quick-overview-global-trigger')).display,
+        routebarQuickCount: document.querySelectorAll('.quick-overview-global-trigger').length,
+        headerQuickVisible: Boolean(document.querySelector('.header-quick-overview:not([hidden])')?.getClientRects().length),
         controls: getComputedStyle(document.querySelector('#atlas-controls')).display,
         loader: getComputedStyle(document.querySelector('.entry-loading-shell')).display,
         loaderPointerEvents: getComputedStyle(document.querySelector('.entry-loading-shell')).pointerEvents,
@@ -278,7 +279,8 @@ test.describe('Intro entry experience master contract', () => {
     expect(settled.graph.height).toBeGreaterThanOrEqual(settled.viewport.height - 1);
     expect(settled.profileButtonVisible).toBe(true);
     expect(settled.routebar).toBe('flex');
-    expect(settled.quickOverview).toBe('none');
+    expect(settled.routebarQuickCount).toBe(0);
+    expect(settled.headerQuickVisible).toBe(true);
     expect(settled.controls).toBe('none');
     // The slow feathered light field may remain visible after semantic entry
     // readiness, but it is purely visual and can never block the graph.

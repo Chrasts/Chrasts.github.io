@@ -88,18 +88,18 @@ test.describe('unified desktop header graph', () => {
     const assertProfessionalLinksUseInk = async () => {
       const colors = await page.evaluate(() => {
         const probe = document.createElement('span');
-        probe.style.color = 'var(--ink)';
+        probe.style.color = 'var(--header-utility-contrast)';
         document.body.appendChild(probe);
-        const ink = getComputedStyle(probe).color;
+        const contrast = getComputedStyle(probe).color;
         probe.remove();
         return {
-          ink,
+          contrast,
           links: [...document.querySelectorAll('.header-practical-actions .header-utility')]
             .map(link => getComputedStyle(link).color)
         };
       });
       expect(colors.links.length).toBe(4);
-      colors.links.forEach(color => expect(color).toBe(colors.ink));
+      colors.links.forEach(color => expect(color).toBe(colors.contrast));
     };
 
     await assertProfessionalLinksUseInk();

@@ -2569,6 +2569,12 @@ body[data-graph-mode="overview"] .detail-node-list button{
     font-weight:760!important
   }
 
+  /* Keep the four direct contact/CV destinations as their own compact cluster,
+     distinct from navigation and Profile brief without adding another box. */
+  .header-practical-actions .header-quick-overview:not([hidden]) + .header-utility{
+    margin-left:12px
+  }
+
   .header-practical-actions .graph-control:hover,
   .header-practical-actions .graph-control:focus-visible,
   .header-practical-actions .graph-control[aria-expanded="true"]{
@@ -2686,6 +2692,10 @@ body[data-graph-mode="overview"] .detail-node-list button{
   .header-practical-actions{
     gap:8px;
     margin-left:16px
+  }
+
+  .header-practical-actions .header-quick-overview:not([hidden]) + .header-utility{
+    margin-left:8px
   }
 
   .header-practical-actions .graph-control{

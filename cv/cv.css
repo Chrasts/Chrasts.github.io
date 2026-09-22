@@ -625,7 +625,6 @@ body[data-cv-view="data-analysis"] .cv-section>h2{
   }
 
   .cv-section-education{
-    gap-left:12px;
     column-gap:12px
   }
 

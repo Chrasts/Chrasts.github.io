@@ -315,7 +315,13 @@
     close.addEventListener('click', closeWorkConceptDetail);
 
     const heading = document.createElement('h2');
-    heading.textContent = labels.join(' & ');
+    heading.className = 'work-concept-heading';
+    labels.forEach(label => {
+      const line = document.createElement('span');
+      line.className = 'work-concept-heading-line';
+      line.textContent = label;
+      heading.appendChild(line);
+    });
 
     const listHeading = document.createElement('p');
     listHeading.className = 'detail-list-title';

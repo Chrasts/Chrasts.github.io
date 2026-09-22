@@ -40,6 +40,36 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
     await expect(page.locator('.profile-root-cv')).toHaveCount(0);
     await expect(page.locator('.profile-root-actions a')).toHaveCount(0);
 
+    const actionNodeState = await page.evaluate(() => {
+      const controls = [
+        document.querySelector('.profile-root-quick-trigger'),
+        ...document.querySelectorAll('.profile-root-actions .profile-root-action')
+      ];
+      const probe = value => {
+        const el = document.createElement('span');
+        el.style.color = value;
+        document.body.appendChild(el);
+        const color = getComputedStyle(el).color;
+        el.remove();
+        return color;
+      };
+      return {
+        count: controls.length,
+        paper: probe('var(--paper)'),
+        ink: probe('var(--ink)'),
+        idleFills: controls.map(control => getComputedStyle(control, '::before').backgroundColor),
+        borderColors: controls.map(control => getComputedStyle(control, '::before').borderColor)
+      };
+    });
+    expect(actionNodeState.count).toBe(3);
+    actionNodeState.idleFills.forEach(fill => expect(fill).toBe(actionNodeState.paper));
+    actionNodeState.borderColors.forEach(color => expect(color).toBe(actionNodeState.ink));
+
+    const selectedWork = page.getByRole('button', { name: 'Selected Work' });
+    await selectedWork.hover();
+    expect(await selectedWork.evaluate(element => getComputedStyle(element, '::before').backgroundColor))
+      .toBe(actionNodeState.ink);
+
     for (const id of firstLevel) {
       await expect(page.locator(`#site-graph .site-graph-node[data-node-id="${id}"][data-profile-root-branch="true"]`)).toBeVisible();
     }

@@ -639,3 +639,54 @@ body[data-cv-view="data-analysis"] .cv-section>h2{
   }
 }
 
+/* Role-specific CV refinements: explicit technical tools, clearer private
+   evidence labels, and intentionally quieter additional credentials. */
+.cv-tech-stack{
+  margin:6px 0 0;
+  color:var(--text-soft);
+  font-size:12px;
+  line-height:1.4
+}
+.cv-tech-stack strong{
+  color:var(--ink);
+  font-weight:700
+}
+.cv-private-note{
+  margin-top:6px;
+  color:var(--muted);
+  font-size:10.5px;
+  line-height:1.35
+}
+.cv-experience-meta{
+  display:block
+}
+.cv-section-certifications>h2{
+  color:var(--muted);
+  font-size:11.5px
+}
+body[data-cv-view="academic"] .cv-section-certifications .cv-item,
+body[data-cv-view="data-analysis"] .cv-section-certifications .cv-item{
+  background:transparent;
+  border-left-color:color-mix(in srgb,var(--line) 52%,transparent)
+}
+body[data-cv-view="academic"] .cv-section-certifications .cv-item::before,
+body[data-cv-view="data-analysis"] .cv-section-certifications .cv-item::before{
+  display:none
+}
+
+@media print{
+  .cv-tech-stack{
+    margin-top:3px;
+    font-size:7.8pt;
+    line-height:1.22
+  }
+  .cv-private-note{
+    margin-top:3px;
+    font-size:7.2pt;
+    line-height:1.2
+  }
+  .cv-section-certifications>h2{
+    font-size:8pt
+  }
+}
+

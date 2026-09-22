@@ -202,7 +202,7 @@ test.describe('V3.1 Phase H practical Profile Root', () => {
 
     await expect(page.locator('#site-graph-title')).toHaveText('Atlas');
     await expect(page.locator('.atlas-button')).toHaveText('Atlas');
-    await expect(page.locator('.atlas-button')).toHaveAttribute('aria-label', 'Open Atlas');
+    await expect(page.locator('.atlas-button')).toHaveAttribute('aria-label', 'Atlas, current view');
 
     const routebarStyle = await page.locator('.graph-breadcrumb').evaluate(element => ({
       borderBottom: getComputedStyle(element).borderBottomWidth,

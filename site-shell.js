@@ -21,10 +21,12 @@
 
   const headerGraphItems = () => {
     if (!header) return [];
+    const quick = header.querySelector('.header-quick-overview');
     const navItems = [...header.querySelectorAll('#main-nav > a[data-route]')];
     const practical = [...header.querySelectorAll('.header-practical-actions .graph-control')]
       .filter(item => !item.hidden && getComputedStyle(item).display !== 'none');
-    return [...navItems, ...practical];
+    const leading = quick && !quick.hidden && getComputedStyle(quick).display !== 'none' ? [quick] : [];
+    return [...leading, ...navItems, ...practical];
   };
 
   const headerGraphKey = (element, index) => {
@@ -108,16 +110,16 @@
     );
 
     const atlasButton = document.querySelector('.graph-routebar .atlas-button');
-    const atlasGlyph = atlasButton?.querySelector('.atlas-entry-glyph');
-    const atlasBox = (atlasGlyph || atlasButton)?.getBoundingClientRect();
-    if (headerAtlasLink && atlasBox?.width && getComputedStyle(atlasButton).display !== 'none') {
-      const targetX = atlasBox.left - headerBox.left + atlasBox.width * .52;
-      const targetY = atlasBox.top - headerBox.top + 4;
-      const kneeY = headerBox.height + 8;
-      const kneeX = themePoint.x + Math.min(18, Math.max(8, (targetX - themePoint.x) * .12));
+    const atlasCentralNode = atlasButton?.querySelector('.atlas-entry-glyph-nodes circle:first-child');
+    const atlasTargetBox = (atlasCentralNode || atlasButton)?.getBoundingClientRect();
+    if (headerAtlasLink && atlasTargetBox?.width && getComputedStyle(atlasButton).display !== 'none') {
+      const targetX = atlasTargetBox.left - headerBox.left + atlasTargetBox.width / 2;
+      const targetY = atlasTargetBox.top - headerBox.top + atlasTargetBox.height / 2;
+      const kneeY = headerBox.height + 9;
+      const kneeX = Math.min(targetX - 10, themePoint.x + Math.max(12, (targetX - themePoint.x) * .38));
       headerAtlasLink.setAttribute(
         'd',
-        `M ${themePoint.x.toFixed(2)} ${themePoint.y.toFixed(2)} L ${kneeX.toFixed(2)} ${kneeY.toFixed(2)} L ${targetX.toFixed(2)} ${(kneeY + 3).toFixed(2)} L ${targetX.toFixed(2)} ${targetY.toFixed(2)}`
+        `M ${themePoint.x.toFixed(2)} ${themePoint.y.toFixed(2)} L ${(themePoint.x + 8).toFixed(2)} ${kneeY.toFixed(2)} L ${kneeX.toFixed(2)} ${(kneeY + 4).toFixed(2)} L ${targetX.toFixed(2)} ${targetY.toFixed(2)}`
       );
     } else {
       headerAtlasLink?.setAttribute('d', '');

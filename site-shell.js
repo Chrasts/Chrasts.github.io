@@ -159,15 +159,18 @@
   });
 
   if (header) {
+    const observedHeaderControls = header.querySelector('.header-actions');
     const observer = new MutationObserver(() => {
       syncHeaderGraphStates();
       scheduleHeaderGraph();
     });
-    observer.observe(header, {
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['aria-current', 'aria-expanded', 'hidden', 'class']
-    });
+    if (observedHeaderControls) {
+      observer.observe(observedHeaderControls, {
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['aria-current', 'aria-expanded', 'hidden', 'class']
+      });
+    }
   }
 
   const updateThemeControl = () => {

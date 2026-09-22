@@ -2815,15 +2815,16 @@ body[data-graph-mode="overview"] .detail-node-list button{
   }
 
   .header-linear-graph-nodes circle[data-header-graph-key="profile-brief"]{
-    fill:var(--ink);
-    stroke:var(--ink);
+    fill:var(--paper);
+    stroke:var(--header-utility-contrast);
+    stroke-width:1.45;
     transform:scale(1.32)
   }
 
   .header-linear-graph-nodes circle[data-header-graph-key="profile-brief"].is-hot,
   .header-linear-graph-nodes circle[data-header-graph-key="profile-brief"].is-current{
-    fill:var(--ink);
-    stroke:var(--ink);
+    fill:var(--header-utility-contrast);
+    stroke:var(--header-utility-contrast);
     transform:scale(1.55)
   }
 

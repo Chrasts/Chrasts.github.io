@@ -467,3 +467,13 @@ body[data-graph-mode="overview"] #site-graph .site-graph-node[data-node-id="work
   }
 }
 
+/* Multi-theme Work concept titles are stacked rather than joined with an
+   additional ampersand, because the theme names themselves may contain '&'. */
+.work-concept-heading{
+  display:grid;
+  gap:2px
+}
+.work-concept-heading-line{
+  display:block
+}
+

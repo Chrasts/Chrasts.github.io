@@ -186,3 +186,39 @@ test('CV section headings sit above a wide multi-column body', async ({ page }) 
   expect(a.y).toBeGreaterThan(h.y + h.height - 1);
   expect(Math.abs(a.y - b.y)).toBeLessThan(8);
 });
+
+test('print CV uses a denser A4-oriented layout without hiding content', async ({ page }) => {
+  await page.goto('/cv/?view=data-analysis');
+  await page.emulateMedia({ media: 'print' });
+
+  const density = await page.evaluate(() => {
+    const header = document.querySelector('.cv-header');
+    const section = document.querySelector('.cv-section-projects');
+    const item = section.querySelector('.cv-item');
+    const summary = item.querySelector('.cv-item-summary');
+    return {
+      bodyFont: parseFloat(getComputedStyle(document.body).fontSize),
+      headerPaddingBottom: parseFloat(getComputedStyle(header).paddingBottom),
+      sectionPaddingTop: parseFloat(getComputedStyle(section).paddingTop),
+      sectionMarginTop: parseFloat(getComputedStyle(section).marginTop),
+      itemPaddingTop: parseFloat(getComputedStyle(item).paddingTop),
+      summaryLineHeight: parseFloat(getComputedStyle(summary).lineHeight),
+      projectColumns: getComputedStyle(section).gridTemplateColumns.split(' ').filter(Boolean).length,
+      toolbarDisplay: getComputedStyle(document.querySelector('.cv-toolbar')).display
+    };
+  });
+
+  expect(density.bodyFont).toBeLessThanOrEqual(12);
+  expect(density.headerPaddingBottom).toBeLessThanOrEqual(9);
+  expect(density.sectionPaddingTop).toBeLessThanOrEqual(9);
+  expect(density.sectionMarginTop).toBeLessThanOrEqual(5);
+  expect(density.itemPaddingTop).toBeLessThanOrEqual(6);
+  expect(density.summaryLineHeight).toBeLessThan(14);
+  expect(density.projectColumns).toBe(2);
+  expect(density.toolbarDisplay).toBe('none');
+
+  await expect(page.locator('.cv-section-projects > .cv-item')).toHaveCount(4);
+  await expect(page.locator('.cv-section-education > .cv-item')).toHaveCount(4);
+  await expect(page.locator('.cv-section-certifications > .cv-item')).toHaveCount(3);
+});
+

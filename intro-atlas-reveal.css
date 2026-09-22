@@ -1071,3 +1071,30 @@ body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-st
   }
 }
 
+/* The animated Atlas control is the persistent spatial branch below the unified
+   header, including the opening Atlas itself. Entry mode hides the breadcrumb
+   and secondary routebar controls, not the Atlas affordance. */
+@media(min-width:901px){
+  body:is([data-entry-state="preparing"],[data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] .graph-routebar,
+  body.is-entry-atlas-condensation .graph-routebar{
+    display:flex!important;
+    visibility:visible!important;
+    justify-content:flex-end!important;
+    pointer-events:none!important
+  }
+
+  body:is([data-entry-state="preparing"],[data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] .graph-routebar .graph-breadcrumb,
+  body:is([data-entry-state="preparing"],[data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] .graph-routebar .quick-overview-global-trigger,
+  body.is-entry-atlas-condensation .graph-routebar .graph-breadcrumb,
+  body.is-entry-atlas-condensation .graph-routebar .quick-overview-global-trigger{
+    display:none!important
+  }
+
+  body:is([data-entry-state="preparing"],[data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] .graph-routebar .atlas-button,
+  body.is-entry-atlas-condensation .graph-routebar .atlas-button{
+    display:grid!important;
+    visibility:visible!important;
+    pointer-events:auto!important
+  }
+}
+

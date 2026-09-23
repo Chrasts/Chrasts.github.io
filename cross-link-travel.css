@@ -454,3 +454,12 @@ body:has(.header-back-slot .crosslink-return-control:not([hidden])) #site-explor
   }
 }
 
+@media(min-width:901px){
+  .header-back-slot .crosslink-return-control{
+    padding:5px 9px 5px 25px!important;
+    border:1px solid color-mix(in srgb,var(--ink) 28%,var(--line))!important;
+    border-radius:3px!important;
+    background:color-mix(in srgb,var(--ink) 4%,var(--paper))!important
+  }
+}
+

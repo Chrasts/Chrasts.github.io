@@ -3002,3 +3002,78 @@ body[data-graph-mode="overview"] .detail-node-list button{
   }
 }
 
+/* Make Back and current location unmistakably separate visual groups. */
+@media(min-width:1281px){
+  .app-header{
+    grid-template-columns:210px minmax(0,1fr)!important
+  }
+  .header-context-slot{
+    width:210px!important
+  }
+}
+
+@media(min-width:901px){
+  .header-context-slot:has(.crosslink-return-control:not([hidden])) .header-back-slot{
+    margin-right:26px!important;
+    padding-right:0!important;
+    border-right:0!important
+  }
+
+  .header-context-slot:has(.crosslink-return-control:not([hidden])) .header-back-slot .crosslink-return-control{
+    min-height:28px!important;
+    padding:5px 9px 5px 25px!important;
+    border:1px solid color-mix(in srgb,var(--ink) 28%,var(--line))!important;
+    border-radius:3px!important;
+    background:color-mix(in srgb,var(--ink) 4%,var(--paper))!important;
+    color:var(--muted)!important
+  }
+
+  .header-context-slot:has(.crosslink-return-control:not([hidden])) .header-back-slot .crosslink-return-control:hover,
+  .header-context-slot:has(.crosslink-return-control:not([hidden])) .header-back-slot .crosslink-return-control:focus-visible{
+    border-color:var(--profile-accent)!important;
+    background:color-mix(in srgb,var(--profile-accent) 7%,var(--paper))!important;
+    color:var(--profile-accent)!important
+  }
+
+  .header-context-slot:has(.crosslink-return-control:not([hidden])) .header-location-label{
+    margin-left:0!important;
+    padding-left:0!important;
+    overflow:visible!important;
+    text-transform:uppercase;
+    letter-spacing:.085em!important
+  }
+
+  .header-context-slot:has(.crosslink-return-control:not([hidden])) .header-location-label::before{
+    content:""!important;
+    display:block!important;
+    position:absolute!important;
+    left:-14px!important;
+    top:50%!important;
+    width:1px!important;
+    height:18px!important;
+    background:color-mix(in srgb,var(--ink) 40%,var(--line))!important;
+    transform:translateY(-50%)!important
+  }
+
+  .site-header #main-nav > a:hover,
+  .site-header #main-nav > a:focus-visible{
+    transform:scale(1.09)!important
+  }
+
+  .site-header .header-quick-overview.graph-control:hover,
+  .site-header .header-quick-overview.graph-control:focus-visible,
+  .site-header .header-practical-actions .header-utility.graph-control:hover,
+  .site-header .header-practical-actions .header-utility.graph-control:focus-visible{
+    transform:scale(1.10)!important
+  }
+}
+
+@media(max-width:1280px) and (min-width:901px){
+  .header-context-slot:has(.crosslink-return-control:not([hidden])) .header-back-slot{
+    margin-right:18px!important
+  }
+  .header-context-slot:has(.crosslink-return-control:not([hidden])) .header-location-label::before{
+    left:-10px!important
+  }
+}
+

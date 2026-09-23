@@ -2947,3 +2947,58 @@ body[data-graph-mode="overview"] .detail-node-list button{
   }
 }
 
+/* Strong Back / current-location separation and consistent header hover lift. */
+@media(min-width:901px){
+  .header-context-slot:has(.crosslink-return-control:not([hidden])){
+    display:flex!important;
+    align-items:center!important
+  }
+
+  .header-context-slot:has(.crosslink-return-control:not([hidden])) .header-back-slot{
+    flex:0 0 auto!important;
+    margin-right:20px!important;
+    padding-right:18px!important;
+    border-right:1px solid color-mix(in srgb,var(--ink) 36%,var(--line))!important
+  }
+
+  .header-context-slot:has(.crosslink-return-control:not([hidden])) .header-location-label{
+    margin-left:0!important;
+    padding-left:0!important
+  }
+
+  .header-context-slot:has(.crosslink-return-control:not([hidden])) .header-location-label::before{
+    content:none!important;
+    display:none!important
+  }
+
+  .site-header #main-nav > a,
+  .site-header .header-quick-overview.graph-control,
+  .site-header .header-practical-actions .header-utility.graph-control{
+    transform-origin:center!important;
+    transition:
+      color .16s ease,
+      font-weight .16s ease,
+      opacity .16s ease,
+      transform .16s cubic-bezier(.2,.72,.2,1)!important
+  }
+
+  .site-header #main-nav > a:hover,
+  .site-header #main-nav > a:focus-visible{
+    transform:scale(1.07)!important
+  }
+
+  .site-header .header-quick-overview.graph-control:hover,
+  .site-header .header-quick-overview.graph-control:focus-visible,
+  .site-header .header-practical-actions .header-utility.graph-control:hover,
+  .site-header .header-practical-actions .header-utility.graph-control:focus-visible{
+    transform:scale(1.075)!important
+  }
+}
+
+@media(max-width:1180px) and (min-width:901px){
+  .header-context-slot:has(.crosslink-return-control:not([hidden])) .header-back-slot{
+    margin-right:14px!important;
+    padding-right:12px!important
+  }
+}
+

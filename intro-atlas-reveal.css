@@ -1168,3 +1168,25 @@ body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-st
   }
 }
 
+/* Opening Atlas uses the same explicit Back/location separation and text-scale
+   hover affordance as the persistent header. */
+@media(min-width:1281px){
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header.app-header{
+    grid-template-columns:210px minmax(0,1fr)!important
+  }
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-context-slot{
+    width:210px!important
+  }
+}
+
+@media(min-width:901px){
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header #main-nav > a:is(:hover,:focus-visible){
+    transform:scale(1.09)!important
+  }
+
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-quick-overview.graph-control:is(:hover,:focus-visible),
+  body:is([data-entry-state="ignition"],[data-entry-state="reveal"],[data-entry-state="ready"])[data-graph-mode="atlas"] > .site-header .header-practical-actions .header-utility.graph-control:is(:hover,:focus-visible){
+    transform:scale(1.10)!important
+  }
+}
+

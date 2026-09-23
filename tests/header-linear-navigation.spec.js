@@ -134,6 +134,60 @@ test.describe('unified desktop header graph', () => {
     await expect(page.locator('.theme-toggle .theme-glyph-orbit')).toBeVisible();
   });
 
+  test('header labels visibly scale on hover and Back is clearly separated from current location', async ({ page }) => {
+    await prepare(page);
+    await page.goto('/#overview', { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => document.body.dataset.graphMode === 'overview');
+    await waitHeader(page);
+
+    const scaleOf = async locator => locator.evaluate(element => {
+      const transform = getComputedStyle(element).transform;
+      if (!transform || transform === 'none') return 1;
+      return new DOMMatrixReadOnly(transform).a;
+    });
+
+    const work = page.locator('#main-nav > a[data-route="work"]');
+    await work.hover();
+    expect(await scaleOf(work)).toBeGreaterThanOrEqual(1.07);
+
+    const cv = page.locator('.header-practical-actions .header-utility[href="/cv/"]');
+    await cv.hover();
+    expect(await scaleOf(cv)).toBeGreaterThanOrEqual(1.08);
+
+    await work.click();
+    await page.waitForFunction(() =>
+      document.body.dataset.graphMode === 'work' &&
+      !document.body.classList.contains('is-v9-transitioning')
+    );
+
+    await page.locator('.graph-routebar .atlas-button').click();
+    await page.waitForFunction(() =>
+      document.body.dataset.graphMode === 'atlas' &&
+      !document.body.classList.contains('is-v9-transitioning')
+    );
+    await page.waitForFunction(() =>
+      document.querySelector('.header-back-slot .crosslink-return-control:not([hidden])')
+    );
+
+    const context = await page.evaluate(() => {
+      const back = document.querySelector('.header-back-slot .crosslink-return-control:not([hidden])');
+      const location = document.querySelector('.header-location-label');
+      const backRect = back.getBoundingClientRect();
+      const locationRect = location.getBoundingClientRect();
+      return {
+        location: location.textContent.trim(),
+        gap: locationRect.left - backRect.right,
+        backBorder: getComputedStyle(back).borderTopStyle,
+        backBackground: getComputedStyle(back).backgroundColor
+      };
+    });
+
+    expect(context.location).toBe('Atlas');
+    expect(context.gap).toBeGreaterThanOrEqual(18);
+    expect(context.backBorder).toBe('solid');
+    expect(context.backBackground).not.toBe('rgba(0, 0, 0, 0)');
+  });
+
   test('active header section node never drops during route animation or graph-node hover', async ({ page }) => {
     await prepare(page);
     await page.goto('/#overview', { waitUntil: 'domcontentloaded' });

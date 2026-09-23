@@ -444,3 +444,13 @@ body:has(.header-back-slot .crosslink-return-control:not([hidden])) #site-explor
 body:has(.header-back-slot .crosslink-return-control:not([hidden])) #site-explorer .site-graph-heading{
   top:88px!important
 }
+
+/* The header owns the visual grouping of Back versus location. Keep the Back
+   control compact so the explicit divider and whitespace remain visible. */
+@media(min-width:901px){
+  .header-back-slot .crosslink-return-control{
+    max-width:none!important;
+    padding-right:0!important
+  }
+}
+

@@ -6,7 +6,7 @@
   // Keep a coherent release together when GitHub Pages or a browser has an
   // earlier same-named lazy asset cached. The entry document versions its
   // eagerly loaded modules with this same revision.
-  const releaseRevision = '20260923-headercontext2';
+  const releaseRevision = '20261003-v4entry1';
   const versionedResource = resource => `${resource}${resource.includes('?') ? '&' : '?'}v=${releaseRevision}`;
   const graphNodes = window.SITE_DATA?.graph?.nodes || [];
   const rootId = window.SITE_DATA?.graph?.rootId || 'stepan-chrast';
@@ -343,11 +343,11 @@
   );
 
   const bootIntro = () => loadFeature('intro', async () => {
-    await Promise.all([
-      bootAtlasInteractions(),
-      loadStyle('intro-atlas-reveal.css', 'data-profile-intro-atlas-style')
-    ]);
-    await loadScript('intro-atlas-reveal.js', 'data-profile-intro-atlas-reveal', () => Boolean(window.ProfileIntro?.__v31));
+    // V4 entry is deliberately independent of the live Atlas. The first-load
+    // Atlas is now an inert SVG illustration and the real Atlas runtime remains
+    // lazy until the visitor explicitly opens the Atlas route.
+    await loadStyle('profile-entry-v4.css', 'data-profile-entry-v4-style');
+    await loadScript('profile-entry-v4.js', 'data-profile-entry-v4', () => Boolean(window.ProfileIntro?.__v4));
   });
 
   const bootArtifactScenes = () => loadFeature('artifacts', async () => {

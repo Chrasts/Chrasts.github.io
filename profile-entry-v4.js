@@ -16,7 +16,7 @@
     rootHold: 180,
     branchDuration: 820,
     branchStagger: 78,
-    edgeDelay: 360,
+    edgeDelay: 520,
     chromeDelay: 980,
     chromeFade: 520
   });

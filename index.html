@@ -104,7 +104,10 @@
        deferred graph module or external stylesheet can expose partial UI. */
     html[data-profile-intro="pending"],
     html[data-profile-intro="preparing"],
-    html[data-profile-intro="running"]{background:#000}
+    html[data-profile-intro="running"]{background:#efe6d9}
+    html[data-theme="dark"][data-profile-intro="pending"],
+    html[data-theme="dark"][data-profile-intro="preparing"],
+    html[data-theme="dark"][data-profile-intro="running"]{background:#11191c}
     /* Reserve the final full-screen graph geometry before external styles and
        modules arrive. Previously the app entered normal document flow first
        and was promoted to a fixed Atlas later, which was the dominant CLS
@@ -117,14 +120,6 @@
     html[data-profile-intro="running"] .profile-app{
       position:fixed!important;inset:0!important;width:100vw!important;
       height:100dvh!important;min-height:0!important;overflow:hidden!important
-    }
-    html[data-profile-intro="pending"]::before,
-    html[data-profile-intro="preparing"]::before{
-      content:"";
-      position:fixed;
-      z-index:2147483646;
-      inset:0;
-      background:#000
     }
     html[data-profile-intro="pending"] body > :not(.entry-loading-shell),
     html[data-profile-intro="preparing"] body > :not(.entry-loading-shell){visibility:hidden!important}
@@ -154,15 +149,30 @@
       inset:0;
       place-items:center;
       overflow:hidden;
-      background:#000;
-      color:#fff
+      background:#efe6d9;
+      color:#242522
     }
-    /* SVG defaults to a 300×150 replaced element until its stylesheet loads.
-       Give the reveal mask its final viewport geometry in the first paint so
-       that its promotion cannot contribute a layout-shift entry. */
-    .entry-visibility-mask{
-      position:absolute;inset:0;width:100%;height:100%;overflow:visible;
+    html[data-theme="dark"][data-profile-intro="pending"] .entry-loading-shell,
+    html[data-theme="dark"][data-profile-intro="preparing"] .entry-loading-shell,
+    html[data-theme="dark"][data-profile-intro="running"] .entry-loading-shell{
+      background:#11191c;
+      color:#f1eadf
+    }
+    .entry-opening-atlas{
+      position:absolute;
+      left:50%;top:50%;
+      width:min(92vw,1180px);height:min(82vh,760px);
+      transform:translate(-50%,-50%);
+      opacity:.28;
+      color:#766b5e;
       pointer-events:none
+    }
+    html[data-theme="dark"] .entry-opening-atlas{opacity:.34;color:#9aa9ad}
+    .entry-opening-atlas .entry-atlas-edge{
+      fill:none;stroke:currentColor;stroke-width:1.2
+    }
+    .entry-opening-atlas .entry-atlas-node{
+      fill:currentColor;stroke:currentColor;stroke-width:1.5
     }
   </style>
   <script defer src="https://cloud.umami.is/script.js" data-website-id="8dd5c849-df0f-40a5-b4e1-3fbcb38f425b"></script>
@@ -178,26 +188,91 @@
 </head>
 <body id="top">
   <div class="entry-loading-shell" aria-live="polite" aria-label="Loading interactive profile" role="status">
-    <svg class="entry-visibility-mask" aria-hidden="true" focusable="false" preserveAspectRatio="none">
-      <defs>
-        <radialGradient id="entry-visibility-gradient">
-          <stop offset="0" stop-color="#000"></stop>
-          <stop offset=".04" stop-color="#000"></stop>
-          <stop offset=".12" stop-color="#010101"></stop>
-          <stop offset=".25" stop-color="#050505"></stop>
-          <stop offset=".40" stop-color="#121212"></stop>
-          <stop offset=".56" stop-color="#2e2e2e"></stop>
-          <stop offset=".70" stop-color="#5b5b5b"></stop>
-          <stop offset=".82" stop-color="#949494"></stop>
-          <stop offset=".93" stop-color="#c7c7c7"></stop>
-          <stop offset="1" stop-color="#fff"></stop>
-        </radialGradient>
-        <mask id="entry-visibility-cutout" maskUnits="userSpaceOnUse">
-          <rect class="entry-visibility-base" fill="#fff"></rect>
-          <circle class="entry-visibility-aperture" r="0" fill="url(#entry-visibility-gradient)"></circle>
-        </mask>
-      </defs>
-      <rect class="entry-visibility-veil" fill="#000" mask="url(#entry-visibility-cutout)"></rect>
+    <svg class="entry-opening-atlas" viewBox="0 0 1200 760" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid meet">
+      <g class="entry-atlas-edges">
+        <path class="entry-atlas-edge" d="M600 380 L318 238"></path>
+        <path class="entry-atlas-edge" d="M600 380 L600 132"></path>
+        <path class="entry-atlas-edge" d="M600 380 L882 238"></path>
+        <path class="entry-atlas-edge" d="M600 380 L818 574"></path>
+        <path class="entry-atlas-edge" d="M600 380 L382 574"></path>
+
+        <path class="entry-atlas-edge" d="M318 238 L177 135 M318 238 L151 250 M318 238 L215 355 M318 238 L365 105 M318 238 L405 238 M177 135 L104 82 M177 135 L112 166 M151 250 L73 257 M215 355 L142 420 M215 355 L280 421 M365 105 L420 52 M405 238 L467 190"></path>
+        <path class="entry-atlas-edge" d="M600 132 L493 70 M600 132 L600 47 M600 132 L704 70 M600 132 L516 191 M600 132 L686 191 M493 70 L442 32 M704 70 L758 30 M516 191 L469 251 M686 191 L733 251"></path>
+        <path class="entry-atlas-edge" d="M882 238 L794 120 M882 238 L932 112 M882 238 L1034 177 M882 238 L1049 287 M882 238 L958 369 M794 120 L760 58 M932 112 L963 51 M1034 177 L1111 153 M1049 287 L1126 307 M958 369 L1014 431"></path>
+        <path class="entry-atlas-edge" d="M818 574 L716 491 M818 574 L750 668 M818 574 L873 681 M818 574 L957 535 M818 574 L990 630 M716 491 L653 451 M750 668 L708 724 M873 681 L904 732 M957 535 L1034 494 M990 630 L1077 672"></path>
+        <path class="entry-atlas-edge" d="M382 574 L244 512 M382 574 L198 619 M382 574 L311 688 M382 574 L476 664 M382 574 L496 502 M244 512 L167 480 M198 619 L111 651 M311 688 L273 733 M476 664 L518 720 M496 502 L554 455"></path>
+
+        <path class="entry-atlas-edge is-cross" d="M405 238 C500 252 518 209 516 191"></path>
+        <path class="entry-atlas-edge is-cross" d="M686 191 C754 195 768 165 794 120"></path>
+        <path class="entry-atlas-edge is-cross" d="M958 369 C920 449 884 484 818 574"></path>
+        <path class="entry-atlas-edge is-cross" d="M496 502 C574 462 649 463 716 491"></path>
+        <path class="entry-atlas-edge is-cross" d="M280 421 C374 448 437 470 496 502"></path>
+      </g>
+
+      <g class="entry-atlas-nodes">
+        <circle class="entry-atlas-node is-root" cx="600" cy="380" r="18"></circle>
+
+        <circle class="entry-atlas-node is-work is-hub" cx="318" cy="238" r="13"></circle>
+        <circle class="entry-atlas-node is-work" cx="177" cy="135" r="7"></circle>
+        <circle class="entry-atlas-node is-work" cx="151" cy="250" r="7"></circle>
+        <circle class="entry-atlas-node is-work" cx="215" cy="355" r="7"></circle>
+        <circle class="entry-atlas-node is-work" cx="365" cy="105" r="7"></circle>
+        <circle class="entry-atlas-node is-work" cx="405" cy="238" r="7"></circle>
+        <circle class="entry-atlas-node is-work" cx="104" cy="82" r="4.5"></circle>
+        <circle class="entry-atlas-node is-work" cx="112" cy="166" r="4.5"></circle>
+        <circle class="entry-atlas-node is-work" cx="73" cy="257" r="4.5"></circle>
+        <circle class="entry-atlas-node is-work" cx="142" cy="420" r="4.5"></circle>
+        <circle class="entry-atlas-node is-work" cx="280" cy="421" r="4.5"></circle>
+        <circle class="entry-atlas-node is-work" cx="420" cy="52" r="4.5"></circle>
+        <circle class="entry-atlas-node is-work" cx="467" cy="190" r="4.5"></circle>
+
+        <circle class="entry-atlas-node is-knowledge is-hub" cx="600" cy="132" r="13"></circle>
+        <circle class="entry-atlas-node is-knowledge" cx="493" cy="70" r="7"></circle>
+        <circle class="entry-atlas-node is-knowledge" cx="600" cy="47" r="7"></circle>
+        <circle class="entry-atlas-node is-knowledge" cx="704" cy="70" r="7"></circle>
+        <circle class="entry-atlas-node is-knowledge" cx="516" cy="191" r="7"></circle>
+        <circle class="entry-atlas-node is-knowledge" cx="686" cy="191" r="7"></circle>
+        <circle class="entry-atlas-node is-knowledge" cx="442" cy="32" r="4.5"></circle>
+        <circle class="entry-atlas-node is-knowledge" cx="758" cy="30" r="4.5"></circle>
+        <circle class="entry-atlas-node is-knowledge" cx="469" cy="251" r="4.5"></circle>
+        <circle class="entry-atlas-node is-knowledge" cx="733" cy="251" r="4.5"></circle>
+
+        <circle class="entry-atlas-node is-experience is-hub" cx="882" cy="238" r="13"></circle>
+        <circle class="entry-atlas-node is-experience" cx="794" cy="120" r="7"></circle>
+        <circle class="entry-atlas-node is-experience" cx="932" cy="112" r="7"></circle>
+        <circle class="entry-atlas-node is-experience" cx="1034" cy="177" r="7"></circle>
+        <circle class="entry-atlas-node is-experience" cx="1049" cy="287" r="7"></circle>
+        <circle class="entry-atlas-node is-experience" cx="958" cy="369" r="7"></circle>
+        <circle class="entry-atlas-node is-experience" cx="760" cy="58" r="4.5"></circle>
+        <circle class="entry-atlas-node is-experience" cx="963" cy="51" r="4.5"></circle>
+        <circle class="entry-atlas-node is-experience" cx="1111" cy="153" r="4.5"></circle>
+        <circle class="entry-atlas-node is-experience" cx="1126" cy="307" r="4.5"></circle>
+        <circle class="entry-atlas-node is-experience" cx="1014" cy="431" r="4.5"></circle>
+
+        <circle class="entry-atlas-node is-education is-hub" cx="818" cy="574" r="13"></circle>
+        <circle class="entry-atlas-node is-education" cx="716" cy="491" r="7"></circle>
+        <circle class="entry-atlas-node is-education" cx="750" cy="668" r="7"></circle>
+        <circle class="entry-atlas-node is-education" cx="873" cy="681" r="7"></circle>
+        <circle class="entry-atlas-node is-education" cx="957" cy="535" r="7"></circle>
+        <circle class="entry-atlas-node is-education" cx="990" cy="630" r="7"></circle>
+        <circle class="entry-atlas-node is-education" cx="653" cy="451" r="4.5"></circle>
+        <circle class="entry-atlas-node is-education" cx="708" cy="724" r="4.5"></circle>
+        <circle class="entry-atlas-node is-education" cx="904" cy="732" r="4.5"></circle>
+        <circle class="entry-atlas-node is-education" cx="1034" cy="494" r="4.5"></circle>
+        <circle class="entry-atlas-node is-education" cx="1077" cy="672" r="4.5"></circle>
+
+        <circle class="entry-atlas-node is-about is-hub" cx="382" cy="574" r="13"></circle>
+        <circle class="entry-atlas-node is-about" cx="244" cy="512" r="7"></circle>
+        <circle class="entry-atlas-node is-about" cx="198" cy="619" r="7"></circle>
+        <circle class="entry-atlas-node is-about" cx="311" cy="688" r="7"></circle>
+        <circle class="entry-atlas-node is-about" cx="476" cy="664" r="7"></circle>
+        <circle class="entry-atlas-node is-about" cx="496" cy="502" r="7"></circle>
+        <circle class="entry-atlas-node is-about" cx="167" cy="480" r="4.5"></circle>
+        <circle class="entry-atlas-node is-about" cx="111" cy="651" r="4.5"></circle>
+        <circle class="entry-atlas-node is-about" cx="273" cy="733" r="4.5"></circle>
+        <circle class="entry-atlas-node is-about" cx="518" cy="720" r="4.5"></circle>
+        <circle class="entry-atlas-node is-about" cx="554" cy="455" r="4.5"></circle>
+      </g>
     </svg>
     <div class="entry-loading-object" aria-hidden="true">
       <span class="entry-loading-orbit is-outer"></span>
@@ -357,7 +432,7 @@
   <script src="site-graph.js?v=20260921-desktoprefine2"></script>
   <script src="graph-transitions-v6.js?v=20260919-fix11"></script>
   <script src="cross-link-travel-v2.js?v=20260921-desktoprefine2"></script>
-  <script src="scene-legacy-bridge.js?v=20260923-headercontext2"></script>
+  <script src="scene-legacy-bridge.js?v=20261003-v4entry1"></script>
   <script src="site-shell.js?v=20260922-headergraph8"></script>
   <script src="mobile-construction-gate.js?v=20260921-mobilecvgate1"></script>
 </body>

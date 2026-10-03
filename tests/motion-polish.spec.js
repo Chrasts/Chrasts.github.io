@@ -15,47 +15,61 @@ const bypassIntro = async page => {
   await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
 };
 
-test.describe('V3.1 Atlas reveal motion', () => {
+test.describe('V4 entry motion', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('wakes the real network without restoring the retired gateway or Phase H motion wrappers', async ({ page }) => {
+  test('condenses the inert opening Atlas without restoring retired gateway wrappers', async ({ page }) => {
     await freshIntro(page);
     await page.goto('/');
-    await page.waitForFunction(() => window.ProfileIntro?.snapshot?.().state === 'ATLAS_REVEAL', null, { timeout: 8_000 });
-    await page.waitForFunction(() => window.ProfileIntro.snapshot().revealedWaves.includes('primary'));
-    await page.waitForFunction(() => Boolean(window.ProfileMotionPolish));
+    await page.waitForFunction(() => Boolean(window.ProfileIntro?.__v4), null, { timeout: 8_000 });
 
+    await expect(page.locator('.entry-opening-atlas')).toHaveCount(1);
     await expect(page.locator('.profile-intro-enter')).toHaveCount(0);
     await expect(page.locator('.profile-intro-overlay')).toHaveCount(0);
     await expect(page.locator('#site-graph .phase-h-node-motion')).toHaveCount(0);
-    const root = page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]');
-    await expect(root).toBeVisible();
-    await expect(root.locator('.site-graph-label')).toContainText('Štěpán Chrast');
 
-    const wake = await page.evaluate(() => ({
-      traced: document.querySelectorAll('#site-graph .site-graph-edges path.is-intro-revealed').length,
-      stage: window.ProfileIntro.snapshot().stage,
-      state: window.ProfileIntro.snapshot().state,
-      enterActive: window.ProfileMotionPolish.snapshot().enterActive
+    await page.waitForFunction(() =>
+      window.ProfileIntro?.snapshot?.().state === 'ATLAS_READY' &&
+      document.body.dataset.graphMode === 'overview' &&
+      document.body.classList.contains('is-entry-loader-complete'),
+    null, { timeout: 10_000 });
+
+    const state = await page.evaluate(() => ({
+      graphMode: document.body.dataset.graphMode,
+      rootLanding: document.body.dataset.rootLanding,
+      staticAtlas: window.ProfileIntro.snapshot().staticOpeningAtlas,
+      profileReady: document.body.classList.contains('is-profile-root-ready')
     }));
-    expect(wake.traced).toBeGreaterThan(0);
-    expect(wake.state).toBe('ATLAS_REVEAL');
-    expect(wake.enterActive).toBe(false);
+    expect(state.graphMode).toBe('overview');
+    expect(state.rootLanding).toBe('false');
+    expect(state.staticAtlas).toBe(true);
+    expect(state.profileReady).toBe(true);
   });
 
-  test('cleans reveal-only styling and leaves the stable live Atlas instead of identity handoff', async ({ page }) => {
+  test('leaves the stable five-branch Profile graph after the loading handoff', async ({ page }) => {
     await freshIntro(page);
     await page.goto('/');
-    await page.waitForFunction(() => window.ProfileIntro?.snapshot?.().state === 'ATLAS_READY', null, { timeout: 8_000 });
+    await page.waitForFunction(() =>
+      window.ProfileIntro?.snapshot?.().state === 'ATLAS_READY' &&
+      document.body.classList.contains('is-entry-loader-complete'),
+    null, { timeout: 10_000 });
 
-    await expect(page.locator('.profile-intro-enter')).toHaveCount(0);
-    await expect(page.locator('.profile-intro-identity')).toHaveCount(0);
-    await expect(page.locator('.profile-intro-overlay')).toHaveCount(0);
-    await expect(page.locator('#site-graph .phase-h-node-motion')).toHaveCount(0);
-    await expect(page.locator('#site-graph .site-graph-node[data-intro-wave]')).toHaveCount(0);
-    await expect(page.locator('#site-graph .site-graph-edges path[data-intro-edge-wave]')).toHaveCount(0);
-    expect(await page.evaluate(() => document.body.dataset.graphMode)).toBe('atlas');
-    expect(await page.evaluate(() => window.ProfileRootLanding.isActive())).toBe(false);
+    const result = await page.evaluate(() => {
+      const ids = ['work', 'knowledge', 'experience', 'education', 'about'];
+      return {
+        mode: document.body.dataset.graphMode,
+        branches: ids.map(id => {
+          const node = document.querySelector('#site-graph .site-graph-node[data-node-id="' + id + '"]');
+          return Boolean(node) && getComputedStyle(node).opacity !== '0';
+        }),
+        legacyIntroNodes: document.querySelectorAll('#site-graph .site-graph-node[data-intro-wave]').length,
+        legacyIntroEdges: document.querySelectorAll('#site-graph .site-graph-edges path[data-intro-edge-wave]').length
+      };
+    });
+    expect(result.mode).toBe('overview');
+    expect(result.branches.every(Boolean)).toBe(true);
+    expect(result.legacyIntroNodes).toBe(0);
+    expect(result.legacyIntroEdges).toBe(0);
   });
 });
 

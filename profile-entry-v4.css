@@ -212,11 +212,20 @@ body.is-entry-loader-handoff .entry-loading-core{
   transform:translate(-50%,-50%) scale(.88)
 }
 
-/* Keep every root-to-section edge fully absent while the five branches are
-   still staged at the root. This also covers graph rerenders that replace the
-   original path nodes after JS staged them. The class is removed immediately
-   before the stroke-draw animation starts, so each edge grows from the root
-   instead of appearing at full length. */
+/* The first Overview reveal uses the same node-first Profile Root emergence
+   choreography as ordinary root transitions. Until that choreography has
+   installed its motion wrappers, keep all five branch nodes and their root
+   relations completely absent. */
+body.is-profile-entry-branches-staged
+#site-graph .site-graph-node[data-node-id="work"],
+body.is-profile-entry-branches-staged
+#site-graph .site-graph-node[data-node-id="knowledge"],
+body.is-profile-entry-branches-staged
+#site-graph .site-graph-node[data-node-id="experience"],
+body.is-profile-entry-branches-staged
+#site-graph .site-graph-node[data-node-id="education"],
+body.is-profile-entry-branches-staged
+#site-graph .site-graph-node[data-node-id="about"],
 body.is-profile-entry-branches-staged
 #site-graph .site-graph-edges path[data-source="stepan-chrast"][data-target="work"],
 body.is-profile-entry-branches-staged
@@ -229,6 +238,16 @@ body.is-profile-entry-branches-staged
 #site-graph .site-graph-edges path[data-source="stepan-chrast"][data-target="about"]{
   opacity:0!important;
   visibility:hidden!important
+}
+
+/* Shared Profile Root motion wrapper. This is the same SVG transform carrier
+   used by the established root/segment transition choreography. */
+#site-graph .profile-root-emergence-motion{
+  pointer-events:none;
+  transform-box:view-box;
+  transform-origin:0 0;
+  will-change:transform,opacity;
+  animation:none!important
 }
 
 body.is-entry-loader-releasing .entry-loading-shell{display:grid!important;pointer-events:none}

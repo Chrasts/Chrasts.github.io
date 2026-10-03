@@ -80,40 +80,42 @@ test.describe('Global fan v3 geometry', () => {
   });
 });
 
-test.describe('Intro source geometry', () => {
+test.describe('V4 entry source geometry', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
-  test('first-session V3.1 reveal originates from the canonical fan-v3 Atlas', async ({ page }) => {
-    await page.addInitScript(() => {
-      sessionStorage.removeItem('profileIntroSeen');
-      sessionStorage.removeItem('__v31IntroFreshPrepared');
-    });
+
+  test('opening Atlas is a static illustration while the destination uses canonical fan-v3 Overview geometry', async ({ page }) => {
+    await page.addInitScript(() => sessionStorage.removeItem('profileIntroSeen'));
     await page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
     await page.goto('/');
-    await page.waitForFunction(() => Boolean(
-      window.ProfileIntro?.__v31 &&
-      window.ProfileIntro.snapshot().state === 'ATLAS_REVEAL' &&
-      window.ProfileIntro.snapshot().running
-    ), null, {timeout:8000});
+
+    await expect(page.locator('.entry-opening-atlas')).toHaveCount(1);
+    expect(await page.locator('.entry-opening-atlas .entry-atlas-node').count()).toBeGreaterThan(20);
+    await page.waitForFunction(() =>
+      window.ProfileIntro?.snapshot?.().state === 'ATLAS_READY' &&
+      document.body.dataset.graphMode === 'overview' &&
+      document.body.classList.contains('is-entry-loader-complete'),
+    null, { timeout: 10_000 });
     await waitFan(page);
     await expect(page.locator('#site-graph .phase-h-node-motion')).toHaveCount(0);
 
     const positions = await page.evaluate(() => {
       const geometry = window.ProfileGeometry;
-      const read = id => {
-        const element = document.querySelector(`#site-graph .site-graph-node[data-node-id="${id}"]`);
-        const canonical = geometry.atlasPoint(id);
-        return {
-          x: Number(element.dataset.x), y: Number(element.dataset.y),
-          expectedX: canonical.x, expectedY: canonical.y
-        };
-      };
-      return Object.fromEntries(['stepan-chrast','knowledge','education','about','experience','work'].map(id => [id, read(id)]));
+      const ids = ['stepan-chrast','knowledge','education','about','experience','work'];
+      return Object.fromEntries(ids.map(id => {
+        const element = [...document.querySelectorAll('#site-graph .site-graph-node[data-node-id="' + id + '"]')]
+          .find(node => !node.closest('.v9-transition-overlay'));
+        const canonical = geometry.overviewPoint(id);
+        return [id, {
+          x: Number(element?.dataset.x),
+          y: Number(element?.dataset.y),
+          expectedX: canonical?.x,
+          expectedY: canonical?.y
+        }];
+      }));
     });
 
     Object.values(positions).forEach(value => {
       expect(Math.hypot(value.x - value.expectedX, value.y - value.expectedY)).toBeLessThan(2);
     });
-    const r=positions['stepan-chrast'], k=positions.knowledge, e=positions.education, a=positions.about, x=positions.experience, w=positions.work;
-    expect(k.x).toBeGreaterThan(r.x); expect(e.y).toBeLessThan(r.y); expect(a.x).toBeLessThan(r.x); expect(x.y).toBeLessThan(r.y); expect(w.y).toBeGreaterThan(r.y);
   });
 });

@@ -48,7 +48,7 @@
     document.head.appendChild(guard);
   }
 
-  const releaseRevision = '20261003-v4entry3';
+  const releaseRevision = '20261003-v4entry4';
   const versionedResource = resource =>
     `${resource}${resource.includes('?') ? '&' : '?'}v=${releaseRevision}`;
 

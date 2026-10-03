@@ -751,3 +751,39 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-read
   border-color:var(--ink)!important
 }
 
+
+
+/* V4: the canonical Profile root keeps its normal click semantics, but reveals
+   the portrait as a purely visual hover/focus treatment. */
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready
+#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .profile-node-portrait{
+  opacity:0;
+  transform:scale(.48);
+  transform-box:fill-box;
+  transform-origin:center;
+  filter:saturate(.78) contrast(.98);
+  pointer-events:none;
+  transition:
+    opacity .20s ease,
+    transform .34s cubic-bezier(.16,.78,.2,1),
+    filter .24s ease
+}
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready
+#site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .profile-node-portrait{
+  opacity:1;
+  transform:scale(1);
+  filter:saturate(1) contrast(1.03)
+}
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready
+#site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .site-graph-dot{
+  opacity:.08!important
+}
+
+@media(prefers-reduced-motion:reduce){
+  body[data-graph-mode="overview"][data-root-landing="false"].is-profile-root-ready
+  #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .profile-node-portrait{
+    transition:none!important
+  }
+}

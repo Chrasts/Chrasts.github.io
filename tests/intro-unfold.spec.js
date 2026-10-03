@@ -30,7 +30,7 @@ const waitCanonicalOverview = (page, ids) => page.waitForFunction(sectionIds => 
   });
 }, ids);
 
-test.describe('V3.1 entry retirement guards', () => {
+test.describe('V4 entry retirement guards', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
   test('retires the old gateway, portrait intermediary and Phase H wrapper runtime completely', async ({ page }) => {
@@ -47,14 +47,14 @@ test.describe('V3.1 entry retirement guards', () => {
     expect(await page.locator('#site-graph .phase-h-node-motion').count()).toBe(0);
   });
 
-  test('first-session entry remains the live Atlas instead of exposing the old latent-root landing', async ({ page }) => {
+  test('first-session entry lands in expanded professional Overview without exposing the old latent-root landing', async ({ page }) => {
     await fresh(page);
     await page.goto('/');
     await waitReady(page);
     await expect(page.locator('#site-explorer')).toBeVisible();
     await expect(page.locator('.phase-h-latent-stub')).toHaveCount(0);
     await expect(page.locator('.root-node-trigger')).toBeHidden();
-    expect(await page.evaluate(() => document.body.dataset.graphMode)).toBe('atlas');
+    expect(await page.evaluate(() => document.body.dataset.graphMode)).toBe('overview');
     expect(await page.evaluate(() => window.ProfileRootLanding.isActive())).toBe(false);
   });
 });

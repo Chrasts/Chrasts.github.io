@@ -43,3 +43,13 @@ body[data-entry-state="reveal"][data-graph-mode="atlas"]:not(.is-root-entry-comm
   display:inline!important;
   visibility:visible!important
 }
+
+
+/* V4: once the visitor explicitly enters Atlas, its root again owns the
+   portrait affordance even though the professional profile remains the global
+   entry state. The click action is unchanged. */
+body[data-graph-mode="atlas"]:not(.is-root-entry-committing) .root-entry-portrait,
+body[data-graph-mode="atlas"]:not(.is-root-entry-committing) .root-entry-action{
+  display:inline!important;
+  visibility:visible!important
+}

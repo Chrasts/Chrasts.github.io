@@ -20,7 +20,7 @@
   const introEligible = earlyIntroState
     ? earlyIntroState === 'pending'
     : initialOverview && storageAvailable && !introSeen;
-  const initialRootLanding = initialOverview && introEligible;
+  // V4 removes the click-through root landing. First-load animation resolves\n  // directly into the already expanded professional Overview.\n  const initialRootLanding = false;
 
   if (!initialOverview && storageAvailable && !introSeen) {
     try { sessionStorage.setItem('profileIntroSeen', 'true'); } catch (_) {}
@@ -46,7 +46,7 @@
     document.head.appendChild(guard);
   }
 
-  const releaseRevision = '20260921-atlasheaderleft2';
+  const releaseRevision = '20261003-v4entry1';
   const versionedResource = resource =>
     `${resource}${resource.includes('?') ? '&' : '?'}v=${releaseRevision}`;
 

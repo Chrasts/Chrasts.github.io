@@ -100,9 +100,9 @@
     return null;
   };
 
-  const syncEntryTarget = () => {
+  const syncEntryTarget = pointOverride => {
     const shell = document.querySelector('.entry-loading-shell');
-    const point = liveRootScreenPoint();
+    const point = pointOverride || liveRootScreenPoint();
     if (!shell || !point) return false;
     const dx = point.x - innerWidth / 2;
     const dy = point.y - innerHeight / 2;
@@ -110,6 +110,40 @@
     shell.style.setProperty('--entry-target-y', dy.toFixed(2) + 'px');
     shell.dataset.entryTarget = 'profile-root';
     return true;
+  };
+
+  const settleEntryTarget = async () => {
+    let previous = null;
+    let stableFrames = 0;
+    let latest = null;
+    for (let frame = 0; frame < 18; frame += 1) {
+      await raf();
+      latest = liveRootScreenPoint();
+      if (!latest) continue;
+      if (previous && Math.hypot(latest.x - previous.x, latest.y - previous.y) <= .3) {
+        stableFrames += 1;
+      } else {
+        stableFrames = 0;
+      }
+      previous = latest;
+      if (stableFrames >= 3) break;
+    }
+    return latest ? syncEntryTarget(latest) : false;
+  };
+
+  const freezeLoaderFloat = () => {
+    const loader = document.querySelector('.entry-loading-object');
+    if (!loader) return;
+    const currentTransform = getComputedStyle(loader).transform;
+    loader.style.animation = 'none';
+    if (currentTransform && currentTransform !== 'none') loader.style.transform = currentTransform;
+    loader.getBoundingClientRect();
+  };
+
+  const releaseFrozenLoader = () => {
+    const loader = document.querySelector('.entry-loading-object');
+    if (!loader) return;
+    loader.style.removeProperty('transform');
   };
 
   const restoreStagedPresentation = () => {
@@ -287,12 +321,16 @@
       );
     }
 
-    // The loader does not own a hard-coded destination. Resolve the exact
-    // on-screen centre of the live Overview root so later Home redesigns can
-    // move the root without requiring intro geometry changes.
+    // The loader does not own a hard-coded destination. At this point the
+    // Overview already uses its final document geometry behind the loader.
+    // Wait until that live root is stationary for several frames, then target
+    // its exact screen centre. This prevents the handoff from chasing an
+    // intermediate layout position.
+    await settleEntryTarget();
+    freezeLoaderFloat();
     await raf();
-    syncEntryTarget();
     document.body?.classList.add('is-entry-loader-releasing');
+    releaseFrozenLoader();
 
     emit('started', { source: 'static-opening-atlas' });
     emit('stage', { stage: 'condensing' });
@@ -376,6 +414,11 @@
     state.loaderReleased = false;
     state.startedAt = performance.now();
     document.documentElement.dataset.profileIntro = 'preparing';
+    const loaderObject = document.querySelector('.entry-loading-object');
+    if (loaderObject) {
+      loaderObject.style.removeProperty('animation');
+      loaderObject.style.removeProperty('transform');
+    }
     if (document.body) {
       document.body.dataset.entryState = 'preparing';
       document.body.classList.remove(

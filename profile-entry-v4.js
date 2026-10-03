@@ -79,6 +79,39 @@
     '#site-graph .site-graph-edges path[data-source="' + CSS.escape(rootId) + '"][data-target]'
   )].filter(path => sectionIds.includes(path.dataset.target) && !path.closest('.v9-transition-overlay'));
 
+  const liveRootScreenPoint = () => {
+    const root = liveNode(rootId);
+    if (!root) return null;
+    const dot = root.querySelector(':scope > .site-graph-dot');
+    const dotRect = dot?.getBoundingClientRect?.();
+    if (dotRect && dotRect.width >= 0 && dotRect.height >= 0) {
+      return {
+        x: dotRect.left + dotRect.width / 2,
+        y: dotRect.top + dotRect.height / 2
+      };
+    }
+    try {
+      const matrix = root.getScreenCTM?.();
+      if (matrix) {
+        const point = new DOMPoint(0, 0).matrixTransform(matrix);
+        return { x: point.x, y: point.y };
+      }
+    } catch (_) {}
+    return null;
+  };
+
+  const syncEntryTarget = () => {
+    const shell = document.querySelector('.entry-loading-shell');
+    const point = liveRootScreenPoint();
+    if (!shell || !point) return false;
+    const dx = point.x - innerWidth / 2;
+    const dy = point.y - innerHeight / 2;
+    shell.style.setProperty('--entry-target-x', dx.toFixed(2) + 'px');
+    shell.style.setProperty('--entry-target-y', dy.toFixed(2) + 'px');
+    shell.dataset.entryTarget = 'profile-root';
+    return true;
+  };
+
   const restoreStagedPresentation = () => {
     stagedNodes.forEach((previous, node) => {
       if (!node?.isConnected) return;
@@ -106,6 +139,7 @@
       stagedEdges.set(edge, edge.style.getPropertyValue('opacity'));
       edge.style.setProperty('opacity', '0', 'important');
     });
+    document.body?.classList.add('is-profile-entry-branches-staged');
   };
 
   const animateBranchNode = (node, root, index) => {
@@ -158,6 +192,7 @@
 
   const animateMainEdges = () => {
     const edges = mainEdges();
+    document.body?.classList.remove('is-profile-entry-branches-staged');
     edges.forEach(edge => {
       edge.style.removeProperty('opacity');
       const previous = stagedEdges.get(edge);
@@ -170,11 +205,28 @@
       window.ProfileMotionRefinements.drawMainBranchEdges();
       return;
     }
+
     edges.forEach((edge, index) => {
-      edge.animate([{ opacity: 0 }, { opacity: .78 }], {
-        duration: 300,
-        delay: index * 35,
-        easing: 'ease-out'
+      let length = 0;
+      try { length = Math.max(1, edge.getTotalLength()); } catch (_) {}
+      const previousDasharray = edge.style.strokeDasharray;
+      const previousDashoffset = edge.style.strokeDashoffset;
+      const previousOpacity = edge.style.opacity;
+      edge.style.strokeDasharray = String(length);
+      edge.style.strokeDashoffset = String(length);
+      edge.style.opacity = '0';
+      edge.animate([
+        { strokeDashoffset: length, opacity: 0 },
+        { strokeDashoffset: 0, opacity: .78 }
+      ], {
+        duration: 520,
+        delay: index * 55,
+        easing: 'cubic-bezier(.16,.78,.2,1)',
+        fill: 'both'
+      }).finished.finally(() => {
+        edge.style.strokeDasharray = previousDasharray;
+        edge.style.strokeDashoffset = previousDashoffset;
+        edge.style.opacity = previousOpacity;
       });
     });
   };
@@ -198,7 +250,8 @@
         'is-entry-loader-releasing',
         'is-entry-loader-handoff',
         'is-profile-entry-revealing',
-        'is-profile-entry-chrome-visible'
+        'is-profile-entry-chrome-visible',
+        'is-profile-entry-branches-staged'
       );
     }
     state.state = STATES.BYPASSED;
@@ -226,13 +279,21 @@
     document.documentElement.dataset.profileIntro = 'running';
     if (document.body) {
       document.body.dataset.entryState = 'ignition';
-      document.body.classList.add('is-entry-loader-releasing', 'is-profile-entry-revealing');
+      document.body.classList.add('is-profile-entry-revealing');
       document.body.classList.remove(
         'is-entry-loader-complete',
         'is-entry-loader-handoff',
         'is-profile-entry-chrome-visible'
       );
     }
+
+    // The loader does not own a hard-coded destination. Resolve the exact
+    // on-screen centre of the live Overview root so later Home redesigns can
+    // move the root without requiring intro geometry changes.
+    await raf();
+    syncEntryTarget();
+    document.body?.classList.add('is-entry-loader-releasing');
+
     emit('started', { source: 'static-opening-atlas' });
     emit('stage', { stage: 'condensing' });
     track('intro_started');
@@ -285,7 +346,11 @@
     state.readyAt = performance.now();
     state.elapsed = state.readyAt - state.startedAt;
     if (document.body) {
-      document.body.classList.remove('is-profile-entry-revealing', 'is-profile-entry-chrome-visible');
+      document.body.classList.remove(
+        'is-profile-entry-revealing',
+        'is-profile-entry-chrome-visible',
+        'is-profile-entry-branches-staged'
+      );
     }
 
     emit('stage', { stage: 'profile' });
@@ -313,7 +378,12 @@
     document.documentElement.dataset.profileIntro = 'preparing';
     if (document.body) {
       document.body.dataset.entryState = 'preparing';
-      document.body.classList.remove('is-entry-loader-complete', 'is-entry-loader-releasing');
+      document.body.classList.remove(
+        'is-entry-loader-complete',
+        'is-entry-loader-releasing',
+        'is-entry-loader-handoff',
+        'is-profile-entry-branches-staged'
+      );
     }
     emit('stage', { stage: 'preparing' });
 
@@ -349,6 +419,7 @@
       return failOpen('profile-root-unavailable');
     }
 
+    syncEntryTarget();
     stageProfileGraph();
     if (skipRequested) return completeToProfile('skipped');
 
@@ -381,6 +452,7 @@
       liveGraphPresent: Boolean(document.querySelector('#site-graph .site-graph-svg')),
       rootPresent: Boolean(liveNode(rootId)),
       staticAtlasPresent: Boolean(document.querySelector('.entry-opening-atlas')),
+      entryTarget: document.querySelector('.entry-loading-shell')?.dataset.entryTarget || null,
       canonicalStates: { ...STATES }
     };
   }

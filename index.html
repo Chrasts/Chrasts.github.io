@@ -138,6 +138,12 @@
       min-height:620px!important;
       overflow:hidden!important
     }
+    @media(max-width:900px){
+      html[data-profile-intro="running"] .profile-app{
+        height:calc(100dvh - 64px)!important;
+        min-height:560px!important
+      }
+    }
     html[data-profile-intro="pending"] body > :not(.entry-loading-shell),
     html[data-profile-intro="preparing"] body > :not(.entry-loading-shell){visibility:hidden!important}
     .entry-loading-shell{display:none}
@@ -441,7 +447,7 @@
   <script src="site-data.js?v=20260922-headergraph8"></script>
   <script src="scene-system.js?v=20260918-r2"></script>
   <script src="transition-coordination.js?v=20260918-r2"></script>
-  <script src="scene-definitions.js?v=20261003-v4entry3"></script>
+  <script src="scene-definitions.js?v=20261003-v4entry4"></script>
   <script src="phase0-stability.js?v=20260922-headergraph3"></script>
   <script src="graph-transition-prelude.js?v=20260922-headergraph8"></script>
   <script src="radial-geometry.js?v=20260919-content9"></script>
@@ -449,7 +455,7 @@
   <script src="site-graph.js?v=20260921-desktoprefine2"></script>
   <script src="graph-transitions-v6.js?v=20260919-fix11"></script>
   <script src="cross-link-travel-v2.js?v=20260921-desktoprefine2"></script>
-  <script src="scene-legacy-bridge.js?v=20261003-v4entry6"></script>
+  <script src="scene-legacy-bridge.js?v=20261003-v4entry7"></script>
   <script src="site-shell.js?v=20260922-headergraph8"></script>
   <script src="mobile-construction-gate.js?v=20260921-mobilecvgate1"></script>
 </body>

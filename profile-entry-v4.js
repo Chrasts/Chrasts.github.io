@@ -9,6 +9,17 @@
   const rootId = graph.rootId || 'stepan-chrast';
   const sectionIds = ['work', 'knowledge', 'experience', 'education', 'about'];
   const reducedMotion = Boolean(bootstrap.reducedMotion) || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const TIMING = Object.freeze({
+    minimumLoader: 1450,
+    condense: 720,
+    handoff: 420,
+    rootHold: 180,
+    branchDuration: 820,
+    branchStagger: 78,
+    edgeDelay: 360,
+    chromeDelay: 980,
+    chromeFade: 520
+  });
   const STATES = Object.freeze({
     PREPARING: 'PREPARING',
     ATLAS_REVEAL: 'ATLAS_REVEAL',
@@ -119,8 +130,8 @@
       return;
     }
 
-    const delay = index * 42;
-    const duration = 500;
+    const delay = index * TIMING.branchStagger;
+    const duration = TIMING.branchDuration;
     node.animate([{ opacity: 0 }, { opacity: 1 }], {
       duration,
       delay,
@@ -173,7 +184,7 @@
     const branches = sectionIds.map(liveNode).filter(Boolean);
     branches.forEach((node, index) => animateBranchNode(node, root, index));
     stagedNodes.clear();
-    setTimeout(animateMainEdges, reducedMotion ? 0 : 210);
+    setTimeout(animateMainEdges, reducedMotion ? 0 : TIMING.edgeDelay);
   };
 
   const failOpen = reason => {
@@ -183,7 +194,12 @@
     if (document.body) {
       document.body.dataset.entryState = 'profile';
       document.body.classList.add('is-entry-loader-complete');
-      document.body.classList.remove('is-entry-loader-releasing', 'is-profile-entry-revealing');
+      document.body.classList.remove(
+        'is-entry-loader-releasing',
+        'is-entry-loader-handoff',
+        'is-profile-entry-revealing',
+        'is-profile-entry-chrome-visible'
+      );
     }
     state.state = STATES.BYPASSED;
     state.stage = 'fallback';
@@ -200,6 +216,8 @@
     if (completionInFlight || !state.eligible || state.state === STATES.ATLAS_READY || state.state === STATES.BYPASSED) return false;
     completionInFlight = true;
     const currentGeneration = generation;
+    const instant = reducedMotion || reason === 'skipped';
+    const phaseWait = ms => wait(instant ? 0 : ms);
     state.running = true;
     state.state = STATES.ATLAS_REVEAL;
     state.stage = 'condensing';
@@ -208,17 +226,58 @@
     document.documentElement.dataset.profileIntro = 'running';
     if (document.body) {
       document.body.dataset.entryState = 'ignition';
-      document.body.classList.add('is-entry-loader-releasing');
-      document.body.classList.remove('is-entry-loader-complete');
+      document.body.classList.add('is-entry-loader-releasing', 'is-profile-entry-revealing');
+      document.body.classList.remove(
+        'is-entry-loader-complete',
+        'is-entry-loader-handoff',
+        'is-profile-entry-chrome-visible'
+      );
     }
     emit('started', { source: 'static-opening-atlas' });
     emit('stage', { stage: 'condensing' });
     track('intro_started');
 
-    await wait(reducedMotion ? 0 : 285);
+    await phaseWait(TIMING.condense);
     if (currentGeneration !== generation) return false;
 
+    // At handoff the static loader has collapsed to its central node. The live
+    // Overview is already staged behind it with only the canonical root visible.
+    // Cross-fade those two roots before any branch or surrounding UI is shown.
     document.documentElement.dataset.profileIntro = 'ready';
+    state.stage = 'root';
+    if (document.body) {
+      document.body.dataset.entryState = 'profile';
+      document.body.classList.add('is-entry-loader-handoff');
+    }
+    emit('stage', { stage: 'root' });
+
+    await phaseWait(TIMING.handoff);
+    if (currentGeneration !== generation) return false;
+    if (document.body) {
+      document.body.classList.add('is-entry-loader-complete');
+      document.body.classList.remove('is-entry-loader-releasing', 'is-entry-loader-handoff');
+    }
+    state.loaderReleased = true;
+
+    await phaseWait(TIMING.rootHold);
+    if (currentGeneration !== generation) return false;
+
+    state.stage = 'branches';
+    emit('stage', { stage: 'branches' });
+    animateProfileEmergence();
+
+    await phaseWait(TIMING.chromeDelay);
+    if (currentGeneration !== generation) return false;
+
+    // The graph establishes hierarchy first. Navigation, the profile brief and
+    // supporting labels then anti-blend in as a separate, quieter layer.
+    state.stage = 'chrome';
+    if (document.body) document.body.classList.add('is-profile-entry-chrome-visible');
+    emit('stage', { stage: 'chrome' });
+
+    await phaseWait(TIMING.chromeFade);
+    if (currentGeneration !== generation) return false;
+
     state.state = STATES.ATLAS_READY;
     state.stage = 'profile';
     state.running = false;
@@ -226,8 +285,7 @@
     state.readyAt = performance.now();
     state.elapsed = state.readyAt - state.startedAt;
     if (document.body) {
-      document.body.dataset.entryState = 'profile';
-      document.body.classList.add('is-profile-entry-revealing');
+      document.body.classList.remove('is-profile-entry-revealing', 'is-profile-entry-chrome-visible');
     }
 
     emit('stage', { stage: 'profile' });
@@ -236,15 +294,6 @@
       detail: { ...snapshot(), reason, entryState: STATES.ATLAS_READY }
     }));
 
-    animateProfileEmergence();
-
-    await wait(reducedMotion ? 0 : 620);
-    if (currentGeneration !== generation) return false;
-    if (document.body) {
-      document.body.classList.add('is-entry-loader-complete');
-      document.body.classList.remove('is-entry-loader-releasing', 'is-profile-entry-revealing');
-    }
-    state.loaderReleased = true;
     clearFailOpen();
     markSeen();
     track(reason === 'skipped' ? 'intro_skipped' : 'intro_completed');
@@ -302,6 +351,13 @@
 
     stageProfileGraph();
     if (skipRequested) return completeToProfile('skipped');
+
+    if (!reducedMotion) {
+      const elapsed = performance.now() - state.startedAt;
+      const remaining = Math.max(0, TIMING.minimumLoader - elapsed);
+      if (remaining) await wait(remaining);
+      if (currentGeneration !== generation) return false;
+    }
     return completeToProfile('completed');
   };
 

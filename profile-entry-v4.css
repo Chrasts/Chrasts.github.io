@@ -179,7 +179,7 @@ body.is-entry-loader-releasing .entry-loading-object{
   filter:blur(1px);
   animation-play-state:paused
 }
-body.is-entry-loader-releasing .entry-loading-shell{pointer-events:none}
+body.is-entry-loader-releasing .entry-loading-shell{display:grid!important;pointer-events:none}
 body.is-entry-loader-complete .entry-loading-shell{display:none!important}
 
 @keyframes entry-loader-orbit{

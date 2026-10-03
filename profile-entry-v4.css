@@ -1,0 +1,224 @@
+/* V4 professional-first entry: inert Atlas illustration -> Profile root. */
+
+.entry-loading-shell{
+  display:none;
+  position:fixed;
+  z-index:2147483647;
+  inset:0;
+  place-items:center;
+  overflow:hidden;
+  isolation:isolate;
+  background:var(--paper,#efe6d9);
+  color:var(--ink,#242522);
+  pointer-events:auto;
+  opacity:1;
+  transition:opacity .22s ease .30s
+}
+html[data-theme="dark"] .entry-loading-shell{
+  background:var(--paper,#11191c);
+  color:var(--ink,#f1eadf)
+}
+html[data-profile-intro="pending"] .entry-loading-shell,
+html[data-profile-intro="preparing"] .entry-loading-shell,
+html[data-profile-intro="running"] .entry-loading-shell{display:grid}
+
+.entry-opening-atlas{
+  position:absolute;
+  z-index:0;
+  left:50%;
+  top:50%;
+  width:min(92vw,1180px);
+  height:min(82dvh,760px);
+  overflow:visible;
+  transform:translate(-50%,-50%) scale(1);
+  transform-origin:50% 50%;
+  opacity:.42;
+  filter:none;
+  pointer-events:none;
+  transition:
+    transform .48s cubic-bezier(.18,.76,.2,1),
+    opacity .32s ease,
+    filter .32s ease
+}
+.entry-opening-atlas .entry-atlas-edge{
+  fill:none;
+  stroke:color-mix(in srgb,var(--ink,#242522) 30%,transparent);
+  stroke-width:1.2;
+  vector-effect:non-scaling-stroke;
+  stroke-linecap:round
+}
+.entry-opening-atlas .entry-atlas-edge.is-cross{
+  stroke-dasharray:5 7;
+  opacity:.55
+}
+.entry-opening-atlas .entry-atlas-node{
+  fill:var(--paper,#efe6d9);
+  stroke:color-mix(in srgb,var(--ink,#242522) 52%,transparent);
+  stroke-width:1.7;
+  vector-effect:non-scaling-stroke
+}
+.entry-opening-atlas .entry-atlas-node.is-root{
+  fill:var(--brown,#6c4e3d);
+  stroke:var(--brown,#6c4e3d);
+  stroke-width:2.4
+}
+.entry-opening-atlas .entry-atlas-node.is-work{stroke:var(--branch-work,#35d86b)}
+.entry-opening-atlas .entry-atlas-node.is-knowledge{stroke:var(--branch-knowledge,#d7d93d)}
+.entry-opening-atlas .entry-atlas-node.is-experience{stroke:var(--branch-experience,#e34859)}
+.entry-opening-atlas .entry-atlas-node.is-education{stroke:var(--branch-education,#39abc4)}
+.entry-opening-atlas .entry-atlas-node.is-about{stroke:var(--branch-about,#d85291)}
+.entry-opening-atlas .entry-atlas-node.is-hub{stroke-width:3}
+
+.entry-loading-object{
+  --entry-brown:var(--brown,#6c4e3d);
+  --entry-work:var(--branch-work,#35d86b);
+  --entry-knowledge:var(--branch-knowledge,#d7d93d);
+  --entry-experience:var(--branch-experience,#e34859);
+  --entry-education:var(--branch-education,#39abc4);
+  --entry-about:var(--branch-about,#d85291);
+  position:relative;
+  z-index:2;
+  width:clamp(108px,9.5vw,148px);
+  aspect-ratio:1;
+  animation:entry-loader-float 2.8s ease-in-out infinite;
+  transition:
+    transform .34s cubic-bezier(.18,.76,.2,1),
+    opacity .24s ease,
+    filter .24s ease
+}
+.entry-loading-object::before,
+.entry-loading-object::after,
+.entry-loading-orbit{
+  box-sizing:border-box;
+  border-radius:50%;
+  pointer-events:none;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask-composite:exclude
+}
+.entry-loading-object::before,
+.entry-loading-object::after{
+  content:"";
+  position:absolute;
+  z-index:0
+}
+.entry-loading-object::before{
+  inset:-13%;
+  padding:4.8px;
+  background:conic-gradient(from 17deg,transparent 0 8%,var(--entry-experience) 8% 31%,transparent 31% 100%);
+  filter:drop-shadow(0 0 4px color-mix(in srgb,var(--entry-experience) 34%,transparent));
+  animation:entry-loader-spectrum 9.4s linear infinite reverse
+}
+.entry-loading-object::after{
+  inset:-1%;
+  padding:4.4px;
+  background:conic-gradient(from 211deg,transparent 0 14%,var(--entry-about) 14% 39%,transparent 39% 100%);
+  filter:drop-shadow(0 0 4px color-mix(in srgb,var(--entry-about) 32%,transparent));
+  animation:entry-loader-spectrum 7.3s linear infinite reverse
+}
+.entry-loading-core,
+.entry-loading-orbit{
+  position:absolute;
+  inset:50%;
+  display:block;
+  transform-origin:center
+}
+.entry-loading-core{
+  z-index:2;
+  width:36%;
+  height:36%;
+  box-sizing:border-box;
+  border:3.8px solid var(--entry-brown);
+  border-radius:50%;
+  background:var(--paper,#efe6d9);
+  box-shadow:0 0 9px color-mix(in srgb,var(--entry-brown) 34%,transparent);
+  transform:translate(-50%,-50%);
+  animation:entry-loader-core 1.7s ease-in-out infinite alternate
+}
+html[data-theme="dark"] .entry-loading-core{background:var(--paper,#11191c)}
+.entry-loading-orbit{
+  z-index:1;
+  border:0;
+  transform:translate(-50%,-50%)
+}
+.entry-loading-orbit.is-inner{
+  width:62%;
+  height:62%;
+  padding:4.6px;
+  background:conic-gradient(from 146deg,transparent 0 5%,var(--entry-work) 5% 39%,transparent 39% 100%);
+  filter:drop-shadow(0 0 3px color-mix(in srgb,var(--entry-work) 30%,transparent));
+  animation:entry-loader-orbit 4.9s linear infinite
+}
+.entry-loading-orbit.is-mid{
+  width:89%;
+  height:89%;
+  padding:4.2px;
+  background:conic-gradient(from 31deg,transparent 0 19%,var(--entry-knowledge) 19% 47%,transparent 47% 100%);
+  filter:drop-shadow(0 0 3px color-mix(in srgb,var(--entry-knowledge) 28%,transparent));
+  animation:entry-loader-orbit 8.1s linear infinite reverse
+}
+.entry-loading-orbit.is-outer{
+  width:120%;
+  height:120%;
+  padding:4px;
+  background:conic-gradient(from 278deg,transparent 0 33%,var(--entry-education) 33% 56%,transparent 56% 100%);
+  filter:drop-shadow(0 0 4px color-mix(in srgb,var(--entry-education) 28%,transparent));
+  animation:entry-loader-orbit 12.4s linear infinite
+}
+
+body.is-entry-loader-releasing .entry-opening-atlas{
+  transform:translate(-50%,-50%) scale(.11);
+  opacity:0;
+  filter:blur(1.4px)
+}
+body.is-entry-loader-releasing .entry-loading-object{
+  transform:scale(.38);
+  opacity:0;
+  filter:blur(1px);
+  animation-play-state:paused
+}
+body.is-entry-loader-releasing .entry-loading-shell{pointer-events:none}
+body.is-entry-loader-complete .entry-loading-shell{display:none!important}
+
+@keyframes entry-loader-orbit{
+  from{transform:translate(-50%,-50%) rotate(0)}
+  to{transform:translate(-50%,-50%) rotate(360deg)}
+}
+@keyframes entry-loader-spectrum{
+  from{transform:rotate(0)}
+  to{transform:rotate(360deg)}
+}
+@keyframes entry-loader-core{
+  from{transform:translate(-50%,-50%) scale(.94)}
+  to{transform:translate(-50%,-50%) scale(1.06)}
+}
+@keyframes entry-loader-float{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-4px)}
+}
+
+@media(max-width:900px){
+  .entry-opening-atlas{
+    width:116vw;
+    height:72dvh;
+    opacity:.32
+  }
+  .entry-loading-object{width:112px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .entry-opening-atlas,
+  .entry-loading-object,
+  .entry-loading-object::before,
+  .entry-loading-object::after,
+  .entry-loading-orbit,
+  .entry-loading-core,
+  .entry-loading-shell{
+    animation:none!important;
+    transition:none!important
+  }
+  body.is-entry-loader-releasing .entry-opening-atlas,
+  body.is-entry-loader-releasing .entry-loading-object{opacity:0}
+}

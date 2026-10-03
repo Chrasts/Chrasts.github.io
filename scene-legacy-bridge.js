@@ -6,7 +6,7 @@
   // Keep a coherent release together when GitHub Pages or a browser has an
   // earlier same-named lazy asset cached. The entry document versions its
   // eagerly loaded modules with this same revision.
-  const releaseRevision = '20261003-v4entry1';
+  const releaseRevision = '20261003-v4entry2';
   const versionedResource = resource => `${resource}${resource.includes('?') ? '&' : '?'}v=${releaseRevision}`;
   const graphNodes = window.SITE_DATA?.graph?.nodes || [];
   const rootId = window.SITE_DATA?.graph?.rootId || 'stepan-chrast';

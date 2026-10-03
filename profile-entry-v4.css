@@ -238,6 +238,7 @@ body.is-entry-loader-complete .entry-loading-shell{display:none!important}
    1) loader collapses to the central node,
    2) the five profile branches unfold from the live root,
    3) navigation and explanatory copy anti-blend in afterwards. */
+html[data-profile-intro="running"] body.is-profile-entry-revealing > .site-header,
 body.is-profile-entry-revealing .site-header,
 body.is-profile-entry-revealing .graph-routebar,
 body.is-profile-entry-revealing .site-graph-heading,
@@ -251,6 +252,7 @@ body.is-profile-entry-revealing .site-graph-help{
     transform .52s cubic-bezier(.18,.76,.2,1),
     visibility 0s linear .52s
 }
+html[data-profile-intro="running"] body.is-profile-entry-revealing.is-profile-entry-chrome-visible > .site-header,
 body.is-profile-entry-revealing.is-profile-entry-chrome-visible .site-header,
 body.is-profile-entry-revealing.is-profile-entry-chrome-visible .graph-routebar,
 body.is-profile-entry-revealing.is-profile-entry-chrome-visible .site-graph-heading,

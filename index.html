@@ -123,10 +123,20 @@
     html[data-profile-intro="preparing"] body,
     html[data-profile-intro="running"] body{min-height:100vh;overflow:hidden}
     html[data-profile-intro="pending"] .profile-app,
-    html[data-profile-intro="preparing"] .profile-app,
-    html[data-profile-intro="running"] .profile-app{
+    html[data-profile-intro="preparing"] .profile-app{
       position:fixed!important;inset:0!important;width:100vw!important;
       height:100dvh!important;min-height:0!important;overflow:hidden!important
+    }
+    /* Once the V4 entry runtime starts, the live Overview already occupies its
+       final document geometry behind the loader. The loader therefore targets
+       the exact same root position that remains after the intro finishes. */
+    html[data-profile-intro="running"] .profile-app{
+      position:relative!important;
+      inset:auto!important;
+      width:auto!important;
+      height:calc(100dvh - 62px)!important;
+      min-height:620px!important;
+      overflow:hidden!important
     }
     html[data-profile-intro="pending"] body > :not(.entry-loading-shell),
     html[data-profile-intro="preparing"] body > :not(.entry-loading-shell){visibility:hidden!important}

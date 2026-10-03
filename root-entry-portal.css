@@ -66,9 +66,9 @@ body[data-graph-mode="atlas"] #site-graph .site-graph-node[data-node-id="stepan-
 }
 
 body[data-graph-mode="atlas"] #site-graph .site-graph-node[data-node-id="stepan-chrast"].is-root-entry-open > .root-entry-portrait{
-  opacity:.96;
-  transform:scale(.86);
-  filter:saturate(.92) contrast(1.02)
+  opacity:1;
+  transform:scale(1.02);
+  filter:saturate(1) contrast(1.03)
 }
 
 body[data-graph-mode="atlas"] #site-graph .site-graph-node[data-node-id="stepan-chrast"].is-root-entry-open > .site-graph-dot{

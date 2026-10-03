@@ -12,7 +12,7 @@
   color:var(--ink,#242522);
   pointer-events:auto;
   opacity:1;
-  transition:opacity .22s ease .30s
+  transition:opacity .42s cubic-bezier(.2,.72,.22,1)
 }
 html[data-theme="dark"] .entry-loading-shell{
   background:var(--paper,#11191c);
@@ -36,9 +36,9 @@ html[data-profile-intro="running"] .entry-loading-shell{display:grid}
   filter:none;
   pointer-events:none;
   transition:
-    transform .48s cubic-bezier(.18,.76,.2,1),
-    opacity .32s ease,
-    filter .32s ease
+    transform .72s cubic-bezier(.18,.76,.2,1),
+    opacity .58s ease,
+    filter .58s ease
 }
 .entry-opening-atlas .entry-atlas-edge{
   fill:none;
@@ -82,9 +82,9 @@ html[data-profile-intro="running"] .entry-loading-shell{display:grid}
   aspect-ratio:1;
   animation:entry-loader-float 2.8s ease-in-out infinite;
   transition:
-    transform .34s cubic-bezier(.18,.76,.2,1),
-    opacity .24s ease,
-    filter .24s ease
+    transform .68s cubic-bezier(.18,.76,.2,1),
+    opacity .38s ease,
+    filter .38s ease
 }
 .entry-loading-object::before,
 .entry-loading-object::after,
@@ -102,7 +102,9 @@ html[data-profile-intro="running"] .entry-loading-shell{display:grid}
 .entry-loading-object::after{
   content:"";
   position:absolute;
-  z-index:0
+  z-index:0;
+  opacity:1;
+  transition:opacity .46s ease,filter .46s ease
 }
 .entry-loading-object::before{
   inset:-13%;
@@ -135,13 +137,16 @@ html[data-profile-intro="running"] .entry-loading-shell{display:grid}
   background:var(--paper,#efe6d9);
   box-shadow:0 0 9px color-mix(in srgb,var(--entry-brown) 34%,transparent);
   transform:translate(-50%,-50%);
-  animation:entry-loader-core 1.7s ease-in-out infinite alternate
+  animation:entry-loader-core 1.7s ease-in-out infinite alternate;
+  transition:opacity .36s ease,transform .42s cubic-bezier(.18,.76,.2,1),box-shadow .36s ease
 }
 html[data-theme="dark"] .entry-loading-core{background:var(--paper,#11191c)}
 .entry-loading-orbit{
   z-index:1;
   border:0;
-  transform:translate(-50%,-50%)
+  opacity:1;
+  transform:translate(-50%,-50%);
+  transition:opacity .46s ease,filter .46s ease
 }
 .entry-loading-orbit.is-inner{
   width:62%;
@@ -169,18 +174,69 @@ html[data-theme="dark"] .entry-loading-core{background:var(--paper,#11191c)}
 }
 
 body.is-entry-loader-releasing .entry-opening-atlas{
-  transform:translate(-50%,-50%) scale(.11);
+  transform:translate(-50%,-50%) scale(.08);
   opacity:0;
-  filter:blur(1.4px)
+  filter:blur(1.6px)
 }
 body.is-entry-loader-releasing .entry-loading-object{
-  transform:scale(.38);
-  opacity:0;
-  filter:blur(1px);
+  transform:scale(.62);
+  opacity:1;
+  filter:none;
   animation-play-state:paused
+}
+body.is-entry-loader-releasing .entry-loading-object::before,
+body.is-entry-loader-releasing .entry-loading-object::after,
+body.is-entry-loader-releasing .entry-loading-orbit{
+  opacity:0;
+  filter:none
+}
+body.is-entry-loader-releasing .entry-loading-core{
+  opacity:1;
+  animation:none;
+  transform:translate(-50%,-50%) scale(1);
+  box-shadow:0 0 12px color-mix(in srgb,var(--entry-brown) 30%,transparent)
+}
+body.is-entry-loader-handoff .entry-loading-shell{
+  opacity:0;
+  pointer-events:none
+}
+body.is-entry-loader-handoff .entry-loading-core{
+  opacity:0;
+  transform:translate(-50%,-50%) scale(.88)
 }
 body.is-entry-loader-releasing .entry-loading-shell{display:grid!important;pointer-events:none}
 body.is-entry-loader-complete .entry-loading-shell{display:none!important}
+
+/* First-session handoff hierarchy:
+   1) loader collapses to the central node,
+   2) the five profile branches unfold from the live root,
+   3) navigation and explanatory copy anti-blend in afterwards. */
+body.is-profile-entry-revealing .site-header,
+body.is-profile-entry-revealing .graph-routebar,
+body.is-profile-entry-revealing .site-graph-heading,
+body.is-profile-entry-revealing .site-graph-help{
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+  transform:translateY(5px);
+  transition:
+    opacity .48s cubic-bezier(.2,.72,.22,1),
+    transform .52s cubic-bezier(.18,.76,.2,1),
+    visibility 0s linear .52s
+}
+body.is-profile-entry-revealing.is-profile-entry-chrome-visible .site-header,
+body.is-profile-entry-revealing.is-profile-entry-chrome-visible .graph-routebar,
+body.is-profile-entry-revealing.is-profile-entry-chrome-visible .site-graph-heading,
+body.is-profile-entry-revealing.is-profile-entry-chrome-visible .site-graph-help{
+  opacity:1!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+  transform:none;
+  transition:
+    opacity .48s cubic-bezier(.2,.72,.22,1),
+    transform .52s cubic-bezier(.18,.76,.2,1),
+    visibility 0s
+}
 
 @keyframes entry-loader-orbit{
   from{transform:translate(-50%,-50%) rotate(0)}
@@ -221,4 +277,11 @@ body.is-entry-loader-complete .entry-loading-shell{display:none!important}
   }
   body.is-entry-loader-releasing .entry-opening-atlas,
   body.is-entry-loader-releasing .entry-loading-object{opacity:0}
+  body.is-profile-entry-revealing .site-header,
+  body.is-profile-entry-revealing .graph-routebar,
+  body.is-profile-entry-revealing .site-graph-heading,
+  body.is-profile-entry-revealing .site-graph-help{
+    transition:none!important;
+    transform:none!important
+  }
 }

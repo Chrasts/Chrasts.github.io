@@ -1,153 +1,54 @@
 const { test, expect } = require('@playwright/test');
 
-const blockAnalytics = page => page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
+const blockAnalytics = page =>
+  page.route('https://cloud.umami.is/**', route => route.abort()).catch(() => {});
 
-test.describe('Intro interactivity and Atlas relation colors', () => {
+test.describe('V4 entry interactivity and Atlas relation colors', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('the Atlas stays inert through reveal and unlocks at ATLAS_READY', async ({ page }) => {
+  test('static opening Atlas is inert and resolves automatically to interactive Profile Overview', async ({ page }) => {
     await page.addInitScript(() => sessionStorage.removeItem('profileIntroSeen'));
     await blockAnalytics(page);
     await page.goto('/', { waitUntil: 'domcontentloaded' });
 
-    await page.waitForFunction(() =>
-      window.ProfileIntro?.snapshot?.().state === 'ATLAS_REVEAL' &&
-      document.body.classList.contains('is-atlas-reveal-late'),
-    null, { timeout: 20_000 });
-
-    const duringReveal = await page.evaluate(() => ({
-      introState: window.ProfileIntro.snapshot().state,
-      shellPointerEvents: getComputedStyle(document.querySelector('.entry-loading-shell')).pointerEvents,
-      workPointerEvents: getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="work"]')).pointerEvents,
-      rootPointerEvents: getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"]')).pointerEvents,
-      rootHitPointerEvents: getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-hit')).pointerEvents,
-      rootPreviewAvailable: window.ProfileRootEntryPortal?.snapshot?.().previewAvailable
-    }));
-
-    expect(duringReveal.introState).toBe('ATLAS_REVEAL');
-    expect(duringReveal.shellPointerEvents).toBe('none');
-    expect(duringReveal.workPointerEvents).toBe('none');
-    expect(duringReveal.rootPointerEvents).toBe('none');
-    expect(duringReveal.rootHitPointerEvents).toBe('none');
-    expect(duringReveal.rootPreviewAvailable).toBe(false);
-
-    await page.waitForFunction(() => window.ProfileIntro?.snapshot?.().state === 'ATLAS_READY', null, { timeout: 10_000 });
-
-    const revealDuration = await page.evaluate(() => {
-      const snapshot = window.ProfileIntro.snapshot();
-      return snapshot.readyAt - snapshot.startedAt;
+    await page.waitForFunction(() => Boolean(window.ProfileIntro?.__v4), null, { timeout: 8_000 });
+    const loading = await page.evaluate(() => {
+      const shell = document.querySelector('.entry-loading-shell');
+      const atlas = document.querySelector('.entry-opening-atlas');
+      return {
+        atlasPointerEvents: atlas ? getComputedStyle(atlas).pointerEvents : null,
+        shellRole: shell?.getAttribute('role') || null,
+        realAtlasRuntimeLoaded: Boolean(window.ProfileAtlasLOD)
+      };
     });
-    // The intentionally diffuse reveal remains bounded: it can read as a
-    // gradual light-up without turning into a multi-second input lock.
-    expect(revealDuration).toBeLessThan(2_400);
+    expect(loading.atlasPointerEvents).toBe('none');
+    expect(loading.shellRole).toBe('status');
+    expect(loading.realAtlasRuntimeLoaded).toBe(false);
 
-    const afterReady = await page.evaluate(() => ({
-      workPointerEvents: getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="work"]')).pointerEvents,
-      rootPointerEvents: getComputedStyle(document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"]')).pointerEvents
+    await page.waitForFunction(() =>
+      window.ProfileIntro?.snapshot?.().state === 'ATLAS_READY' &&
+      document.body.dataset.graphMode === 'overview' &&
+      document.body.classList.contains('is-entry-loader-complete'),
+    null, { timeout: 10_000 });
+
+    const ready = await page.evaluate(() => ({
+      graphMode: document.body.dataset.graphMode,
+      rootLanding: document.body.dataset.rootLanding,
+      profileReady: document.body.classList.contains('is-profile-root-ready'),
+      workPointerEvents: getComputedStyle(
+        document.querySelector('#site-graph .site-graph-node[data-node-id="work"]')
+      ).pointerEvents
     }));
-
-    expect(afterReady.workPointerEvents).not.toBe('none');
-    expect(afterReady.rootPointerEvents).not.toBe('none');
+    expect(ready.graphMode).toBe('overview');
+    expect(ready.rootLanding).toBe('false');
+    expect(ready.profileReady).toBe(true);
+    expect(ready.workPointerEvents).not.toBe('none');
 
     await page.locator('#site-graph .site-graph-node[data-node-id="work"] > .site-graph-hit').hover();
     await expect.poll(() => page.evaluate(() => window.ProfileNodeInteraction?.snapshot?.().hoveredNodeId)).toBe('work');
   });
 
-  test('hovering or clicking the root during reveal cannot preview or skip into profile Atlas', async ({ page }) => {
-    await page.addInitScript(() => sessionStorage.removeItem('profileIntroSeen'));
-    await blockAnalytics(page);
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await page.waitForFunction(() => window.ProfileIntro?.snapshot?.().state === 'ATLAS_REVEAL', null, { timeout: 20_000 });
-    await page.waitForTimeout(700);
-
-    const rootHit = page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-hit').first();
-    const box = await rootHit.boundingBox();
-    expect(box).not.toBeNull();
-
-    const before = await page.evaluate(() => ({
-      introState: window.ProfileIntro.snapshot().state,
-      entryState: document.body.dataset.entryState,
-      portraitTransform: getComputedStyle(document.querySelector('#site-graph [data-node-id="stepan-chrast"] > .root-entry-portrait')).transform,
-      portal: window.ProfileRootEntryPortal.snapshot(),
-      condensationState: window.ProfileAtlasCondensation?.snapshot?.().state || null
-    }));
-
-    const x = box.x + box.width / 2;
-    const y = box.y + box.height / 2;
-    await page.mouse.move(x, y);
-    await page.waitForTimeout(120);
-    await page.mouse.click(x, y);
-    await page.waitForTimeout(180);
-
-    const after = await page.evaluate(() => ({
-      introState: window.ProfileIntro.snapshot().state,
-      entryState: document.body.dataset.entryState,
-      portraitTransform: getComputedStyle(document.querySelector('#site-graph [data-node-id="stepan-chrast"] > .root-entry-portrait')).transform,
-      portal: window.ProfileRootEntryPortal.snapshot(),
-      condensationState: window.ProfileAtlasCondensation?.snapshot?.().state || null
-    }));
-
-    expect(before.introState).toBe('ATLAS_REVEAL');
-    expect(after.introState).toBe('ATLAS_REVEAL');
-    expect(after.entryState).toBe('reveal');
-    expect(after.portal.previewAvailable).toBe(false);
-    expect(after.portal.open).toBe(false);
-    expect(after.portal.entering).toBe(false);
-    expect(after.portraitTransform).toBe(before.portraitTransform);
-    expect(after.condensationState).toBe(before.condensationState);
-  });
-
-  test('the root previews and enters the profile on the first click once Atlas is ready', async ({ page }) => {
-    await page.addInitScript(() => {
-      sessionStorage.removeItem('profileIntroSeen');
-      sessionStorage.removeItem('profileRootReached');
-    });
-    await blockAnalytics(page);
-    await page.goto('/', { waitUntil: 'domcontentloaded' });
-    // Exercise the historical race explicitly: force the Profile Root
-    // synchronizer while the intro still owns the transient Overview shell.
-    await page.waitForFunction(() => Boolean(window.ProfileRootOverview && window.ProfilePostEntry));
-    await page.evaluate(() => window.ProfileRootOverview.refresh());
-    await page.waitForFunction(() => window.ProfileIntro?.snapshot?.().state === 'ATLAS_READY', null, { timeout: 20_000 });
-
-    const retirement = await page.evaluate(() => ({
-      postEntry: window.ProfilePostEntry.snapshot(),
-      retiredClass: document.body.classList.contains('is-root-entry-retired'),
-      rootReadyClass: document.body.classList.contains('is-profile-root-ready'),
-      entryState: document.body.dataset.entryState
-    }));
-    expect(retirement.postEntry.retired).toBe(false);
-    expect(retirement.retiredClass).toBe(false);
-    expect(retirement.rootReadyClass).toBe(false);
-    expect(retirement.entryState).toBe('ready');
-
-    const root = page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]').first();
-    const portraitOpacity = () => page.evaluate(() => Number(getComputedStyle(
-      document.querySelector('#site-graph .site-graph-node[data-node-id="stepan-chrast"] > [data-root-entry-portrait]')
-    ).opacity));
-    expect(await portraitOpacity()).toBeLessThan(.1);
-    await root.hover();
-    await expect.poll(() => page.evaluate(() => window.ProfileRootEntryPortal?.snapshot?.().open)).toBe(true);
-    await expect.poll(portraitOpacity).toBeGreaterThan(.8);
-
-    const preview = await page.evaluate(() => window.ProfileRootEntryPortal.snapshot());
-    expect(preview.previewAvailable).toBe(true);
-    expect(preview.introState).toBe('ATLAS_READY');
-
-    await page.mouse.move(12, 12);
-    await expect.poll(() => page.evaluate(() => window.ProfileRootEntryPortal?.snapshot?.().open)).toBe(false);
-    await expect.poll(portraitOpacity).toBeLessThan(.1);
-    await root.hover();
-
-    await root.locator(':scope > .site-graph-hit').click();
-    await page.waitForFunction(() => {
-      const state = window.ProfileAtlasCondensation?.snapshot?.().state;
-      return ['PREPARING', 'CONDENSING', 'COMMITTING', 'COMPLETE'].includes(state);
-    }, null, { timeout: 8_000 });
-    expect(await page.evaluate(() => window.ProfileIntro.snapshot().state)).not.toBe('ATLAS_REVEAL');
-  });
-
-  test('Atlas hover uses brown parent paths and teal child paths', async ({ page }) => {
+  test('explicit Atlas keeps semantic parent/child path colors', async ({ page }) => {
     await page.addInitScript(() => sessionStorage.setItem('profileIntroSeen', 'true'));
     await blockAnalytics(page);
     await page.goto('/#atlas', { waitUntil: 'domcontentloaded' });

@@ -9,6 +9,8 @@
   if (!profile || !graph?.nodes?.length || !scene?.registry || !scene?.manager) return;
 
   const rootId = graph.rootId || 'stepan-chrast';
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const XLINK_NS = 'http://www.w3.org/1999/xlink';
   const sections = ['work', 'knowledge', 'experience', 'education', 'about'];
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let brief = null;
@@ -362,6 +364,52 @@
     });
   };
 
+  const ensureProfileRootPortrait = () => {
+    if (mode() !== 'overview' || rootLanding() === 'true') return null;
+    const graphSvg = document.querySelector('#site-graph .site-graph-svg');
+    const node = [...document.querySelectorAll(`#site-graph .site-graph-node[data-node-id="${CSS.escape(rootId)}"]`)]
+      .find(candidate => !candidate.closest('.v9-transition-overlay'));
+    if (!graphSvg || !node) return null;
+
+    let defs = graphSvg.querySelector(':scope > defs[data-profile-root-portrait-defs]');
+    if (!defs) {
+      defs = document.createElementNS(SVG_NS, 'defs');
+      defs.dataset.profileRootPortraitDefs = 'true';
+      graphSvg.insertBefore(defs, graphSvg.firstChild);
+    }
+
+    let clip = defs.querySelector('#profile-overview-node-portrait-clip');
+    if (!clip) {
+      clip = document.createElementNS(SVG_NS, 'clipPath');
+      clip.id = 'profile-overview-node-portrait-clip';
+      const circle = document.createElementNS(SVG_NS, 'circle');
+      circle.setAttribute('cx', '0');
+      circle.setAttribute('cy', '0');
+      circle.setAttribute('r', '31');
+      clip.appendChild(circle);
+      defs.appendChild(clip);
+    }
+
+    let portrait = node.querySelector(':scope > .profile-node-portrait');
+    if (portrait) return portrait;
+    portrait = document.createElementNS(SVG_NS, 'image');
+    portrait.classList.add('profile-node-portrait');
+    portrait.dataset.profileNodePortrait = 'true';
+    portrait.setAttribute('x', '-32');
+    portrait.setAttribute('y', '-32');
+    portrait.setAttribute('width', '64');
+    portrait.setAttribute('height', '64');
+    portrait.setAttribute('href', 'assets/stepan-chrast.jpg');
+    portrait.setAttributeNS(XLINK_NS, 'href', 'assets/stepan-chrast.jpg');
+    portrait.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+    portrait.setAttribute('clip-path', 'url(#profile-overview-node-portrait-clip)');
+    portrait.setAttribute('pointer-events', 'none');
+    portrait.setAttribute('aria-hidden', 'true');
+    const label = node.querySelector(':scope > .site-graph-label');
+    node.insertBefore(portrait, label || null);
+    return portrait;
+  };
+
   const retireLegacyRootLanding = () => {
     if (!legacyRootNeedsRetirement() || !window.ProfileRootLanding?.commitExpanded) return false;
     window.ProfileRootLanding.commitExpanded({
@@ -380,6 +428,7 @@
     ensureQuickDialog();
     registerSceneObjects();
     markBranches();
+    ensureProfileRootPortrait();
     retireLegacyRootLanding();
 
     const profileVisible = overviewActive();
@@ -433,6 +482,10 @@
   addEventListener('profile:scene-state', () => sync('scene-state'));
   addEventListener('profile:transition-finish', () => sync('transition-finish'));
   addEventListener('profile:transition-cancel', () => sync('transition-cancel'));
+  addEventListener('profile:graph-render-settled', () => requestAnimationFrame(() => {
+    markBranches();
+    ensureProfileRootPortrait();
+  }));
   addEventListener('hashchange', () => requestAnimationFrame(() => sync('hashchange')));
   reducedMotion.addEventListener?.('change', () => sync('motion-preference'));
 

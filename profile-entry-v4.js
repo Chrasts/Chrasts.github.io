@@ -14,10 +14,9 @@
     condense: 720,
     handoff: 420,
     rootHold: 180,
-    branchDuration: 820,
-    branchStagger: 78,
-    edgeDelay: 520,
-    chromeDelay: 980,
+    branchDuration: 760,
+    branchStagger: 68,
+    chromeDelay: 140,
     chromeFade: 520
   });
   const STATES = Object.freeze({
@@ -146,132 +145,126 @@
     loader.style.removeProperty('transform');
   };
 
+  const clamp01 = value => Math.max(0, Math.min(1, value));
+  const ease = value => {
+    const t = clamp01(value);
+    return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  };
+
   const restoreStagedPresentation = () => {
-    stagedNodes.forEach((previous, node) => {
-      if (!node?.isConnected) return;
-      if (previous == null || previous === '') node.style.removeProperty('opacity');
-      else node.style.setProperty('opacity', previous);
-    });
-    stagedEdges.forEach((previous, edge) => {
-      if (!edge?.isConnected) return;
-      if (previous == null || previous === '') edge.style.removeProperty('opacity');
-      else edge.style.setProperty('opacity', previous);
-    });
+    document.body?.classList.remove('is-profile-entry-branches-staged');
     stagedNodes.clear();
     stagedEdges.clear();
   };
 
   const stageProfileGraph = () => {
     restoreStagedPresentation();
-    sectionIds.forEach(id => {
-      const node = liveNode(id);
-      if (!node) return;
-      stagedNodes.set(node, node.style.getPropertyValue('opacity'));
-      node.style.setProperty('opacity', '0', 'important');
-    });
-    mainEdges().forEach(edge => {
-      stagedEdges.set(edge, edge.style.getPropertyValue('opacity'));
-      edge.style.setProperty('opacity', '0', 'important');
-    });
     document.body?.classList.add('is-profile-entry-branches-staged');
   };
 
-  const animateBranchNode = (node, root, index) => {
-    if (!node || !root) return;
-    const previous = stagedNodes.get(node);
-    node.style.removeProperty('opacity');
-    if (previous) node.style.setProperty('opacity', previous);
-
-    if (reducedMotion) return;
-
-    const rootX = Number(root.dataset.x);
-    const rootY = Number(root.dataset.y);
-    const nodeX = Number(node.dataset.x);
-    const nodeY = Number(node.dataset.y);
-    if (![rootX, rootY, nodeX, nodeY].every(Number.isFinite)) {
-      node.animate([{ opacity: 0 }, { opacity: 1 }], {
-        duration: 300,
-        delay: index * 30,
-        easing: 'ease-out',
-        fill: 'both'
-      });
-      return;
-    }
-
-    const delay = index * TIMING.branchStagger;
-    const duration = TIMING.branchDuration;
-    node.animate([{ opacity: 0 }, { opacity: 1 }], {
-      duration,
-      delay,
-      easing: 'cubic-bezier(.16,.78,.2,1)',
-      fill: 'both'
-    });
-
-    const motion = document.createElementNS(SVG_NS, 'animateTransform');
-    motion.setAttribute('attributeName', 'transform');
-    motion.setAttribute('attributeType', 'XML');
-    motion.setAttribute('type', 'translate');
-    motion.setAttribute('additive', 'sum');
-    motion.setAttribute('from', (rootX - nodeX).toFixed(2) + ' ' + (rootY - nodeY).toFixed(2));
-    motion.setAttribute('to', '0 0');
-    motion.setAttribute('dur', duration + 'ms');
-    motion.setAttribute('begin', delay + 'ms');
-    motion.setAttribute('fill', 'remove');
-    motion.setAttribute('calcMode', 'spline');
-    motion.setAttribute('keySplines', '.16 .78 .2 1');
-    node.appendChild(motion);
-    try { motion.beginElement?.(); } catch (_) {}
-    setTimeout(() => motion.remove(), duration + delay + 90);
+  const createEmergenceGroup = node => {
+    const movable = [...node.children].filter(child => child.tagName?.toLowerCase() !== 'title');
+    if (!movable.length) return null;
+    const group = document.createElementNS(SVG_NS, 'g');
+    group.classList.add('profile-root-emergence-motion');
+    node.insertBefore(group, movable[0]);
+    movable.forEach(child => group.appendChild(child));
+    return group;
   };
 
-  const animateMainEdges = () => {
-    const edges = mainEdges();
-    document.body?.classList.remove('is-profile-entry-branches-staged');
-    edges.forEach(edge => {
-      edge.style.removeProperty('opacity');
-      const previous = stagedEdges.get(edge);
-      if (previous) edge.style.setProperty('opacity', previous);
-    });
-    stagedEdges.clear();
-
-    if (reducedMotion) return;
-    if (window.ProfileMotionRefinements?.drawMainBranchEdges) {
-      window.ProfileMotionRefinements.drawMainBranchEdges();
-      return;
+  const restoreEmergence = record => {
+    if (record.group?.isConnected && record.group.parentElement === record.node) {
+      [...record.group.children].forEach(child => record.node.insertBefore(child, record.group));
+      record.group.remove();
     }
-
-    edges.forEach((edge, index) => {
-      let length = 0;
-      try { length = Math.max(1, edge.getTotalLength()); } catch (_) {}
-      const previousDasharray = edge.style.strokeDasharray;
-      const previousDashoffset = edge.style.strokeDashoffset;
-      const previousOpacity = edge.style.opacity;
-      edge.style.strokeDasharray = String(length);
-      edge.style.strokeDashoffset = String(length);
-      edge.style.opacity = '0';
-      edge.animate([
-        { strokeDashoffset: length, opacity: 0 },
-        { strokeDashoffset: 0, opacity: .78 }
-      ], {
-        duration: 520,
-        delay: index * 55,
-        easing: 'cubic-bezier(.16,.78,.2,1)',
-        fill: 'both'
-      }).finished.finally(() => {
-        edge.style.strokeDasharray = previousDasharray;
-        edge.style.strokeDashoffset = previousDashoffset;
-        edge.style.opacity = previousOpacity;
-      });
-    });
+    if (record.edge?.isConnected) {
+      if (record.edgeStyle == null) record.edge.removeAttribute('style');
+      else record.edge.setAttribute('style', record.edgeStyle);
+      if (record.pathLength == null) record.edge.removeAttribute('pathLength');
+      else record.edge.setAttribute('pathLength', record.pathLength);
+    }
   };
 
-  const animateProfileEmergence = () => {
+  const animateProfileEmergence = currentGeneration => new Promise(resolve => {
     const root = liveNode(rootId);
-    const branches = sectionIds.map(liveNode).filter(Boolean);
-    branches.forEach((node, index) => animateBranchNode(node, root, index));
-    stagedNodes.clear();
-    setTimeout(animateMainEdges, reducedMotion ? 0 : TIMING.edgeDelay);
-  };
+    const rootPoint = root ? { x: Number(root.dataset.x), y: Number(root.dataset.y) } : null;
+    const edges = mainEdges();
+    if (!rootPoint || ![rootPoint.x, rootPoint.y].every(Number.isFinite)) {
+      restoreStagedPresentation();
+      return resolve(false);
+    }
+
+    const records = sectionIds.map((id, index) => {
+      const node = liveNode(id);
+      const x = Number(node?.dataset.x);
+      const y = Number(node?.dataset.y);
+      const group = node ? createEmergenceGroup(node) : null;
+      if (!node || !group || ![x, y].every(Number.isFinite)) return null;
+      const edge = edges.find(candidate => candidate.dataset.target === id) || null;
+      const dx = rootPoint.x - x;
+      const dy = rootPoint.y - y;
+      group.setAttribute('transform', `translate(${dx.toFixed(2)} ${dy.toFixed(2)}) scale(.16)`);
+      group.style.opacity = '0';
+      const edgeStyle = edge?.getAttribute('style') ?? null;
+      const pathLength = edge?.getAttribute('pathLength') ?? null;
+      if (edge) {
+        edge.setAttribute('pathLength', '1');
+        edge.style.strokeDasharray = '.0001 1';
+        edge.style.strokeDashoffset = '0';
+        edge.style.opacity = '0';
+      }
+      return { id, index, node, x, y, group, edge, edgeStyle, pathLength };
+    }).filter(Boolean);
+
+    if (records.length !== sectionIds.length) {
+      records.forEach(restoreEmergence);
+      restoreStagedPresentation();
+      return resolve(false);
+    }
+
+    document.body?.classList.add('is-profile-root-emerging');
+    document.body?.classList.remove('is-profile-entry-branches-staged');
+    dispatchEvent(new CustomEvent('profile:profile-root-emergence', { detail: { phase: 'nodes', source: 'entry' } }));
+
+    if (reducedMotion) {
+      records.forEach(restoreEmergence);
+      document.body?.classList.remove('is-profile-root-emerging');
+      dispatchEvent(new CustomEvent('profile:profile-root-emergence', { detail: { phase: 'settled', source: 'entry', reducedMotion: true } }));
+      return resolve(true);
+    }
+
+    const started = performance.now();
+    const total = TIMING.branchDuration + TIMING.branchStagger * (records.length - 1);
+    const step = now => {
+      if (currentGeneration !== generation) {
+        records.forEach(restoreEmergence);
+        document.body?.classList.remove('is-profile-root-emerging');
+        dispatchEvent(new CustomEvent('profile:profile-root-emergence', { detail: { phase: 'cancelled', source: 'entry' } }));
+        return resolve(false);
+      }
+
+      const elapsed = now - started;
+      records.forEach(record => {
+        const raw = clamp01((elapsed - record.index * TIMING.branchStagger) / TIMING.branchDuration);
+        const p = ease(raw);
+        const dx = (rootPoint.x - record.x) * (1 - p);
+        const dy = (rootPoint.y - record.y) * (1 - p);
+        const scale = .16 + .84 * p;
+        record.group.setAttribute('transform', `translate(${dx.toFixed(2)} ${dy.toFixed(2)}) scale(${scale.toFixed(4)})`);
+        record.group.style.opacity = String(ease(clamp01(raw / .60)));
+      });
+
+      if (elapsed >= total) {
+        records.forEach(restoreEmergence);
+        document.body?.classList.remove('is-profile-root-emerging');
+        dispatchEvent(new CustomEvent('profile:profile-root-emergence', { detail: { phase: 'settled', source: 'entry' } }));
+        resolve(true);
+        return;
+      }
+      requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  });
 
   const failOpen = reason => {
     ++generation;
@@ -363,7 +356,8 @@
 
     state.stage = 'branches';
     emit('stage', { stage: 'branches' });
-    animateProfileEmergence();
+    await animateProfileEmergence(currentGeneration);
+    if (currentGeneration !== generation) return false;
 
     await phaseWait(TIMING.chromeDelay);
     if (currentGeneration !== generation) return false;

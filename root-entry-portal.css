@@ -1,8 +1,8 @@
 /* V3.1 Phase F — the Atlas root reveals identity inside the same semantic SVG object. */
 
 #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .root-entry-portrait{
-  opacity:.34;
-  transform:scale(.68);
+  opacity:0;
+  transform:scale(.52);
   transform-box:fill-box;
   transform-origin:center;
   filter:saturate(.72) contrast(.96);

@@ -356,6 +356,8 @@
 
     state.stage = 'branches';
     emit('stage', { stage: 'branches' });
+    await waitFor(() => Boolean(window.ProfileMotionRefinements?.drawMainBranchEdges), 900);
+    if (currentGeneration !== generation) return false;
     await animateProfileEmergence(currentGeneration);
     if (currentGeneration !== generation) return false;
 

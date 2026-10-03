@@ -66,7 +66,8 @@
     .filter(node => !node.closest('.v9-transition-overlay'));
   const introOwned = () =>
     ['pending', 'preparing', 'running'].includes(document.documentElement?.dataset.profileIntro || '') ||
-    document.body?.classList.contains('is-atlas-reveal');
+    document.body?.classList.contains('is-atlas-reveal') ||
+    document.body?.classList.contains('is-profile-entry-revealing');
   const blocked = () => Boolean(
     reducedMotion.matches ||
     suspended ||

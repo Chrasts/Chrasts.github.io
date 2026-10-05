@@ -48,7 +48,7 @@
     document.head.appendChild(guard);
   }
 
-  const releaseRevision = '20261003-v4entry4';
+  const releaseRevision = '20261005-home1';
   const versionedResource = resource =>
     `${resource}${resource.includes('?') ? '&' : '?'}v=${releaseRevision}`;
 
@@ -126,6 +126,7 @@
   ensureStylesheet('profile-post-entry.css', 'data-profile-post-entry-style');
   ensureStylesheet('profile-motion-refinements.css', 'data-profile-motion-refinements-style');
   ensureStylesheet('branch-colors.css?v=20260919-contrast10', 'data-profile-branch-colors-style');
+  ensureStylesheet('home-overview-v4.css', 'data-profile-home-v4-style');
   prepareRootLandingDom();
 
   document.body.dataset.rootLanding = initialRootLanding ? 'true' : 'false';
@@ -190,4 +191,5 @@
   ensureScript('accessibility-runtime.js', 'data-profile-accessibility-runtime');
   ensureScript('portfolio-refinements.js', 'data-profile-refinements');
   ensureScript('profile-post-entry.js', 'data-profile-post-entry');
+  ensureScript('home-overview-v4.js', 'data-profile-home-v4');
 })();

@@ -7,28 +7,29 @@ const boot = async (page, route = 'overview') => {
   await page.route('https://cloud.umami.is/**', response => response.abort());
   await page.goto(`/#${route}`);
   await page.waitForFunction(() => Boolean(window.ProfileScene?.manager));
-  await page.waitForFunction(() => Boolean(window.ProfileRootLanding && window.ProfileRootOverview));
+  await page.waitForFunction(() => Boolean(window.ProfileRootLanding && window.ProfileHomeOverviewV4));
   await page.waitForFunction(() => Boolean(document.body.dataset.graphMode));
   await page.waitForFunction(() => Boolean(document.querySelector('#site-graph .site-graph-svg')));
   await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
 };
 
-test.describe('Phase H legacy root-landing retirement — desktop', () => {
+test.describe('V4 legacy root-landing retirement compatibility', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('same-session Overview starts directly in the expanded practical profile root', async ({ page }) => {
+  test('same-session Overview opens the professional Home directly', async ({ page }) => {
     await boot(page);
-    await page.waitForFunction(() => window.ProfileRootOverview.snapshot().visible === true);
 
     expect(await page.evaluate(() => window.ProfileRootLanding.isActive())).toBe(false);
     expect(await page.evaluate(() => window.ProfileRootLanding.hasActivated())).toBe(true);
     expect(await page.evaluate(() => window.ProfileScene.manager.graphState.rootLanding)).toBe(false);
+    expect(await page.evaluate(() => window.ProfileHomeOverviewV4.snapshot().active)).toBe(true);
+
     await expect(page.locator('body')).toHaveAttribute('data-root-landing', 'false');
     await expect(page.locator('.hero')).toBeHidden();
+    await expect(page.locator('.profile-root-brief')).toBeHidden();
+    await expect(page.locator('.home-v4-shell')).toBeVisible();
     await expect(page.locator('#site-explorer')).toBeVisible();
     await expect(page.locator('#main-nav')).toBeVisible();
-    await expect(page.locator('.header-utility').first()).toBeVisible();
-    await expect(page.locator('.profile-root-brief')).toBeVisible();
 
     for (const id of firstLevelIds) {
       await expect(page.locator(`#site-graph .site-graph-node[data-node-id="${id}"]`)).toBeVisible();
@@ -38,8 +39,8 @@ test.describe('Phase H legacy root-landing retirement — desktop', () => {
   test('commitExpanded remains an idempotent compatibility primitive', async ({ page }) => {
     await boot(page);
     const result = await page.evaluate(() => {
-      const first = window.ProfileRootLanding.commitExpanded({ focusGraph: false, animate: false, reason: 'phase-h-test' });
-      const second = window.ProfileRootLanding.commitExpanded({ focusGraph: false, animate: false, reason: 'phase-h-test-repeat' });
+      const first = window.ProfileRootLanding.commitExpanded({ focusGraph: false, animate: false, reason: 'v4-test' });
+      const second = window.ProfileRootLanding.commitExpanded({ focusGraph: false, animate: false, reason: 'v4-test-repeat' });
       return {
         first,
         second,
@@ -49,6 +50,7 @@ test.describe('Phase H legacy root-landing retirement — desktop', () => {
         route: document.body.dataset.graphRoute
       };
     });
+
     expect(result.first).toBe(true);
     expect(result.second).toBe(true);
     expect(result.active).toBe(false);
@@ -57,7 +59,7 @@ test.describe('Phase H legacy root-landing retirement — desktop', () => {
     expect(result.route).toBe('overview');
   });
 
-  test('returning to Overview after normal navigation never resurrects the standalone hero', async ({ page }) => {
+  test('returning to Home after normal navigation restores V4 Home, not the retired brief or hero', async ({ page }) => {
     await boot(page);
     await page.locator('#main-nav [data-route="knowledge"]').click({ force: true });
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'knowledge');
@@ -68,43 +70,22 @@ test.describe('Phase H legacy root-landing retirement — desktop', () => {
     await page.waitForFunction(() => !document.body.classList.contains('is-v9-transitioning'));
 
     expect(await page.evaluate(() => window.ProfileRootLanding.isActive())).toBe(false);
-    expect(await page.evaluate(() => window.ProfileRootLanding.hasActivated())).toBe(true);
-    await expect(page.locator('#site-explorer')).toBeVisible();
+    expect(await page.evaluate(() => window.ProfileHomeOverviewV4.snapshot().active)).toBe(true);
+    await expect(page.locator('.home-v4-shell')).toBeVisible();
     await expect(page.locator('.hero')).toBeHidden();
-    await expect(page.locator('.profile-root-brief')).toBeVisible();
+    await expect(page.locator('.profile-root-brief')).toBeHidden();
   });
 
-  test('deep links continue to bypass all root-landing presentation', async ({ page }) => {
+  test('deep links bypass Home presentation and retain the requested focused route', async ({ page }) => {
     await boot(page, 'knowledge');
 
     expect(await page.evaluate(() => window.ProfileRootLanding.isActive())).toBe(false);
+    expect(await page.evaluate(() => window.ProfileHomeOverviewV4.snapshot().active)).toBe(false);
     await expect(page.locator('body')).toHaveAttribute('data-root-landing', 'false');
     await expect(page.locator('#site-explorer')).toBeVisible();
-    await expect(page.locator('#main-nav')).toBeVisible();
+    await expect(page.locator('.home-v4-shell')).toBeHidden();
     await expect(page.locator('.hero')).toBeHidden();
     expect(await page.evaluate(() => document.body.dataset.graphMode)).toBe('focus');
     expect(await page.evaluate(() => document.body.dataset.graphRoute)).toBe('knowledge');
-    await expect(page.locator('.quick-overview-global-trigger')).toHaveCount(0);
-    await expect(page.locator('.header-quick-overview')).toBeVisible();
-  });
-});
-
-test.describe('Phase H legacy root-landing retirement — mobile', () => {
-  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
-
-  test('same-session mobile opens the practical graph root rather than the old portrait hero', async ({ page }) => {
-    await boot(page);
-    await page.waitForFunction(() => Boolean(window.MobileProfileScene));
-    await page.waitForFunction(() => window.ProfileRootOverview.snapshot().visible === true);
-
-    await expect(page.locator('.hero')).toBeHidden();
-    await expect(page.locator('#site-explorer')).toBeVisible();
-    await expect(page.locator('.menu-button')).toBeVisible();
-    await expect(page.locator('.profile-root-brief')).toBeVisible();
-    await expect(page.locator('.profile-root-name')).toContainText('Štěpán Chrast');
-
-    for (const id of firstLevelIds) {
-      await expect(page.locator(`#site-graph .site-graph-node[data-node-id="${id}"]`)).toBeVisible();
-    }
   });
 });

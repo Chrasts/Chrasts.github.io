@@ -3,9 +3,12 @@
   "private": true,
   "scripts": {
     "start": "node scripts/serve.mjs",
-    "validate": "node scripts/validate-portfolio-model.mjs && node scripts/validate-artifacts.mjs && node scripts/validate-artifact-scenes.mjs && node scripts/validate-performance-contracts.mjs",
+    "validate": "node scripts/validate-portfolio-model.mjs && node scripts/validate-artifacts.mjs && node scripts/validate-artifact-scenes.mjs",
+    "validate:performance": "node scripts/validate-performance-contracts.mjs",
     "test": "playwright test",
+    "test:smoke": "playwright test tests/product-smoke-v4.spec.js",
     "test:performance": "playwright test tests/performance-bootstrap.spec.js",
+    "test:extended": "playwright test",
     "measure:performance": "node scripts/measure-performance.mjs"
   },
   "devDependencies": {

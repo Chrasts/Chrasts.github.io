@@ -203,18 +203,19 @@ body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is
 body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is-home-interactive-exiting)
 .home-v4-interactive-back::after{opacity:1}
 
-/* Root portal material. The Home root is slightly larger at rest, then makes a
-   deliberately strong identity transition on hover/focus: portrait expansion,
-   rotating orbit reveal, stronger halos and the existing entry affordance. */
+/* Root portal material. Professional Home keeps the canonical node abstract:
+   the portrait is now static in the left profile panel. The root itself is a
+   strong graph affordance with persistent halos and a much faster, larger hover
+   response. */
 body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
 #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-dot{
-  transform:scale(1.40)!important;
-  stroke-width:2.65!important
+  transform:scale(1.58)!important;
+  stroke-width:2.85!important
 }
 
 body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
 #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-hit{
-  r:38px!important
+  r:44px!important
 }
 
 #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .home-v4-root-entry-action{
@@ -238,10 +239,10 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:no
 #site-graph .home-v4-root-entry-label{
   fill:var(--ink);
   font-family:var(--font-meta,var(--sans));
-  font-size:10.5px;
-  font-weight:820;
-  letter-spacing:.085em;
-  transform:translateY(17px)
+  font-size:12.8px;
+  font-weight:860;
+  letter-spacing:.095em;
+  transform:translateY(19px)
 }
 
 body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
@@ -266,8 +267,8 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active
 
 body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
 #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .profile-root-overview-orbit{
-  opacity:0!important;
-  transform:scale(.72);
+  opacity:.78!important;
+  transform:scale(1.22);
   transform-box:fill-box;
   transform-origin:center;
   transition:
@@ -278,35 +279,75 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:no
 body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
 #site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .profile-root-overview-orbit{
   opacity:1!important;
-  transform:scale(1.42)
+  transform:scale(1.98)
+}
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
+#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-halo--primary{
+  opacity:.70!important;
+  transform:scale(1.18)!important
+}
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
+#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-halo--secondary{
+  opacity:.38!important;
+  transform:scale(1.42)!important
 }
 
 body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
 #site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .site-graph-halo--primary{
-  opacity:.90!important;
-  transform:scale(1.52)!important
+  opacity:.96!important;
+  transform:scale(1.86)!important
 }
 
 body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
 #site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .site-graph-halo--secondary{
-  opacity:.58!important;
-  transform:scale(1.88)!important
+  opacity:.72!important;
+  transform:scale(2.28)!important
 }
 
-body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active
 #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .profile-node-portrait{
-  transform:scale(.78)!important;
-  transition:
-    opacity .24s ease,
-    transform .42s cubic-bezier(.16,.78,.2,1),
-    filter .30s ease!important
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+  transform:scale(.5)!important;
+  animation:none!important
 }
 
-body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
-#site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .profile-node-portrait{
-  opacity:1!important;
+/* Hover/focus accelerates the same root material in both professional Home and
+   Interactive Profile. No portrait swap is involved. */
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active
+#site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .profile-root-overview-orbit .is-a{
+  animation-duration:1.55s!important
+}
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active
+#site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .profile-root-overview-orbit .is-b{
+  animation-duration:2.15s!important
+}
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active
+#site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .site-graph-halo--secondary{
+  animation-duration:2.5s!important
+}
+
+body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is-home-interactive-exiting)
+#site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .site-graph-dot{
   transform:scale(1.62)!important;
-  filter:saturate(1.04) contrast(1.05)!important
+  stroke-width:2.65!important
+}
+body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is-home-interactive-exiting)
+#site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .site-graph-halo--primary{
+  opacity:.78!important;
+  transform:scale(1.38)!important
+}
+body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is-home-interactive-exiting)
+#site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .site-graph-halo--secondary{
+  opacity:.48!important;
+  transform:scale(1.68)!important
+}
+body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is-home-interactive-exiting)
+#site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .profile-root-overview-orbit{
+  transform:scale(1.36)!important
 }
 
 /* Once Interactive Profile is active the root goes back to its established

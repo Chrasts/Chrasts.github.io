@@ -48,7 +48,7 @@
     document.head.appendChild(guard);
   }
 
-  const releaseRevision = '20261006-home2';
+  const releaseRevision = '20261005-home1';
   const versionedResource = resource =>
     `${resource}${resource.includes('?') ? '&' : '?'}v=${releaseRevision}`;
 
@@ -89,76 +89,72 @@
       heading.after(trigger);
     }
 
-    if (!copy.querySelector('[data-root-hint]')) {
-      const hint = document.createElement('p');
-      hint.className = 'root-landing-hint';
-      hint.dataset.rootHint = 'true';
-      hint.textContent = 'Activate the node to enter the interactive profile.';
-      links.before(hint);
+    const rootTrigger = copy.querySelector('[data-root-activate]');
+    if (rootTrigger) {
+      rootTrigger.hidden = !initialRootLanding;
+      rootTrigger.style.pointerEvents = initialRootLanding ? '' : 'none';
+    }
+
+    if (!copy.querySelector('.root-atlas-affordance')) {
+      const atlas = document.createElement('button');
+      atlas.type = 'button';
+      atlas.className = 'root-atlas-affordance';
+      atlas.dataset.route = 'atlas';
+      atlas.disabled = true;
+      atlas.setAttribute('aria-label', 'Explore Atlas');
+      const label = document.createElement('span');
+      label.textContent = 'Explore Atlas';
+      atlas.append(label);
+      links.after(atlas);
+    }
+
+    const atlasAffordance = copy.querySelector('.root-atlas-affordance');
+    if (atlasAffordance) {
+      atlasAffordance.hidden = !initialRootLanding;
+      atlasAffordance.style.pointerEvents = initialRootLanding ? '' : 'none';
     }
   };
 
-  const ensureHeaderGraph = () => {
-    const header = document.querySelector('.app-header');
-    if (!header || header.querySelector('.header-linear-graph')) return;
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.classList.add('header-linear-graph');
-    svg.setAttribute('aria-hidden', 'true');
-    svg.setAttribute('focusable', 'false');
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    line.classList.add('header-linear-graph-line');
-    const atlas = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    atlas.classList.add('header-linear-graph-atlas-link');
-    const nodes = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    nodes.classList.add('header-linear-graph-nodes');
-    svg.append(line, atlas, nodes);
-    header.appendChild(svg);
-  };
-
-  ensureHeaderGraph();
+  ensureStylesheet('root-landing.css', 'data-profile-root-landing-style');
+  ensureStylesheet('motion-polish.css', 'data-profile-motion-polish-style');
+  ensureStylesheet('graph-feel.css', 'data-profile-graph-feel-style');
+  ensureStylesheet('camera-materiality.css', 'data-profile-camera-materiality-style');
+  ensureStylesheet('intro-fixes-v3.css', 'data-profile-intro-fixes-v3-style');
+  ensureStylesheet('profile-root.css?v=20260922-headergraph7', 'data-profile-root-overview-style');
+  ensureStylesheet('graph-navigation-materiality.css', 'data-profile-graph-navigation-style');
+  ensureStylesheet('portfolio-refinements.css?v=20260922-headergraph8', 'data-profile-refinements-style');
+  ensureStylesheet('profile-post-entry.css', 'data-profile-post-entry-style');
+  ensureStylesheet('profile-motion-refinements.css', 'data-profile-motion-refinements-style');
+  ensureStylesheet('branch-colors.css?v=20260919-contrast10', 'data-profile-branch-colors-style');
+  ensureStylesheet('home-overview-v4.css', 'data-profile-home-v4-style');
   prepareRootLandingDom();
 
-  const ensureStyles = () => {
-    ensureStylesheet('scene-system.css', 'data-profile-scene-style');
-    ensureStylesheet('branch-colors.css?v=20260919-contrast10', 'data-profile-branch-colors-style');
-    ensureStylesheet('profile-root.css', 'data-profile-root-overview-style');
-    ensureStylesheet('intro-fixes-v3.css', 'data-profile-intro-fixes-v3-style');
-    ensureStylesheet('graph-navigation-materiality.css', 'data-profile-graph-navigation-style');
-    ensureStylesheet('portfolio-refinements.css?v=20260922-headergraph8', 'data-profile-refinements-style');
-    ensureStylesheet('profile-post-entry.css', 'data-profile-post-entry-style');
-    ensureStylesheet('profile-motion-refinements.css', 'data-profile-motion-refinements-style');
-    ensureStylesheet('branch-colors.css?v=20260919-contrast10', 'data-profile-branch-colors-style');
-  };
-  ensureStyles();
+  document.body.dataset.rootLanding = initialRootLanding ? 'true' : 'false';
+  document.body.classList.toggle('is-root-landing', initialRootLanding);
+  const explorer = document.querySelector('#site-explorer');
+  if (initialRootLanding && explorer) explorer.style.setProperty('display', 'none', 'important');
+  scene.manager.setGraphState({ rootLanding: initialRootLanding }, { reason: 'root-landing-bootstrap' });
+
+  const modeIs = mode => context => context.mode === mode;
+  const rootLanding = context => context.mode === 'overview' && context.rootLanding === true;
+  const graphScene = context => !rootLanding(context);
+  const work = modeIs('work');
+  const atlas = modeIs('atlas');
+
+  scene.registry.register({ id: 'root-identity-shell', selector: '.hero', visible: rootLanding, placement: 'identity-shell', enter: 'root-shell-in', exit: 'root-shell-out', variants: { desktop: { placement: 'identity-shell-desktop' }, mobile: { placement: 'identity-shell-mobile' } } });
+  scene.registry.register({ id: 'root-profile-copy', selector: '.hero-copy', managedVisibility: false, visible: rootLanding, anchorNodeId: 'stepan-chrast', placement: 'identity-copy', enter: 'from-left', exit: 'to-left', variants: { desktop: { placement: 'identity-copy-left', enter: 'from-left', exit: 'to-left' }, mobile: { placement: 'identity-copy-centre', enter: 'fade-up', exit: 'fade-left' } } });
+  scene.registry.register({ id: 'portrait', selector: '.hero-visual.profile-identity', managedVisibility: false, visible: rootLanding, anchorNodeId: 'stepan-chrast', placement: 'identity-portrait', enter: 'from-right', exit: 'to-right', variants: { desktop: { placement: 'identity-portrait-right', enter: 'from-right', exit: 'to-right' }, mobile: { placement: 'identity-portrait-top', enter: 'fade-scale', exit: 'fade-right' } } });
+  scene.registry.register({ id: 'root-activate-control', selector: '[data-root-activate]', managedVisibility: false, visible: rootLanding, anchorNodeId: 'stepan-chrast', placement: 'root-primary-action', enter: 'root-affordance-in', exit: 'root-affordance-out', variants: { desktop: { placement: 'root-primary-action' }, mobile: { placement: 'root-primary-action-centre' } } });
+  scene.registry.register({ id: 'root-atlas-affordance', selector: '.root-atlas-affordance', managedVisibility: false, visible: rootLanding, anchorNodeId: 'stepan-chrast', placement: 'root-secondary-action', enter: 'utility-up', exit: 'utility-down', variants: { desktop: { placement: 'root-secondary-action' }, mobile: { placement: 'root-secondary-action-centre' } } });
+  scene.registry.register({ id: 'profile-graph-stage', selector: '#site-explorer', managedVisibility: false, visible: graphScene, anchorNodeId: 'stepan-chrast', placement: 'graph-stage', enter: 'graph-unfold', exit: 'graph-fold', variants: { desktop: { placement: 'graph-stage-desktop' }, mobile: { placement: 'graph-stage-mobile' } } });
+  scene.registry.register({ id: 'work-controls', selector: '.integrated-work-controls', visible: work, anchorNodeId: 'work', placement: 'work-rails', enter: 'rails-in', exit: 'rails-out', variants: { desktop: { placement: 'work-side-rails', enter: 'rails-in', exit: 'rails-out' }, mobile: { placement: 'control-sheet', enter: 'sheet-in', exit: 'sheet-out' } } });
+  scene.registry.register({ id: 'atlas-controls', selector: '#atlas-controls', visible: atlas, anchorNodeId: 'stepan-chrast', placement: 'atlas-toolbar', enter: 'utility-up', exit: 'utility-down', variants: { desktop: { placement: 'atlas-bottom-toolbar', enter: 'utility-up', exit: 'utility-down' }, mobile: { placement: 'control-sheet', enter: 'sheet-in', exit: 'sheet-out' } } });
 
   scene.registry.register({
-    id: 'graph-routebar',
-    selector: '.graph-routebar',
+    id: 'detail-panel',
+    selector: '#site-detail-panel',
     managedVisibility: false,
-    visible: () => true,
-    anchorNodeId: graph?.rootId || 'stepan-chrast',
-    placement: 'hud',
-    composition: { zone: 'hud', role: 'navigation' },
-    enter: 'utility-in',
-    exit: 'utility-out'
-  });
-  scene.registry.register({
-    id: 'site-graph-help',
-    selector: '.site-graph-help',
-    managedVisibility: false,
-    visible: context => context.mode !== 'atlas',
-    anchorNodeId: graph?.rootId || 'stepan-chrast',
-    placement: 'hud',
-    composition: { zone: 'hud', role: 'help' },
-    enter: 'utility-in',
-    exit: 'utility-out'
-  });
-  scene.registry.register({
-    id: 'site-detail-panel',
-    selector: '.scene-detail',
-    managedVisibility: false,
-    visible: context => Boolean(context.detailOpen),
-    anchorNodeId: graph?.rootId || 'stepan-chrast',
+    visible: ({ element }) => !element.hidden || element.classList.contains('is-open'),
     placement: 'inspector',
     composition: context => context.variant === 'mobile'
       ? { zone: 'mobile-tray', role: 'inspector' }

@@ -4,10 +4,13 @@
   const graph = window.SITE_DATA?.graph;
   if (!graph?.nodes?.length) return;
 
+  const SVG_NS = 'http://www.w3.org/2000/svg';
   const rootId = graph.rootId || 'stepan-chrast';
   const sectionIds = ['work', 'knowledge', 'experience', 'education', 'about'];
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   let branchEdgeFrame = 0;
+  let branchMotionFrame = 0;
+  let branchMotionGeneration = 0;
   let wasEmerging = false;
 
   const clamp01 = value => Math.max(0, Math.min(1, value));
@@ -27,9 +30,13 @@
   addEventListener('profile:scene-state', refineProfileRootCopy);
   addEventListener('hashchange', () => requestAnimationFrame(refineProfileRootCopy));
 
+  const liveNode = id => [...document.querySelectorAll(
+    `#site-graph .site-graph-node[data-node-id="${CSS.escape(id)}"]`
+  )].find(node => !node.closest('.v9-transition-overlay')) || null;
+
   const mainBranchEdges = () => [...document.querySelectorAll(
     `#site-graph .site-graph-edges path[data-source="${CSS.escape(rootId)}"][data-target]`
-  )].filter(path => sectionIds.includes(path.dataset.target));
+  )].filter(path => sectionIds.includes(path.dataset.target) && !path.closest('.v9-transition-overlay'));
 
   const markMainBranchEdges = () => {
     mainBranchEdges().forEach(path => { path.dataset.profileMainEdge = 'true'; });
@@ -128,6 +135,112 @@
     drawMainBranchEdges();
   };
 
+  const createEmergenceGroup = node => {
+    const movable = [...node.children].filter(child =>
+      child.tagName?.toLowerCase() !== 'title' && !child.classList?.contains('home-v4-root-entry-action')
+    );
+    if (!movable.length) return null;
+    const group = document.createElementNS(SVG_NS, 'g');
+    group.classList.add('profile-root-emergence-motion');
+    node.insertBefore(group, movable[0]);
+    movable.forEach(child => group.appendChild(child));
+    return group;
+  };
+
+  const restoreEmergenceGroup = record => {
+    if (!record?.group?.isConnected || record.group.parentElement !== record.node) return;
+    [...record.group.children].forEach(child => record.node.insertBefore(child, record.group));
+    record.group.remove();
+  };
+
+  // Canonical Profile Root branch motion. This is deliberately shared by the
+  // Atlas/Profile handoff and the professional Home -> Interactive Profile
+  // portal, so the same five branches always use one semantic movement model.
+  const animateMainBranches = (options = {}) => new Promise(resolve => {
+    cancelAnimationFrame(branchMotionFrame);
+    branchMotionFrame = 0;
+    const generation = ++branchMotionGeneration;
+    const direction = options.direction === 'in' ? 'in' : 'out';
+    const duration = Math.max(1, Number(options.duration) || 760);
+    const stagger = Math.max(0, Number(options.stagger) || 68);
+    const source = options.source || 'shared';
+    const guard = typeof options.guard === 'function' ? options.guard : () => true;
+    const root = liveNode(rootId);
+    const rootPoint = root ? { x: Number(root.dataset.x), y: Number(root.dataset.y) } : null;
+
+    if (!rootPoint || ![rootPoint.x, rootPoint.y].every(Number.isFinite)) return resolve(false);
+
+    const records = sectionIds.map((id, index) => {
+      const node = liveNode(id);
+      const x = Number(node?.dataset.x);
+      const y = Number(node?.dataset.y);
+      const group = node ? createEmergenceGroup(node) : null;
+      if (!node || !group || ![x, y].every(Number.isFinite)) return null;
+      const rootDx = rootPoint.x - x;
+      const rootDy = rootPoint.y - y;
+      if (direction === 'out') {
+        group.setAttribute('transform', `translate(${rootDx.toFixed(2)} ${rootDy.toFixed(2)}) scale(.16)`);
+        group.style.opacity = '0';
+      } else {
+        group.setAttribute('transform', 'translate(0 0) scale(1)');
+        group.style.opacity = '1';
+      }
+      return { id, index, node, x, y, rootDx, rootDy, group };
+    }).filter(Boolean);
+
+    if (records.length !== sectionIds.length) {
+      records.forEach(restoreEmergenceGroup);
+      return resolve(false);
+    }
+
+    document.body?.classList.add('is-profile-root-emerging');
+    dispatchEvent(new CustomEvent('profile:profile-root-emergence', {
+      detail: { phase: 'nodes', direction, source }
+    }));
+
+    const finish = (ok, phase) => {
+      cancelAnimationFrame(branchMotionFrame);
+      branchMotionFrame = 0;
+      records.forEach(restoreEmergenceGroup);
+      document.body?.classList.remove('is-profile-root-emerging');
+      dispatchEvent(new CustomEvent('profile:profile-root-emergence', {
+        detail: { phase, direction, source }
+      }));
+      resolve(ok);
+    };
+
+    if (reducedMotion.matches) return finish(true, direction === 'out' ? 'settled' : 'cancelled');
+
+    const started = performance.now();
+    const total = duration + stagger * Math.max(0, records.length - 1);
+    const step = now => {
+      branchMotionFrame = 0;
+      if (generation !== branchMotionGeneration || !guard()) return finish(false, 'cancelled');
+      const elapsed = now - started;
+      records.forEach(record => {
+        const raw = clamp01((elapsed - record.index * stagger) / duration);
+        const p = ease(raw);
+        if (direction === 'out') {
+          const dx = record.rootDx * (1 - p);
+          const dy = record.rootDy * (1 - p);
+          const scale = .16 + .84 * p;
+          record.group.setAttribute('transform', `translate(${dx.toFixed(2)} ${dy.toFixed(2)}) scale(${scale.toFixed(4)})`);
+          record.group.style.opacity = String(ease(clamp01(raw / .60)));
+        } else {
+          const dx = record.rootDx * p;
+          const dy = record.rootDy * p;
+          const scale = 1 - .84 * p;
+          const fade = ease(clamp01((raw - .34) / .66));
+          record.group.setAttribute('transform', `translate(${dx.toFixed(2)} ${dy.toFixed(2)}) scale(${scale.toFixed(4)})`);
+          record.group.style.opacity = String(1 - fade);
+        }
+      });
+      if (elapsed >= total) return finish(true, direction === 'out' ? 'settled' : 'cancelled');
+      branchMotionFrame = requestAnimationFrame(step);
+    };
+    branchMotionFrame = requestAnimationFrame(step);
+  });
+
   addEventListener('profile:profile-root-emergence', event => syncEmergencePhase(event.detail?.phase));
   addEventListener('profile:graph-render-settled', () => {
     refineProfileRootCopy();
@@ -152,9 +265,10 @@
     refineProfileRootCopy,
     drawMainBranchEdges,
     restoreMainBranchEdges,
+    animateMainBranches,
     snapshot: () => ({
-      active: false,
-      phase: null,
+      active: Boolean(branchMotionFrame),
+      phase: document.body?.classList.contains('is-profile-root-emerging') ? 'nodes' : null,
       branchEdgePhase: document.body?.dataset.profileBranchEdgePhase || null,
       lastResult: null,
       reducedMotion: reducedMotion.matches

@@ -30,7 +30,7 @@ const waitRoute = async (page, route) => {
 test.describe('V4 professional portfolio smoke', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('Home exposes identity, current context, profile map and selected work in one viewport', async ({ page }) => {
+  test('Home exposes identity, current context, one profile root and selected work in one viewport', async ({ page }) => {
     await bootDesktopHome(page);
 
     await expect(page.locator('.home-v4-name')).toContainText('Štěpán Chrast');
@@ -40,16 +40,50 @@ test.describe('V4 professional portfolio smoke', () => {
     await expect(page.locator('.home-v4-project-preview')).toBeVisible();
     await expect(page.locator('.profile-root-brief')).toBeHidden();
     await expect(page.locator('.hero')).toBeHidden();
+    await expect(page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]')).toBeVisible();
 
     for (const id of firstLevelIds) {
-      await expect(page.locator(`#site-graph .site-graph-node[data-node-id="${id}"]`)).toBeVisible();
+      await expect(page.locator(`#site-graph .site-graph-node[data-node-id="${id}"]`)).toBeHidden();
     }
+
+    const state = await page.evaluate(() => window.ProfileHomeOverviewV4.snapshot());
+    expect(state.interactiveIntent).toBe(false);
+    expect(state.interactivePhase).toBe('home');
+    expect(state.rootActionPresent).toBe(true);
 
     const viewportFit = await page.evaluate(() => ({
       scrollHeight: document.documentElement.scrollHeight,
       innerHeight: window.innerHeight
     }));
     expect(viewportFit.scrollHeight).toBeLessThanOrEqual(viewportFit.innerHeight + 2);
+  });
+
+  test('profile root opt-in reveals the existing interactive Overview and reverses back to Home', async ({ page }) => {
+    await bootDesktopHome(page);
+
+    const root = page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]').first();
+    await root.hover();
+    await expect(root.locator(':scope > .home-v4-root-entry-action')).toBeVisible();
+    await expect(root.locator(':scope > .profile-node-portrait')).toBeVisible();
+
+    await root.click();
+    await page.waitForFunction(() => window.ProfileHomeOverviewV4?.snapshot().interactivePhase === 'interactive', null, { timeout: 5_000 });
+
+    await expect(page.locator('.home-v4-profile')).toBeHidden();
+    await expect(page.locator('.home-v4-work')).toBeHidden();
+    await expect(page.locator('.header-linear-graph')).toBeVisible();
+    await expect(page.locator('.home-v4-interactive-back')).toBeVisible();
+    for (const id of firstLevelIds) {
+      await expect(page.locator(`#site-graph .site-graph-node[data-node-id="${id}"]`)).toBeVisible();
+    }
+
+    await page.locator('.home-v4-interactive-back').click();
+    await page.waitForFunction(() => window.ProfileHomeOverviewV4?.snapshot().interactivePhase === 'home', null, { timeout: 5_000 });
+    await expect(page.locator('.home-v4-profile')).toBeVisible();
+    await expect(page.locator('.home-v4-work')).toBeVisible();
+    for (const id of firstLevelIds) {
+      await expect(page.locator(`#site-graph .site-graph-node[data-node-id="${id}"]`)).toBeHidden();
+    }
   });
 
   test('Selected Work switches evidence without expanding the Home layout', async ({ page }) => {
@@ -121,7 +155,7 @@ test.describe('V4 professional portfolio smoke', () => {
     await expect(page.locator('#site-explorer')).toBeVisible();
   });
 
-  test('fresh-session intro resolves automatically into Home with no Enter Profile gate', async ({ page }) => {
+  test('fresh-session intro resolves automatically into root-only Home with no mandatory graph gate', async ({ page }) => {
     await blockAnalytics(page);
     await page.goto('/#overview');
 
@@ -130,6 +164,9 @@ test.describe('V4 professional portfolio smoke', () => {
     await page.waitForFunction(() => document.body.classList.contains('is-entry-loader-complete'), null, { timeout: 10_000 });
     await expect(page.locator('.home-v4-shell')).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('[data-root-activate]')).toBeHidden();
+    for (const id of firstLevelIds) {
+      await expect(page.locator(`#site-graph .site-graph-node[data-node-id="${id}"]`)).toBeHidden();
+    }
   });
 });
 

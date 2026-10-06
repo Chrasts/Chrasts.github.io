@@ -302,11 +302,11 @@
   const overviewRoot = target => {
     if (document.querySelector('.profile-intro-overlay')) return null;
     if (document.body?.dataset.graphMode !== 'overview' || document.body?.dataset.rootLanding === 'true') return null;
-    // Professional Home now owns the first root activation. The legacy identity
-    // inspector remains available only after the visitor has explicitly entered
-    // the graph-native Interactive Profile state.
-    if (document.body?.classList.contains('is-home-v4-active') &&
-        !document.body?.classList.contains('is-home-interactive')) return null;
+    // Professional Home owns the canonical Overview root in both directions:
+    // Home -> Interactive Graph and Interactive Graph -> Home. The legacy
+    // identity inspector must never compete for this click while V4 Home is
+    // active; the portrait now lives statically in the professional panel.
+    if (document.body?.classList.contains('is-home-v4-active')) return null;
     return target.closest?.(`#site-graph .site-graph-node[data-node-id="${rootId}"]`) || null;
   };
   addEventListener('click', event => {

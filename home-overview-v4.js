@@ -30,6 +30,7 @@
   let interactiveIntent = false;
   let interactivePhase = 'home';
   let transitionGeneration = 0;
+  let branchMotionFrame = 0;
 
   const element = (tag, className = '', text = '') => {
     const node = document.createElement(tag);
@@ -38,6 +39,11 @@
     return node;
   };
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const clamp01 = value => Math.max(0, Math.min(1, value));
+  const ease = value => {
+    const t = clamp01(value);
+    return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  };
   const normaliseRoute = value => String(value || 'overview')
     .replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
   const routeTo = target => {
@@ -56,6 +62,15 @@
   const liveBranchNodes = () => sectionIds.map(id => [...document.querySelectorAll(
     `#site-graph .site-graph-node[data-node-id="${CSS.escape(id)}"]`
   )].find(node => !node.closest('.v9-transition-overlay')) || null).filter(Boolean);
+
+  const ensurePortalStyles = () => {
+    if (document.querySelector('link[data-home-interactive-portal-style]')) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'home-interactive-portal-v4.css?v=20261006-home2';
+    link.dataset.homeInteractivePortalStyle = 'true';
+    document.head.appendChild(link);
+  };
 
   const graphControl = (label, target, className = '') => {
     const button = element('button', `home-v4-link ${className}`.trim(), label);
@@ -87,11 +102,7 @@
 
     const meta = element('p', 'home-v4-project-meta', project.type || 'Selected project');
     const title = element('h3', 'home-v4-project-title', project.title || project.graphLabel);
-    const summary = element(
-      'p',
-      'home-v4-project-summary',
-      project.caseStudy?.oneLine || project.description || ''
-    );
+    const summary = element('p', 'home-v4-project-summary', project.caseStudy?.oneLine || project.description || '');
     preview.append(meta, title, summary);
 
     const facts = element('dl', 'home-v4-project-facts');
@@ -107,9 +118,7 @@
 
     const tech = (project.tech || []).slice(0, 4);
     if (tech.length) preview.append(element('p', 'home-v4-project-tech', tech.join(' · ')));
-
-    const open = graphControl('Open project →', `work/project/${project.id}`, 'home-v4-open-project');
-    preview.appendChild(open);
+    preview.appendChild(graphControl('Open project →', `work/project/${project.id}`, 'home-v4-open-project'));
 
     shell.querySelectorAll('.home-v4-project-choice').forEach(button => {
       const active = button.dataset.projectId === project.id;
@@ -126,15 +135,17 @@
   };
 
   const buildProfilePanel = () => {
-    const panel = element('section', 'home-v4-profile', '');
+    const panel = element('section', 'home-v4-profile');
     panel.setAttribute('aria-labelledby', 'home-v4-name');
 
     const identity = element('div', 'home-v4-identity');
     const name = element('h1', 'home-v4-name', profile.name || 'Štěpán Chrast');
     name.id = 'home-v4-name';
-    const role = element('p', 'home-v4-role', 'Data Analysis · Research · Mathematical Logic');
-    const intro = element('p', 'home-v4-summary', profile.intro || '');
-    identity.append(name, role, intro);
+    identity.append(
+      name,
+      element('p', 'home-v4-role', 'Data Analysis · Research · Mathematical Logic'),
+      element('p', 'home-v4-summary', profile.intro || '')
+    );
 
     const current = element('section', 'home-v4-current');
     current.appendChild(element('p', 'home-v4-eyebrow', 'Current'));
@@ -189,10 +200,9 @@
     const panel = element('section', 'home-v4-work');
     panel.setAttribute('aria-labelledby', 'home-v4-work-title');
     const head = element('header', 'home-v4-work-head');
-    const eyebrow = element('p', 'home-v4-eyebrow', 'Evidence');
     const title = element('h2', 'home-v4-work-title', 'Selected Work');
     title.id = 'home-v4-work-title';
-    head.append(eyebrow, title);
+    head.append(element('p', 'home-v4-eyebrow', 'Evidence'), title);
 
     const choices = element('div', 'home-v4-project-list');
     choices.setAttribute('role', 'group');
@@ -255,6 +265,7 @@
 
     action.append(rule, label);
     root.appendChild(action);
+    root.setAttribute('aria-label', interactiveIntent ? 'Profile root' : 'Enter interactive profile - Štěpán Chrast');
     return action;
   };
 
@@ -266,10 +277,7 @@
     interactiveBack.type = 'button';
     interactiveBack.setAttribute('aria-label', 'Back to professional Home');
     interactiveBack.addEventListener('click', () => {
-      if (history.state?.profileHomeInteractive) {
-        history.back();
-        return;
-      }
+      if (history.state?.profileHomeInteractive) return history.back();
       exitInteractive('header-back');
     });
     slot.appendChild(interactiveBack);
@@ -283,10 +291,7 @@
     const card = element('div', 'home-v4-contact-card');
     const header = element('header', 'home-v4-contact-head');
     const titleWrap = element('div');
-    titleWrap.append(
-      element('p', 'home-v4-eyebrow', 'Contact'),
-      element('h2', '', 'Get in touch')
-    );
+    titleWrap.append(element('p', 'home-v4-eyebrow', 'Contact'), element('h2', '', 'Get in touch'));
     titleWrap.querySelector('h2').id = 'home-v4-contact-title';
     const close = element('button', 'home-v4-contact-close', '×');
     close.type = 'button';
@@ -294,7 +299,6 @@
     close.addEventListener('click', () => contactDialog.close());
     header.append(titleWrap, close);
 
-    const emailLabel = element('p', 'home-v4-contact-label', 'Email');
     const emailRow = element('div', 'home-v4-contact-email-row');
     const email = element('code', 'home-v4-contact-email', profile.email || '');
     const copy = element('button', 'home-v4-contact-action', 'Copy');
@@ -331,7 +335,7 @@
     const linkedin = linkFor('LinkedIn');
     if (linkedin?.href) actions.appendChild(makeExternal('LinkedIn ↗', linkedin.href));
 
-    card.append(header, emailLabel, emailRow, actions);
+    card.append(header, element('p', 'home-v4-contact-label', 'Email'), emailRow, actions);
     contactDialog.appendChild(card);
     contactDialog.addEventListener('click', event => {
       if (event.target === contactDialog) contactDialog.close();
@@ -369,9 +373,112 @@
     });
   };
 
-  const waitForMotion = async timeout => {
+  const createEmergenceGroup = node => {
+    const movable = [...node.children].filter(child => child.tagName?.toLowerCase() !== 'title');
+    if (!movable.length) return null;
+    const group = document.createElementNS(SVG_NS, 'g');
+    group.classList.add('profile-root-emergence-motion');
+    node.insertBefore(group, movable[0]);
+    movable.forEach(child => group.appendChild(child));
+    return group;
+  };
+
+  const restoreEmergenceGroup = record => {
+    if (!record?.group?.isConnected || record.group.parentElement !== record.node) return;
+    [...record.group.children].forEach(child => record.node.insertBefore(child, record.group));
+    record.group.remove();
+  };
+
+  // Same Profile Root movement contract used by the existing segment/root
+  // transition: temporary SVG motion wrappers + profile:profile-root-emergence
+  // phases. The established ProfileMotionRefinements owner draws relations only
+  // after the five nodes have settled.
+  const animateMainBranches = (direction, options = {}) => new Promise(resolve => {
+    cancelAnimationFrame(branchMotionFrame);
+    branchMotionFrame = 0;
+    const duration = Math.max(1, Number(options.duration) || (direction === 'in' ? 560 : 760));
+    const stagger = Math.max(0, Number(options.stagger) || (direction === 'in' ? 42 : 68));
+    const source = options.source || 'home-interactive';
+    const generation = options.generation;
+    const root = liveRoot();
+    const rootPoint = root ? { x: Number(root.dataset.x), y: Number(root.dataset.y) } : null;
+    if (!rootPoint || ![rootPoint.x, rootPoint.y].every(Number.isFinite)) return resolve(false);
+
+    const records = sectionIds.map((id, index) => {
+      const node = [...document.querySelectorAll(`#site-graph .site-graph-node[data-node-id="${CSS.escape(id)}"]`)]
+        .find(candidate => !candidate.closest('.v9-transition-overlay'));
+      const x = Number(node?.dataset.x);
+      const y = Number(node?.dataset.y);
+      const group = node ? createEmergenceGroup(node) : null;
+      if (!node || !group || ![x, y].every(Number.isFinite)) return null;
+      const rootDx = rootPoint.x - x;
+      const rootDy = rootPoint.y - y;
+      if (direction === 'out') {
+        group.setAttribute('transform', `translate(${rootDx.toFixed(2)} ${rootDy.toFixed(2)}) scale(.16)`);
+        group.style.opacity = '0';
+      } else {
+        group.setAttribute('transform', 'translate(0 0) scale(1)');
+        group.style.opacity = '1';
+      }
+      return { id, index, node, rootDx, rootDy, group };
+    }).filter(Boolean);
+
+    if (records.length !== sectionIds.length) {
+      records.forEach(restoreEmergenceGroup);
+      return resolve(false);
+    }
+
+    document.body?.classList.add('is-profile-root-emerging');
+    dispatchEvent(new CustomEvent('profile:profile-root-emergence', {
+      detail: { phase: 'nodes', direction, source }
+    }));
+
+    const finish = (ok, phase) => {
+      cancelAnimationFrame(branchMotionFrame);
+      branchMotionFrame = 0;
+      records.forEach(restoreEmergenceGroup);
+      document.body?.classList.remove('is-profile-root-emerging');
+      dispatchEvent(new CustomEvent('profile:profile-root-emergence', {
+        detail: { phase, direction, source }
+      }));
+      resolve(ok);
+    };
+
+    if (reducedMotion.matches) return finish(true, direction === 'out' ? 'settled' : 'cancelled');
+
     const started = performance.now();
-    while (!window.ProfileMotionRefinements?.animateMainBranches && performance.now() - started < timeout) {
+    const total = duration + stagger * Math.max(0, records.length - 1);
+    const step = now => {
+      branchMotionFrame = 0;
+      if (generation !== transitionGeneration || !homeActive() || !interactiveIntent) return finish(false, 'cancelled');
+      const elapsed = now - started;
+      records.forEach(record => {
+        const raw = clamp01((elapsed - record.index * stagger) / duration);
+        const p = ease(raw);
+        if (direction === 'out') {
+          const dx = record.rootDx * (1 - p);
+          const dy = record.rootDy * (1 - p);
+          const scale = .16 + .84 * p;
+          record.group.setAttribute('transform', `translate(${dx.toFixed(2)} ${dy.toFixed(2)}) scale(${scale.toFixed(4)})`);
+          record.group.style.opacity = String(ease(clamp01(raw / .60)));
+        } else {
+          const dx = record.rootDx * p;
+          const dy = record.rootDy * p;
+          const scale = 1 - .84 * p;
+          const fade = ease(clamp01((raw - .34) / .66));
+          record.group.setAttribute('transform', `translate(${dx.toFixed(2)} ${dy.toFixed(2)}) scale(${scale.toFixed(4)})`);
+          record.group.style.opacity = String(1 - fade);
+        }
+      });
+      if (elapsed >= total) return finish(true, direction === 'out' ? 'settled' : 'cancelled');
+      branchMotionFrame = requestAnimationFrame(step);
+    };
+    branchMotionFrame = requestAnimationFrame(step);
+  });
+
+  const waitForEdgeOwner = async timeout => {
+    const started = performance.now();
+    while (!window.ProfileMotionRefinements?.drawMainBranchEdges && performance.now() - started < timeout) {
       await wait(24);
     }
     return window.ProfileMotionRefinements || null;
@@ -400,18 +507,15 @@
     }
     const location = document.querySelector('.header-location-label');
     if (active && location) location.textContent = interactiveIntent ? 'Overview' : 'Profile';
+    const root = liveRoot();
+    if (root) root.setAttribute('aria-label', interactiveIntent ? 'Profile root' : 'Enter interactive profile - Štěpán Chrast');
   };
 
   const applyInteractiveClasses = active => {
     const body = document.body;
     if (!body) return;
     if (!active) {
-      body.classList.remove(
-        'is-home-interactive-entering',
-        'is-home-branches-emerging',
-        'is-home-interactive',
-        'is-home-interactive-exiting'
-      );
+      body.classList.remove('is-home-interactive-entering', 'is-home-branches-emerging', 'is-home-interactive', 'is-home-interactive-exiting');
       delete body.dataset.homeMode;
       return;
     }
@@ -437,29 +541,24 @@
     setBranchAccessibility(false);
 
     if (pushHistory) {
-      try {
-        history.pushState({ ...(history.state || {}), profileHomeInteractive: true }, '', location.href);
-      } catch (_) {}
+      try { history.pushState({ ...(history.state || {}), profileHomeInteractive: true }, '', location.href); } catch (_) {}
     }
-
     try { window.umami?.track?.('interactive_profile_entered', { source }); } catch (_) {}
 
     if (animate) await wait(300);
     if (generation !== transitionGeneration || !homeActive() || !interactiveIntent) return false;
 
-    const body = document.body;
-    body?.classList.add('is-home-branches-emerging');
+    document.body?.classList.add('is-home-branches-emerging');
     setBranchAccessibility(true);
-    const motion = await waitForMotion(1200);
+    await waitForEdgeOwner(1200);
     if (generation !== transitionGeneration || !homeActive() || !interactiveIntent) return false;
 
-    if (animate && motion?.animateMainBranches) {
-      await motion.animateMainBranches({
-        direction: 'out',
+    if (animate) {
+      await animateMainBranches('out', {
+        generation,
         duration: 760,
         stagger: 68,
-        source: 'home-interactive-entry',
-        guard: () => generation === transitionGeneration && homeActive() && interactiveIntent
+        source: 'home-interactive-entry'
       });
     }
     if (generation !== transitionGeneration || !homeActive() || !interactiveIntent) return false;
@@ -468,9 +567,7 @@
     applyInteractiveClasses(true);
     syncHeader(true);
     liveRoot()?.focus?.({ preventScroll: true });
-    dispatchEvent(new CustomEvent('profile:home-interactive', {
-      detail: { phase: 'entered', source }
-    }));
+    dispatchEvent(new CustomEvent('profile:home-interactive', { detail: { phase: 'entered', source } }));
     return true;
   };
 
@@ -482,29 +579,26 @@
     interactivePhase = 'exiting';
     applyInteractiveClasses(homeActive());
     syncHeader(homeActive());
-    const motion = await waitForMotion(900);
+    const edgeOwner = await waitForEdgeOwner(900);
 
-    if (homeActive() && animate && motion?.animateMainBranches) {
-      await motion.animateMainBranches({
-        direction: 'in',
+    if (homeActive() && animate) {
+      await animateMainBranches('in', {
+        generation,
         duration: 560,
         stagger: 42,
-        source: 'home-interactive-exit',
-        guard: () => generation === transitionGeneration && homeActive() && interactiveIntent
+        source: 'home-interactive-exit'
       });
     }
     if (generation !== transitionGeneration) return false;
 
     interactiveIntent = false;
     interactivePhase = 'home';
-    motion?.restoreMainBranchEdges?.();
+    edgeOwner?.restoreMainBranchEdges?.();
     setBranchAccessibility(false);
     applyInteractiveClasses(homeActive());
     syncHeader(homeActive());
     liveRoot()?.focus?.({ preventScroll: true });
-    dispatchEvent(new CustomEvent('profile:home-interactive', {
-      detail: { phase: 'exited', source }
-    }));
+    dispatchEvent(new CustomEvent('profile:home-interactive', { detail: { phase: 'exited', source } }));
     return true;
   };
 
@@ -599,6 +693,7 @@
     })
   });
 
+  ensurePortalStyles();
   ensureShell();
   ensureContactDialog();
   ensureInteractiveBack();

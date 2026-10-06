@@ -1,0 +1,263 @@
+/* V4.1 Home portal: professional Home is root-only. The same canonical root
+   becomes the opt-in gateway into the graph-native profile; no duplicate root
+   or route is introduced. */
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .site-graph-viewport{
+  transition:
+    left .46s cubic-bezier(.2,.72,.22,1),
+    right .46s cubic-bezier(.2,.72,.22,1),
+    top .46s cubic-bezier(.2,.72,.22,1),
+    bottom .46s cubic-bezier(.2,.72,.22,1)
+}
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:is(
+  .is-home-interactive-entering,
+  .is-home-interactive,
+  .is-home-interactive-exiting
+) .site-graph-viewport{
+  left:0!important;
+  right:0!important;
+  top:0!important;
+  bottom:0!important
+}
+
+/* Home owns only the profile root. The five semantic branches already exist in
+   the canonical SVG, but stay non-rendered and non-interactive until the root
+   portal explicitly enters Interactive Profile mode. */
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-branches-emerging):not(.is-home-interactive):not(.is-home-interactive-exiting)
+#site-graph .site-graph-node[data-profile-root-branch="true"],
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-branches-emerging):not(.is-home-interactive):not(.is-home-interactive-exiting)
+#site-graph .site-graph-edges path[data-source="stepan-chrast"][data-target="work"],
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-branches-emerging):not(.is-home-interactive):not(.is-home-interactive-exiting)
+#site-graph .site-graph-edges path[data-source="stepan-chrast"][data-target="knowledge"],
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-branches-emerging):not(.is-home-interactive):not(.is-home-interactive-exiting)
+#site-graph .site-graph-edges path[data-source="stepan-chrast"][data-target="experience"],
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-branches-emerging):not(.is-home-interactive):not(.is-home-interactive-exiting)
+#site-graph .site-graph-edges path[data-source="stepan-chrast"][data-target="education"],
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-branches-emerging):not(.is-home-interactive):not(.is-home-interactive-exiting)
+#site-graph .site-graph-edges path[data-source="stepan-chrast"][data-target="about"]{
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+  transition:none!important
+}
+
+/* Side stages leave the viewport rather than being display-toggled. The graph
+   can therefore take over the same physical screen without a layout jump. */
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .home-v4-profile,
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .home-v4-work{
+  opacity:1;
+  visibility:visible;
+  transition:
+    opacity .30s cubic-bezier(.2,.72,.22,1),
+    transform .42s cubic-bezier(.2,.72,.22,1),
+    visibility 0s
+}
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:is(
+  .is-home-interactive-entering,
+  .is-home-interactive,
+  .is-home-interactive-exiting
+) .home-v4-profile{
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transform:translate(-22px,-50%);
+  transition:
+    opacity .30s cubic-bezier(.2,.72,.22,1),
+    transform .42s cubic-bezier(.2,.72,.22,1),
+    visibility 0s linear .30s
+}
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:is(
+  .is-home-interactive-entering,
+  .is-home-interactive,
+  .is-home-interactive-exiting
+) .home-v4-work{
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transform:translate(22px,-50%);
+  transition:
+    opacity .30s cubic-bezier(.2,.72,.22,1),
+    transform .42s cubic-bezier(.2,.72,.22,1),
+    visibility 0s linear .30s
+}
+
+/* Home starts with the conventional header. Entering the root reveals the
+   already-existing linear graph overlay used by the local profile segments,
+   turning the same labels into graph-native navigation without replacing the
+   header DOM. */
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .header-linear-graph{
+  display:block!important;
+  opacity:0!important;
+  visibility:hidden!important;
+  transform:translateY(5px);
+  transition:
+    opacity .38s cubic-bezier(.2,.72,.22,1),
+    transform .46s cubic-bezier(.18,.76,.2,1),
+    visibility 0s linear .42s!important
+}
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:is(
+  .is-home-interactive-entering,
+  .is-home-interactive,
+  .is-home-interactive-exiting
+) .header-linear-graph{
+  opacity:1!important;
+  visibility:visible!important;
+  transform:none;
+  transition:
+    opacity .38s cubic-bezier(.2,.72,.22,1),
+    transform .46s cubic-bezier(.18,.76,.2,1),
+    visibility 0s!important
+}
+
+/* Keep GitHub/LinkedIn out of the conventional Home header, as before. They
+   return once the header becomes the full graph-native segment header. */
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:is(
+  .is-home-interactive-entering,
+  .is-home-interactive,
+  .is-home-interactive-exiting
+) .header-practical-actions .graph-control--external{
+  display:inline-flex!important
+}
+
+.home-v4-interactive-back{
+  max-width:0;
+  min-height:30px;
+  padding-left:0;
+  opacity:0;
+  visibility:hidden;
+  overflow:hidden;
+  pointer-events:none;
+  transform:translateX(-7px);
+  transition:
+    max-width .38s cubic-bezier(.2,.72,.22,1),
+    padding .38s cubic-bezier(.2,.72,.22,1),
+    opacity .26s ease,
+    transform .38s cubic-bezier(.2,.72,.22,1),
+    visibility 0s linear .38s
+}
+.home-v4-interactive-back::before,
+.home-v4-interactive-back::after{opacity:0;transition:opacity .18s ease}
+
+body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is-home-interactive-exiting)
+.home-v4-interactive-back{
+  max-width:88px;
+  padding-left:25px;
+  opacity:1;
+  visibility:visible;
+  pointer-events:auto;
+  transform:none;
+  transition:
+    max-width .38s cubic-bezier(.2,.72,.22,1),
+    padding .38s cubic-bezier(.2,.72,.22,1),
+    opacity .26s ease .08s,
+    transform .38s cubic-bezier(.2,.72,.22,1),
+    visibility 0s
+}
+body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is-home-interactive-exiting)
+.home-v4-interactive-back::before,
+body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is-home-interactive-exiting)
+.home-v4-interactive-back::after{opacity:1}
+
+/* Root portal material. Portrait comes from the existing Profile Root owner;
+   this layer only adds the old entry affordance and stronger halo response. */
+#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .home-v4-root-entry-action{
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transition:opacity .20s ease,visibility 0s linear .20s
+}
+#site-graph .home-v4-root-entry-rule{
+  stroke:color-mix(in srgb,var(--profile-accent) 55%,var(--line));
+  stroke-width:1;
+  vector-effect:non-scaling-stroke
+}
+#site-graph .home-v4-root-entry-label{
+  fill:var(--muted);
+  font-family:var(--font-meta,var(--sans));
+  font-size:8.5px;
+  font-weight:650;
+  letter-spacing:.045em
+}
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
+#site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .home-v4-root-entry-action{
+  opacity:1;
+  visibility:visible;
+  transition:opacity .20s ease,visibility 0s
+}
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active
+#site-graph .site-graph-node[data-node-id="stepan-chrast"] > :is(.site-graph-halo--primary,.site-graph-halo--secondary){
+  transform-box:fill-box;
+  transform-origin:center;
+  transition:
+    transform .38s cubic-bezier(.16,.78,.2,1),
+    opacity .28s ease!important
+}
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
+#site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .site-graph-halo--primary{
+  opacity:.68!important;
+  transform:scale(1.30)
+}
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
+#site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .site-graph-halo--secondary{
+  opacity:.34!important;
+  transform:scale(1.52)!important
+}
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
+#site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .profile-node-portrait{
+  opacity:1!important;
+  transform:scale(1.14)!important;
+  filter:saturate(1) contrast(1.03)!important
+}
+
+/* Once Interactive Profile is active the root goes back to its established
+   Overview semantics. The portal prompt itself never follows the visitor into
+   graph mode. */
+body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is-home-interactive-exiting)
+#site-graph .home-v4-root-entry-action{
+  opacity:0!important;
+  visibility:hidden!important
+}
+
+/* Do not let the first-session opening choreography leak its five branches onto
+   professional Home. They remain hidden until an explicit root activation. */
+body.is-profile-entry-revealing.is-home-v4-active:not(.is-home-interactive)
+#site-graph .site-graph-node[data-profile-root-branch="true"]{
+  visibility:hidden!important
+}
+
+@media(max-width:1280px) and (min-width:901px){
+  body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:is(
+    .is-home-interactive-entering,
+    .is-home-interactive,
+    .is-home-interactive-exiting
+  ) .site-graph-viewport{
+    left:0!important;
+    right:0!important
+  }
+}
+
+@media(max-width:900px){
+  .home-v4-interactive-back{display:none!important}
+}
+
+@media(prefers-reduced-motion:reduce){
+  body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .site-graph-viewport,
+  body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .home-v4-profile,
+  body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .home-v4-work,
+  body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .header-linear-graph,
+  .home-v4-interactive-back,
+  #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .home-v4-root-entry-action,
+  body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active
+  #site-graph .site-graph-node[data-node-id="stepan-chrast"] > :is(.site-graph-halo--primary,.site-graph-halo--secondary){
+    transition:none!important
+  }
+}

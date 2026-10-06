@@ -22,6 +22,12 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .h
 body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .header-practical-actions .graph-control--external{
   display:none!important
 }
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
+#main-nav > a[data-route="knowledge"],
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
+.header-practical-actions [data-route="atlas"]{
+  display:none!important
+}
 body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .header-context-slot{
   opacity:.72
 }
@@ -78,6 +84,33 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .s
   margin:9px 0 0;
   color:var(--text-soft,var(--muted));
   font:540 clamp(11px,.78vw,13px)/1.52 var(--sans)
+}
+.home-v4-static-portrait{
+  position:relative;
+  width:112px;
+  aspect-ratio:1;
+  margin:18px 0 0;
+  overflow:hidden;
+  border:1px solid color-mix(in srgb,var(--brown) 52%,var(--line));
+  border-radius:50%;
+  background:color-mix(in srgb,var(--paper) 92%,var(--brown));
+  box-shadow:0 0 0 6px color-mix(in srgb,var(--brown) 5%,transparent)
+}
+.home-v4-static-portrait::after{
+  content:"";
+  position:absolute;
+  inset:-7px;
+  border:1px dashed color-mix(in srgb,var(--brown) 40%,transparent);
+  border-radius:50%;
+  pointer-events:none
+}
+.home-v4-static-portrait img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center;
+  filter:saturate(.94) contrast(1.02)
 }
 .home-v4-eyebrow{
   margin:0;

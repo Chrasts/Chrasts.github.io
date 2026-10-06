@@ -209,8 +209,15 @@ body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is
    response. */
 body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
 #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-dot{
+  opacity:1!important;
   transform:scale(1.58)!important;
   stroke-width:2.85!important
+}
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
+#site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .site-graph-dot{
+  opacity:1!important;
+  transform:scale(2.02)!important;
+  stroke-width:3.05!important
 }
 
 body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
@@ -332,6 +339,7 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active
 
 body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is-home-interactive-exiting)
 #site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .site-graph-dot{
+  opacity:1!important;
   transform:scale(1.62)!important;
   stroke-width:2.65!important
 }

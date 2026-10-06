@@ -67,7 +67,7 @@
     if (document.querySelector('link[data-home-interactive-portal-style]')) return;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = 'home-interactive-portal-v4.css?v=20261006-home2';
+    link.href = 'home-interactive-portal-v4.css?v=20261007-home3';
     link.dataset.homeInteractivePortalStyle = 'true';
     document.head.appendChild(link);
   };
@@ -147,6 +147,15 @@
       element('p', 'home-v4-summary', profile.intro || '')
     );
 
+    const portrait = element('figure', 'home-v4-static-portrait');
+    const portraitImage = document.createElement('img');
+    portraitImage.src = 'assets/stepan-chrast.jpg';
+    portraitImage.alt = 'Portrait of Štěpán Chrast';
+    portraitImage.width = 720;
+    portraitImage.height = 540;
+    portraitImage.decoding = 'async';
+    portrait.appendChild(portraitImage);
+
     const current = element('section', 'home-v4-current');
     current.appendChild(element('p', 'home-v4-eyebrow', 'Current'));
     const currentGrid = element('div', 'home-v4-current-grid');
@@ -183,8 +192,7 @@
     const contact = element('button', 'home-v4-link home-v4-contact-trigger', 'Contact');
     contact.type = 'button';
     contact.addEventListener('click', () => openContact('home'));
-    const atlas = graphControl('Explore Atlas', 'atlas', 'home-v4-link--atlas');
-    actions.append(cv, contact, atlas);
+    actions.append(cv, contact);
 
     const secondary = element('div', 'home-v4-secondary-links');
     const github = linkFor('GitHub');
@@ -192,7 +200,7 @@
     if (github?.href) secondary.appendChild(makeExternal('GitHub ↗', github.href));
     if (linkedin?.href) secondary.appendChild(makeExternal('LinkedIn ↗', linkedin.href));
 
-    panel.append(identity, current, actions, secondary);
+    panel.append(identity, portrait, current, actions, secondary);
     return panel;
   };
 
@@ -251,21 +259,21 @@
 
     const rule = document.createElementNS(SVG_NS, 'line');
     rule.classList.add('home-v4-root-entry-rule');
-    rule.setAttribute('x1', '-40');
-    rule.setAttribute('x2', '40');
-    rule.setAttribute('y1', '43');
-    rule.setAttribute('y2', '43');
+    rule.setAttribute('x1', '-52');
+    rule.setAttribute('x2', '52');
+    rule.setAttribute('y1', '48');
+    rule.setAttribute('y2', '48');
 
     const label = document.createElementNS(SVG_NS, 'text');
     label.classList.add('home-v4-root-entry-label');
     label.setAttribute('x', '0');
-    label.setAttribute('y', '61');
+    label.setAttribute('y', '70');
     label.setAttribute('text-anchor', 'middle');
-    label.textContent = 'Enter interactive profile';
+    label.textContent = 'Enter interactive graph';
 
     action.append(rule, label);
     root.appendChild(action);
-    root.setAttribute('aria-label', interactiveIntent ? 'Profile root' : 'Enter interactive profile - Štěpán Chrast');
+    root.setAttribute('aria-label', interactiveIntent ? 'Return to professional Home' : 'Enter interactive graph - Štěpán Chrast');
     return action;
   };
 
@@ -508,7 +516,7 @@
     const location = document.querySelector('.header-location-label');
     if (active && location) location.textContent = interactiveIntent ? 'Overview' : 'Profile';
     const root = liveRoot();
-    if (root) root.setAttribute('aria-label', interactiveIntent ? 'Profile root' : 'Enter interactive profile - Štěpán Chrast');
+    if (root) root.setAttribute('aria-label', interactiveIntent ? 'Return to professional Home' : 'Enter interactive graph - Štěpán Chrast');
   };
 
   const applyInteractiveClasses = active => {
@@ -643,18 +651,32 @@
     }
 
     const root = event.target.closest?.(`#site-graph .site-graph-node[data-node-id="${CSS.escape(rootId)}"]`);
-    if (!root || !homeActive() || interactiveIntent) return;
+    if (!root || !homeActive()) return;
     event.preventDefault();
     event.stopImmediatePropagation();
+
+    if (interactiveIntent) {
+      if (interactivePhase !== 'interactive') return;
+      if (history.state?.profileHomeInteractive) history.back();
+      else exitInteractive('root-click-return');
+      return;
+    }
     enterInteractive('root-click');
   }, true);
 
   document.addEventListener('keydown', event => {
-    if (!homeActive() || interactiveIntent || !['Enter', ' '].includes(event.key)) return;
+    if (!homeActive() || !['Enter', ' '].includes(event.key)) return;
     const root = event.target.closest?.(`#site-graph .site-graph-node[data-node-id="${CSS.escape(rootId)}"]`);
     if (!root) return;
     event.preventDefault();
     event.stopImmediatePropagation();
+
+    if (interactiveIntent) {
+      if (interactivePhase !== 'interactive') return;
+      if (history.state?.profileHomeInteractive) history.back();
+      else exitInteractive('root-keyboard-return');
+      return;
+    }
     enterInteractive('root-keyboard');
   }, true);
 

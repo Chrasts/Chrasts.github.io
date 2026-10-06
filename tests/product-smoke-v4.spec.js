@@ -38,9 +38,14 @@ test.describe('V4 professional portfolio smoke', () => {
     await expect(page.locator('.home-v4-current-item')).toHaveCount(2);
     await expect(page.locator('.home-v4-project-choice')).toHaveCount(4);
     await expect(page.locator('.home-v4-project-preview')).toBeVisible();
+    await expect(page.locator('.home-v4-static-portrait img')).toBeVisible();
+    await expect(page.locator('.home-v4-static-portrait img')).toHaveAttribute('src', 'assets/stepan-chrast.jpg');
     await expect(page.locator('.profile-root-brief')).toBeHidden();
     await expect(page.locator('.hero')).toBeHidden();
     await expect(page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]')).toBeVisible();
+    await expect(page.locator('#main-nav > a[data-route="knowledge"]')).toBeHidden();
+    await expect(page.locator('.header-practical-actions [data-route="atlas"]')).toBeHidden();
+    await expect(page.locator('.home-v4-actions [data-route-target="atlas"]')).toHaveCount(0);
 
     for (const id of firstLevelIds) {
       await expect(page.locator(`#site-graph .site-graph-node[data-node-id="${id}"]`)).toBeHidden();
@@ -64,7 +69,8 @@ test.describe('V4 professional portfolio smoke', () => {
     const root = page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]').first();
     await root.hover();
     await expect(root.locator(':scope > .home-v4-root-entry-action')).toBeVisible();
-    await expect(root.locator(':scope > .profile-node-portrait')).toBeVisible();
+    await expect(root.locator(':scope > .home-v4-root-entry-label')).toContainText('Enter interactive graph');
+    await expect(root.locator(':scope > .profile-node-portrait')).toBeHidden();
 
     await root.click();
     await page.waitForFunction(() => window.ProfileHomeOverviewV4?.snapshot().interactivePhase === 'interactive', null, { timeout: 5_000 });
@@ -73,11 +79,15 @@ test.describe('V4 professional portfolio smoke', () => {
     await expect(page.locator('.home-v4-work')).toBeHidden();
     await expect(page.locator('.header-linear-graph')).toBeVisible();
     await expect(page.locator('.home-v4-interactive-back')).toBeVisible();
+    await expect(page.locator('#main-nav > a[data-route="knowledge"]')).toBeVisible();
+    await expect(page.locator('.header-practical-actions [data-route="atlas"]')).toBeVisible();
+    await expect(page.locator('.graph-routebar .atlas-button.atlas-entry-v7')).toBeVisible();
     for (const id of firstLevelIds) {
       await expect(page.locator(`#site-graph .site-graph-node[data-node-id="${id}"]`)).toBeVisible();
     }
 
-    await page.locator('.home-v4-interactive-back').click();
+    // The same canonical root is the return portal; no separate Home control is required.
+    await root.click();
     await page.waitForFunction(() => window.ProfileHomeOverviewV4?.snapshot().interactivePhase === 'home', null, { timeout: 5_000 });
     await expect(page.locator('.home-v4-profile')).toBeVisible();
     await expect(page.locator('.home-v4-work')).toBeVisible();

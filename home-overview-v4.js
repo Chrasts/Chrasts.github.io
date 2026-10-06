@@ -7,6 +7,10 @@
   const work = site.work || {};
   if (!graph.nodes?.length || !work.projects?.length) return;
 
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const rootId = graph.rootId || 'stepan-chrast';
+  const sectionIds = ['work', 'knowledge', 'experience', 'education', 'about'];
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const featured = [...work.projects]
     .filter(project => Number.isFinite(project.featuredRank))
     .sort((a, b) => (a.featuredRank ?? 999) - (b.featuredRank ?? 999))
@@ -21,7 +25,11 @@
 
   let shell = null;
   let contactDialog = null;
+  let interactiveBack = null;
   let activeProjectId = featured[0]?.id || null;
+  let interactiveIntent = false;
+  let interactivePhase = 'home';
+  let transitionGeneration = 0;
 
   const element = (tag, className = '', text = '') => {
     const node = document.createElement(tag);
@@ -29,6 +37,7 @@
     if (text) node.textContent = text;
     return node;
   };
+  const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   const normaliseRoute = value => String(value || 'overview')
     .replace(/^#/, '').replace(/^\/+|\/+$/g, '') || 'overview';
   const routeTo = target => {
@@ -41,6 +50,12 @@
   const homeActive = () =>
     document.body?.dataset.graphMode === 'overview' &&
     document.body?.dataset.rootLanding === 'false';
+  const liveRoot = () => [...document.querySelectorAll(
+    `#site-graph .site-graph-node[data-node-id="${CSS.escape(rootId)}"]`
+  )].find(node => !node.closest('.v9-transition-overlay')) || null;
+  const liveBranchNodes = () => sectionIds.map(id => [...document.querySelectorAll(
+    `#site-graph .site-graph-node[data-node-id="${CSS.escape(id)}"]`
+  )].find(node => !node.closest('.v9-transition-overlay')) || null).filter(Boolean);
 
   const graphControl = (label, target, className = '') => {
     const button = element('button', `home-v4-link ${className}`.trim(), label);
@@ -213,6 +228,54 @@
     return shell;
   };
 
+  const ensureRootAction = () => {
+    const root = liveRoot();
+    if (!root) return null;
+    let action = root.querySelector(':scope > .home-v4-root-entry-action');
+    if (action) return action;
+
+    action = document.createElementNS(SVG_NS, 'g');
+    action.classList.add('home-v4-root-entry-action');
+    action.setAttribute('aria-hidden', 'true');
+    action.setAttribute('pointer-events', 'none');
+
+    const rule = document.createElementNS(SVG_NS, 'line');
+    rule.classList.add('home-v4-root-entry-rule');
+    rule.setAttribute('x1', '-40');
+    rule.setAttribute('x2', '40');
+    rule.setAttribute('y1', '43');
+    rule.setAttribute('y2', '43');
+
+    const label = document.createElementNS(SVG_NS, 'text');
+    label.classList.add('home-v4-root-entry-label');
+    label.setAttribute('x', '0');
+    label.setAttribute('y', '61');
+    label.setAttribute('text-anchor', 'middle');
+    label.textContent = 'Enter interactive profile';
+
+    action.append(rule, label);
+    root.appendChild(action);
+    return action;
+  };
+
+  const ensureInteractiveBack = () => {
+    if (interactiveBack?.isConnected) return interactiveBack;
+    const slot = document.querySelector('.header-back-slot');
+    if (!slot) return null;
+    interactiveBack = element('button', 'home-v4-interactive-back graph-control graph-control--secondary', 'Back');
+    interactiveBack.type = 'button';
+    interactiveBack.setAttribute('aria-label', 'Back to professional Home');
+    interactiveBack.addEventListener('click', () => {
+      if (history.state?.profileHomeInteractive) {
+        history.back();
+        return;
+      }
+      exitInteractive('header-back');
+    });
+    slot.appendChild(interactiveBack);
+    return interactiveBack;
+  };
+
   const ensureContactDialog = () => {
     if (contactDialog?.isConnected) return contactDialog;
     contactDialog = element('dialog', 'home-v4-contact-dialog');
@@ -289,6 +352,31 @@
     return true;
   }
 
+  const setBranchAccessibility = visible => {
+    liveBranchNodes().forEach(node => {
+      if (!node.dataset.homeV4TabindexSaved) {
+        node.dataset.homeV4TabindexSaved = 'true';
+        node.dataset.homeV4Tabindex = node.getAttribute('tabindex') ?? '';
+      }
+      if (visible) {
+        node.removeAttribute('aria-hidden');
+        if (node.dataset.homeV4Tabindex) node.setAttribute('tabindex', node.dataset.homeV4Tabindex);
+        else node.removeAttribute('tabindex');
+      } else {
+        node.setAttribute('aria-hidden', 'true');
+        node.setAttribute('tabindex', '-1');
+      }
+    });
+  };
+
+  const waitForMotion = async timeout => {
+    const started = performance.now();
+    while (!window.ProfileMotionRefinements?.animateMainBranches && performance.now() - started < timeout) {
+      await wait(24);
+    }
+    return window.ProfileMotionRefinements || null;
+  };
+
   const syncHeader = active => {
     const home = document.querySelector('#main-nav > a[data-route="overview"]');
     if (home && home.textContent.trim() !== 'Home') home.textContent = 'Home';
@@ -302,25 +390,188 @@
         openContact('legacy-link');
       });
     });
+
     document.body?.classList.toggle('is-home-v4-active', active);
+    ensureInteractiveBack();
+    if (interactiveBack) {
+      const visible = active && interactiveIntent;
+      interactiveBack.setAttribute('aria-hidden', String(!visible));
+      interactiveBack.tabIndex = visible ? 0 : -1;
+    }
+    const location = document.querySelector('.header-location-label');
+    if (active && location) location.textContent = interactiveIntent ? 'Overview' : 'Profile';
+  };
+
+  const applyInteractiveClasses = active => {
+    const body = document.body;
+    if (!body) return;
+    if (!active) {
+      body.classList.remove(
+        'is-home-interactive-entering',
+        'is-home-branches-emerging',
+        'is-home-interactive',
+        'is-home-interactive-exiting'
+      );
+      delete body.dataset.homeMode;
+      return;
+    }
+
+    body.dataset.homeMode = interactivePhase;
+    body.classList.toggle('is-home-interactive-entering', interactivePhase === 'entering');
+    body.classList.toggle('is-home-interactive', interactiveIntent && ['interactive', 'exiting'].includes(interactivePhase));
+    body.classList.toggle('is-home-interactive-exiting', interactivePhase === 'exiting');
+    if (interactivePhase !== 'entering') body.classList.remove('is-home-branches-emerging');
+  };
+
+  const enterInteractive = async (source = 'root', options = {}) => {
+    if (!homeActive() || interactiveIntent || interactivePhase === 'entering') return false;
+    const animate = options.animate !== false && !reducedMotion.matches;
+    const pushHistory = options.pushHistory !== false;
+    const generation = ++transitionGeneration;
+
+    interactiveIntent = true;
+    interactivePhase = 'entering';
+    applyInteractiveClasses(true);
+    syncHeader(true);
+    ensureRootAction();
+    setBranchAccessibility(false);
+
+    if (pushHistory) {
+      try {
+        history.pushState({ ...(history.state || {}), profileHomeInteractive: true }, '', location.href);
+      } catch (_) {}
+    }
+
+    try { window.umami?.track?.('interactive_profile_entered', { source }); } catch (_) {}
+
+    if (animate) await wait(300);
+    if (generation !== transitionGeneration || !homeActive() || !interactiveIntent) return false;
+
+    const body = document.body;
+    body?.classList.add('is-home-branches-emerging');
+    setBranchAccessibility(true);
+    const motion = await waitForMotion(1200);
+    if (generation !== transitionGeneration || !homeActive() || !interactiveIntent) return false;
+
+    if (animate && motion?.animateMainBranches) {
+      await motion.animateMainBranches({
+        direction: 'out',
+        duration: 760,
+        stagger: 68,
+        source: 'home-interactive-entry',
+        guard: () => generation === transitionGeneration && homeActive() && interactiveIntent
+      });
+    }
+    if (generation !== transitionGeneration || !homeActive() || !interactiveIntent) return false;
+
+    interactivePhase = 'interactive';
+    applyInteractiveClasses(true);
+    syncHeader(true);
+    liveRoot()?.focus?.({ preventScroll: true });
+    dispatchEvent(new CustomEvent('profile:home-interactive', {
+      detail: { phase: 'entered', source }
+    }));
+    return true;
+  };
+
+  const exitInteractive = async (source = 'api', options = {}) => {
+    if (!interactiveIntent || interactivePhase === 'exiting') return false;
+    const animate = options.animate !== false && !reducedMotion.matches;
+    const generation = ++transitionGeneration;
+
+    interactivePhase = 'exiting';
+    applyInteractiveClasses(homeActive());
+    syncHeader(homeActive());
+    const motion = await waitForMotion(900);
+
+    if (homeActive() && animate && motion?.animateMainBranches) {
+      await motion.animateMainBranches({
+        direction: 'in',
+        duration: 560,
+        stagger: 42,
+        source: 'home-interactive-exit',
+        guard: () => generation === transitionGeneration && homeActive() && interactiveIntent
+      });
+    }
+    if (generation !== transitionGeneration) return false;
+
+    interactiveIntent = false;
+    interactivePhase = 'home';
+    motion?.restoreMainBranchEdges?.();
+    setBranchAccessibility(false);
+    applyInteractiveClasses(homeActive());
+    syncHeader(homeActive());
+    liveRoot()?.focus?.({ preventScroll: true });
+    dispatchEvent(new CustomEvent('profile:home-interactive', {
+      detail: { phase: 'exited', source }
+    }));
+    return true;
   };
 
   const sync = () => {
     const active = homeActive();
     const nextShell = ensureShell();
+    ensureRootAction();
+    ensureInteractiveBack();
     if (nextShell) {
       nextShell.hidden = !active;
       nextShell.setAttribute('aria-hidden', String(!active));
     }
+
+    if (!active) {
+      if (interactivePhase === 'entering' || interactivePhase === 'exiting') {
+        ++transitionGeneration;
+        interactivePhase = interactiveIntent ? 'suspended' : 'home';
+      } else if (interactiveIntent) {
+        interactivePhase = 'suspended';
+      }
+      applyInteractiveClasses(false);
+    } else if (interactiveIntent) {
+      if (!['entering', 'exiting'].includes(interactivePhase)) interactivePhase = 'interactive';
+      setBranchAccessibility(true);
+      applyInteractiveClasses(true);
+    } else {
+      interactivePhase = 'home';
+      setBranchAccessibility(false);
+      applyInteractiveClasses(true);
+    }
+
     syncHeader(active);
     if (!active && contactDialog?.open) contactDialog.close();
   };
 
   document.addEventListener('click', event => {
-    const trigger = event.target.closest?.('[data-home-contact-trigger]');
-    if (!trigger) return;
+    const contactTrigger = event.target.closest?.('[data-home-contact-trigger]');
+    if (contactTrigger) {
+      event.preventDefault();
+      openContact('delegated');
+      return;
+    }
+
+    const root = event.target.closest?.(`#site-graph .site-graph-node[data-node-id="${CSS.escape(rootId)}"]`);
+    if (!root || !homeActive() || interactiveIntent) return;
     event.preventDefault();
-    openContact('delegated');
+    event.stopImmediatePropagation();
+    enterInteractive('root-click');
+  }, true);
+
+  document.addEventListener('keydown', event => {
+    if (!homeActive() || interactiveIntent || !['Enter', ' '].includes(event.key)) return;
+    const root = event.target.closest?.(`#site-graph .site-graph-node[data-node-id="${CSS.escape(rootId)}"]`);
+    if (!root) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    enterInteractive('root-keyboard');
+  }, true);
+
+  addEventListener('popstate', event => {
+    if (!homeActive()) return;
+    const wantsInteractive = Boolean(event.state?.profileHomeInteractive);
+    if (wantsInteractive && !interactiveIntent) {
+      enterInteractive('history-forward', { pushHistory: false, animate: false });
+    } else if (!wantsInteractive && interactiveIntent) {
+      exitInteractive('history-back');
+    }
   });
 
   ['profile:graph-render-settled', 'profile:scene-state', 'profile:transition-finish', 'profile:transition-cancel',
@@ -333,16 +584,24 @@
     sync,
     openContact,
     selectProject,
+    enterInteractive,
+    exitInteractive,
     snapshot: () => ({
       active: homeActive(),
       activeProjectId,
       featuredProjectIds: featured.map(project => project.id),
       shellPresent: Boolean(shell?.isConnected),
-      contactOpen: Boolean(contactDialog?.open)
+      contactOpen: Boolean(contactDialog?.open),
+      interactiveIntent,
+      interactivePhase,
+      rootActionPresent: Boolean(liveRoot()?.querySelector(':scope > .home-v4-root-entry-action')),
+      branchCount: liveBranchNodes().length
     })
   });
 
   ensureShell();
   ensureContactDialog();
+  ensureInteractiveBack();
+  ensureRootAction();
   sync();
 })();

@@ -185,22 +185,7 @@
     }
     current.appendChild(currentGrid);
 
-    const actions = element('nav', 'home-v4-actions');
-    actions.setAttribute('aria-label', 'Profile actions');
-    const cv = element('a', 'home-v4-link home-v4-link--primary', 'CV');
-    cv.href = '/cv/';
-    const contact = element('button', 'home-v4-link home-v4-contact-trigger', 'Contact');
-    contact.type = 'button';
-    contact.addEventListener('click', () => openContact('home'));
-    actions.append(cv, contact);
-
-    const secondary = element('div', 'home-v4-secondary-links');
-    const github = linkFor('GitHub');
-    const linkedin = linkFor('LinkedIn');
-    if (github?.href) secondary.appendChild(makeExternal('GitHub ↗', github.href));
-    if (linkedin?.href) secondary.appendChild(makeExternal('LinkedIn ↗', linkedin.href));
-
-    panel.append(identity, portrait, current, actions, secondary);
+    panel.append(identity, portrait, current);
     return panel;
   };
 
@@ -210,7 +195,7 @@
     const head = element('header', 'home-v4-work-head');
     const title = element('h2', 'home-v4-work-title', 'Selected Work');
     title.id = 'home-v4-work-title';
-    head.append(element('p', 'home-v4-eyebrow', 'Evidence'), title);
+    head.append(title);
 
     const choices = element('div', 'home-v4-project-list');
     choices.setAttribute('role', 'group');
@@ -234,15 +219,66 @@
     return panel;
   };
 
+  const buildPortraitEdge = () => {
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.classList.add('home-v4-portrait-edge');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    const line = document.createElementNS(SVG_NS, 'line');
+    line.classList.add('home-v4-portrait-edge-line');
+    svg.appendChild(line);
+    return svg;
+  };
+
+  const syncPortraitEdge = () => {
+    const edge = shell?.querySelector('.home-v4-portrait-edge');
+    const line = edge?.querySelector('.home-v4-portrait-edge-line');
+    const portrait = shell?.querySelector('.home-v4-static-portrait');
+    const rootDot = liveRoot()?.querySelector(':scope > .site-graph-dot');
+    if (!edge || !line || !portrait || !rootDot || !homeActive() || interactiveIntent) {
+      if (edge) edge.dataset.ready = 'false';
+      return false;
+    }
+
+    const hostRect = shell.getBoundingClientRect();
+    const portraitRect = portrait.getBoundingClientRect();
+    const rootRect = rootDot.getBoundingClientRect();
+    if (hostRect.width < 1 || hostRect.height < 1 || portraitRect.width < 1 || rootRect.width < 1) {
+      edge.dataset.ready = 'false';
+      return false;
+    }
+
+    const px = portraitRect.left + portraitRect.width / 2 - hostRect.left;
+    const py = portraitRect.top + portraitRect.height / 2 - hostRect.top;
+    const rx = rootRect.left + rootRect.width / 2 - hostRect.left;
+    const ry = rootRect.top + rootRect.height / 2 - hostRect.top;
+    const dx = rx - px;
+    const dy = ry - py;
+    const distance = Math.hypot(dx, dy) || 1;
+    const ux = dx / distance;
+    const uy = dy / distance;
+    const portraitRadius = Math.min(portraitRect.width, portraitRect.height) / 2 + 5;
+    const rootRadius = Math.max(rootRect.width, rootRect.height) / 2 + 7;
+
+    edge.setAttribute('viewBox', `0 0 ${hostRect.width} ${hostRect.height}`);
+    line.setAttribute('x1', String(px + ux * portraitRadius));
+    line.setAttribute('y1', String(py + uy * portraitRadius));
+    line.setAttribute('x2', String(rx - ux * rootRadius));
+    line.setAttribute('y2', String(ry - uy * rootRadius));
+    edge.dataset.ready = 'true';
+    return true;
+  };
+
   const ensureShell = () => {
     if (shell?.isConnected) return shell;
     const panel = document.querySelector('.site-graph-panel');
     if (!panel) return null;
     shell = element('div', 'home-v4-shell');
     shell.dataset.homeOverview = 'true';
-    shell.append(buildProfilePanel(), buildWorkPanel());
+    shell.append(buildPortraitEdge(), buildProfilePanel(), buildWorkPanel());
     panel.appendChild(shell);
     selectProject(activeProjectId);
+    requestAnimationFrame(syncPortraitEdge);
     return shell;
   };
 
@@ -640,6 +676,7 @@
 
     syncHeader(active);
     if (!active && contactDialog?.open) contactDialog.close();
+    requestAnimationFrame(syncPortraitEdge);
   };
 
   document.addEventListener('click', event => {
@@ -711,6 +748,7 @@
       interactiveIntent,
       interactivePhase,
       rootActionPresent: Boolean(liveRoot()?.querySelector(':scope > .home-v4-root-entry-action')),
+      portraitEdgeReady: shell?.querySelector('.home-v4-portrait-edge')?.dataset.ready === 'true',
       branchCount: liveBranchNodes().length
     })
   });

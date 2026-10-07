@@ -134,6 +134,8 @@
         ? pathPoints.map((point, index) => `${index ? 'L' : 'M'} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join(' ')
         : ''
     );
+    headerGraphLine.setAttribute('pathLength', '1');
+    headerAtlasLink?.setAttribute('pathLength', '1');
 
     const atlasButton = document.querySelector('.graph-routebar .atlas-button');
     const atlasCentralNode = atlasButton?.querySelector('.atlas-entry-glyph-nodes circle:first-child');
@@ -295,6 +297,10 @@
       syncHeaderContext();
       scheduleHeaderGraph();
     }));
+  addEventListener('profile:header-graph-refresh', () => {
+    syncHeaderContext();
+    scheduleHeaderGraph();
+  });
   addEventListener('hashchange', () => requestAnimationFrame(() => {
     setActiveHeaderRoute(routeTopLevel(location.hash));
     syncHeaderContext();

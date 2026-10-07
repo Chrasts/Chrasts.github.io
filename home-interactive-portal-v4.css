@@ -42,6 +42,27 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:no
   transition:none!important
 }
 
+/* Atomic branch staging. The class is removed only after all five temporary
+   motion wrappers have been initialized at the root and the shared relation
+   owner has entered its node phase. */
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active.is-home-branches-staged
+#site-graph .site-graph-node[data-profile-root-branch="true"],
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active.is-home-branches-staged
+#site-graph .site-graph-edges path[data-source="stepan-chrast"][data-target="work"],
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active.is-home-branches-staged
+#site-graph .site-graph-edges path[data-source="stepan-chrast"][data-target="knowledge"],
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active.is-home-branches-staged
+#site-graph .site-graph-edges path[data-source="stepan-chrast"][data-target="experience"],
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active.is-home-branches-staged
+#site-graph .site-graph-edges path[data-source="stepan-chrast"][data-target="education"],
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active.is-home-branches-staged
+#site-graph .site-graph-edges path[data-source="stepan-chrast"][data-target="about"]{
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+  transition:none!important
+}
+
 /* Side stages leave the viewport rather than being display-toggled. The graph
    can therefore take over the same physical screen without a layout jump. */
 body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .home-v4-profile,
@@ -154,6 +175,56 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:is
     visibility 0s!important
 }
 
+body.is-home-header-growing .header-linear-graph-line,
+body.is-home-header-growing .header-linear-graph-atlas-link{
+  stroke-dasharray:1!important;
+  stroke-dashoffset:1!important
+}
+body.is-home-header-growing .header-linear-graph-line{
+  animation:home-header-line-grow .92s cubic-bezier(.2,.72,.22,1) .08s forwards!important
+}
+body.is-home-header-growing .header-linear-graph-atlas-link{
+  animation:home-header-line-grow .44s cubic-bezier(.2,.72,.22,1) .84s forwards!important
+}
+body.is-home-header-growing .header-linear-graph-nodes circle{
+  opacity:0!important;
+  transform-box:fill-box;
+  transform-origin:center;
+  transform:scale(.38);
+  animation:home-header-node-grow .24s cubic-bezier(.16,.78,.2,1) forwards!important
+}
+body.is-home-header-growing .header-linear-graph-nodes circle:nth-child(1){animation-delay:.10s!important}
+body.is-home-header-growing .header-linear-graph-nodes circle:nth-child(2){animation-delay:.18s!important}
+body.is-home-header-growing .header-linear-graph-nodes circle:nth-child(3){animation-delay:.26s!important}
+body.is-home-header-growing .header-linear-graph-nodes circle:nth-child(4){animation-delay:.34s!important}
+body.is-home-header-growing .header-linear-graph-nodes circle:nth-child(5){animation-delay:.42s!important}
+body.is-home-header-growing .header-linear-graph-nodes circle:nth-child(6){animation-delay:.50s!important}
+body.is-home-header-growing .header-linear-graph-nodes circle:nth-child(7){animation-delay:.58s!important}
+body.is-home-header-growing .header-linear-graph-nodes circle:nth-child(8){animation-delay:.66s!important}
+body.is-home-header-growing .header-linear-graph-nodes circle:nth-child(9){animation-delay:.74s!important}
+body.is-home-header-growing .header-linear-graph-nodes circle:nth-child(10){animation-delay:.82s!important}
+body.is-home-header-growing .header-linear-graph-nodes circle:nth-child(11){animation-delay:.90s!important}
+body.is-home-header-growing .header-linear-graph-nodes circle:nth-child(12){animation-delay:.98s!important}
+
+body.is-home-header-growing .graph-routebar .atlas-button.atlas-entry-v7{
+  opacity:0!important;
+  transform:translateY(-5px) scale(.92)!important;
+  animation:home-header-atlas-grow .38s cubic-bezier(.16,.78,.2,1) 1.04s forwards!important
+}
+
+@keyframes home-header-line-grow{
+  to{stroke-dashoffset:0}
+}
+@keyframes home-header-node-grow{
+  0%{opacity:0;transform:scale(.38)}
+  70%{opacity:1;transform:scale(1.14)}
+  100%{opacity:1;transform:scale(1)}
+}
+@keyframes home-header-atlas-grow{
+  0%{opacity:0;transform:translateY(-5px) scale(.92)}
+  100%{opacity:1;transform:none}
+}
+
 /* Keep GitHub/LinkedIn out of the conventional Home header, as before. They
    return once the header becomes the full graph-native segment header. */
 body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:is(
@@ -162,6 +233,14 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:is
   .is-home-interactive-exiting
 ) .header-practical-actions .graph-control--external{
   display:inline-flex!important
+}
+
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:is(
+  .is-home-interactive-entering,
+  .is-home-interactive,
+  .is-home-interactive-exiting
+) .header-back-slot .crosslink-return-control{
+  display:none!important
 }
 
 .home-v4-interactive-back{
@@ -390,6 +469,15 @@ body.is-profile-entry-revealing.is-home-v4-active:not(.is-home-interactive)
 }
 
 @media(prefers-reduced-motion:reduce){
+  body.is-home-header-growing .header-linear-graph-line,
+  body.is-home-header-growing .header-linear-graph-atlas-link,
+  body.is-home-header-growing .header-linear-graph-nodes circle,
+  body.is-home-header-growing .graph-routebar .atlas-button.atlas-entry-v7{
+    animation:none!important;
+    opacity:1!important;
+    transform:none!important;
+    stroke-dashoffset:0!important
+  }
   body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .site-graph-viewport,
   body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .home-v4-profile,
   body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .home-v4-work,

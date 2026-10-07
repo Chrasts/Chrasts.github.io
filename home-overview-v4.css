@@ -299,13 +299,13 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .s
   display:grid;
   gap:1px;
   margin-top:8px;
-  padding:0 0 9px;
+  padding:0 0 9px 4px;
   border-bottom:1px solid color-mix(in srgb,var(--ink) 12%,transparent)
 }
 .home-v4-project-list::before{
   content:"";
   position:absolute;
-  left:4px;
+  left:8px;
   top:13px;
   bottom:22px;
   border-left:1px solid color-mix(in srgb,var(--brown) 34%,transparent)

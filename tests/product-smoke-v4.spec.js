@@ -43,9 +43,18 @@ test.describe('V4 professional portfolio smoke', () => {
     await expect(page.locator('.profile-root-brief')).toBeHidden();
     await expect(page.locator('.hero')).toBeHidden();
     await expect(page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]')).toBeVisible();
-    await expect(page.locator('#main-nav > a[data-route="knowledge"]')).toBeHidden();
+    await expect(page.locator('.header-context-slot')).toBeHidden();
+    for (const route of ['overview', 'work', 'experience', 'education', 'knowledge', 'about']) {
+      await expect(page.locator(`#main-nav > a[data-route="${route}"]`)).toBeHidden();
+    }
+    await expect(page.locator('.header-practical-actions a[href="/cv/"]')).toBeVisible();
+    await expect(page.locator('.header-practical-actions a[href^="mailto:"]')).toBeVisible();
+    await expect(page.locator('.header-practical-actions a[href*="github.com"]')).toBeVisible();
+    await expect(page.locator('.header-practical-actions a[href*="linkedin.com"]')).toBeVisible();
     await expect(page.locator('.header-practical-actions [data-route="atlas"]')).toBeHidden();
-    await expect(page.locator('.home-v4-actions [data-route-target="atlas"]')).toHaveCount(0);
+    await expect(page.locator('.home-v4-actions')).toHaveCount(0);
+    await expect(page.locator('.home-v4-secondary-links')).toHaveCount(0);
+    await expect(page.locator('.home-v4-work-head .home-v4-eyebrow')).toHaveCount(0);
 
     for (const id of firstLevelIds) {
       await expect(page.locator(`#site-graph .site-graph-node[data-node-id="${id}"]`)).toBeHidden();
@@ -55,6 +64,7 @@ test.describe('V4 professional portfolio smoke', () => {
     expect(state.interactiveIntent).toBe(false);
     expect(state.interactivePhase).toBe('home');
     expect(state.rootActionPresent).toBe(true);
+    expect(state.portraitEdgeReady).toBe(true);
 
     const viewportFit = await page.evaluate(() => ({
       scrollHeight: document.documentElement.scrollHeight,
@@ -117,7 +127,7 @@ test.describe('V4 professional portfolio smoke', () => {
   test('Contact is an explicit panel with visible email and deliberate mailto action', async ({ page }) => {
     await bootDesktopHome(page);
 
-    await page.locator('.home-v4-contact-trigger').click();
+    await page.locator('.header-practical-actions a[href^="mailto:"]').click();
     const dialog = page.locator('.home-v4-contact-dialog');
     await expect(dialog).toBeVisible();
     await expect(page.locator('.home-v4-contact-email')).toContainText('@');

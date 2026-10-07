@@ -68,7 +68,7 @@
     if (document.querySelector('link[data-home-interactive-portal-style]')) return;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = 'home-interactive-portal-v4.css?v=20261007-home3';
+    link.href = 'home-interactive-portal-v4.css?v=20261007-home6';
     link.dataset.homeInteractivePortalStyle = 'true';
     document.head.appendChild(link);
   };

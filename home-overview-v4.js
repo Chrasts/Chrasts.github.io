@@ -31,6 +31,7 @@
   let interactivePhase = 'home';
   let transitionGeneration = 0;
   let branchMotionFrame = 0;
+  let headerGrowthTimer = 0;
 
   const element = (tag, className = '', text = '') => {
     const node = document.createElement(tag);
@@ -476,12 +477,13 @@
     dispatchEvent(new CustomEvent('profile:profile-root-emergence', {
       detail: { phase: 'nodes', direction, source }
     }));
+    if (direction === 'out') document.body?.classList.remove('is-home-branches-staged');
 
     const finish = (ok, phase) => {
       cancelAnimationFrame(branchMotionFrame);
       branchMotionFrame = 0;
       records.forEach(restoreEmergenceGroup);
-      document.body?.classList.remove('is-profile-root-emerging');
+      document.body?.classList.remove('is-profile-root-emerging', 'is-home-branches-staged');
       dispatchEvent(new CustomEvent('profile:profile-root-emergence', {
         detail: { phase, direction, source }
       }));
@@ -528,6 +530,29 @@
     return window.ProfileMotionRefinements || null;
   };
 
+  const beginHeaderGrowth = animate => {
+    clearTimeout(headerGrowthTimer);
+    document.body?.classList.remove('is-home-header-growing');
+    dispatchEvent(new CustomEvent('profile:header-graph-refresh', {
+      detail: { reason: 'home-interactive-entry' }
+    }));
+    if (!animate) return;
+    // Commit the reset state before applying the animation class so a repeated
+    // Home -> graph transition remains deterministic.
+    void document.querySelector('.header-linear-graph')?.getBoundingClientRect();
+    document.body?.classList.add('is-home-header-growing');
+    headerGrowthTimer = window.setTimeout(() => {
+      document.body?.classList.remove('is-home-header-growing');
+      headerGrowthTimer = 0;
+    }, 1450);
+  };
+
+  const stopHeaderGrowth = () => {
+    clearTimeout(headerGrowthTimer);
+    headerGrowthTimer = 0;
+    document.body?.classList.remove('is-home-header-growing');
+  };
+
   const syncHeader = active => {
     const home = document.querySelector('#main-nav > a[data-route="overview"]');
     if (home && home.textContent.trim() !== 'Home') home.textContent = 'Home';
@@ -559,7 +584,14 @@
     const body = document.body;
     if (!body) return;
     if (!active) {
-      body.classList.remove('is-home-interactive-entering', 'is-home-branches-emerging', 'is-home-interactive', 'is-home-interactive-exiting');
+      body.classList.remove(
+        'is-home-interactive-entering',
+        'is-home-branches-emerging',
+        'is-home-branches-staged',
+        'is-home-interactive',
+        'is-home-interactive-exiting',
+        'is-home-header-growing'
+      );
       delete body.dataset.homeMode;
       return;
     }
@@ -579,8 +611,10 @@
 
     interactiveIntent = true;
     interactivePhase = 'entering';
+    document.body?.classList.add('is-home-branches-staged');
     applyInteractiveClasses(true);
     syncHeader(true);
+    beginHeaderGrowth(animate);
     ensureRootAction();
     setBranchAccessibility(false);
 
@@ -592,7 +626,7 @@
     if (animate) await wait(300);
     if (generation !== transitionGeneration || !homeActive() || !interactiveIntent) return false;
 
-    document.body?.classList.add('is-home-branches-emerging');
+    document.body?.classList.add('is-home-branches-emerging', 'is-home-branches-staged');
     setBranchAccessibility(true);
     await waitForEdgeOwner(1200);
     if (generation !== transitionGeneration || !homeActive() || !interactiveIntent) return false;
@@ -621,6 +655,7 @@
     const generation = ++transitionGeneration;
 
     interactivePhase = 'exiting';
+    stopHeaderGrowth();
     applyInteractiveClasses(homeActive());
     syncHeader(homeActive());
     const edgeOwner = await waitForEdgeOwner(900);

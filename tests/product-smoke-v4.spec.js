@@ -83,12 +83,23 @@ test.describe('V4 professional portfolio smoke', () => {
     await expect(root.locator(':scope > .profile-node-portrait')).toBeHidden();
 
     await root.click();
+    await page.waitForTimeout(340);
+    const entryIsAtomic = await page.evaluate(() =>
+      document.body.classList.contains('is-home-branches-staged') ||
+      document.body.classList.contains('is-profile-root-emerging')
+    );
+    expect(entryIsAtomic).toBe(true);
+    await expect(page.locator('body')).toHaveClass(/is-home-header-growing/);
+    await expect(page.locator('.header-linear-graph-line')).toHaveAttribute('pathLength', '1');
+
     await page.waitForFunction(() => window.ProfileHomeOverviewV4?.snapshot().interactivePhase === 'interactive', null, { timeout: 5_000 });
 
     await expect(page.locator('.home-v4-profile')).toBeHidden();
     await expect(page.locator('.home-v4-work')).toBeHidden();
     await expect(page.locator('.header-linear-graph')).toBeVisible();
     await expect(page.locator('.home-v4-interactive-back')).toBeVisible();
+    const genericBack = page.locator('.header-back-slot .crosslink-return-control');
+    if (await genericBack.count()) await expect(genericBack).toBeHidden();
     await expect(page.locator('#main-nav > a[data-route="knowledge"]')).toBeVisible();
     await expect(page.locator('.header-practical-actions [data-route="atlas"]')).toBeVisible();
     await expect(page.locator('.graph-routebar .atlas-button.atlas-entry-v7')).toBeVisible();
@@ -114,6 +125,12 @@ test.describe('V4 professional portfolio smoke', () => {
     const beforeTitle = (await page.locator('.home-v4-project-title').textContent())?.trim();
 
     const choices = page.locator('.home-v4-project-choice');
+    const workBox = await page.locator('.home-v4-work').boundingBox();
+    const firstNodeBox = await choices.first().locator('.home-v4-project-node').boundingBox();
+    expect(workBox).not.toBeNull();
+    expect(firstNodeBox).not.toBeNull();
+    expect(firstNodeBox.x).toBeGreaterThan(workBox.x + 1);
+
     await choices.nth(1).click();
     await expect(choices.nth(1)).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('.home-v4-project-title')).not.toHaveText(beforeTitle || '');

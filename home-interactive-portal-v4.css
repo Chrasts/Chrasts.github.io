@@ -177,8 +177,8 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:is
 
 body.is-home-header-growing .header-linear-graph-line,
 body.is-home-header-growing .header-linear-graph-atlas-link{
-  stroke-dasharray:1!important;
-  stroke-dashoffset:1!important
+  stroke-dasharray:1;
+  stroke-dashoffset:1
 }
 body.is-home-header-growing .header-linear-graph-line{
   animation:home-header-line-grow .92s cubic-bezier(.2,.72,.22,1) .08s forwards!important
@@ -187,7 +187,7 @@ body.is-home-header-growing .header-linear-graph-atlas-link{
   animation:home-header-line-grow .44s cubic-bezier(.2,.72,.22,1) .84s forwards!important
 }
 body.is-home-header-growing .header-linear-graph-nodes circle{
-  opacity:0!important;
+  opacity:0;
   transform-box:fill-box;
   transform-origin:center;
   transform:scale(.38);
@@ -207,8 +207,8 @@ body.is-home-header-growing .header-linear-graph-nodes circle:nth-child(11){anim
 body.is-home-header-growing .header-linear-graph-nodes circle:nth-child(12){animation-delay:.98s!important}
 
 body.is-home-header-growing .graph-routebar .atlas-button.atlas-entry-v7{
-  opacity:0!important;
-  transform:translateY(-5px) scale(.92)!important;
+  opacity:0;
+  transform:translateY(-5px) scale(.92);
   animation:home-header-atlas-grow .38s cubic-bezier(.16,.78,.2,1) 1.04s forwards!important
 }
 

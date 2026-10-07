@@ -57,39 +57,51 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .s
 }
 
 .home-v4-profile{
-  left:clamp(30px,4.8vw,86px);
+  left:clamp(46px,7.6vw,132px);
   top:50%;
-  width:min(360px,21.5vw);
+  width:min(445px,30.5vw);
+  display:grid;
+  grid-template-columns:minmax(0,1fr) clamp(108px,8.6vw,132px);
+  grid-template-areas:
+    "identity portrait"
+    "current current"
+    "actions actions"
+    "secondary secondary";
+  column-gap:clamp(20px,2vw,34px);
+  align-items:center;
   transform:translateY(-50%)
 }
 .home-v4-identity{
+  grid-area:identity;
   display:grid;
-  gap:7px
+  gap:8px
 }
 .home-v4-name{
   margin:0;
   color:var(--ink);
-  font:720 clamp(28px,2.45vw,43px)/.96 var(--font-ui);
-  letter-spacing:-.035em
+  font:740 clamp(32px,2.8vw,48px)/.94 var(--font-ui);
+  letter-spacing:-.04em
 }
 .home-v4-role{
   margin:0;
   max-width:34ch;
   color:var(--brown);
-  font:720 10px/1.4 var(--sans);
-  letter-spacing:.045em
+  font:740 clamp(10px,.76vw,11.5px)/1.42 var(--sans);
+  letter-spacing:.05em
 }
 .home-v4-summary{
-  max-width:42ch;
-  margin:9px 0 0;
+  max-width:40ch;
+  margin:10px 0 0;
   color:var(--text-soft,var(--muted));
-  font:540 clamp(11px,.78vw,13px)/1.52 var(--sans)
+  font:550 clamp(11.5px,.86vw,14px)/1.55 var(--sans)
 }
 .home-v4-static-portrait{
+  grid-area:portrait;
+  justify-self:end;
   position:relative;
-  width:112px;
+  width:clamp(108px,8.6vw,132px);
   aspect-ratio:1;
-  margin:18px 0 0;
+  margin:0;
   overflow:hidden;
   border:1px solid color-mix(in srgb,var(--brown) 52%,var(--line));
   border-radius:50%;
@@ -121,6 +133,7 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .s
 }
 
 .home-v4-current{
+  grid-area:current;
   margin-top:24px
 }
 .home-v4-current-grid{
@@ -146,16 +159,16 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .s
 .home-v4-current-item strong{
   overflow:hidden;
   color:var(--ink);
-  font:680 10.5px/1.28 var(--sans);
+  font:700 11.5px/1.3 var(--sans);
   text-overflow:ellipsis
 }
 .home-v4-current-item > span:last-child{
   color:var(--muted);
-  font:540 9px/1.35 var(--sans)
+  font:550 9.7px/1.38 var(--sans)
 }
 .home-v4-current-kind{
   color:var(--muted)!important;
-  font:720 7.5px/1.2 var(--sans)!important;
+  font:740 8px/1.2 var(--sans)!important;
   letter-spacing:.08em;
   text-transform:uppercase
 }
@@ -172,12 +185,14 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .s
   align-items:center
 }
 .home-v4-actions{
-  gap:8px 18px;
-  margin-top:24px
+  grid-area:actions;
+  gap:8px 20px;
+  margin-top:22px
 }
 .home-v4-secondary-links{
-  gap:14px;
-  margin-top:10px
+  grid-area:secondary;
+  gap:16px;
+  margin-top:11px
 }
 .home-v4-link{
   appearance:none;
@@ -234,10 +249,10 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .s
 .home-v4-link--external::after{display:none}
 
 .home-v4-work{
-  right:clamp(30px,4.4vw,80px);
+  right:clamp(46px,7.2vw,126px);
   top:50%;
-  width:min(350px,20.5vw);
-  max-height:calc(100% - 54px);
+  width:min(420px,28.5vw);
+  max-height:calc(100% - 48px);
   transform:translateY(-50%);
   overflow:hidden
 }
@@ -250,7 +265,7 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .s
 .home-v4-work-title{
   margin:0;
   color:var(--ink);
-  font:680 clamp(18px,1.35vw,24px)/1.08 var(--font-ui);
+  font:710 clamp(22px,1.65vw,29px)/1.06 var(--font-ui);
   letter-spacing:-.025em
 }
 .home-v4-project-list{
@@ -276,7 +291,7 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .s
   grid-template-columns:10px minmax(0,1fr);
   align-items:center;
   gap:9px;
-  min-height:31px;
+  min-height:34px;
   padding:4px 0;
   border:0;
   background:transparent;
@@ -295,7 +310,7 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .s
 }
 .home-v4-project-choice-label{
   overflow:hidden;
-  font:620 10px/1.3 var(--sans);
+  font:650 clamp(10.5px,.78vw,12px)/1.32 var(--sans);
   text-overflow:ellipsis;
   white-space:nowrap
 }
@@ -314,8 +329,8 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .s
 .home-v4-project-choice.is-active .home-v4-project-node{background:var(--brown)}
 
 .home-v4-project-preview{
-  min-height:228px;
-  padding-top:13px
+  min-height:236px;
+  padding-top:15px
 }
 .home-v4-project-meta{
   margin:0 0 5px;
@@ -327,13 +342,13 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .s
 .home-v4-project-title{
   margin:0;
   color:var(--ink);
-  font:680 clamp(15px,1.08vw,19px)/1.15 var(--font-ui);
+  font:700 clamp(17px,1.22vw,22px)/1.13 var(--font-ui);
   letter-spacing:-.02em
 }
 .home-v4-project-summary{
   margin:7px 0 0;
   color:var(--text-soft,var(--muted));
-  font:540 10px/1.46 var(--sans)
+  font:550 clamp(10.5px,.76vw,11.5px)/1.48 var(--sans)
 }
 .home-v4-project-facts{
   display:grid;
@@ -355,7 +370,7 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .s
 .home-v4-project-fact dd{
   margin:0;
   color:var(--text-soft,var(--ink));
-  font:520 8.7px/1.4 var(--sans)
+  font:540 clamp(8.8px,.66vw,9.8px)/1.42 var(--sans)
 }
 .home-v4-project-tech{
   margin:10px 0 0;
@@ -467,14 +482,21 @@ body.is-profile-entry-revealing.is-profile-entry-chrome-visible .home-v4-shell{
     left:25%!important;
     right:25%!important
   }
-  .home-v4-profile{left:28px;width:23vw}
-  .home-v4-work{right:28px;width:22.5vw}
-  .home-v4-name{font-size:30px}
-  .home-v4-summary{font-size:10.5px}
+  .home-v4-profile{
+    left:clamp(38px,5.1vw,66px);
+    width:31vw;
+    grid-template-columns:minmax(0,1fr) clamp(92px,9vw,112px);
+    column-gap:18px
+  }
+  .home-v4-work{right:clamp(38px,5.1vw,66px);width:29.5vw}
+  .home-v4-name{font-size:clamp(30px,3vw,38px)}
+  .home-v4-role{font-size:9.8px}
+  .home-v4-summary{font-size:10.8px}
+  .home-v4-static-portrait{width:clamp(92px,9vw,112px)}
   .home-v4-current{margin-top:18px}
   .home-v4-actions{margin-top:18px}
   .home-v4-project-preview{min-height:200px}
-  .home-v4-project-fact dd{font-size:8px}
+  .home-v4-project-fact dd{font-size:8.4px}
 }
 
 @media(max-height:720px) and (min-width:901px){

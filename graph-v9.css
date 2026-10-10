@@ -210,6 +210,37 @@ body[data-graph-mode="work"] .site-graph-edges path.is-work-lattice{
 }
 
 /* --------------------------------------------------------------------------
+   Knowledge / About local-node emphasis
+   --------------------------------------------------------------------------
+   These branches are label-dense exploratory scenes. Hover/focus should make
+   the node being inspected immediately legible without changing graph
+   geometry or affecting the other Profile branches. */
+body[data-graph-mode="focus"]:is(
+  [data-graph-route="knowledge"],
+  [data-graph-route^="knowledge/"],
+  [data-graph-route="about"],
+  [data-graph-route^="about/"]
+) #site-graph .site-graph-node > .site-graph-label{
+  transform-box:fill-box;
+  transform-origin:center;
+  transition:
+    fill .20s ease,
+    opacity .20s ease,
+    transform .22s cubic-bezier(.16,.78,.2,1),
+    font-weight .20s ease;
+}
+
+body[data-graph-mode="focus"]:is(
+  [data-graph-route="knowledge"],
+  [data-graph-route^="knowledge/"],
+  [data-graph-route="about"],
+  [data-graph-route^="about/"]
+) #site-graph .site-graph-node:is(:hover,:focus-visible) > .site-graph-label{
+  transform:scale(1.38)!important;
+  font-weight:840!important;
+}
+
+/* --------------------------------------------------------------------------
    Atlas controls
    -------------------------------------------------------------------------- */
 /* Reserve a real lower lane for the toolbar instead of laying it directly over

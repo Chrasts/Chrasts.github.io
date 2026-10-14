@@ -114,8 +114,10 @@ test.describe('V4 professional portfolio smoke', () => {
     await root.hover();
     await page.waitForTimeout(500);
     const hoverSize = await rootDot.evaluate(dot => getComputedStyle(dot).transform);
-    expect(parseFloat(hoverSize.match(/^matrix\\(([^,]+)/)?.[1] || '0'))
-      .toBeGreaterThan(parseFloat(idleSize.match(/^matrix\\(([^,]+)/)?.[1] || '0'));
+    const scaleX = transform => Number(transform.startsWith('matrix(')
+      ? transform.slice(7).split(',')[0]
+      : '0');
+    expect(scaleX(hoverSize)).toBeGreaterThan(scaleX(idleSize));
     await expect(spectrum).toBeVisible();
     await expect(root.locator(':scope > .home-v4-root-entry-action')).toBeVisible();
     await expect(root.locator(':scope > .home-v4-root-entry-label')).toContainText('Enter interactive graph');

@@ -172,36 +172,56 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .s
   appearance:none;
   display:grid;
   min-width:0;
-  gap:2px;
-  padding:0 10px 0 0;
+  align-content:start;
+  gap:4px;
+  padding:2px 0 4px;
   border:0;
-  border-left:1px solid color-mix(in srgb,var(--brown) 46%,transparent);
-  padding-left:9px;
   background:transparent;
   color:var(--ink);
   text-align:left;
   cursor:pointer
 }
+.home-v4-current-item--work{--home-current-accent:#326b59}
+.home-v4-current-item--education{--home-current-accent:#685483}
+html[data-theme="dark"] .home-v4-current-item--work{--home-current-accent:#a1c7b8}
+html[data-theme="dark"] .home-v4-current-item--education{--home-current-accent:#b9aed2}
 .home-v4-current-item strong{
-  overflow:hidden;
+  min-width:0;
+  overflow-wrap:break-word;
   color:var(--ink);
-  font:700 11.5px/1.3 var(--sans);
-  text-overflow:ellipsis
+  font:700 11.5px/1.3 var(--sans)
 }
 .home-v4-current-item > span:last-child{
   color:var(--muted);
   font:550 9.7px/1.38 var(--sans)
 }
 .home-v4-current-kind{
-  color:var(--muted)!important;
-  font:740 8px/1.2 var(--sans)!important;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  min-height:10px;
+  color:var(--home-current-accent);
+  font:740 8px/1.2 var(--sans);
   letter-spacing:.08em;
   text-transform:uppercase
 }
-.home-v4-current-item:hover,
+.home-v4-current-kind::before{
+  content:"";
+  flex:none;
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  background:var(--home-current-accent);
+  transition:transform .16s ease
+}
+.home-v4-current-item:hover .home-v4-current-kind::before,
+.home-v4-current-item:focus-visible .home-v4-current-kind::before{
+  transform:scale(1.2)
+}
+.home-v4-current-item:hover strong{color:color-mix(in srgb,var(--ink) 80%,var(--home-current-accent))}
 .home-v4-current-item:focus-visible{
-  border-left-color:var(--ink);
-  outline:none
+  outline:1px solid var(--home-current-accent);
+  outline-offset:4px
 }
 
 .home-v4-actions,
@@ -545,7 +565,8 @@ body.is-profile-entry-revealing.is-profile-entry-chrome-visible .home-v4-shell{
 @media(prefers-reduced-motion:reduce){
   .home-v4-shell,
   .home-v4-link::before,
-  .home-v4-project-node{transition:none!important}
+  .home-v4-project-node,
+  .home-v4-current-kind::before{transition:none!important}
 }
 
 

@@ -36,6 +36,19 @@ test.describe('V4 professional portfolio smoke', () => {
     await expect(page.locator('.home-v4-name')).toContainText('Štěpán Chrast');
     await expect(page.locator('.home-v4-role')).toContainText('Data Analysis');
     await expect(page.locator('.home-v4-current-item')).toHaveCount(2);
+    const workStatus = page.locator('.home-v4-current-item--work');
+    const studyStatus = page.locator('.home-v4-current-item--education');
+    await expect(workStatus.locator('.home-v4-current-kind')).toHaveText('Working at');
+    await expect(workStatus.locator('strong')).toHaveText('České priority');
+    await expect(workStatus.locator('span').last()).toContainText('Junior Researcher and Data Analyst');
+    await expect(studyStatus.locator('.home-v4-current-kind')).toHaveText('Studying at');
+    await expect(studyStatus.locator('strong')).toHaveText('Charles University');
+    await expect(studyStatus.locator('span').last()).toContainText('MSc in Logic');
+    const statusDecoration = await workStatus.evaluate(item => ({
+      leftBorder: getComputedStyle(item).borderLeftWidth,
+      dotWidth: getComputedStyle(item.querySelector('.home-v4-current-kind'), '::before').width
+    }));
+    expect(statusDecoration).toEqual({ leftBorder: '0px', dotWidth: '7px' });
     await expect(page.locator('.home-v4-project-choice')).toHaveCount(4);
     await expect(page.locator('.home-v4-project-preview')).toBeVisible();
     await expect(page.locator('.home-v4-static-portrait img')).toBeVisible();

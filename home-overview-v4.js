@@ -162,25 +162,25 @@
     const currentGrid = element('div', 'home-v4-current-grid');
 
     if (currentExperience) {
-      const item = element('button', 'home-v4-current-item');
+      const item = element('button', 'home-v4-current-item home-v4-current-item--work');
       item.type = 'button';
       item.addEventListener('click', () => routeTo(currentExperience.route || 'experience'));
       item.append(
-        element('span', 'home-v4-current-kind', 'Role'),
-        element('strong', '', currentExperience.role || currentExperience.label),
-        element('span', '', currentExperience.label || '')
+        element('span', 'home-v4-current-kind', 'Working at'),
+        element('strong', '', currentExperience.label || currentExperience.organisation || currentExperience.role || ''),
+        element('span', '', currentExperience.role || '')
       );
       currentGrid.appendChild(item);
     }
 
     if (currentEducation) {
-      const item = element('button', 'home-v4-current-item');
+      const item = element('button', 'home-v4-current-item home-v4-current-item--education');
       item.type = 'button';
       item.addEventListener('click', () => routeTo(currentEducation.route || 'education'));
       item.append(
-        element('span', 'home-v4-current-kind', 'Education'),
-        element('strong', '', currentEducation.label || currentEducation.programme || 'MSc in Logic'),
-        element('span', '', currentEducation.organisation || 'Charles University')
+        element('span', 'home-v4-current-kind', 'Studying at'),
+        element('strong', '', currentEducation.organisation || 'Charles University'),
+        element('span', '', currentEducation.label || currentEducation.programme || 'MSc in Logic')
       );
       currentGrid.appendChild(item);
     }

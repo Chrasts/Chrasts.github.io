@@ -125,7 +125,7 @@
   ensureStylesheet('portfolio-refinements.css?v=20260922-headergraph8', 'data-profile-refinements-style');
   ensureStylesheet('profile-post-entry.css', 'data-profile-post-entry-style');
   ensureStylesheet('profile-motion-refinements.css', 'data-profile-motion-refinements-style');
-  ensureStylesheet('branch-colors.css?v=20261014-amber-ruby1', 'data-profile-branch-colors-style');
+  ensureStylesheet('branch-colors.css?v=20261014-knowledge-root-hover2', 'data-profile-branch-colors-style');
   ensureStylesheet('home-overview-v4.css', 'data-profile-home-v4-style');
   prepareRootLandingDom();
 

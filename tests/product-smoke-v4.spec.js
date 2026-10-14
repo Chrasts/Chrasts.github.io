@@ -209,6 +209,39 @@ test.describe('V4 professional portfolio smoke', () => {
     await expect(page.locator('.home-v4-profile')).toBeVisible();
   });
 
+  test('root node visibly responds to hover in focused sections and Work', async ({ page }) => {
+    await page.addInitScript(() => {
+      sessionStorage.setItem('profileIntroSeen', 'true');
+      sessionStorage.setItem('mobileConstructionPreview', 'true');
+    });
+    await blockAnalytics(page);
+
+    for (const route of ['knowledge', 'about', 'education', 'experience', 'work']) {
+      await page.goto('/#' + route);
+      await waitRoute(page, route);
+      const root = page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]').first();
+      await expect(root).toBeVisible();
+
+      // Move into the actual root dot: the text label is not the hover target.
+      await page.mouse.move(1, 1);
+      const dot = root.locator(':scope > .site-graph-dot');
+      const box = await dot.boundingBox();
+      expect(box).not.toBeNull();
+      const before = await dot.evaluate(el => getComputedStyle(el).transform);
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await page.waitForTimeout(550);
+      const result = await root.evaluate(el => ({
+        hover: el.matches(':hover'),
+        dot: getComputedStyle(el.querySelector(':scope > .site-graph-dot')).transform,
+        haloOpacity: Number(getComputedStyle(el.querySelector(':scope > .site-graph-halo--primary')).opacity)
+      }));
+      const scale = transform => Number(transform.startsWith('matrix(') ? transform.slice(7).split(',')[0] : '0');
+      expect(result.hover, route).toBe(true);
+      expect(scale(result.dot), route).toBeGreaterThan(scale(before) + .12);
+      expect(result.haloOpacity, route).toBeGreaterThan(.6);
+    }
+  });
+
   test('Selected Work switches evidence without expanding the Home layout', async ({ page }) => {
     await bootDesktopHome(page);
 

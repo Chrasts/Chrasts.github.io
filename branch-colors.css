@@ -9,7 +9,7 @@
 
 :root{
   --branch-work:#087a46;
-  --branch-knowledge:#a65c00;
+  --branch-knowledge:#d4a100;
   --branch-experience:#980c18;
   --branch-education:#08759b;
   --branch-about:#af2c78;
@@ -146,4 +146,55 @@ html:not([data-theme="dark"]) body #site-graph .site-graph-edges path[data-profi
   stroke-width:3px!important;
   opacity:1!important;
   filter:drop-shadow(0 0 1.5px color-mix(in srgb,var(--edge-branch-color) 28%,transparent))
+}
+
+
+/* The canonical identity root is an explicit return action in Work and all
+   focused fragments. Keep its physical hover/focus response independent of
+   knowledge/about-only label effects and the upstream-node resting scale. */
+body:is([data-graph-mode="focus"],[data-graph-mode="work"])
+#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-dot{
+  transform-box:fill-box;
+  transform-origin:center;
+  transition:
+    transform .4s cubic-bezier(.16,.8,.22,1),
+    stroke-width .25s ease,
+    fill .25s ease,
+    filter .3s ease!important
+}
+body:is([data-graph-mode="focus"],[data-graph-mode="work"])
+#site-graph .site-graph-node[data-node-id="stepan-chrast"] > :is(.site-graph-halo--primary,.site-graph-halo--secondary){
+  transform-box:fill-box;
+  transform-origin:center;
+  transition:
+    transform .44s cubic-bezier(.16,.8,.22,1),
+    opacity .3s ease,
+    stroke-width .26s ease,
+    filter .3s ease!important
+}
+body:is([data-graph-mode="focus"],[data-graph-mode="work"])
+#site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .site-graph-dot{
+  transform:scale(1.47)!important;
+  stroke-width:2.75!important;
+  fill:color-mix(in srgb,var(--brown) 12%,var(--paper));
+  filter:drop-shadow(0 0 5px color-mix(in srgb,var(--brown) 23%,transparent))
+}
+body:is([data-graph-mode="focus"],[data-graph-mode="work"])
+#site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .site-graph-halo--primary{
+  opacity:.82!important;
+  transform:scale(1.33)!important;
+  stroke-width:2!important;
+  filter:drop-shadow(0 0 7px color-mix(in srgb,var(--brown) 20%,transparent))
+}
+body:is([data-graph-mode="focus"],[data-graph-mode="work"])
+#site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .site-graph-halo--secondary{
+  opacity:.48!important;
+  transform:scale(1.21)!important;
+  stroke-width:1.35!important
+}
+@media(prefers-reduced-motion:reduce){
+  body:is([data-graph-mode="focus"],[data-graph-mode="work"])
+  #site-graph .site-graph-node[data-node-id="stepan-chrast"] > :is(.site-graph-dot,.site-graph-halo--primary,.site-graph-halo--secondary){
+    transition:none!important
+  }
 }

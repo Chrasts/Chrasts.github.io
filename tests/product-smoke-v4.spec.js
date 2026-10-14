@@ -129,7 +129,7 @@ test.describe('V4 professional portfolio smoke', () => {
     expect(scaleX(hoverSize)).toBeGreaterThan(scaleX(idleSize));
     await expect(spectrum).toBeVisible();
     await expect(root.locator(':scope > .home-v4-root-entry-action')).toBeVisible();
-    await expect(root.locator(':scope > .home-v4-root-entry-label')).toContainText('Enter interactive graph');
+    await expect(root.locator(':scope > .home-v4-root-entry-action .home-v4-root-entry-label')).toContainText('Enter interactive graph');
     await expect(root.locator(':scope > .profile-node-portrait')).toBeHidden();
 
     await root.click();
@@ -221,7 +221,9 @@ test.describe('V4 professional portfolio smoke', () => {
     const firstNodeBox = await choices.first().locator('.home-v4-project-node').boundingBox();
     expect(workBox).not.toBeNull();
     expect(firstNodeBox).not.toBeNull();
-    expect(firstNodeBox.x).toBeGreaterThan(workBox.x + 1);
+    const firstLabelBox = await choices.first().locator('.home-v4-project-choice-label').boundingBox();
+    expect(firstLabelBox).not.toBeNull();
+    expect(firstLabelBox.x - (firstNodeBox.x + firstNodeBox.width)).toBeGreaterThan(20);
 
     await choices.nth(1).click();
     await expect(choices.nth(1)).toHaveAttribute('aria-pressed', 'true');
@@ -263,7 +265,9 @@ test.describe('V4 professional portfolio smoke', () => {
   test('conventional navigation can leave Home and return without resurrecting legacy overview UI', async ({ page }) => {
     await bootDesktopHome(page);
 
-    await page.locator('#main-nav [data-route="work"]').click();
+    // Home deliberately hides the detailed section navigation.
+    // Verify a conventional route transition without depending on a hidden link.
+    await page.evaluate(() => { location.hash = '#work'; });
     await waitRoute(page, 'work');
     await expect(page.locator('.home-v4-shell')).toBeHidden();
 

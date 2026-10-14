@@ -312,7 +312,10 @@
       orbit.setAttribute('cy', '0');
       orbit.setAttribute('stroke-dasharray', `${segment.toFixed(2)} ${(circumference - segment).toFixed(2)}`);
       orbit.style.stroke = `var(--branch-${territory})`;
-      orbit.style.setProperty('--spectrum-start', `${start}deg`);
+      // Stroke offset rotates the visible semi-halo without moving its SVG
+      // element's bounding box, preserving stable pointer hit-testing.
+      orbit.style.setProperty('--spectrum-start-offset', (circumference * start / 360).toFixed(2));
+      orbit.style.setProperty('--spectrum-circumference', circumference.toFixed(2));
       spectrum.appendChild(orbit);
     });
 

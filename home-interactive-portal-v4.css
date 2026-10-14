@@ -304,8 +304,6 @@ body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is
   stroke-width:3.4;
   stroke-linecap:round;
   vector-effect:non-scaling-stroke;
-  transform-box:fill-box;
-  transform-origin:center;
   animation:home-v4-semi-halo-rotate 7.2s linear infinite
 }
 #site-graph .home-v4-root-spectrum-arc[data-territory="knowledge"]{animation-duration:9.1s;animation-direction:reverse}
@@ -313,8 +311,8 @@ body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is
 #site-graph .home-v4-root-spectrum-arc[data-territory="education"]{animation-duration:12.3s;animation-direction:reverse}
 #site-graph .home-v4-root-spectrum-arc[data-territory="about"]{animation-duration:14.1s}
 @keyframes home-v4-semi-halo-rotate{
-  from{transform:rotate(var(--spectrum-start,0deg))}
-  to{transform:rotate(calc(var(--spectrum-start,0deg) + 360deg))}
+  from{stroke-dashoffset:var(--spectrum-start-offset,0)}
+  to{stroke-dashoffset:calc(var(--spectrum-start-offset,0) - var(--spectrum-circumference,240))}
 }
 body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
 #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .home-v4-root-spectrum{
@@ -548,6 +546,6 @@ body.is-profile-entry-revealing.is-home-v4-active:not(.is-home-interactive)
   }
   #site-graph .home-v4-root-spectrum-arc{
     animation:none!important;
-    transform:rotate(var(--spectrum-start,0deg))!important
+    stroke-dashoffset:var(--spectrum-start-offset,0)!important
   }
 }

@@ -68,7 +68,7 @@
     if (document.querySelector('link[data-home-interactive-portal-style]')) return;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = 'home-interactive-portal-v4.css?v=20261007-home6';
+    link.href = 'home-interactive-portal-v4.css?v=20261014-root-spectrum1';
     link.dataset.homeInteractivePortalStyle = 'true';
     document.head.appendChild(link);
   };
@@ -283,9 +283,42 @@
     return shell;
   };
 
+  // Five semantic territories share a single root. Keep the coloured identity
+  // arcs inside the canonical SVG node instead of adding an HTML overlay that
+  // would drift when the graph camera moves or the root is re-rendered.
+  const ensureRootSpectrum = root => {
+    if (!root || root.querySelector(':scope > .home-v4-root-spectrum')) return;
+
+    const spectrum = document.createElementNS(SVG_NS, 'g');
+    spectrum.classList.add('home-v4-root-spectrum');
+    spectrum.setAttribute('aria-hidden', 'true');
+    spectrum.setAttribute('pointer-events', 'none');
+    spectrum.setAttribute('focusable', 'false');
+    const territories = ['work', 'knowledge', 'experience', 'education', 'about'];
+    const radius = 38;
+    const polar = angle => ({
+      x: (Math.cos(angle * Math.PI / 180) * radius).toFixed(2),
+      y: (Math.sin(angle * Math.PI / 180) * radius).toFixed(2)
+    });
+
+    territories.forEach((territory, index) => {
+      const start = polar(-85 + index * 72);
+      const end = polar(-23 + index * 72);
+      const arc = document.createElementNS(SVG_NS, 'path');
+      arc.classList.add('home-v4-root-spectrum-arc');
+      arc.dataset.territory = territory;
+      arc.setAttribute('d', `M ${start.x} ${start.y} A ${radius} ${radius} 0 0 1 ${end.x} ${end.y}`);
+      arc.style.stroke = `var(--branch-${territory})`;
+      spectrum.appendChild(arc);
+    });
+
+    root.insertBefore(spectrum, root.querySelector(':scope > .site-graph-dot'));
+  };
+
   const ensureRootAction = () => {
     const root = liveRoot();
     if (!root) return null;
+    ensureRootSpectrum(root);
     let action = root.querySelector(':scope > .home-v4-root-entry-action');
     if (action) return action;
 

@@ -102,7 +102,21 @@ test.describe('V4 professional portfolio smoke', () => {
     await bootDesktopHome(page);
 
     const root = page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]').first();
+    const spectrum = root.locator(':scope > .home-v4-root-spectrum');
+    await expect(spectrum).toBeVisible();
+    await expect(spectrum.locator('path')).toHaveCount(5);
+    const spectrumColors = await spectrum.locator('path').evaluateAll(arcs =>
+      arcs.map(arc => getComputedStyle(arc).stroke)
+    );
+    expect(new Set(spectrumColors).size).toBe(5);
+    const rootDot = root.locator(':scope > .site-graph-dot');
+    const idleSize = await rootDot.evaluate(dot => getComputedStyle(dot).transform);
     await root.hover();
+    await page.waitForTimeout(500);
+    const hoverSize = await rootDot.evaluate(dot => getComputedStyle(dot).transform);
+    expect(parseFloat(hoverSize.match(/^matrix\\(([^,]+)/)?.[1] || '0'))
+      .toBeGreaterThan(parseFloat(idleSize.match(/^matrix\\(([^,]+)/)?.[1] || '0'));
+    await expect(spectrum).toBeVisible();
     await expect(root.locator(':scope > .home-v4-root-entry-action')).toBeVisible();
     await expect(root.locator(':scope > .home-v4-root-entry-label')).toContainText('Enter interactive graph');
     await expect(root.locator(':scope > .profile-node-portrait')).toBeHidden();
@@ -121,6 +135,7 @@ test.describe('V4 professional portfolio smoke', () => {
 
     await expect(page.locator('.home-v4-profile')).toBeHidden();
     await expect(page.locator('.home-v4-work')).toBeHidden();
+    await expect(spectrum).toBeHidden();
     await expect(page.locator('.header-linear-graph')).toBeVisible();
     await expect(page.locator('.home-v4-interactive-back')).toBeVisible();
     const genericBack = page.locator('.header-back-slot .crosslink-return-control');

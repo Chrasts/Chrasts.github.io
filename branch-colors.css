@@ -8,11 +8,11 @@
    ========================================================================== */
 
 :root{
-  --branch-work:#2f6b4f;
-  --branch-knowledge:#947800;
-  --branch-experience:#9f1f24;
-  --branch-education:#0f5068;
-  --branch-about:#9b4f77;
+  --branch-work:#087a46;
+  --branch-knowledge:#846400;
+  --branch-experience:#b51f36;
+  --branch-education:#08759b;
+  --branch-about:#af2c78;
 
   --profile-accent:var(--brown);
   --teal:var(--profile-accent)

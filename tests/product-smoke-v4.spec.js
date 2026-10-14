@@ -104,11 +104,20 @@ test.describe('V4 professional portfolio smoke', () => {
     const root = page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]').first();
     const spectrum = root.locator(':scope > .home-v4-root-spectrum');
     await expect(spectrum).toBeVisible();
-    await expect(spectrum.locator('path')).toHaveCount(5);
-    const spectrumColors = await spectrum.locator('path').evaluateAll(arcs =>
+    await expect(spectrum.locator('circle')).toHaveCount(5);
+    const spectrumColors = await spectrum.locator('circle').evaluateAll(arcs =>
       arcs.map(arc => getComputedStyle(arc).stroke)
     );
     expect(new Set(spectrumColors).size).toBe(5);
+    const orbitStyles = await spectrum.locator('circle').evaluateAll(circles =>
+      circles.map(circle => ({
+        animation: getComputedStyle(circle).animationName,
+        radius: Number(circle.getAttribute('r')),
+        segment: circle.getAttribute('stroke-dasharray')
+      }))
+    );
+    expect(new Set(orbitStyles.map(arc => arc.radius)).size).toBe(5);
+    expect(orbitStyles.every(arc => arc.animation === 'home-v4-semi-halo-rotate' && arc.segment)).toBe(true);
     const rootDot = root.locator(':scope > .site-graph-dot');
     const idleSize = await rootDot.evaluate(dot => getComputedStyle(dot).transform);
     await root.hover();
@@ -157,6 +166,47 @@ test.describe('V4 professional portfolio smoke', () => {
     for (const id of firstLevelIds) {
       await expect(page.locator(`#site-graph .site-graph-node[data-node-id="${id}"]`)).toBeHidden();
     }
+  });
+
+
+  test('focus root returns to five-branch Overview before Home, by mouse or keyboard', async ({ page }) => {
+    await bootDesktopHome(page);
+    const root = page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]').first();
+
+    // Enter the interactive five-branch overview through the canonical Home root.
+    await root.click();
+    await page.waitForFunction(() => window.ProfileHomeOverviewV4?.snapshot().interactivePhase === 'interactive');
+
+    // The Work focus route has its own root, which must return one level only.
+    await page.locator('#site-graph .site-graph-node[data-node-id="work"]').click();
+    await waitRoute(page, 'work');
+    await expect(page.locator('.home-v4-shell')).toBeHidden();
+    await root.click();
+    await waitRoute(page, 'overview');
+    await page.waitForFunction(() => window.ProfileHomeOverviewV4?.snapshot().interactivePhase === 'interactive');
+    await expect(page.locator('.home-v4-profile')).toBeHidden();
+    for (const id of firstLevelIds) {
+      await expect(page.locator(`#site-graph .site-graph-node[data-node-id="${id}"]`)).toBeVisible();
+    }
+    // The second root click, from the five-node fragment, returns to Home.
+    await root.click();
+    await page.waitForFunction(() => window.ProfileHomeOverviewV4?.snapshot().interactivePhase === 'home');
+    await expect(page.locator('.home-v4-profile')).toBeVisible();
+
+    // A direct deep link has the same behaviour, even without the Home entry flow.
+    await page.goto('/#education');
+    await waitRoute(page, 'education');
+    await root.focus();
+    await page.keyboard.press('Enter');
+    await waitRoute(page, 'overview');
+    await page.waitForFunction(() => window.ProfileHomeOverviewV4?.snapshot().interactivePhase === 'interactive');
+    for (const id of firstLevelIds) {
+      await expect(page.locator(`#site-graph .site-graph-node[data-node-id="${id}"]`)).toBeVisible();
+    }
+    await root.focus();
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => window.ProfileHomeOverviewV4?.snapshot().interactivePhase === 'home');
+    await expect(page.locator('.home-v4-profile')).toBeVisible();
   });
 
   test('Selected Work switches evidence without expanding the Home layout', async ({ page }) => {

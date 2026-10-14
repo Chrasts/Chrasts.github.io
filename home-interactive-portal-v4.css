@@ -287,37 +287,54 @@ body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is
    strong graph affordance with persistent halos and a much faster, larger hover
    response. */
 
-/* Identity spectrum is decorative SVG geometry following the actual root,
-   not another navigation layer. Five arcs map to the five established
-   semantic branch-colour tokens in light and dark mode. */
+/* The loader's visual grammar: five partial, independently moving colour
+   halos, not one segmented ring. Only the initial Home uses these orbits. */
 #site-graph .home-v4-root-spectrum{
   fill:none;
   opacity:0;
   visibility:hidden;
   pointer-events:none;
-  transform:scale(.82);
+  transform:scale(.85);
   transform-box:fill-box;
   transform-origin:center;
-  transition:transform .46s cubic-bezier(.16,.8,.22,1),opacity .28s ease,visibility 0s linear .46s
+  transition:transform .44s cubic-bezier(.16,.8,.22,1),opacity .28s ease,visibility 0s linear .44s
 }
 #site-graph .home-v4-root-spectrum-arc{
   fill:none;
-  stroke-width:2.75;
+  stroke-width:3.4;
   stroke-linecap:round;
-  vector-effect:non-scaling-stroke
+  vector-effect:non-scaling-stroke;
+  transform-box:fill-box;
+  transform-origin:center;
+  animation:home-v4-semi-halo-rotate 7.2s linear infinite
+}
+#site-graph .home-v4-root-spectrum-arc[data-territory="knowledge"]{animation-duration:9.1s;animation-direction:reverse}
+#site-graph .home-v4-root-spectrum-arc[data-territory="experience"]{animation-duration:10.8s}
+#site-graph .home-v4-root-spectrum-arc[data-territory="education"]{animation-duration:12.3s;animation-direction:reverse}
+#site-graph .home-v4-root-spectrum-arc[data-territory="about"]{animation-duration:14.1s}
+@keyframes home-v4-semi-halo-rotate{
+  from{transform:rotate(var(--spectrum-start,0deg))}
+  to{transform:rotate(calc(var(--spectrum-start,0deg) + 360deg))}
 }
 body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
 #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .home-v4-root-spectrum{
-  opacity:.92;
+  opacity:.96;
   visibility:visible;
   transform:scale(1);
-  transition:transform .46s cubic-bezier(.16,.8,.22,1),opacity .28s ease,visibility 0s
+  transition:transform .44s cubic-bezier(.16,.8,.22,1),opacity .28s ease,visibility 0s
 }
 body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
 #site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .home-v4-root-spectrum{
   opacity:1;
-  transform:scale(1.25)
+  transform:scale(1.16)
 }
+/* The older neutral dashed orbit stays in graph mode. Suppress it on Home so
+   the five true semantic halos retain a clear shape and colour identity. */
+body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
+#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .profile-root-overview-orbit{
+  opacity:0!important
+}
+
 body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
 #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-dot{
   fill:color-mix(in srgb,var(--brown) 10%,var(--paper))!important;
@@ -357,7 +374,7 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:no
   vector-effect:non-scaling-stroke;
   transform-box:fill-box;
   transform-origin:center;
-  transform:translateY(15px) scaleX(1.2)
+  transform:translateY(43px) scaleX(1.2)
 }
 #site-graph .home-v4-root-entry-label{
   fill:var(--ink);
@@ -365,7 +382,7 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:no
   font-size:12.8px;
   font-weight:860;
   letter-spacing:.095em;
-  transform:translateY(19px)
+  transform:translateY(49px)
 }
 
 body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
@@ -401,8 +418,7 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:no
 
 body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
 #site-graph .site-graph-node[data-node-id="stepan-chrast"]:is(:hover,:focus-visible) > .profile-root-overview-orbit{
-  opacity:.82!important;
-  transform:scale(1.72)
+  opacity:0!important
 }
 
 body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:not(.is-home-interactive-entering):not(.is-home-interactive):not(.is-home-interactive-exiting)
@@ -523,10 +539,15 @@ body.is-profile-entry-revealing.is-home-v4-active:not(.is-home-interactive)
   .home-v4-interactive-back,
   #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .home-v4-root-entry-action,
   #site-graph .home-v4-root-spectrum,
+  #site-graph .home-v4-root-spectrum-arc,
   body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active
   #site-graph .site-graph-node[data-node-id="stepan-chrast"] > :is(.site-graph-halo--primary,.site-graph-halo--secondary),
   body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active
   #site-graph .site-graph-node[data-node-id="stepan-chrast"] > :is(.profile-root-overview-orbit,.profile-node-portrait){
     transition:none!important
+  }
+  #site-graph .home-v4-root-spectrum-arc{
+    animation:none!important;
+    transform:rotate(var(--spectrum-start,0deg))!important
   }
 }

@@ -29,6 +29,7 @@
   let activeProjectId = featured[0]?.id || null;
   let interactiveIntent = false;
   let interactivePhase = 'home';
+  let returnedFromFocus = false;
   let transitionGeneration = 0;
   let branchMotionFrame = 0;
   let headerGrowthTimer = 0;
@@ -68,7 +69,7 @@
     if (document.querySelector('link[data-home-interactive-portal-style]')) return;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = 'home-interactive-portal-v4.css?v=20261014-root-spectrum1';
+    link.href = 'home-interactive-portal-v4.css?v=20261014-semi-halos2';
     link.dataset.homeInteractivePortalStyle = 'true';
     document.head.appendChild(link);
   };
@@ -283,9 +284,8 @@
     return shell;
   };
 
-  // Five semantic territories share a single root. Keep the coloured identity
-  // arcs inside the canonical SVG node instead of adding an HTML overlay that
-  // would drift when the graph camera moves or the root is re-rendered.
+  // Five independent semi-halos echo the initial loading node. Their shared
+  // centre is the canonical SVG root, so camera motion cannot detach them.
   const ensureRootSpectrum = root => {
     if (!root || root.querySelector(':scope > .home-v4-root-spectrum')) return;
 
@@ -294,22 +294,26 @@
     spectrum.setAttribute('aria-hidden', 'true');
     spectrum.setAttribute('pointer-events', 'none');
     spectrum.setAttribute('focusable', 'false');
-    const territories = ['work', 'knowledge', 'experience', 'education', 'about'];
-    const radius = 38;
-    const polar = angle => ({
-      x: (Math.cos(angle * Math.PI / 180) * radius).toFixed(2),
-      y: (Math.sin(angle * Math.PI / 180) * radius).toFixed(2)
-    });
 
-    territories.forEach((territory, index) => {
-      const start = polar(-85 + index * 72);
-      const end = polar(-23 + index * 72);
-      const arc = document.createElementNS(SVG_NS, 'path');
-      arc.classList.add('home-v4-root-spectrum-arc');
-      arc.dataset.territory = territory;
-      arc.setAttribute('d', `M ${start.x} ${start.y} A ${radius} ${radius} 0 0 1 ${end.x} ${end.y}`);
-      arc.style.stroke = `var(--branch-${territory})`;
-      spectrum.appendChild(arc);
+    [
+      { territory: 'work', radius: 36, arc: 77, start: -110 },
+      { territory: 'knowledge', radius: 42, arc: 84, start: 45 },
+      { territory: 'experience', radius: 48, arc: 94, start: 165 },
+      { territory: 'education', radius: 54, arc: 78, start: -35 },
+      { territory: 'about', radius: 60, arc: 100, start: 95 }
+    ].forEach(({ territory, radius, arc, start }) => {
+      const orbit = document.createElementNS(SVG_NS, 'circle');
+      const circumference = 2 * Math.PI * radius;
+      const segment = circumference * arc / 360;
+      orbit.classList.add('home-v4-root-spectrum-arc');
+      orbit.dataset.territory = territory;
+      orbit.setAttribute('r', String(radius));
+      orbit.setAttribute('cx', '0');
+      orbit.setAttribute('cy', '0');
+      orbit.setAttribute('stroke-dasharray', `${segment.toFixed(2)} ${(circumference - segment).toFixed(2)}`);
+      orbit.style.stroke = `var(--branch-${territory})`;
+      orbit.style.setProperty('--spectrum-start', `${start}deg`);
+      spectrum.appendChild(orbit);
     });
 
     root.insertBefore(spectrum, root.querySelector(':scope > .site-graph-dot'));
@@ -638,6 +642,7 @@
 
   const enterInteractive = async (source = 'root', options = {}) => {
     if (!homeActive() || interactiveIntent || interactivePhase === 'entering') return false;
+    returnedFromFocus = false;
     const animate = options.animate !== false && !reducedMotion.matches;
     const pushHistory = options.pushHistory !== false;
     const generation = ++transitionGeneration;
@@ -682,6 +687,19 @@
     return true;
   };
 
+  // A focused section is one level below the five-branch Overview.
+  // Restore that Overview, even for a direct /#education or /#work visitor.
+  // Do not play the Home entry choreography or create a second graph model.
+  const returnToInteractiveOverview = (source = 'focus-root') => {
+    const mode = document.body?.dataset.graphMode;
+    if (mode !== 'focus' && mode !== 'work') return false;
+    returnedFromFocus = true;
+    interactiveIntent = true;
+    interactivePhase = 'suspended';
+    routeTo('overview');
+    return true;
+  };
+
   const exitInteractive = async (source = 'api', options = {}) => {
     if (!interactiveIntent || interactivePhase === 'exiting') return false;
     const animate = options.animate !== false && !reducedMotion.matches;
@@ -705,6 +723,7 @@
 
     interactiveIntent = false;
     interactivePhase = 'home';
+    returnedFromFocus = false;
     edgeOwner?.restoreMainBranchEdges?.();
     setBranchAccessibility(false);
     applyInteractiveClasses(homeActive());
@@ -762,7 +781,7 @@
 
     if (interactiveIntent) {
       if (interactivePhase !== 'interactive') return;
-      if (history.state?.profileHomeInteractive) history.back();
+      if (history.state?.profileHomeInteractive && !returnedFromFocus) history.back();
       else exitInteractive('root-click-return');
       return;
     }
@@ -778,7 +797,7 @@
 
     if (interactiveIntent) {
       if (interactivePhase !== 'interactive') return;
-      if (history.state?.profileHomeInteractive) history.back();
+      if (history.state?.profileHomeInteractive && !returnedFromFocus) history.back();
       else exitInteractive('root-keyboard-return');
       return;
     }
@@ -807,6 +826,7 @@
     selectProject,
     enterInteractive,
     exitInteractive,
+    returnToInteractiveOverview,
     snapshot: () => ({
       active: homeActive(),
       activeProjectId,
@@ -815,6 +835,7 @@
       contactOpen: Boolean(contactDialog?.open),
       interactiveIntent,
       interactivePhase,
+      returnedFromFocus,
       rootActionPresent: Boolean(liveRoot()?.querySelector(':scope > .home-v4-root-entry-action')),
       portraitEdgeReady: shell?.querySelector('.home-v4-portrait-edge')?.dataset.ready === 'true',
       branchCount: liveBranchNodes().length

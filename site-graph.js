@@ -922,12 +922,18 @@
           return;
         }
         if (state.mode === 'work') {
-          if (node.id === profileRoot.id) updateHash('overview');
+          if (node.id === profileRoot.id) {
+            if (!window.ProfileHomeOverviewV4?.returnToInteractiveOverview?.('work-root-keyboard')) updateHash('overview');
+          }
           else if (node.id === workRoot.id) setThemesViaControls([]);
           else {
             const concept = conceptByNodeId.get(node.id);
             if (concept) setThemesViaControls(concept.intent, concept.intent.length > 1 ? 'all' : 'any');
           }
+          return;
+        }
+        if (node.id === profileRoot.id && state.mode === 'focus') {
+          if (!window.ProfileHomeOverviewV4?.returnToInteractiveOverview?.('focus-root-keyboard')) updateHash('overview');
           return;
         }
         updateHash(routeForNode(node));
@@ -978,7 +984,7 @@
         if (state.mode !== 'focus' || target?.dataset.nodeId !== profileRoot.id) return;
         event.preventDefault();
         event.stopImmediatePropagation();
-        updateHash('overview');
+        if (!window.ProfileHomeOverviewV4?.returnToInteractiveOverview?.('focus-root-click')) updateHash('overview');
       }, true);
 
       renderer.svg.addEventListener('wheel', event => {

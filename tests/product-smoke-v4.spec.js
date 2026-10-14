@@ -118,6 +118,17 @@ test.describe('V4 professional portfolio smoke', () => {
     );
     expect(new Set(orbitStyles.map(arc => arc.radius)).size).toBe(5);
     expect(orbitStyles.every(arc => arc.animation === 'home-v4-semi-halo-rotate' && arc.segment)).toBe(true);
+    // A declared animation is not enough: unitless custom properties in
+    // calc() previously made Chromium hold a static stroke-dashoffset.
+    const readOffsets = () => spectrum.locator('circle').evaluateAll(arcs =>
+      arcs.map(arc => parseFloat(getComputedStyle(arc).strokeDashoffset))
+    );
+    const beforeRotation = await readOffsets();
+    await page.waitForTimeout(550);
+    const afterRotation = await readOffsets();
+    expect(beforeRotation.every(Number.isFinite)).toBe(true);
+    expect(afterRotation.every(Number.isFinite)).toBe(true);
+    expect(afterRotation.every((offset, i) => Math.abs(offset - beforeRotation[i]) > 8)).toBe(true);
     const rootDot = root.locator(':scope > .site-graph-dot');
     const idleSize = await rootDot.evaluate(dot => getComputedStyle(dot).transform);
     await root.hover();

@@ -69,7 +69,7 @@
     if (document.querySelector('link[data-home-interactive-portal-style]')) return;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = 'home-interactive-portal-v4.css?v=20261014-semi-halos2';
+    link.href = 'home-interactive-portal-v4.css?v=20261014-halo-rotation4';
     link.dataset.homeInteractivePortalStyle = 'true';
     document.head.appendChild(link);
   };
@@ -314,8 +314,10 @@
       orbit.style.stroke = `var(--branch-${territory})`;
       // Stroke offset rotates the visible semi-halo without moving its SVG
       // element's bounding box, preserving stable pointer hit-testing.
-      orbit.style.setProperty('--spectrum-start-offset', (circumference * start / 360).toFixed(2));
-      orbit.style.setProperty('--spectrum-circumference', circumference.toFixed(2));
+      // CSS stroke-dashoffset interpolation requires <length> values for
+      // calc(). Bare numbers make Chromium hold a static offset and jump.
+      orbit.style.setProperty('--spectrum-start-offset', `${(circumference * start / 360).toFixed(2)}px`);
+      orbit.style.setProperty('--spectrum-circumference', `${circumference.toFixed(2)}px`);
       spectrum.appendChild(orbit);
     });
 

@@ -304,12 +304,12 @@ body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is
   stroke-width:3.4;
   stroke-linecap:round;
   vector-effect:non-scaling-stroke;
-  animation:home-v4-semi-halo-rotate 7.2s linear infinite
+  animation:home-v4-semi-halo-rotate 4.2s linear infinite
 }
-#site-graph .home-v4-root-spectrum-arc[data-territory="knowledge"]{animation-duration:9.1s;animation-direction:reverse}
-#site-graph .home-v4-root-spectrum-arc[data-territory="experience"]{animation-duration:10.8s}
-#site-graph .home-v4-root-spectrum-arc[data-territory="education"]{animation-duration:12.3s;animation-direction:reverse}
-#site-graph .home-v4-root-spectrum-arc[data-territory="about"]{animation-duration:14.1s}
+#site-graph .home-v4-root-spectrum-arc[data-territory="knowledge"]{animation-duration:5.3s;animation-direction:reverse}
+#site-graph .home-v4-root-spectrum-arc[data-territory="experience"]{animation-duration:4.8s}
+#site-graph .home-v4-root-spectrum-arc[data-territory="education"]{animation-duration:6.1s;animation-direction:reverse}
+#site-graph .home-v4-root-spectrum-arc[data-territory="about"]{animation-duration:5.6s}
 @keyframes home-v4-semi-halo-rotate{
   from{stroke-dashoffset:var(--spectrum-start-offset,0)}
   to{stroke-dashoffset:calc(var(--spectrum-start-offset,0) - var(--spectrum-circumference,240))}

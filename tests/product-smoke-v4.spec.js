@@ -224,6 +224,9 @@ test.describe('V4 professional portfolio smoke', () => {
 
       // Move into the actual root dot: the text label is not the hover target.
       await page.mouse.move(1, 1);
+      // Let the previous route's animated root return to its resting scale
+      // before recording the new route's baseline.
+      await page.waitForTimeout(500);
       const dot = root.locator(':scope > .site-graph-dot');
       const box = await dot.boundingBox();
       expect(box).not.toBeNull();

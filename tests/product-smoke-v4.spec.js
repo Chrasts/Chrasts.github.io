@@ -51,6 +51,18 @@ test.describe('V4 professional portfolio smoke', () => {
     expect(statusDecoration).toEqual({ leftBorder: '0px', dotWidth: '7px' });
     await expect(page.locator('.home-v4-project-choice')).toHaveCount(4);
     await expect(page.locator('.home-v4-project-preview')).toBeVisible();
+    const workDecor = await page.locator('.home-v4-work').evaluate(work => ({
+      headerBorder: getComputedStyle(work.querySelector('.home-v4-work-head')).borderBottomWidth,
+      listBorder: getComputedStyle(work.querySelector('.home-v4-project-list')).borderBottomWidth,
+      listConnector: getComputedStyle(work.querySelector('.home-v4-project-list'), '::before').content,
+      nodeGap: getComputedStyle(work.querySelector('.home-v4-project-choice')).columnGap
+    }));
+    expect(workDecor).toEqual({
+      headerBorder: '0px',
+      listBorder: '0px',
+      listConnector: 'none',
+      nodeGap: '31px'
+    });
     await expect(page.locator('.home-v4-static-portrait img')).toBeVisible();
     await expect(page.locator('.home-v4-static-portrait img')).toHaveAttribute('src', 'assets/stepan-chrast.jpg');
     await expect(page.locator('.profile-root-brief')).toBeHidden();
@@ -147,6 +159,22 @@ test.describe('V4 professional portfolio smoke', () => {
     await choices.nth(1).click();
     await expect(choices.nth(1)).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('.home-v4-project-title')).not.toHaveText(beforeTitle || '');
+
+    // Exactly one edge extends out of its selected node, without moving labels.
+    await expect(choices.locator('.home-v4-project-node')).toHaveCount(4);
+    await page.waitForTimeout(600);
+    const edgeState = await choices.evaluateAll(buttons => buttons.map(button => {
+      const node = button.querySelector('.home-v4-project-node');
+      const edge = getComputedStyle(node, '::after');
+      return {
+        active: button.classList.contains('is-active'),
+        extended: edge.transform.includes('matrix(1,') || edge.transform.includes('scaleX(1)'),
+        hidden: edge.opacity === '0'
+      };
+    }));
+    expect(edgeState.map(entry => entry.active)).toEqual([false, true, false, false]);
+    expect(edgeState.map(entry => entry.extended)).toEqual([false, true, false, false]);
+    expect(edgeState.map(entry => entry.hidden)).toEqual([true, false, true, true]);
 
     const afterBox = await shell.boundingBox();
     expect(beforeBox).not.toBeNull();

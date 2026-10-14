@@ -295,6 +295,7 @@ html[data-theme="dark"] .home-v4-current-item--education{--home-current-accent:#
 .home-v4-link--external::after{display:none}
 
 .home-v4-work{
+  --home-v4-work-accent:#326b59;
   right:clamp(58px,8vw,142px);
   top:50%;
   width:min(400px,27vw);
@@ -302,11 +303,11 @@ html[data-theme="dark"] .home-v4-current-item--education{--home-current-accent:#
   transform:translateY(-50%);
   overflow:hidden
 }
+html[data-theme="dark"] .home-v4-work{--home-v4-work-accent:#a1c7b8}
 .home-v4-work-head{
   display:grid;
   gap:0;
-  padding-bottom:9px;
-  border-bottom:1px solid color-mix(in srgb,var(--ink) 14%,transparent)
+  padding-bottom:6px
 }
 .home-v4-work-title{
   margin:0;
@@ -315,28 +316,18 @@ html[data-theme="dark"] .home-v4-current-item--education{--home-current-accent:#
   letter-spacing:-.025em
 }
 .home-v4-project-list{
-  position:relative;
   display:grid;
-  gap:1px;
+  gap:2px;
   margin-top:8px;
-  padding:0 0 9px 4px;
-  border-bottom:1px solid color-mix(in srgb,var(--ink) 12%,transparent)
-}
-.home-v4-project-list::before{
-  content:"";
-  position:absolute;
-  left:8px;
-  top:13px;
-  bottom:22px;
-  border-left:1px solid color-mix(in srgb,var(--brown) 34%,transparent)
+  padding:0 0 10px
 }
 .home-v4-project-choice{
   appearance:none;
   position:relative;
   display:grid;
-  grid-template-columns:10px minmax(0,1fr);
+  grid-template-columns:9px minmax(0,1fr);
   align-items:center;
-  gap:9px;
+  column-gap:31px;
   min-height:34px;
   padding:4px 0;
   border:0;
@@ -346,13 +337,30 @@ html[data-theme="dark"] .home-v4-current-item--education{--home-current-accent:#
   cursor:pointer
 }
 .home-v4-project-node{
-  z-index:1;
+  position:relative;
   width:9px;
   height:9px;
   border:1.4px solid var(--brown);
   border-radius:50%;
   background:var(--paper);
-  transition:background .16s ease,transform .16s ease,border-color .16s ease
+  transition:background .18s ease,transform .18s ease,border-color .18s ease
+}
+/* Each node is independent. Only the selected node traces a short edge
+   across the reserved gap; label positions stay fixed during navigation. */
+.home-v4-project-node::after{
+  content:"";
+  position:absolute;
+  top:50%;
+  left:calc(100% + 4px);
+  width:22px;
+  height:1px;
+  border-radius:999px;
+  background:var(--home-v4-work-accent);
+  opacity:0;
+  transform:translateY(-50%) scaleX(0);
+  transform-origin:left center;
+  pointer-events:none;
+  transition:transform .52s cubic-bezier(.16,1,.3,1),opacity .16s ease
 }
 .home-v4-project-choice-label{
   overflow:hidden;
@@ -367,23 +375,45 @@ html[data-theme="dark"] .home-v4-current-item--education{--home-current-accent:#
   outline:none
 }
 .home-v4-project-choice:hover .home-v4-project-node,
-.home-v4-project-choice:focus-visible .home-v4-project-node,
-.home-v4-project-choice.is-active .home-v4-project-node{
-  border-color:var(--ink);
-  transform:scale(1.12)
+.home-v4-project-choice:focus-visible .home-v4-project-node{
+  border-color:var(--home-v4-work-accent);
+  transform:scale(1.08)
 }
-.home-v4-project-choice.is-active .home-v4-project-node{background:var(--brown)}
+.home-v4-project-choice.is-active .home-v4-project-node{
+  border-color:var(--home-v4-work-accent);
+  background:var(--home-v4-work-accent);
+  transform:none
+}
+.home-v4-project-choice.is-active .home-v4-project-node::after{
+  opacity:1;
+  transform:translateY(-50%) scaleX(1)
+}
+.home-v4-project-choice:focus-visible{
+  outline:1px solid var(--home-v4-work-accent);
+  outline-offset:3px
+}
 
 .home-v4-project-preview{
   min-height:236px;
   padding-top:15px
 }
 .home-v4-project-meta{
+  display:flex;
+  align-items:center;
+  gap:7px;
   margin:0 0 5px;
-  color:var(--muted);
+  color:var(--home-v4-work-accent);
   font:720 7.5px/1.25 var(--sans);
   letter-spacing:.08em;
   text-transform:uppercase
+}
+.home-v4-project-meta::before{
+  content:"";
+  flex:none;
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:var(--home-v4-work-accent)
 }
 .home-v4-project-title{
   margin:0;
@@ -428,6 +458,11 @@ html[data-theme="dark"] .home-v4-current-item--education{--home-current-accent:#
   color:var(--ink);
   font-weight:740
 }
+.home-v4-open-project::before{
+  border-color:var(--home-v4-work-accent);
+  background:var(--home-v4-work-accent)
+}
+.home-v4-open-project::after{display:none}
 
 /* Intro choreography keeps ownership of the root and five branches. The two
    professional side stages join only in the existing chrome anti-blend phase. */
@@ -566,6 +601,7 @@ body.is-profile-entry-revealing.is-profile-entry-chrome-visible .home-v4-shell{
   .home-v4-shell,
   .home-v4-link::before,
   .home-v4-project-node,
+  .home-v4-project-node::after,
   .home-v4-current-kind::before{transition:none!important}
 }
 

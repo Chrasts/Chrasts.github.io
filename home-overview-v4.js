@@ -69,7 +69,7 @@
     if (document.querySelector('link[data-home-interactive-portal-style]')) return;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = 'home-interactive-portal-v4.css?v=20261014-halo-rotation4';
+    link.href = 'home-interactive-portal-v4.css?v=20261015-backcontext1';
     link.dataset.homeInteractivePortalStyle = 'true';
     document.head.appendChild(link);
   };
@@ -364,7 +364,7 @@
     interactiveBack.type = 'button';
     interactiveBack.setAttribute('aria-label', 'Back to professional Home');
     interactiveBack.addEventListener('click', () => {
-      if (history.state?.profileHomeInteractive) return history.back();
+      if (history.state?.profileHomeInteractive && !returnedFromFocus) return history.back();
       exitInteractive('header-back');
     });
     slot.appendChild(interactiveBack);

@@ -159,7 +159,31 @@ test.describe('V4 professional portfolio smoke', () => {
     await expect(page.locator('.home-v4-work')).toBeHidden();
     await expect(spectrum).toBeHidden();
     await expect(page.locator('.header-linear-graph')).toBeVisible();
-    await expect(page.locator('.home-v4-interactive-back')).toBeVisible();
+    const homeGraphBack = page.locator('.home-v4-interactive-back');
+    await expect(homeGraphBack).toBeVisible();
+    await expect(page.locator('.header-location-label')).toHaveText('Overview');
+    const homeHeaderState = await page.evaluate(() => {
+      const back = document.querySelector('.header-back-slot .home-v4-interactive-back');
+      const location = document.querySelector('.header-context-slot .header-location-label');
+      const backRect = back.getBoundingClientRect();
+      const locationRect = location.getBoundingClientRect();
+      return {
+        backText: back.textContent.trim(),
+        backBorder: getComputedStyle(back).borderTopStyle,
+        backBackground: getComputedStyle(back).backgroundColor,
+        backRadius: parseFloat(getComputedStyle(back).borderTopLeftRadius),
+        gap: locationRect.left - backRect.right,
+        locationTextTransform: getComputedStyle(location).textTransform,
+        locationVisible: getComputedStyle(location).visibility
+      };
+    });
+    expect(homeHeaderState.backText).toBe('Back');
+    expect(homeHeaderState.backBorder).toBe('solid');
+    expect(homeHeaderState.backBackground).not.toBe('rgba(0, 0, 0, 0)');
+    expect(homeHeaderState.backRadius).toBeLessThanOrEqual(5);
+    expect(homeHeaderState.gap).toBeGreaterThanOrEqual(18);
+    expect(homeHeaderState.locationTextTransform).toBe('uppercase');
+    expect(homeHeaderState.locationVisible).toBe('visible');
     const genericBack = page.locator('.header-back-slot .crosslink-return-control');
     if (await genericBack.count()) await expect(genericBack).toBeHidden();
     await expect(page.locator('#main-nav > a[data-route="knowledge"]')).toBeVisible();
@@ -179,6 +203,18 @@ test.describe('V4 professional portfolio smoke', () => {
     }
   });
 
+
+  test('interactive Overview Back returns to Home without opening a fragment', async ({ page }) => {
+    await bootDesktopHome(page);
+    const root = page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]').first();
+    await root.click();
+    await page.waitForFunction(() => window.ProfileHomeOverviewV4?.snapshot().interactivePhase === 'interactive');
+
+    await page.locator('.header-back-slot .home-v4-interactive-back').click();
+    await page.waitForFunction(() => window.ProfileHomeOverviewV4?.snapshot().interactivePhase === 'home');
+    await expect(page.locator('.home-v4-profile')).toBeVisible();
+    await expect(page.locator('.header-context-slot')).toBeHidden();
+  });
 
   test('focus root returns to five-branch Overview before Home, by mouse or keyboard', async ({ page }) => {
     await bootDesktopHome(page);

@@ -5,19 +5,13 @@
   const graph = window.SITE_DATA?.graph;
   if (!graph?.nodes?.length) return;
 
-  const SVG_NS = 'http://www.w3.org/2000/svg';
   const rootId = graph.rootId || 'stepan-chrast';
   const sectionIds = ['work', 'knowledge', 'experience', 'education', 'about'];
   const reducedMotion = Boolean(bootstrap.reducedMotion) || matchMedia('(prefers-reduced-motion: reduce)').matches;
   const TIMING = Object.freeze({
     minimumLoader: 1450,
     condense: 720,
-    handoff: 420,
-    rootHold: 180,
-    branchDuration: 760,
-    branchStagger: 68,
-    chromeDelay: 140,
-    chromeFade: 520
+    handoff: 420
   });
   const STATES = Object.freeze({
     PREPARING: 'PREPARING',
@@ -47,8 +41,6 @@
   let generation = 0;
   let completionInFlight = false;
   let skipRequested = false;
-  const stagedNodes = new Map();
-  const stagedEdges = new Map();
 
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   const raf = () => new Promise(resolve => requestAnimationFrame(resolve));
@@ -145,126 +137,14 @@
     loader.style.removeProperty('transform');
   };
 
-  const clamp01 = value => Math.max(0, Math.min(1, value));
-  const ease = value => {
-    const t = clamp01(value);
-    return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-  };
-
   const restoreStagedPresentation = () => {
     document.body?.classList.remove('is-profile-entry-branches-staged');
-    stagedNodes.clear();
-    stagedEdges.clear();
   };
 
   const stageProfileGraph = () => {
     restoreStagedPresentation();
     document.body?.classList.add('is-profile-entry-branches-staged');
   };
-
-  const createEmergenceGroup = node => {
-    const movable = [...node.children].filter(child => child.tagName?.toLowerCase() !== 'title');
-    if (!movable.length) return null;
-    const group = document.createElementNS(SVG_NS, 'g');
-    group.classList.add('profile-root-emergence-motion');
-    node.insertBefore(group, movable[0]);
-    movable.forEach(child => group.appendChild(child));
-    return group;
-  };
-
-  const restoreEmergence = record => {
-    if (record.group?.isConnected && record.group.parentElement === record.node) {
-      [...record.group.children].forEach(child => record.node.insertBefore(child, record.group));
-      record.group.remove();
-    }
-    if (record.edge?.isConnected) {
-      if (record.edgeStyle == null) record.edge.removeAttribute('style');
-      else record.edge.setAttribute('style', record.edgeStyle);
-      if (record.pathLength == null) record.edge.removeAttribute('pathLength');
-      else record.edge.setAttribute('pathLength', record.pathLength);
-    }
-  };
-
-  const animateProfileEmergence = currentGeneration => new Promise(resolve => {
-    const root = liveNode(rootId);
-    const rootPoint = root ? { x: Number(root.dataset.x), y: Number(root.dataset.y) } : null;
-    const edges = mainEdges();
-    if (!rootPoint || ![rootPoint.x, rootPoint.y].every(Number.isFinite)) {
-      restoreStagedPresentation();
-      return resolve(false);
-    }
-
-    const records = sectionIds.map((id, index) => {
-      const node = liveNode(id);
-      const x = Number(node?.dataset.x);
-      const y = Number(node?.dataset.y);
-      const group = node ? createEmergenceGroup(node) : null;
-      if (!node || !group || ![x, y].every(Number.isFinite)) return null;
-      const edge = edges.find(candidate => candidate.dataset.target === id) || null;
-      const dx = rootPoint.x - x;
-      const dy = rootPoint.y - y;
-      group.setAttribute('transform', `translate(${dx.toFixed(2)} ${dy.toFixed(2)}) scale(.16)`);
-      group.style.opacity = '0';
-      const edgeStyle = edge?.getAttribute('style') ?? null;
-      const pathLength = edge?.getAttribute('pathLength') ?? null;
-      if (edge) {
-        edge.setAttribute('pathLength', '1');
-        edge.style.strokeDasharray = '.0001 1';
-        edge.style.strokeDashoffset = '0';
-        edge.style.opacity = '0';
-      }
-      return { id, index, node, x, y, group, edge, edgeStyle, pathLength };
-    }).filter(Boolean);
-
-    if (records.length !== sectionIds.length) {
-      records.forEach(restoreEmergence);
-      restoreStagedPresentation();
-      return resolve(false);
-    }
-
-    document.body?.classList.add('is-profile-root-emerging');
-    document.body?.classList.remove('is-profile-entry-branches-staged');
-    dispatchEvent(new CustomEvent('profile:profile-root-emergence', { detail: { phase: 'nodes', source: 'entry' } }));
-
-    if (reducedMotion) {
-      records.forEach(restoreEmergence);
-      document.body?.classList.remove('is-profile-root-emerging');
-      dispatchEvent(new CustomEvent('profile:profile-root-emergence', { detail: { phase: 'settled', source: 'entry', reducedMotion: true } }));
-      return resolve(true);
-    }
-
-    const started = performance.now();
-    const total = TIMING.branchDuration + TIMING.branchStagger * (records.length - 1);
-    const step = now => {
-      if (currentGeneration !== generation) {
-        records.forEach(restoreEmergence);
-        document.body?.classList.remove('is-profile-root-emerging');
-        dispatchEvent(new CustomEvent('profile:profile-root-emergence', { detail: { phase: 'cancelled', source: 'entry' } }));
-        return resolve(false);
-      }
-
-      const elapsed = now - started;
-      records.forEach(record => {
-        const raw = clamp01((elapsed - record.index * TIMING.branchStagger) / TIMING.branchDuration);
-        const p = ease(raw);
-        const dx = (rootPoint.x - record.x) * (1 - p);
-        const dy = (rootPoint.y - record.y) * (1 - p);
-        const scale = .16 + .84 * p;
-        record.group.setAttribute('transform', `translate(${dx.toFixed(2)} ${dy.toFixed(2)}) scale(${scale.toFixed(4)})`);
-        record.group.style.opacity = String(ease(clamp01(raw / .60)));
-      });
-
-      if (elapsed >= total) {
-        records.forEach(restoreEmergence);
-        document.body?.classList.remove('is-profile-root-emerging');
-        dispatchEvent(new CustomEvent('profile:profile-root-emergence', { detail: { phase: 'settled', source: 'entry' } }));
-        resolve(true);
-        return;
-      }
-      requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  });
 
   const failOpen = reason => {
     ++generation;
@@ -332,16 +212,34 @@
     await phaseWait(TIMING.condense);
     if (currentGeneration !== generation) return false;
 
-    // At handoff the static loader has collapsed to its central node. The live
-    // Overview is already staged behind it with only the canonical root visible.
-    // Cross-fade those two roots before any branch or surrounding UI is shown.
+    // The Home V4 destination is a complete, root-only professional overview.
+    // The former root hold, five-branch emergence and delayed chrome reveal
+    // exposed a root-only screen for several seconds after the loader.
+    // Keep the opaque loader until the actual Home panels are ready.
+    const homeReady = await waitFor(() => {
+      const shell = document.querySelector('.home-v4-shell');
+      return document.body?.classList.contains('is-home-v4-active') &&
+        document.body?.dataset.graphMode === 'overview' &&
+        document.body?.dataset.rootLanding === 'false' &&
+        shell && !shell.hidden &&
+        Boolean(shell.querySelector('.home-v4-profile')) &&
+        Boolean(shell.querySelector('.home-v4-work')) &&
+        Boolean(liveNode(rootId));
+    }, 2400);
+    if (currentGeneration !== generation) return false;
+    if (!homeReady) return failOpen('home-surface-unavailable');
+
+    // One presentation boundary: prepare the whole Home underneath the loader
+    // before fading it. No frame may show the root without both side panels.
+    restoreStagedPresentation();
     document.documentElement.dataset.profileIntro = 'ready';
-    state.stage = 'root';
+    state.stage = 'home';
     if (document.body) {
       document.body.dataset.entryState = 'profile';
+      document.body.classList.remove('is-profile-entry-revealing', 'is-profile-entry-chrome-visible');
       document.body.classList.add('is-entry-loader-handoff');
     }
-    emit('stage', { stage: 'root' });
+    emit('stage', { stage: 'home' });
 
     await phaseWait(TIMING.handoff);
     if (currentGeneration !== generation) return false;
@@ -350,28 +248,6 @@
       document.body.classList.remove('is-entry-loader-releasing', 'is-entry-loader-handoff');
     }
     state.loaderReleased = true;
-
-    await phaseWait(TIMING.rootHold);
-    if (currentGeneration !== generation) return false;
-
-    state.stage = 'branches';
-    emit('stage', { stage: 'branches' });
-    await waitFor(() => Boolean(window.ProfileMotionRefinements?.drawMainBranchEdges), 900);
-    if (currentGeneration !== generation) return false;
-    await animateProfileEmergence(currentGeneration);
-    if (currentGeneration !== generation) return false;
-
-    await phaseWait(TIMING.chromeDelay);
-    if (currentGeneration !== generation) return false;
-
-    // The graph establishes hierarchy first. Navigation, the profile brief and
-    // supporting labels then anti-blend in as a separate, quieter layer.
-    state.stage = 'chrome';
-    if (document.body) document.body.classList.add('is-profile-entry-chrome-visible');
-    emit('stage', { stage: 'chrome' });
-
-    await phaseWait(TIMING.chromeFade);
-    if (currentGeneration !== generation) return false;
 
     state.state = STATES.ATLAS_READY;
     state.stage = 'profile';

@@ -253,10 +253,21 @@ body.is-profile-entry-branches-staged
 body.is-entry-loader-releasing .entry-loading-shell{display:grid!important;pointer-events:none}
 body.is-entry-loader-complete .entry-loading-shell{display:none!important}
 
-/* First-session handoff hierarchy:
-   1) loader collapses to the central node,
-   2) the five profile branches unfold from the live root,
-   3) navigation and explanatory copy anti-blend in afterwards. */
+/* V4 Home handoff: the loader dissolves over the complete, already mounted
+   professional overview. Suppress any residual chrome or panel transitions
+   during that paint boundary; the five-branch graph is still opt-in. */
+body.is-entry-loader-handoff > .site-header,
+body.is-entry-loader-handoff .home-v4-shell{
+  opacity:1!important;
+  visibility:visible!important;
+  transition:none!important
+}
+body.is-entry-loader-handoff .home-v4-profile,
+body.is-entry-loader-handoff .home-v4-work{
+  opacity:1!important;
+  visibility:visible!important;
+  transition:none!important
+}
 html[data-profile-intro="running"] body.is-profile-entry-revealing > .site-header,
 body.is-profile-entry-revealing .site-header,
 body.is-profile-entry-revealing .graph-routebar,

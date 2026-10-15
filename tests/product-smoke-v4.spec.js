@@ -387,7 +387,28 @@ test.describe('V4 professional portfolio smoke', () => {
     await expect(page.locator('#site-explorer')).toBeVisible();
   });
 
-  test('fresh-session intro resolves automatically into root-only Home with no mandatory graph gate', async ({ page }) => {
+  test('fresh-session intro reveals the whole Home at the loader handoff, without a root-only interstitial', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.__homeEntryHandoffSamples = [];
+      window.addEventListener('profile:intro-stage', event => {
+        if (event.detail?.stage !== 'home') return;
+        const measure = selector => {
+          const el = document.querySelector(selector);
+          if (!el) return { connected: false, visibility: 'missing', opacity: 0 };
+          const style = getComputedStyle(el);
+          return { connected: el.isConnected, visibility: style.visibility, opacity: Number(style.opacity) };
+        };
+        window.__homeEntryHandoffSamples.push({
+          loaderFading: document.body.classList.contains('is-entry-loader-handoff'),
+          hasHiddenBranches: [...document.querySelectorAll('#site-graph .site-graph-node[data-profile-root-branch="true"]')]
+            .every(node => getComputedStyle(node).visibility === 'hidden'),
+          shell: measure('.home-v4-shell'),
+          profile: measure('.home-v4-profile'),
+          work: measure('.home-v4-work'),
+          header: measure('.site-header')
+        });
+      });
+    });
     await blockAnalytics(page);
     await page.goto('/#overview');
 
@@ -395,6 +416,17 @@ test.describe('V4 professional portfolio smoke', () => {
     await page.waitForFunction(() => document.body.dataset.graphMode === 'overview', null, { timeout: 10_000 });
     await page.waitForFunction(() => document.body.classList.contains('is-entry-loader-complete'), null, { timeout: 10_000 });
     await expect(page.locator('.home-v4-shell')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('.home-v4-profile')).toBeVisible();
+    await expect(page.locator('.home-v4-work')).toBeVisible();
+    const samples = await page.evaluate(() => window.__homeEntryHandoffSamples);
+    expect(samples).toHaveLength(1);
+    expect(samples[0].loaderFading).toBe(true);
+    expect(samples[0].hasHiddenBranches).toBe(true);
+    for (const part of ['shell', 'profile', 'work', 'header']) {
+      expect(samples[0][part].connected, part).toBe(true);
+      expect(samples[0][part].visibility, part).toBe('visible');
+      expect(samples[0][part].opacity, part).toBe(1);
+    }
     await expect(page.locator('[data-root-activate]')).toBeHidden();
     for (const id of firstLevelIds) {
       await expect(page.locator(`#site-graph .site-graph-node[data-node-id="${id}"]`)).toBeHidden();

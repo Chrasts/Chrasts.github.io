@@ -178,7 +178,8 @@ test.describe('V4 professional portfolio smoke', () => {
         locationVisible: getComputedStyle(location).visibility
       };
     });
-    expect(homeHeaderState.backText).toBe('Back');
+    // The shared Back control also owns a visually hidden destination span.
+    expect(homeHeaderState.backText).toBe('BackHome');
     expect(homeHeaderState.backBorder).toBe('solid');
     expect(homeHeaderState.backBackground).not.toBe('rgba(0, 0, 0, 0)');
     expect(homeHeaderState.backRadius).toBeLessThanOrEqual(5);

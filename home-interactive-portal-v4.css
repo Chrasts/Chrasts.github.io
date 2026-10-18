@@ -238,6 +238,16 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:is
 /* Overview and focused graph sections share the canonical Back control
    styled by cross-link-travel.css and styles.css. */
 
+/* The scene-object placement layer can display a Profile brief button even
+   after its owner sets [hidden]. Suppress it at the graph-mode boundary; this
+   does not affect the separate Atlas quick profile affordance. */
+body:is([data-graph-mode="focus"],[data-graph-mode="work"])
+.site-header .header-quick-overview{
+  display:none!important;
+  visibility:hidden!important;
+  pointer-events:none!important
+}
+
 /* Root portal material. Professional Home keeps the canonical node abstract:
    the portrait is now static in the left profile panel. The root itself is a
    strong graph affordance with persistent halos and a much faster, larger hover

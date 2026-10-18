@@ -235,138 +235,8 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:is
   display:inline-flex!important
 }
 
-body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:is(
-  .is-home-interactive-entering,
-  .is-home-interactive,
-  .is-home-interactive-exiting
-) .header-back-slot .crosslink-return-control{
-  display:none!important
-}
-
-.home-v4-interactive-back{
-  max-width:0;
-  min-height:30px;
-  padding-left:0;
-  opacity:0;
-  visibility:hidden;
-  overflow:hidden;
-  pointer-events:none;
-  transform:translateX(-7px);
-  transition:
-    max-width .38s cubic-bezier(.2,.72,.22,1),
-    padding .38s cubic-bezier(.2,.72,.22,1),
-    opacity .26s ease,
-    transform .38s cubic-bezier(.2,.72,.22,1),
-    visibility 0s linear .38s
-}
-.home-v4-interactive-back::before,
-.home-v4-interactive-back::after{opacity:0;transition:opacity .18s ease}
-
-body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is-home-interactive-exiting)
-.home-v4-interactive-back{
-  max-width:88px;
-  padding-left:25px;
-  opacity:1;
-  visibility:visible;
-  pointer-events:auto;
-  transform:none;
-  transition:
-    max-width .38s cubic-bezier(.2,.72,.22,1),
-    padding .38s cubic-bezier(.2,.72,.22,1),
-    opacity .26s ease .08s,
-    transform .38s cubic-bezier(.2,.72,.22,1),
-    visibility 0s
-}
-body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is-home-interactive-exiting)
-.home-v4-interactive-back::before,
-body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is-home-interactive-exiting)
-.home-v4-interactive-back::after{opacity:1}
-
-/* The five-branch Overview uses its own return action, but it must share the
-   same compact boxed Back / distinctly separated location presentation as
-   focused fragments and Work. Apply only while this particular button is
-   visible, leaving the professional Home header and other routes untouched. */
-@media(min-width:901px){
-  body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is-home-interactive-exiting)
-  .header-context-slot:has(.home-v4-interactive-back[aria-hidden="false"]){
-    display:flex!important;
-    align-items:center!important;
-    opacity:1!important;
-    visibility:visible!important;
-    pointer-events:auto!important
-  }
-
-  body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is-home-interactive-exiting)
-  .header-context-slot:has(.home-v4-interactive-back[aria-hidden="false"]) .header-back-slot{
-    flex:0 0 auto!important;
-    margin-right:26px!important;
-    padding:0!important;
-    border:0!important
-  }
-
-  body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is-home-interactive-exiting)
-  .header-back-slot .home-v4-interactive-back[aria-hidden="false"]{
-    --graph-control-node:var(--muted);
-    --graph-control-line:var(--line);
-    width:auto!important;
-    max-width:none!important;
-    min-width:0;
-    min-height:28px!important;
-    padding:5px 9px 5px 25px!important;
-    border:1px solid color-mix(in srgb,var(--ink) 28%,var(--line))!important;
-    border-radius:3px!important;
-    background:color-mix(in srgb,var(--ink) 4%,var(--paper))!important;
-    color:var(--muted)!important;
-    font-weight:650;
-    letter-spacing:.02em;
-    opacity:1!important;
-    overflow:visible!important;
-    transform:none!important
-  }
-
-  body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is-home-interactive-exiting)
-  .header-back-slot .home-v4-interactive-back[aria-hidden="false"]:is(:hover,:focus-visible){
-    --graph-control-node:var(--profile-accent);
-    --graph-control-line:var(--profile-accent);
-    border-color:var(--profile-accent)!important;
-    background:color-mix(in srgb,var(--profile-accent) 7%,var(--paper))!important;
-    color:var(--profile-accent)!important
-  }
-
-  body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is-home-interactive-exiting)
-  .header-context-slot:has(.home-v4-interactive-back[aria-hidden="false"]) .header-location-label{
-    margin:0!important;
-    padding:0!important;
-    color:var(--profile-accent)!important;
-    opacity:1!important;
-    overflow:visible!important;
-    text-transform:uppercase;
-    letter-spacing:.085em!important
-  }
-
-  body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is-home-interactive-exiting)
-  .header-context-slot:has(.home-v4-interactive-back[aria-hidden="false"]) .header-location-label::before{
-    content:""!important;
-    display:block!important;
-    position:absolute!important;
-    left:-14px!important;
-    top:50%!important;
-    width:1px!important;
-    height:18px!important;
-    background:color-mix(in srgb,var(--ink) 40%,var(--line))!important;
-    transform:translateY(-50%)!important
-  }
-}
-@media(max-width:1280px) and (min-width:901px){
-  body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is-home-interactive-exiting)
-  .header-context-slot:has(.home-v4-interactive-back[aria-hidden="false"]) .header-back-slot{
-    margin-right:18px!important
-  }
-  body.is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is-home-interactive-exiting)
-  .header-context-slot:has(.home-v4-interactive-back[aria-hidden="false"]) .header-location-label::before{
-    left:-10px!important
-  }
-}
+/* Overview and focused graph sections share the canonical Back control
+   styled by cross-link-travel.css and styles.css. */
 
 /* Root portal material. Professional Home keeps the canonical node abstract:
    the portrait is now static in the left profile panel. The root itself is a
@@ -601,10 +471,6 @@ body.is-profile-entry-revealing.is-home-v4-active:not(.is-home-interactive)
   }
 }
 
-@media(max-width:900px){
-  .home-v4-interactive-back{display:none!important}
-}
-
 @media(prefers-reduced-motion:reduce){
   body.is-home-header-growing .header-linear-graph-line,
   body.is-home-header-growing .header-linear-graph-atlas-link,
@@ -620,7 +486,6 @@ body.is-profile-entry-revealing.is-home-v4-active:not(.is-home-interactive)
   body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .home-v4-work,
   body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .graph-routebar,
   body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active .header-linear-graph,
-  .home-v4-interactive-back,
   #site-graph .site-graph-node[data-node-id="stepan-chrast"] > .home-v4-root-entry-action,
   #site-graph .home-v4-root-spectrum,
   #site-graph .home-v4-root-spectrum-arc,

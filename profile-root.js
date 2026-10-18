@@ -48,6 +48,8 @@
     mode() === 'overview' && rootLanding() === 'false' && !introOwnsEntry();
   const quickAvailable = () => {
     if (!mode() || !(introStable() || lateReveal())) return false;
+    // Focused graph sections and Work use the shared header without Profile brief.
+    if (['work', 'focus'].includes(mode())) return false;
     return mode() !== 'overview' || rootLanding() === 'false' || lateReveal();
   };
   const openingAtlasHeaderActive = () =>

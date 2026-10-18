@@ -216,7 +216,14 @@
   };
 
   const routeReturnForCurrentRoute = () => routeHistory.at(-1) || null;
+  // The five-node Overview uses the same Back control as Work and the
+  // focused fragments; its destination is Home, not an older routeHistory.
+  const interactiveHome = () =>
+    document.body?.dataset.graphMode === 'overview' &&
+    window.ProfileHomeOverviewV4?.snapshot?.().interactiveIntent === true;
+
   const returnDestination = () => {
+    if (interactiveHome()) return { kind: 'home', route: 'overview', label: 'Home' };
     const crossLink = returnEntryForCurrentRoute();
     if (crossLink) return { kind: 'cross-link', route: crossLink.sourceRoute, label: labelForRoute(crossLink.sourceRoute) };
     const route = routeReturnForCurrentRoute();
@@ -634,6 +641,7 @@
 
   const returnToPrevious = () => {
     if (state.travelling) return false;
+    if (interactiveHome()) return Boolean(window.ProfileHomeOverviewV4?.returnHomeFromInteractive?.('shared-back'));
     if (returnEntryForCurrentRoute()) return returnToOrigin();
     const route = routeReturnForCurrentRoute();
     if (!route) return false;
@@ -721,6 +729,7 @@
   window.addEventListener('profile:intro-stage', scheduleRender);
   window.addEventListener('profile:intro-completed', scheduleRender);
   window.addEventListener('profile:graph-render-settled', scheduleRender);
+  window.addEventListener('profile:home-interactive', scheduleRender);
 
   window.ProfileCrossLinkTravel = Object.freeze({
     navigate: (targetId, type = null) => navigate({ sourceId: currentSourceId(), targetId, type }),

@@ -159,11 +159,12 @@ test.describe('V4 professional portfolio smoke', () => {
     await expect(page.locator('.home-v4-work')).toBeHidden();
     await expect(spectrum).toBeHidden();
     await expect(page.locator('.header-linear-graph')).toBeVisible();
-    const homeGraphBack = page.locator('.home-v4-interactive-back');
+    const homeGraphBack = page.locator('.header-back-slot .crosslink-return-control');
     await expect(homeGraphBack).toBeVisible();
+    await expect(page.locator('.home-v4-interactive-back')).toHaveCount(0);
     await expect(page.locator('.header-location-label')).toHaveText('Overview');
     const homeHeaderState = await page.evaluate(() => {
-      const back = document.querySelector('.header-back-slot .home-v4-interactive-back');
+      const back = document.querySelector('.header-back-slot .crosslink-return-control:not([hidden])');
       const location = document.querySelector('.header-context-slot .header-location-label');
       const backRect = back.getBoundingClientRect();
       const locationRect = location.getBoundingClientRect();
@@ -184,8 +185,7 @@ test.describe('V4 professional portfolio smoke', () => {
     expect(homeHeaderState.gap).toBeGreaterThanOrEqual(18);
     expect(homeHeaderState.locationTextTransform).toBe('uppercase');
     expect(homeHeaderState.locationVisible).toBe('visible');
-    const genericBack = page.locator('.header-back-slot .crosslink-return-control');
-    if (await genericBack.count()) await expect(genericBack).toBeHidden();
+    await expect(page.locator('.header-back-slot .crosslink-return-control')).toHaveCount(1);
     await expect(page.locator('#main-nav > a[data-route="knowledge"]')).toBeVisible();
     await expect(page.locator('.header-practical-actions [data-route="atlas"]')).toBeVisible();
     await expect(page.locator('.graph-routebar .atlas-button.atlas-entry-v7')).toBeVisible();
@@ -210,10 +210,49 @@ test.describe('V4 professional portfolio smoke', () => {
     await root.click();
     await page.waitForFunction(() => window.ProfileHomeOverviewV4?.snapshot().interactivePhase === 'interactive');
 
-    await page.locator('.header-back-slot .home-v4-interactive-back').click();
+    await page.locator('.header-back-slot .crosslink-return-control').click();
     await page.waitForFunction(() => window.ProfileHomeOverviewV4?.snapshot().interactivePhase === 'home');
     await expect(page.locator('.home-v4-profile')).toBeVisible();
     await expect(page.locator('.header-context-slot')).toBeHidden();
+  });
+
+  test('Overview and Work share the same Back control and omit Profile brief', async ({ page }) => {
+    await bootDesktopHome(page);
+    const root = page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"]').first();
+    await root.click();
+    await page.waitForFunction(() => window.ProfileHomeOverviewV4?.snapshot().interactivePhase === 'interactive');
+    const back = page.locator('.header-back-slot .crosslink-return-control');
+    await expect(back).toBeVisible();
+    await expect(back).toHaveAttribute('aria-label', /Return to Home/);
+    await expect(page.locator('.header-location-label')).toHaveText('Overview');
+    await expect(page.locator('.header-quick-overview')).toBeHidden();
+    const initial = await back.evaluate(el => {
+      el.dataset.sharedHeaderProof = 'same-element';
+      return {
+        border: getComputedStyle(el).borderTopStyle,
+        radius: getComputedStyle(el).borderTopLeftRadius
+      };
+    });
+
+    await page.locator('#site-graph .site-graph-node[data-node-id="work"]').click();
+    await waitRoute(page, 'work');
+    await expect(back).toBeVisible();
+    expect(await back.evaluate(el => el.dataset.sharedHeaderProof)).toBe('same-element');
+    const workStyle = await back.evaluate(el => ({
+      border: getComputedStyle(el).borderTopStyle,
+      radius: getComputedStyle(el).borderTopLeftRadius
+    }));
+    expect(workStyle).toEqual(initial);
+    await expect(page.locator('.header-quick-overview')).toBeHidden();
+
+    await root.click();
+    await waitRoute(page, 'overview');
+    await page.waitForFunction(() => window.ProfileHomeOverviewV4?.snapshot().interactivePhase === 'interactive');
+    await expect(back).toHaveAttribute('aria-label', /Return to Home/);
+    await back.click();
+    await page.waitForFunction(() => window.ProfileHomeOverviewV4?.snapshot().interactivePhase === 'home');
+    await expect(back).toBeHidden();
+    await expect(page.locator('.home-v4-profile')).toBeVisible();
   });
 
   test('focus root returns to five-branch Overview before Home, by mouse or keyboard', async ({ page }) => {

@@ -39,7 +39,7 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:no
 }
 body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:is(.is-home-interactive-entering,.is-home-interactive,.is-home-interactive-exiting)
 .header-context-slot{
-  opacity:.72
+  opacity:1
 }
 
 /* Reserve the middle of the viewport for the live five-branch map. Side

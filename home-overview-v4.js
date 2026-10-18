@@ -25,7 +25,6 @@
 
   let shell = null;
   let contactDialog = null;
-  let interactiveBack = null;
   let activeProjectId = featured[0]?.id || null;
   let interactiveIntent = false;
   let interactivePhase = 'home';
@@ -69,7 +68,7 @@
     if (document.querySelector('link[data-home-interactive-portal-style]')) return;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = 'home-interactive-portal-v4.css?v=20261015-backcontext1';
+    link.href = 'home-interactive-portal-v4.css?v=20261018-shared-header1';
     link.dataset.homeInteractivePortalStyle = 'true';
     document.head.appendChild(link);
   };
@@ -356,21 +355,6 @@
     return action;
   };
 
-  const ensureInteractiveBack = () => {
-    if (interactiveBack?.isConnected) return interactiveBack;
-    const slot = document.querySelector('.header-back-slot');
-    if (!slot) return null;
-    interactiveBack = element('button', 'home-v4-interactive-back graph-control graph-control--secondary', 'Back');
-    interactiveBack.type = 'button';
-    interactiveBack.setAttribute('aria-label', 'Back to professional Home');
-    interactiveBack.addEventListener('click', () => {
-      if (history.state?.profileHomeInteractive && !returnedFromFocus) return history.back();
-      exitInteractive('header-back');
-    });
-    slot.appendChild(interactiveBack);
-    return interactiveBack;
-  };
-
   const ensureContactDialog = () => {
     if (contactDialog?.isConnected) return contactDialog;
     contactDialog = element('dialog', 'home-v4-contact-dialog');
@@ -610,12 +594,7 @@
     });
 
     document.body?.classList.toggle('is-home-v4-active', active);
-    ensureInteractiveBack();
-    if (interactiveBack) {
-      const visible = active && interactiveIntent;
-      interactiveBack.setAttribute('aria-hidden', String(!visible));
-      interactiveBack.tabIndex = visible ? 0 : -1;
-    }
+    // ProfileCrossLinkTravel owns one persistent Back across graph segments.
     const location = document.querySelector('.header-location-label');
     if (active && location) location.textContent = interactiveIntent ? 'Overview' : 'Profile';
     const root = liveRoot();
@@ -705,6 +684,13 @@
     return true;
   };
 
+  const returnHomeFromInteractive = (source = 'shared-back') => {
+    if (!homeActive() || !interactiveIntent || interactivePhase !== 'interactive') return false;
+    if (history.state?.profileHomeInteractive && !returnedFromFocus) history.back();
+    else void exitInteractive(source);
+    return true;
+  };
+
   const exitInteractive = async (source = 'api', options = {}) => {
     if (!interactiveIntent || interactivePhase === 'exiting') return false;
     const animate = options.animate !== false && !reducedMotion.matches;
@@ -742,7 +728,6 @@
     const active = homeActive();
     const nextShell = ensureShell();
     ensureRootAction();
-    ensureInteractiveBack();
     if (nextShell) {
       nextShell.hidden = !active;
       nextShell.setAttribute('aria-hidden', String(!active));
@@ -785,9 +770,7 @@
     event.stopImmediatePropagation();
 
     if (interactiveIntent) {
-      if (interactivePhase !== 'interactive') return;
-      if (history.state?.profileHomeInteractive && !returnedFromFocus) history.back();
-      else exitInteractive('root-click-return');
+      returnHomeFromInteractive('root-click-return');
       return;
     }
     enterInteractive('root-click');
@@ -801,9 +784,7 @@
     event.stopImmediatePropagation();
 
     if (interactiveIntent) {
-      if (interactivePhase !== 'interactive') return;
-      if (history.state?.profileHomeInteractive && !returnedFromFocus) history.back();
-      else exitInteractive('root-keyboard-return');
+      returnHomeFromInteractive('root-keyboard-return');
       return;
     }
     enterInteractive('root-keyboard');
@@ -832,6 +813,7 @@
     enterInteractive,
     exitInteractive,
     returnToInteractiveOverview,
+    returnHomeFromInteractive,
     snapshot: () => ({
       active: homeActive(),
       activeProjectId,
@@ -850,7 +832,6 @@
   ensurePortalStyles();
   ensureShell();
   ensureContactDialog();
-  ensureInteractiveBack();
   ensureRootAction();
   sync();
 })();

@@ -68,7 +68,7 @@
     if (document.querySelector('link[data-home-interactive-portal-style]')) return;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = 'home-interactive-portal-v4.css?v=20261018-shared-header1';
+    link.href = 'home-interactive-portal-v4.css?v=20261018-shared-header2';
     link.dataset.homeInteractivePortalStyle = 'true';
     document.head.appendChild(link);
   };

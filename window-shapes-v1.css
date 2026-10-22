@@ -1,0 +1,61 @@
+/* Shared geometry for interactive information windows.
+   Two deliberately unequal chamfers: top-left 14px, bottom-right 20px.
+   Never apply to graph nodes, circular affordances, navigation controls,
+   the full-screen artifact canvas or documentary media surfaces. */
+
+:root{
+  --window-chamfer-start:14px;
+  --window-chamfer-end:20px
+}
+
+@media(max-width:900px){
+  :root{
+    --window-chamfer-start:10px;
+    --window-chamfer-end:15px
+  }
+}
+
+/* :is() preserves the specificity needed to override existing per-scene
+   radius declarations, including mobile variants. One shape, all windows. */
+:is(
+  .scene-detail,
+  #work .work-detail-panel,
+  .site-detail-panel,
+  .quick-overview-dialog,
+  .home-v4-contact-dialog,
+  .profile-root-inspector-panel,
+  .mobile-control-sheet,
+  .artifact-focus-header > div,
+  .artifact-focus-description
+){
+  --window-shape:asymmetric-chamfer;
+  border-radius:var(--window-chamfer-start) 0 var(--window-chamfer-end) 0!important;
+  corner-shape:bevel!important
+}
+
+/* Chrome/Edge follow the bevel with their real borders and shadows.
+   Firefox and Safari currently lack corner-shape; clip-path preserves the
+   actual asymmetrical silhouette rather than reverting to rounded corners. */
+@supports not (corner-shape:bevel){
+  :is(
+    .scene-detail,
+    #work .work-detail-panel,
+    .site-detail-panel,
+    .quick-overview-dialog,
+    .home-v4-contact-dialog,
+    .profile-root-inspector-panel,
+    .mobile-control-sheet,
+    .artifact-focus-header > div,
+    .artifact-focus-description
+  ){
+    border-radius:0!important;
+    clip-path:polygon(
+      var(--window-chamfer-start) 0,
+      100% 0,
+      100% calc(100% - var(--window-chamfer-end)),
+      calc(100% - var(--window-chamfer-end)) 100%,
+      0 100%,
+      0 var(--window-chamfer-start)
+    )!important
+  }
+}

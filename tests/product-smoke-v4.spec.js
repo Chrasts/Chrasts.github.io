@@ -374,6 +374,56 @@ test.describe('V4 professional portfolio smoke', () => {
     expect(Math.abs(afterBox.height - beforeBox.height)).toBeLessThan(3);
   });
 
+  test('all interactive window surfaces share asymmetrically chamfered corners', async ({ page }) => {
+    await bootDesktopHome(page);
+    await page.locator('.header-practical-actions a[href^="mailto:"]').click();
+
+    const result = await page.evaluate(() => {
+      const selectors = [
+        '.home-v4-contact-dialog',
+        '.scene-detail',
+        '#work .work-detail-panel',
+        '.quick-overview-dialog',
+        '.profile-root-inspector-panel',
+        '.mobile-control-sheet',
+        '.artifact-focus-description'
+      ];
+      const supported = CSS.supports('corner-shape', 'bevel');
+      const computed = selectors.map(selector => {
+        const element = document.querySelector(selector);
+        if (!element) return { selector, present: false };
+        const style = getComputedStyle(element);
+        return {
+          selector,
+          present: true,
+          radius: style.borderRadius,
+          cornerShape: style.cornerShape,
+          clipPath: style.clipPath
+        };
+      });
+      return { supported, computed };
+    });
+    const contact = result.computed.find(x => x.selector === '.home-v4-contact-dialog');
+    expect(contact.present).toBe(true);
+    const scene = result.computed.find(x => x.selector === '.scene-detail');
+    expect(scene.present).toBe(true);
+    for (const shape of result.computed.filter(x => x.present)) {
+      if (result.supported) {
+        expect(shape.cornerShape, shape.selector).toContain('bevel');
+        expect(shape.radius, shape.selector).toMatch(/14px.*20px/);
+      } else {
+        expect(shape.clipPath, shape.selector).toContain('polygon(');
+      }
+    }
+
+    // The change must not touch the circular main node or change modal input.
+    const node = page.locator('#site-graph .site-graph-node[data-node-id="stepan-chrast"] > .site-graph-dot').first();
+    await expect(node).toBeVisible();
+    await expect(page.locator('.home-v4-contact-dialog')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.home-v4-contact-dialog')).toBeHidden();
+  });
+
   test('Contact is an explicit panel with visible email and deliberate mailto action', async ({ page }) => {
     await bootDesktopHome(page);
 

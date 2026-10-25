@@ -521,6 +521,41 @@ body[data-graph-mode="focus"] .site-graph-heading{top:82px!important}
 }
 
 
+/* Semantic geometry: faint categorical coordinate system.
+   It explains position without turning Work into an HTML table or implying
+   that pixel distance is a numerical measure of project similarity. */
+body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-semantic-guide.is-work-column .site-graph-semantic-guide-line{
+  stroke:var(--teal);
+  stroke-width:.9;
+  stroke-dasharray:1 9;
+  opacity:.17
+}
+body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-semantic-guide.is-work-row .site-graph-semantic-guide-line{
+  stroke:var(--line);
+  stroke-width:1;
+  stroke-dasharray:3 10;
+  opacity:.23
+}
+body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-semantic-guide.is-work-column .site-graph-semantic-guide-label{
+  fill:var(--teal);
+  font-size:8.6px;
+  font-weight:790;
+  letter-spacing:.1em;
+  opacity:.72
+}
+body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-semantic-guide.is-work-row .site-graph-semantic-guide-label{
+  fill:var(--muted);
+  font-size:7.5px;
+  font-weight:740;
+  letter-spacing:.09em;
+  opacity:.74
+}
+body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-edges path.is-work-related[data-work-relation="peer"]{
+  stroke:var(--teal);
+  stroke-width:1.75;
+  opacity:.55
+}
+
 /* V4 Work constellation: canonical project objects instead of concept labels.
    The FCA Hasse diagram remains available through the Work view toggle. */
 .integrated-work-rail .work-view-control{

@@ -945,30 +945,6 @@
       return projection?.activeFor?.(state.mode) ? projection.projectPath(path, state.mode) : path;
     };
 
-    const syncWorkProjectMorphology = (element, enabled) => {
-      element.classList.toggle('is-work-constellation-project', enabled);
-      const existingOrbit = element.querySelector('.work-project-orbit');
-      if (!enabled) {
-        existingOrbit?.remove();
-        element.querySelector('.work-project-shell')?.remove();
-        return;
-      }
-      if (existingOrbit) return;
-      const orbit = document.createElementNS(svgNS, 'ellipse');
-      orbit.classList.add('work-project-orbit');
-      orbit.setAttribute('rx', '26');
-      orbit.setAttribute('ry', '9');
-      orbit.setAttribute('transform', 'rotate(-28)');
-      orbit.setAttribute('aria-hidden', 'true');
-      const shell = document.createElementNS(svgNS, 'circle');
-      shell.classList.add('work-project-shell');
-      shell.setAttribute('r', '15');
-      shell.setAttribute('aria-hidden', 'true');
-      // Insert the 2.5D material behind the canonical dot and label.
-      const dot = element.querySelector('.site-graph-dot');
-      if (dot) dot.before(orbit, shell);
-    };
-
     const createNode = node => {
       const group = document.createElementNS(svgNS, 'g');
       group.classList.add('site-graph-node', `is-${node.type}`);
@@ -1551,7 +1527,8 @@
         }
         targets.set(node.id, target);
         if (node.type === 'project') {
-          syncWorkProjectMorphology(element, state.mode === 'work' && workView === 'constellation');
+          // Reuse the same canonical dot + halo system as every other branch.
+          element.classList.toggle('is-work-constellation-project', state.mode === 'work' && workView === 'constellation');
         }
         element.classList.toggle('is-selected',
           (node.id === state.node?.id && state.mode !== 'overview') ||

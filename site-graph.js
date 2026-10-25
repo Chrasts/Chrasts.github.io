@@ -945,6 +945,30 @@
       return projection?.activeFor?.(state.mode) ? projection.projectPath(path, state.mode) : path;
     };
 
+    const syncWorkProjectMorphology = (element, enabled) => {
+      element.classList.toggle('is-work-constellation-project', enabled);
+      const existingOrbit = element.querySelector('.work-project-orbit');
+      if (!enabled) {
+        existingOrbit?.remove();
+        element.querySelector('.work-project-shell')?.remove();
+        return;
+      }
+      if (existingOrbit) return;
+      const orbit = document.createElementNS(svgNS, 'ellipse');
+      orbit.classList.add('work-project-orbit');
+      orbit.setAttribute('rx', '26');
+      orbit.setAttribute('ry', '9');
+      orbit.setAttribute('transform', 'rotate(-28)');
+      orbit.setAttribute('aria-hidden', 'true');
+      const shell = document.createElementNS(svgNS, 'circle');
+      shell.classList.add('work-project-shell');
+      shell.setAttribute('r', '15');
+      shell.setAttribute('aria-hidden', 'true');
+      // Insert the 2.5D material behind the canonical dot and label.
+      const dot = element.querySelector('.site-graph-dot');
+      if (dot) dot.before(orbit, shell);
+    };
+
     const createNode = node => {
       const group = document.createElementNS(svgNS, 'g');
       group.classList.add('site-graph-node', `is-${node.type}`);
@@ -996,22 +1020,7 @@
         label.textContent = node.id === workRoot.id && state.mode === 'work' ? 'WORK' : node.label;
       }
 
-      if (state.mode === 'work' && workView === 'constellation' && node.type === 'project') {
-        group.classList.add('is-work-constellation-project');
-        const orbital = document.createElementNS(svgNS, 'ellipse');
-        orbital.classList.add('work-project-orbit');
-        orbital.setAttribute('rx', '26');
-        orbital.setAttribute('ry', '9');
-        orbital.setAttribute('transform', 'rotate(-28)');
-        orbital.setAttribute('aria-hidden', 'true');
-        const outer = document.createElementNS(svgNS, 'circle');
-        outer.classList.add('work-project-shell');
-        outer.setAttribute('r', '15');
-        outer.setAttribute('aria-hidden', 'true');
-        group.append(hit, orbital, outer, dot, variantGlyph, label);
-      } else {
-        group.append(hit, dot, variantGlyph, label);
-      }
+      group.append(hit, dot, variantGlyph, label);
 
       if (node.meta && state.mode !== 'work') {
         const meta = document.createElementNS(svgNS, 'text');
@@ -1541,6 +1550,9 @@
           starts.set(node.id, pointOf(element));
         }
         targets.set(node.id, target);
+        if (node.type === 'project') {
+          syncWorkProjectMorphology(element, state.mode === 'work' && workView === 'constellation');
+        }
         element.classList.toggle('is-selected',
           (node.id === state.node?.id && state.mode !== 'overview') ||
           (state.mode === 'work' && workView === 'constellation' && node.id === 'project-' + state.workProjectId));

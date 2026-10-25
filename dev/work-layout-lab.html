@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta name="color-scheme" content="dark">
+  <title>Work Layout Lab · A / Free Constellation</title>
+  <meta name="description" content="Isolated Work portfolio geometry experiment: a semantic free constellation of ten real projects.">
+  <link rel="stylesheet" href="./work-layout-lab.css">
+  <script src="../site-data.js" defer></script>
+  <script src="./work-layout-lab.js" defer></script>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <a class="brand" href="../">
+        <span class="brand-mark" aria-hidden="true">ŠC</span>
+        <span>ŠTĚPÁN CHRAST <span style="color:#7a9991;font-weight:400">/ LAB</span></span>
+      </a>
+      <nav class="toplinks" aria-label="Lab navigation">
+        <a href="./">Interaction Lab</a>
+        <a href="../#work">Current Work ↗</a>
+        <a href="../">Portfolio ↗</a>
+      </nav>
+    </header>
+
+    <div class="heading">
+      <div>
+        <div class="eyebrow">Work Layout Experiment / 01</div>
+        <h1>Free Constellation<span style="color:#83b1a5">.</span></h1>
+        <p class="lead">The projects become the primary nodes. Shared themes create an explainable, sparse network. A first experiment in the geometry and behaviour of a more spatial Work section, not a replacement for the existing FCA lattice.</p>
+      </div>
+      <span class="prototype-chip">VARIANT A · SVG / 2.5D</span>
+    </div>
+
+    <div class="lab-grid">
+      <aside class="control-panel" aria-label="Constellation controls">
+        <p class="panel-eyebrow">01 / DISCOVER</p>
+        <h2 class="control-title">Explore by theme</h2>
+        <p class="control-description">Select one or more themes to reveal relevant projects. These are the current Work attributes.</p>
+        <div class="theme-buttons" id="theme-buttons">
+          <button type="button" class="theme-button" id="show-all" aria-pressed="true" style="--theme:#bcd9ca">All projects</button>
+        </div>
+        <div class="control-label">Theme logic</div>
+        <button type="button" class="control-button" id="match-mode" disabled>Match: all selected</button>
+
+        <div class="control-label">Display</div>
+        <div class="control-stack">
+          <button type="button" class="control-button" id="connection-toggle" aria-pressed="true">Connections: on</button>
+          <button type="button" class="control-button" id="motion-toggle" aria-pressed="true">Ambient motion: on</button>
+          <button type="button" class="control-button" id="reset-layout">Reset positions</button>
+        </div>
+
+        <div class="control-label">Reading the map</div>
+        <div class="legend">
+          <div class="legend-row"><span class="legend-icon" aria-hidden="true">●</span> One node represents one project</div>
+          <div class="legend-row"><span class="legend-line" aria-hidden="true"></span> A line means shared themes, not an FCA cover relation</div>
+          <div class="legend-row"><span class="legend-icon" aria-hidden="true">↗</span> Hover, select or drag a project</div>
+        </div>
+      </aside>
+
+      <section class="map-panel" aria-label="Interactive project constellation">
+        <div class="map-header">
+          <p class="panel-eyebrow">PROJECT NETWORK / FREE FORM</p>
+          <span class="map-kicker"><span class="map-dot" aria-hidden="true"></span>LIVE MODEL</span>
+        </div>
+        <div class="map-canvas">
+          <svg id="constellation" viewBox="0 0 1000 680" xmlns="http://www.w3.org/2000/svg" aria-label="Interactive map of ten projects connected by shared themes">
+            <defs>
+              <pattern id="dot-grid" width="31" height="31" patternUnits="userSpaceOnUse">
+                <circle class="grid-dots" cx="2" cy="2" r="0.65"/>
+              </pattern>
+              <radialGradient id="stage-glow" cx="50%" cy="45%" r="62%">
+                <stop offset="0%" stop-color="#274044" stop-opacity=".23"/>
+                <stop offset="100%" stop-color="#0c1518" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <rect x="-2000" y="-1500" width="5000" height="3800" fill="transparent"/>
+            <rect x="0" y="0" width="1000" height="680" fill="url(#stage-glow)" pointer-events="none"/>
+            <rect x="0" y="0" width="1000" height="680" fill="url(#dot-grid)" pointer-events="none"/>
+            <ellipse class="orbit-hint" cx="500" cy="341" rx="425" ry="260" transform="rotate(-11 500 341)"/>
+            <ellipse class="orbit-hint" cx="500" cy="341" rx="310" ry="185" transform="rotate(13 500 341)"/>
+            <text class="zone-hint" x="90" y="70">LOGIC / MATHEMATICS</text>
+            <text class="zone-hint" x="722" y="70">DATA / COMPUTING</text>
+            <text class="zone-hint" x="112" y="633">RESEARCH</text>
+            <text class="zone-hint" x="731" y="633">EDUCATION</text>
+            <g id="relation-layer" aria-hidden="true"></g>
+            <g id="project-layer" aria-label="Projects"></g>
+          </svg>
+        </div>
+        <footer class="map-footer">
+          <span id="lab-status" aria-live="polite">Loading project relationships…</span>
+          <div class="zoom-controls" aria-label="Map camera controls">
+            <button class="icon-button" id="zoom-out" type="button" aria-label="Zoom out">−</button>
+            <span id="zoom-value">100%</span>
+            <button class="icon-button" id="zoom-in" type="button" aria-label="Zoom in">+</button>
+            <button class="icon-button" id="fit-view" type="button">Fit</button>
+          </div>
+        </footer>
+      </section>
+
+      <aside class="inspector" id="project-detail" aria-label="Selected project details" aria-live="polite">
+        <p class="detail-eyebrow">PROJECT INSPECTOR</p>
+        <h2>Choose a project</h2>
+        <p class="detail-description">Hover over a node to explore its thematic neighbourhood. Select one for project details.</p>
+      </aside>
+    </div>
+
+    <p class="bottom-note">Concept experiment only. The current portfolio Work and FCA lattice remain unchanged. Connections are derived from shared project attributes; their visual proximity is exploratory, not a measured similarity score. The map supports pointer drag and zoom. Reduced-motion preferences are respected.</p>
+  </main>
+</body>
+</html>

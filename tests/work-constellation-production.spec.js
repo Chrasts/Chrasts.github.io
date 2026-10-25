@@ -49,6 +49,22 @@ test.describe('Production Work — project-first constellation', () => {
     await expect(logic).toBeChecked();
   });
 
+  test('restores project nodes when moving between Work and Atlas', async ({ page }) => {
+    await page.goto('/#work');
+    await page.waitForFunction(() => document.body.dataset.graphMode === 'work');
+    await expect(page.locator('#site-graph .work-project-orbit')).toHaveCount(10);
+
+    await page.evaluate(() => { location.hash = '#atlas'; });
+    await page.waitForFunction(() => document.body.dataset.graphMode === 'atlas');
+    await expect(page.locator('#site-graph .work-project-orbit')).toHaveCount(0);
+    await expect(page.locator('#site-graph .site-graph-node[data-node-id="project-modal-logic-lab"] .site-graph-meta'))
+      .toContainText('Interactive mathematical logic');
+
+    await page.evaluate(() => { location.hash = '#work'; });
+    await page.waitForFunction(() => document.body.dataset.graphMode === 'work');
+    await expect(page.locator('#site-graph .work-project-orbit')).toHaveCount(10);
+  });
+
   test('honors reduced motion and keeps all other sections accessible', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/#work');

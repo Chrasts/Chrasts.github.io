@@ -550,6 +550,19 @@ body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-semanti
   letter-spacing:.09em;
   opacity:.74
 }
+body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-edges path.is-work-membership{
+  stroke:var(--teal);
+  stroke-width:.8;
+  stroke-dasharray:2 12;
+  opacity:.045;
+  pointer-events:none
+}
+body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-edges path.is-work-membership.is-work-strong{
+  stroke:var(--teal)!important;
+  stroke-width:1.05!important;
+  stroke-dasharray:2 8;
+  opacity:.29!important
+}
 body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-edges path.is-work-related[data-work-relation="peer"]{
   stroke:var(--teal);
   stroke-width:1.75;

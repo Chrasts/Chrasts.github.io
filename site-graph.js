@@ -690,90 +690,100 @@
        Positions are deterministic so navigation does not randomly reshuffle.
        ---------------------------------------------------------------------- */
     const workNeighbourEdges = (() => {
-      const byKey = new Map();
-      const intersection = (a, b) => a.lattice.filter(theme => b.lattice.includes(theme));
-      const similarity = (a, b) => intersection(a, b).length / new Set([...a.lattice, ...b.lattice]).size;
-      projects.forEach(project => {
-        [...projects].filter(other => other.id !== project.id && intersection(project, other).length)
-          .sort((a, b) => similarity(project, b) - similarity(project, a) || a.order - b.order)
-          .slice(0, 2)
-          .forEach(other => {
-            const key = [project.id, other.id].sort().join('|');
-            if (!byKey.has(key)) byKey.set(key, {
-              source: 'project-' + project.id,
-              target: 'project-' + other.id,
-              type: 'work-related',
-              sharedThemes: intersection(project, other)
-            });
-          });
-      });
-      return [...byKey.values()];
+      // Attribute-neighbour relations are exact: the two sets either coincide
+      // (peer projects) or differ by exactly one theme. This is the one-step
+      // adjacency of B4, not a claim that the project graph is a Hasse diagram.
+      const edges = [];
+      projects.forEach((a, index) => projects.slice(index + 1).forEach(b => {
+        const aThemes = new Set(a.lattice), bThemes = new Set(b.lattice);
+        const differing = attributes
+          .map(attribute => attribute.id)
+          .filter(id => aThemes.has(id) !== bThemes.has(id));
+        if (differing.length > 1) return;
+        edges.push({
+          source: 'project-' + a.id,
+          target: 'project-' + b.id,
+          type: 'work-related',
+          relationKind: differing.length ? 'one-theme' : 'peer',
+          differingTheme: differing[0] || null,
+          sharedThemes: a.lattice.filter(theme => bThemes.has(theme))
+        });
+      }));
+      return edges;
     })();
 
-    const constellationPositions = (() => {
-      const anchors = {
-        logic: { x: 390, y: 210 }, 'computing-data': { x: 990, y: 235 },
-        research: { x: 450, y: 555 }, education: { x: 985, y: 540 }
-      };
-      const points = new Map(), velocity = new Map();
+    const workThemeProjection = (() => {
+      // A discrete semantic projection, not a force simulation:
+      // columns encode Logic / Computing memberships (10, 11, 01).
+      // rows encode Research / Education-Communication (10, 11, 00, 01).
+      // All ten current projects have at least one domain tag. A future
+      // project with neither domain will fall into the middle column.
+      const colCenters = { logic: 440, both: 725, data: 1000, neither: 725 };
+      const rowCenters = { research: 226, both: 355, neither: 480, education: 610 };
+      const rowFor = (research, education) => research && education ? 'both'
+        : research ? 'research' : education ? 'education' : 'neither';
+      const colFor = (logic, data) => logic && data ? 'both'
+        : logic ? 'logic' : data ? 'data' : 'neither';
+      const cells = new Map();
       projects.forEach(project => {
-        const centers = project.lattice.map(theme => anchors[theme]).filter(Boolean);
-        const homeX = centers.reduce((sum, p) => sum + p.x, 0) / Math.max(1, centers.length);
-        const homeY = centers.reduce((sum, p) => sum + p.y, 0) / Math.max(1, centers.length);
-        const seed = stableNumber('work-constellation:' + project.id);
-        points.set(project.id, {
-          x: homeX + ((seed % 101) - 50) * 1.65,
-          y: homeY + (((seed >>> 8) % 101) - 50) * 1.45,
-          homeX, homeY
-        });
-        velocity.set(project.id, { x: 0, y: 0 });
+        const themes = new Set(project.lattice);
+        const col = colFor(themes.has('logic'), themes.has('computing-data'));
+        const row = rowFor(themes.has('research'), themes.has('education'));
+        const key = col + ':' + row;
+        if (!cells.has(key)) cells.set(key, []);
+        cells.get(key).push(project);
       });
-      for (let pass = 0; pass < 380; pass++) {
-        const force = new Map(projects.map(p => [p.id, { x: 0, y: 0 }]));
-        projects.forEach((a, i) => projects.slice(i + 1).forEach(b => {
-          const p = points.get(a.id), q = points.get(b.id);
-          const dx = q.x - p.x, dy = q.y - p.y;
-          const dist = Math.max(1, Math.hypot(dx, dy));
-          const clearance = Math.hypot(dx / 143, dy / 104);
-          const magnitude = 10000 / (dist * dist + 3400) + Math.max(0, 1 - clearance) * 4.2;
-          const fx = dx / dist * magnitude, fy = dy / dist * magnitude;
-          force.get(a.id).x -= fx; force.get(a.id).y -= fy;
-          force.get(b.id).x += fx; force.get(b.id).y += fy;
-        }));
-        workNeighbourEdges.forEach(edge => {
-          const a = edge.source.slice(8), b = edge.target.slice(8);
-          const p = points.get(a), q = points.get(b);
-          const dx = q.x - p.x, dy = q.y - p.y;
-          const length = Math.max(1, Math.hypot(dx, dy));
-          const attraction = (length - 215) * .003;
-          force.get(a).x += dx / length * attraction;
-          force.get(a).y += dy / length * attraction;
-          force.get(b).x -= dx / length * attraction;
-          force.get(b).y -= dy / length * attraction;
+      const positions = new Map();
+      cells.forEach((members, cell) => {
+        const [col, row] = cell.split(':');
+        members.sort((a, b) => a.order - b.order);
+        members.forEach((project, index) => {
+          // Duplicate category signatures occupy a small, predictable pair
+          // within the cell. Do not perturb semantic coordinates at random.
+          const columns = Math.ceil(Math.sqrt(members.length));
+          const rows = Math.ceil(members.length / columns);
+          const ix = index % columns, iy = Math.floor(index / columns);
+          positions.set(project.id, {
+            x: colCenters[col] + (ix - (columns - 1) / 2) * 122,
+            y: rowCenters[row] + (iy - (rows - 1) / 2) * 88
+          });
         });
-        projects.forEach(project => {
-          const p = points.get(project.id), f = force.get(project.id), v = velocity.get(project.id);
-          f.x += (p.homeX - p.x) * .003;
-          f.y += (p.homeY - p.y) * .003;
-          v.x = (v.x + f.x) * .8;
-          v.y = (v.y + f.y) * .8;
-          p.x = Math.max(345, Math.min(1085, p.x + v.x));
-          p.y = Math.max(185, Math.min(625, p.y + v.y));
-        });
-      }
-      return points;
+      });
+      return positions;
     })();
+
+    const workProjectionGuides = [
+      ...[
+        ['logic', 440, 'LOGIC / MATHEMATICS'],
+        ['both', 725, 'LOGIC + DATA'],
+        ['data', 1000, 'DATA / COMPUTING']
+      ].map(([id, x, label]) => ({
+        id: 'work-column-' + id, kind: 'work-column',
+        x1: x, x2: x, y1: 178, y2: 655,
+        label, labelX: x, labelY: 152
+      })),
+      ...[
+        ['research', 226, 'RESEARCH'],
+        ['both', 355, 'RESEARCH + EDUCATION'],
+        ['neither', 480, 'NEITHER R / E'],
+        ['education', 610, 'EDUCATION / COMMUNICATION']
+      ].map(([id, y, label]) => ({
+        id: 'work-row-' + id, kind: 'work-row',
+        x1: 346, x2: 1127, y1: y - 52, y2: y - 52,
+        label, labelX: 1020, labelY: y - 61
+      }))
+    ];
 
     const layoutWorkConstellation = () => {
       const positions = new Map([
         [profileRoot.id, { x: 180, y: 92 }],
-        [workRoot.id, { x: 260, y: 225 }]
+        [workRoot.id, { x: 265, y: 225 }]
       ]);
       projects.forEach(project => {
-        const point = constellationPositions.get(project.id);
-        positions.set('project-' + project.id, { x: point.x, y: point.y });
+        const point = workThemeProjection.get(project.id);
+        if (point) positions.set('project-' + project.id, { ...point });
       });
-      return { width: 1200, height: 760, positions };
+      return { width: 1200, height: 760, positions, semanticGuides: workProjectionGuides };
     };
 
     const layoutWork = nodes => {
@@ -1603,6 +1613,15 @@
           element.classList.add(`is-${edge.type}`);
           if (!['hierarchy', 'hierarchy-alt', 'work-lattice', 'work-related'].includes(edge.type)) element.classList.add('is-cross-link');
           if (edge.type === 'hierarchy-alt' || edge.secondary) element.classList.add('is-secondary');
+          if (edge.type === 'work-related') {
+            element.dataset.workRelation = edge.relationKind;
+            const title = document.createElementNS(svgNS, 'title');
+            title.textContent = edge.relationKind === 'peer'
+              ? 'Projects have exactly the same thematic labels'
+              : 'Projects differ in one thematic label: ' +
+                (attributeMap.get(edge.differingTheme)?.label || edge.differingTheme);
+            element.appendChild(title);
+          }
           renderer.edgeElements.set(key, element);
           renderer.edges.appendChild(element);
           enteringEdges.add(key);
@@ -2343,7 +2362,7 @@
         ? 'Hover to distinguish upstream, downstream and cross-links. Click to pin a node and inspect it.'
         : state.mode === 'work'
           ? (workView === 'constellation'
-              ? 'Projects are linked by shared themes. Hover to trace relationships, select a project for evidence, or switch to FCA lattice.'
+              ? 'Horizontal position: Logic / Data; vertical position: Research / Education. Lines connect projects with identical labels or one differing label. Select a project or switch to FCA lattice.'
               : 'FCA concept lattice. Explore formal concepts, thematic filters and project labels; switch to Projects for the constellation.')
           : state.mode === 'overview'
             ? 'Select an area to let the map unfold around it.'

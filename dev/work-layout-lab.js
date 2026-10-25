@@ -455,7 +455,13 @@
   });
   const endDrag = event => {
     if (!drag || drag.pointerId !== event.pointerId) return;
+    // Pointer capture keeps dragging stable; an undragged pointerup also
+    // activates the original node (captured clicks may target the SVG root).
     if (drag.moved) suppressClickUntil = performance.now() + 220;
+    else if (drag.id) {
+      suppressClickUntil = performance.now() + 220;
+      selectProject(drag.id);
+    }
     if (svg.hasPointerCapture(event.pointerId)) svg.releasePointerCapture(event.pointerId);
     drag = null;
   };

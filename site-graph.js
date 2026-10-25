@@ -1761,6 +1761,11 @@
     const applyConstellationHighlight = hoverId => {
       const selected = hoverId || (state.workProjectId ? 'project-' + state.workProjectId : null);
       const related = new Set(selected ? [selected] : []);
+      // WORK is a collection anchor: hovering it reveals every member rather
+      // than treating every project as unrelated to the section.
+      if (selected === workRoot.id) {
+        projects.forEach(project => related.add('project-' + project.id));
+      }
       workNeighbourEdges.forEach(edge => {
         if (edge.source === selected) related.add(edge.target);
         if (edge.target === selected) related.add(edge.source);

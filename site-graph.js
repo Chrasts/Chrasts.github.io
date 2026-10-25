@@ -770,7 +770,7 @@
       ].map(([id, y, label]) => ({
         id: 'work-row-' + id, kind: 'work-row',
         x1: 346, x2: 1127, y1: y - 52, y2: y - 52,
-        label, labelX: 1020, labelY: y - 61
+        label, labelX: 555, labelY: y - 61
       }))
     ];
 

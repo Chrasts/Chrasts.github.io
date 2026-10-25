@@ -1223,6 +1223,10 @@
           element.remove();
           renderer.decorationElements.delete(key);
         });
+        if (state.mode === 'work' && workView === 'constellation') {
+          clearWorkClasses();
+          applyPersistentWorkHighlight();
+        }
         return;
       }
 

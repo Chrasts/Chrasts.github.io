@@ -553,56 +553,55 @@ body[data-graph-mode="focus"] .site-graph-heading{top:82px!important}
   background:color-mix(in srgb,var(--teal) 12%,var(--paper));
   color:var(--teal)
 }
-body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-node.is-work-constellation-project{
-  --work-orbit-speed:13s;
-  opacity:1;
-  cursor:pointer
+/* Project nodes use the site's canonical circle and ProfileHaloRenderer.
+   The quiet semicircle is a visual treatment of the existing single halo,
+   not a new evidence ring or an independent 3D object. */
+body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-node.is-work-constellation-project > .site-graph-hit{
+  r:22px
 }
-body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-node.is-work-constellation-project .site-graph-hit{r:26px}
-body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-node.is-work-constellation-project .site-graph-dot{
-  r:8px;
+body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-node.is-work-constellation-project > .site-graph-dot{
+  r:6.25px;
+  fill:var(--paper);
   stroke:var(--teal);
-  stroke-width:1.9;
-  fill:color-mix(in srgb,var(--teal) 65%,var(--paper));
-  filter:drop-shadow(0 0 3px color-mix(in srgb,var(--teal) 42%,transparent))
+  stroke-width:1.85;
+  filter:none
 }
-body[data-graph-mode="work"][data-work-view="constellation"] .work-project-shell{
-  fill:color-mix(in srgb,var(--teal) 7%,var(--paper));
-  stroke:color-mix(in srgb,var(--teal) 53%,var(--line));
-  stroke-width:1.15;
-  opacity:.86;
-  transition:fill .2s ease,stroke .2s ease
-}
-body[data-graph-mode="work"][data-work-view="constellation"] .work-project-orbit{
-  fill:none;
-  stroke:var(--teal);
-  stroke-width:1.05;
-  opacity:.5;
-  transform-box:fill-box;
-  transform-origin:center;
-  animation:work-constellation-orbit var(--work-orbit-speed) linear infinite;
-  pointer-events:none
-}
-body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project:nth-child(3n) .work-project-orbit{
-  animation-duration:17s;
-  animation-direction:reverse
-}
-body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project:nth-child(4n) .work-project-orbit{animation-duration:21s}
-body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project .site-graph-label{
+body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project > .site-graph-label{
   fill:var(--ink);
-  font-size:13px;
-  font-weight:735;
+  font-size:11.5px;
+  font-weight:710;
   paint-order:stroke;
   stroke:var(--paper);
-  stroke-width:5px
+  stroke-width:4.5px
 }
-body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project:hover .work-project-shell,
-body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project:focus-visible .work-project-shell,
-body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project.is-selected .work-project-shell{
+body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project > .site-graph-halo--primary{
   stroke:var(--teal);
-  fill:color-mix(in srgb,var(--teal) 22%,var(--paper))
+  stroke-linecap:round
 }
-body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project.is-work-soft .site-graph-dot{stroke-width:2.4}
+/* An idle semi-halo gives Work a subtle ambient motion. Standard hover,
+   focus and selected halo states remain owned by graph-feel.css. */
+body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project[data-halo-state="idle"] > .site-graph-halo--primary{
+  stroke-dasharray:21 43;
+  opacity:.26;
+  transform:scale(1);
+  animation:work-semi-halo-drift 19s linear infinite
+}
+body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project:nth-child(3n)[data-halo-state="idle"] > .site-graph-halo--primary{
+  animation-duration:23s;
+  animation-direction:reverse
+}
+body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project[data-halo-state="related"] > .site-graph-halo--primary{
+  stroke-dasharray:21 43;
+  opacity:.25;
+  transform:scale(1)
+}
+body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project.is-work-strong > .site-graph-halo--primary{
+  stroke-dasharray:none;
+  opacity:.64
+}
+body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project.is-work-soft > .site-graph-halo--primary{
+  opacity:.38
+}
 body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project.is-filtered-work{opacity:.18}
 body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project.is-work-strong{
   opacity:1!important
@@ -619,9 +618,9 @@ body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-edges p
   opacity:1!important
 }
 body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-edges path.is-work-related.is-muted-soft{opacity:.12}
-@keyframes work-constellation-orbit {
-  from{transform:rotate(0deg)}
-  to{transform:rotate(360deg)}
+@keyframes work-semi-halo-drift{
+  from{stroke-dashoffset:0}
+  to{stroke-dashoffset:-64}
 }
 @media(max-width:900px){
   body[data-graph-mode="work"] .integrated-work-rail.is-left{
@@ -633,6 +632,6 @@ body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-edges p
   body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-heading{top:58px}
 }
 @media(prefers-reduced-motion:reduce){
-  body[data-graph-mode="work"] .work-project-orbit{animation:none!important}
+  body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project[data-halo-state="idle"] > .site-graph-halo--primary{animation:none!important}
   .integrated-work-rail .work-view-button{transition:none}
 }

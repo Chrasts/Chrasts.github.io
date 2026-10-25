@@ -8,10 +8,38 @@ test.describe('Production Work — project-first constellation', () => {
     await page.waitForFunction(() => document.body.dataset.graphMode === 'work');
     await page.waitForFunction(() => window.ProfileWorkController?.snapshot?.().view === 'constellation');
     await expect(page.locator('#site-graph .site-graph-node.is-work-constellation-project')).toHaveCount(10);
-    await expect(page.locator('#site-graph .site-graph-edges path.is-work-related')).toHaveCount(13);
+    await expect(page.locator('#site-graph .site-graph-edges path.is-work-related')).toHaveCount(16);
+    await expect(page.locator('#site-graph .site-graph-semantic-guide.is-work-column')).toHaveCount(3);
+    await expect(page.locator('#site-graph .site-graph-semantic-guide.is-work-row')).toHaveCount(4);
     await expect(page.locator('.integrated-work-rail .work-view-button[data-view="constellation"]'))
       .toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#site-graph .site-graph-node.is-work-concept')).toHaveCount(0);
+  });
+
+  test('thematic coordinates encode the full four-tag signature and are stable', async ({ page }) => {
+    await page.goto('/#work');
+    await page.waitForFunction(() => document.body.dataset.graphMode === 'work');
+    const coordinates = await page.evaluate(async () => {
+      await new Promise(resolve => setTimeout(resolve, 600));
+      return [...document.querySelectorAll('#site-graph .is-work-constellation-project')].map(node => ({
+        id: node.dataset.nodeId,
+        x: Math.round(Number(node.dataset.x)),
+        y: Math.round(Number(node.dataset.y))
+      }));
+    });
+    const byId = Object.fromEntries(coordinates.map(node => [node.id, node]));
+    // Every project's exact position follows its categorical coordinates.
+    expect(byId['project-bachelor-thesis'].x).toBe(440);
+    expect(byId['project-arol-lab'].x).toBe(725);
+    expect(byId['project-modal-logic-lab'].x).toBe(725);
+    expect(byId['project-sql-schema'].y).toBe(480);
+    expect(byId['project-modal-logic-lab'].y).toBe(610);
+    expect(byId['project-clp-survey'].y).toBe(355);
+    expect(byId['project-tachov-workshop'].y).toBe(355);
+    expect(byId['project-insolvency'].y).toBe(byId['project-social-workers-survey'].y);
+    expect(byId['project-insolvency'].x).not.toBe(byId['project-social-workers-survey'].x);
+    await page.locator('#work-reset').click();
+    await expect(page.locator('#site-graph .site-graph-node.is-work-constellation-project')).toHaveCount(10);
   });
 
   test('project selection opens the existing canonical Work inspector', async ({ page }) => {

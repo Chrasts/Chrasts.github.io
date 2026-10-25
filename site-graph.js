@@ -248,6 +248,9 @@
     /* ----------------------------------------------------------------------
        Canonical Work controller and controls
        ---------------------------------------------------------------------- */
+    // Work offers a project-first constellation and the original, mathematically
+    // defined FCA lattice. Both views share canonical project data and filters.
+    let workView = 'constellation';
     let state = { route: 'overview', mode: 'overview', node: profileRoot, workProjectId: null };
     const workFilterState = {
       context: 'all',
@@ -358,7 +361,22 @@
       syncWorkControls('reset');
     });
 
-    leftRail.append(contextControl, themeControl, matchControl, resetButton);
+    const workViewControl = makeControlGroup('work-view-control', 'View', 'work-view-title');
+    const workViewButtons = new Map();
+    [['constellation', 'Projects'], ['lattice', 'FCA lattice']].forEach(([view, label]) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'work-view-button';
+      button.dataset.view = view;
+      button.textContent = label;
+      button.addEventListener('click', () => {
+        if (workView === view) return;
+        updateHash(view === 'lattice' ? 'work/lattice' : 'work');
+      });
+      workViewControl.appendChild(button);
+      workViewButtons.set(view, button);
+    });
+    leftRail.append(workViewControl, contextControl, themeControl, matchControl, resetButton);
     controls.append(leftRail);
     scene.appendChild(controls);
 
@@ -386,6 +404,9 @@
       modeButtons.forEach((button, mode) => {
         button.setAttribute('aria-pressed', String(mode === workFilterState.mode));
         button.disabled = workFilterState.selectedThemes.size < 2;
+      });
+      workViewButtons.forEach((button, view) => {
+        button.setAttribute('aria-pressed', String(workView === view));
       });
       const visibleCount = projects.filter(project => projectMatchesWork(project)).length;
       resetButton.disabled = workFilterState.context === 'all' &&
@@ -453,7 +474,9 @@
     const visibleGraph = () => {
       if (state.mode === 'overview') return [profileRoot, ...childrenFor(profileRoot.id)];
       if (state.mode === 'atlas') return graph.nodes;
-      if (state.mode === 'work') return [profileRoot, workRoot, ...workConceptNodes];
+      if (state.mode === 'work') return workView === 'constellation'
+        ? [profileRoot, workRoot, ...projects.map(project => nodeMap.get(`project-${project.id}`)).filter(Boolean)]
+        : [profileRoot, workRoot, ...workConceptNodes];
 
       // Credentials are dated evidence, not a navigational parent in the
       // Education map. Keep deep links useful by showing their milestones
@@ -660,7 +683,101 @@
       return { width, height, positions: resolveCollisions(nodes, positions, width, height, focusSafe) };
     };
 
+
+    /* ----------------------------------------------------------------------
+       Project-first Work constellation
+       The sparse graph expresses shared thematic attributes, not FCA order.
+       Positions are deterministic so navigation does not randomly reshuffle.
+       ---------------------------------------------------------------------- */
+    const workNeighbourEdges = (() => {
+      const byKey = new Map();
+      const intersection = (a, b) => a.lattice.filter(theme => b.lattice.includes(theme));
+      const similarity = (a, b) => intersection(a, b).length / new Set([...a.lattice, ...b.lattice]).size;
+      projects.forEach(project => {
+        [...projects].filter(other => other.id !== project.id && intersection(project, other).length)
+          .sort((a, b) => similarity(project, b) - similarity(project, a) || a.order - b.order)
+          .slice(0, 2)
+          .forEach(other => {
+            const key = [project.id, other.id].sort().join('|');
+            if (!byKey.has(key)) byKey.set(key, {
+              source: 'project-' + project.id,
+              target: 'project-' + other.id,
+              type: 'work-related',
+              sharedThemes: intersection(project, other)
+            });
+          });
+      });
+      return [...byKey.values()];
+    })();
+
+    const constellationPositions = (() => {
+      const anchors = {
+        logic: { x: 390, y: 210 }, 'computing-data': { x: 990, y: 235 },
+        research: { x: 450, y: 555 }, education: { x: 985, y: 540 }
+      };
+      const points = new Map(), velocity = new Map();
+      projects.forEach(project => {
+        const centers = project.lattice.map(theme => anchors[theme]).filter(Boolean);
+        const homeX = centers.reduce((sum, p) => sum + p.x, 0) / Math.max(1, centers.length);
+        const homeY = centers.reduce((sum, p) => sum + p.y, 0) / Math.max(1, centers.length);
+        const seed = stableNumber('work-constellation:' + project.id);
+        points.set(project.id, {
+          x: homeX + ((seed % 101) - 50) * 1.65,
+          y: homeY + (((seed >>> 8) % 101) - 50) * 1.45,
+          homeX, homeY
+        });
+        velocity.set(project.id, { x: 0, y: 0 });
+      });
+      for (let pass = 0; pass < 380; pass++) {
+        const force = new Map(projects.map(p => [p.id, { x: 0, y: 0 }]));
+        projects.forEach((a, i) => projects.slice(i + 1).forEach(b => {
+          const p = points.get(a.id), q = points.get(b.id);
+          const dx = q.x - p.x, dy = q.y - p.y;
+          const dist = Math.max(1, Math.hypot(dx, dy));
+          const clearance = Math.hypot(dx / 143, dy / 104);
+          const magnitude = 10000 / (dist * dist + 3400) + Math.max(0, 1 - clearance) * 4.2;
+          const fx = dx / dist * magnitude, fy = dy / dist * magnitude;
+          force.get(a.id).x -= fx; force.get(a.id).y -= fy;
+          force.get(b.id).x += fx; force.get(b.id).y += fy;
+        }));
+        workNeighbourEdges.forEach(edge => {
+          const a = edge.source.slice(8), b = edge.target.slice(8);
+          const p = points.get(a), q = points.get(b);
+          const dx = q.x - p.x, dy = q.y - p.y;
+          const length = Math.max(1, Math.hypot(dx, dy));
+          const attraction = (length - 215) * .003;
+          force.get(a).x += dx / length * attraction;
+          force.get(a).y += dy / length * attraction;
+          force.get(b).x -= dx / length * attraction;
+          force.get(b).y -= dy / length * attraction;
+        });
+        projects.forEach(project => {
+          const p = points.get(project.id), f = force.get(project.id), v = velocity.get(project.id);
+          f.x += (p.homeX - p.x) * .003;
+          f.y += (p.homeY - p.y) * .003;
+          v.x = (v.x + f.x) * .8;
+          v.y = (v.y + f.y) * .8;
+          p.x = Math.max(345, Math.min(1085, p.x + v.x));
+          p.y = Math.max(185, Math.min(625, p.y + v.y));
+        });
+      }
+      return points;
+    })();
+
+    const layoutWorkConstellation = () => {
+      const positions = new Map([
+        [profileRoot.id, { x: 180, y: 92 }],
+        [workRoot.id, { x: 260, y: 225 }]
+      ]);
+      projects.forEach(project => {
+        const point = constellationPositions.get(project.id);
+        positions.set('project-' + project.id, { x: point.x, y: point.y });
+      });
+      return { width: 1200, height: 760, positions };
+    };
+
     const layoutWork = nodes => {
+      if (workView === 'constellation') return layoutWorkConstellation();
       const width = 1200, height = 760;
       const positions = new Map([
         [profileRoot.id, { x: 600, y: 92 }],
@@ -755,7 +872,9 @@
       layoutFocus(nodes);
 
     const graphEdges = (nodes, layout = null) => {
-      if (state.mode === 'work') return workEdgesModel();
+      if (state.mode === 'work') return workView === 'constellation'
+        ? [{ source: profileRoot.id, target: workRoot.id, type: 'hierarchy' }, ...workNeighbourEdges]
+        : workEdgesModel();
       const ids = new Set(nodes.map(node => node.id));
       const edges = [];
       const semanticLayout = state.mode === 'focus' && Boolean(layout?.semanticKind);
@@ -877,7 +996,22 @@
         label.textContent = node.id === workRoot.id && state.mode === 'work' ? 'WORK' : node.label;
       }
 
-      group.append(hit, dot, variantGlyph, label);
+      if (state.mode === 'work' && workView === 'constellation' && node.type === 'project') {
+        group.classList.add('is-work-constellation-project');
+        const orbital = document.createElementNS(svgNS, 'ellipse');
+        orbital.classList.add('work-project-orbit');
+        orbital.setAttribute('rx', '26');
+        orbital.setAttribute('ry', '9');
+        orbital.setAttribute('transform', 'rotate(-28)');
+        orbital.setAttribute('aria-hidden', 'true');
+        const outer = document.createElementNS(svgNS, 'circle');
+        outer.classList.add('work-project-shell');
+        outer.setAttribute('r', '15');
+        outer.setAttribute('aria-hidden', 'true');
+        group.append(hit, orbital, outer, dot, variantGlyph, label);
+      } else {
+        group.append(hit, dot, variantGlyph, label);
+      }
 
       if (node.meta && state.mode !== 'work') {
         const meta = document.createElementNS(svgNS, 'text');
@@ -925,8 +1059,12 @@
           if (node.id === profileRoot.id) {
             if (!window.ProfileHomeOverviewV4?.returnToInteractiveOverview?.('work-root-keyboard')) updateHash('overview');
           }
-          else if (node.id === workRoot.id) setThemesViaControls([]);
-          else {
+          else if (node.id === workRoot.id) {
+            if (workView === 'lattice') setThemesViaControls([]);
+            else updateHash('work');
+          } else if (workView === 'constellation' && node.type === 'project') {
+            updateHash(node.route);
+          } else {
             const concept = conceptByNodeId.get(node.id);
             if (concept) setThemesViaControls(concept.intent, concept.intent.length > 1 ? 'all' : 'any');
           }
@@ -1080,7 +1218,7 @@
 
     const syncWorkDecorations = layout => {
       const desired = new Set();
-      if (state.mode !== 'work') {
+      if (state.mode !== 'work' || workView === 'constellation') {
         [...renderer.decorationElements.entries()].forEach(([key, element]) => {
           element.remove();
           renderer.decorationElements.delete(key);
@@ -1399,7 +1537,9 @@
           starts.set(node.id, pointOf(element));
         }
         targets.set(node.id, target);
-        element.classList.toggle('is-selected', node.id === state.node?.id && state.mode !== 'overview');
+        element.classList.toggle('is-selected',
+          (node.id === state.node?.id && state.mode !== 'overview') ||
+          (state.mode === 'work' && workView === 'constellation' && node.id === 'project-' + state.workProjectId));
         element.classList.toggle('is-work-root', node.id === 'work' && state.mode === 'work');
         const timelineRole = Boolean(layout.timelineNodeIds?.has?.(node.id)) ||
           (layout.semanticKind === 'experience-temporal' && node.type === 'experience');
@@ -1425,6 +1565,9 @@
         const textOffsets = layout.timelineTextOffsets?.get?.(node.id);
         if (label) {
           if (node.id === 'work') label.textContent = state.mode === 'work' ? 'WORK' : 'Work';
+          if (state.mode === 'work' && workView === 'constellation' && node.type === 'project') {
+            label.textContent = projectMap.get(node.id.slice(8))?.graphLabel || node.label;
+          }
           label.setAttribute('y', timelineRole ? String(textOffsets?.label ?? -20) : node.id === profileRoot.id ? '-25' : '25');
         }
         const meta = element.querySelector('.site-graph-meta');
@@ -1455,7 +1598,7 @@
           element.dataset.target = edge.target;
           element.dataset.type = edge.type;
           element.classList.add(`is-${edge.type}`);
-          if (!['hierarchy', 'hierarchy-alt', 'work-lattice'].includes(edge.type)) element.classList.add('is-cross-link');
+          if (!['hierarchy', 'hierarchy-alt', 'work-lattice', 'work-related'].includes(edge.type)) element.classList.add('is-cross-link');
           if (edge.type === 'hierarchy-alt' || edge.secondary) element.classList.add('is-secondary');
           renderer.edgeElements.set(key, element);
           renderer.edges.appendChild(element);
@@ -1586,8 +1729,41 @@
 
     const conceptForId = id => id === 'work' ? topConcept : conceptByNodeId.get(id);
 
+    const applyConstellationHighlight = hoverId => {
+      const selected = hoverId || (state.workProjectId ? 'project-' + state.workProjectId : null);
+      const related = new Set(selected ? [selected] : []);
+      workNeighbourEdges.forEach(edge => {
+        if (edge.source === selected) related.add(edge.target);
+        if (edge.target === selected) related.add(edge.source);
+      });
+      renderer.nodeElements.forEach((element, id) => {
+        const project = id.startsWith('project-') ? projectMap.get(id.slice(8)) : null;
+        if (!project) return;
+        const matches = projectMatchesWork(project);
+        element.classList.toggle('is-filtered-work', !matches);
+        element.classList.toggle('is-work-soft', related.has(id) && id !== selected);
+        element.classList.toggle('is-work-strong', id === selected);
+        element.classList.toggle('is-muted-soft', Boolean(selected) && !related.has(id));
+      });
+      renderer.edgeElements.forEach((element, key) => {
+        const edge = renderer.lastEdges.find(item => edgeKey(item) === key);
+        if (!edge || edge.type !== 'work-related') return;
+        const matches = [edge.source, edge.target].every(id => {
+          const project = projectMap.get(id.slice(8));
+          return project && projectMatchesWork(project);
+        });
+        const active = selected && (edge.source === selected || edge.target === selected);
+        element.classList.toggle('is-work-strong', Boolean(active));
+        element.classList.toggle('is-muted-soft', !matches || Boolean(selected && !active));
+      });
+    };
+
     const applyPersistentWorkHighlight = () => {
       if (state.mode !== 'work') return;
+      if (workView === 'constellation') {
+        applyConstellationHighlight(null);
+        return;
+      }
       const filter = readWorkState();
       const selected = [...filter.selectedThemes];
 
@@ -1688,6 +1864,10 @@
 
     const workPreviewNode = nodeId => {
       clearWorkClasses();
+      if (workView === 'constellation') {
+        applyConstellationHighlight(nodeId === profileRoot.id || nodeId === workRoot.id ? null : nodeId);
+        return;
+      }
       if (nodeId === profileRoot.id) {
         renderer.nodeElements.get(profileRoot.id)?.classList.add('is-work-strong');
         renderer.edgeElements.get(`${profileRoot.id}|work|hierarchy`)?.classList.add('is-work-strong');
@@ -2159,7 +2339,9 @@
       help.textContent = state.mode === 'atlas'
         ? 'Hover to distinguish upstream, downstream and cross-links. Click to pin a node and inspect it.'
         : state.mode === 'work'
-          ? 'The Work concept lattice is part of the same map. Use the side filters, themes, concepts or project labels directly.'
+          ? (workView === 'constellation'
+              ? 'Projects are linked by shared themes. Hover to trace relationships, select a project for evidence, or switch to FCA lattice.'
+              : 'FCA concept lattice. Explore formal concepts, thematic filters and project labels; switch to Projects for the constellation.')
           : state.mode === 'overview'
             ? 'Select an area to let the map unfold around it.'
             : 'Select a connected node to move deeper. Ancestors remain in the graph.';
@@ -2182,8 +2364,13 @@
       const route = normaliseRoute(rawRoute);
       const projectMatch = route.match(/^work\/project\/([^/]+)$/);
       const themeMatch = route.match(/^work\/theme\/([^/]+)$/);
+      const latticeRoute = route === 'work/lattice';
 
-      if (route === 'work' || projectMatch || themeMatch) {
+      if (route === 'work' || latticeRoute || projectMatch || themeMatch) {
+        if (latticeRoute) workView = 'lattice';
+        else if (route === 'work') workView = 'constellation';
+        document.body.dataset.workView = workView;
+        workViewButtons.forEach((button, view) => button.setAttribute('aria-pressed', String(view === workView)));
         state = {
           route,
           mode: 'work',
@@ -2218,6 +2405,7 @@
         return;
       }
 
+      delete document.body.dataset.workView;
       const atlas = route === 'atlas';
       const target = atlas ? profileRoot : (nodeForRoute(route) || profileRoot);
       state = {
@@ -2286,6 +2474,8 @@
         visibleProjectCount: projects.filter(project => projectMatchesWork(project)).length,
         projectCount: projects.length,
         conceptCount: displayConcepts.length,
+        view: workView,
+        relationCount: workNeighbourEdges.length,
         route: state.route,
         activeProjectId: state.workProjectId
       })

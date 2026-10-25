@@ -519,3 +519,120 @@ body[data-graph-mode="focus"] .site-graph-heading{top:82px!important}
     animation:none!important
   }
 }
+
+
+/* V4 Work constellation: canonical project objects instead of concept labels.
+   The FCA Hasse diagram remains available through the Work view toggle. */
+.integrated-work-rail .work-view-control{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  column-gap:5px;
+  margin-bottom:19px!important;
+  padding-bottom:16px!important;
+  border-bottom:1px solid var(--line)!important
+}
+.integrated-work-rail .work-view-control .work-side-title{grid-column:1/-1}
+.integrated-work-rail .work-view-button{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:33px;
+  padding:6px 5px;
+  border:1px solid var(--line);
+  border-radius:4px;
+  color:var(--muted);
+  background:transparent;
+  font:700 10px/1.1 var(--sans);
+  cursor:pointer;
+  transition:border-color .18s ease,background .18s ease,color .18s ease
+}
+.integrated-work-rail .work-view-button:hover,
+.integrated-work-rail .work-view-button:focus-visible{border-color:var(--teal);color:var(--ink)}
+.integrated-work-rail .work-view-button[aria-pressed="true"]{
+  border-color:var(--teal);
+  background:color-mix(in srgb,var(--teal) 12%,var(--paper));
+  color:var(--teal)
+}
+body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-node.is-work-constellation-project{
+  --work-orbit-speed:13s;
+  opacity:1;
+  cursor:pointer
+}
+body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-node.is-work-constellation-project .site-graph-hit{r:26px}
+body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-node.is-work-constellation-project .site-graph-dot{
+  r:8px;
+  stroke:var(--teal);
+  stroke-width:1.9;
+  fill:color-mix(in srgb,var(--teal) 65%,var(--paper));
+  filter:drop-shadow(0 0 3px color-mix(in srgb,var(--teal) 42%,transparent))
+}
+body[data-graph-mode="work"][data-work-view="constellation"] .work-project-shell{
+  fill:color-mix(in srgb,var(--teal) 7%,var(--paper));
+  stroke:color-mix(in srgb,var(--teal) 53%,var(--line));
+  stroke-width:1.15;
+  opacity:.86;
+  transition:fill .2s ease,stroke .2s ease
+}
+body[data-graph-mode="work"][data-work-view="constellation"] .work-project-orbit{
+  fill:none;
+  stroke:var(--teal);
+  stroke-width:1.05;
+  opacity:.5;
+  transform-box:fill-box;
+  transform-origin:center;
+  animation:work-constellation-orbit var(--work-orbit-speed) linear infinite;
+  pointer-events:none
+}
+body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project:nth-child(3n) .work-project-orbit{
+  animation-duration:17s;
+  animation-direction:reverse
+}
+body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project:nth-child(4n) .work-project-orbit{animation-duration:21s}
+body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project .site-graph-label{
+  fill:var(--ink);
+  font-size:13px;
+  font-weight:735;
+  paint-order:stroke;
+  stroke:var(--paper);
+  stroke-width:5px
+}
+body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project:hover .work-project-shell,
+body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project:focus-visible .work-project-shell,
+body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project.is-selected .work-project-shell{
+  stroke:var(--teal);
+  fill:color-mix(in srgb,var(--teal) 22%,var(--paper))
+}
+body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project.is-work-soft .site-graph-dot{stroke-width:2.4}
+body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project.is-filtered-work{opacity:.18}
+body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project.is-work-strong{
+  opacity:1!important
+}
+body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-edges path.is-work-related{
+  stroke:var(--line);
+  stroke-width:1.25;
+  stroke-dasharray:none;
+  opacity:.42
+}
+body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-edges path.is-work-related.is-work-strong{
+  stroke:var(--teal)!important;
+  stroke-width:2.1!important;
+  opacity:1!important
+}
+body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-edges path.is-work-related.is-muted-soft{opacity:.12}
+@keyframes work-constellation-orbit {
+  from{transform:rotate(0deg)}
+  to{transform:rotate(360deg)}
+}
+@media(max-width:900px){
+  body[data-graph-mode="work"] .integrated-work-rail.is-left{
+    max-height:38dvh;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    scrollbar-width:thin
+  }
+  body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-heading{top:58px}
+}
+@media(prefers-reduced-motion:reduce){
+  body[data-graph-mode="work"] .work-project-orbit{animation:none!important}
+  .integrated-work-rail .work-view-button{transition:none}
+}

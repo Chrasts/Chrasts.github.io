@@ -9,6 +9,7 @@ test.describe('Production Work — project-first constellation', () => {
     await page.waitForFunction(() => window.ProfileWorkController?.snapshot?.().view === 'constellation');
     await expect(page.locator('#site-graph .site-graph-node.is-work-constellation-project')).toHaveCount(10);
     await expect(page.locator('#site-graph .site-graph-edges path.is-work-related')).toHaveCount(16);
+    await expect(page.locator('#site-graph .site-graph-edges path.is-work-membership')).toHaveCount(10);
     await expect(page.locator('#site-graph .site-graph-semantic-guide.is-work-column')).toHaveCount(3);
     await expect(page.locator('#site-graph .site-graph-semantic-guide.is-work-row')).toHaveCount(4);
     await expect(page.locator('.integrated-work-rail .work-view-button[data-view="constellation"]'))

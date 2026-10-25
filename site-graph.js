@@ -883,7 +883,14 @@
 
     const graphEdges = (nodes, layout = null) => {
       if (state.mode === 'work') return workView === 'constellation'
-        ? [{ source: profileRoot.id, target: workRoot.id, type: 'hierarchy' }, ...workNeighbourEdges]
+        ? [
+            { source: profileRoot.id, target: workRoot.id, type: 'hierarchy' },
+            ...projects.map(project => ({
+              source: workRoot.id, target: 'project-' + project.id,
+              type: 'work-membership'
+            })),
+            ...workNeighbourEdges
+          ]
         : workEdgesModel();
       const ids = new Set(nodes.map(node => node.id));
       const edges = [];
@@ -1611,7 +1618,7 @@
           element.dataset.target = edge.target;
           element.dataset.type = edge.type;
           element.classList.add(`is-${edge.type}`);
-          if (!['hierarchy', 'hierarchy-alt', 'work-lattice', 'work-related'].includes(edge.type)) element.classList.add('is-cross-link');
+          if (!['hierarchy', 'hierarchy-alt', 'work-lattice', 'work-related', 'work-membership'].includes(edge.type)) element.classList.add('is-cross-link');
           if (edge.type === 'hierarchy-alt' || edge.secondary) element.classList.add('is-secondary');
           if (edge.type === 'work-related') {
             element.dataset.workRelation = edge.relationKind;
@@ -1769,6 +1776,10 @@
       });
       renderer.edgeElements.forEach((element, key) => {
         const edge = renderer.lastEdges.find(item => edgeKey(item) === key);
+        if (edge?.type === 'work-membership') {
+          element.classList.toggle('is-work-strong', hoverId === workRoot.id);
+          return;
+        }
         if (!edge || edge.type !== 'work-related') return;
         const matches = [edge.source, edge.target].every(id => {
           const project = projectMap.get(id.slice(8));
@@ -1887,7 +1898,7 @@
     const workPreviewNode = nodeId => {
       clearWorkClasses();
       if (workView === 'constellation') {
-        applyConstellationHighlight(nodeId === profileRoot.id || nodeId === workRoot.id ? null : nodeId);
+        applyConstellationHighlight(nodeId === profileRoot.id ? null : nodeId);
         return;
       }
       if (nodeId === profileRoot.id) {

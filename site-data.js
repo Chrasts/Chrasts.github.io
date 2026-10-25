@@ -32,7 +32,7 @@ window.SITE_DATA={
     },
     nodes:[
   N("stepan-chrast","profile","Štěpán Chrast",null,"overview",null,"Data analysis, research and mathematical logic.",null),
-  N("work","section","Work","stepan-chrast","work",null,"Selected projects, explored through a concept lattice of themes and contexts.",null),
+  N("work","section","Work","stepan-chrast","work",null,"Selected projects explored through their thematic relationships, with an optional formal concept lattice.",null),
   N("knowledge","section","Knowledge","stepan-chrast","knowledge",null,"Substantive working knowledge from projects, research, sustained study and independent practice.",null),
   N("experience","section","Experience","stepan-chrast","experience",null,"Roles and practical contexts behind the work.",null),
   N("education","section","Education","stepan-chrast","education",null,"Programmes, coursework and academic foundations.",null),

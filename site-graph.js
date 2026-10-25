@@ -1586,9 +1586,19 @@
           }
           label.setAttribute('y', timelineRole ? String(textOffsets?.label ?? -20) : node.id === profileRoot.id ? '-25' : '25');
         }
-        const meta = element.querySelector('.site-graph-meta');
+        let meta = element.querySelector('.site-graph-meta');
+        // A project can be instantiated in Work (without metadata) and then
+        // reused in Atlas, or vice versa. Keep its label complete in both.
+        if (!meta && node.type === 'project' && node.meta && state.mode !== 'work') {
+          meta = document.createElementNS(svgNS, 'text');
+          meta.classList.add('site-graph-meta');
+          meta.setAttribute('text-anchor', 'middle');
+          meta.setAttribute('pointer-events', 'all');
+          element.appendChild(meta);
+        }
         const metaModel = layout.timelineLabelMeta?.get?.(node.id);
         if (meta) {
+          meta.style.display = state.mode === 'work' ? 'none' : '';
           meta.setAttribute('y', timelineRole ? String(textOffsets?.meta ?? -37) : '42');
           meta.textContent = metaModel?.text ?? node.meta ?? '';
           meta.classList.toggle('is-semantic-meta-hidden', Boolean(metaModel?.hidden));

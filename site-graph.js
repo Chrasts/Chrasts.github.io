@@ -774,6 +774,73 @@
       }))
     ];
 
+    /* Observatory is a focus state of the same Work graph. "Nearest" here
+       refers to categorical overlap, not a geometric or causal relationship.
+       One-step/identical attribute neighbours are preferred; more distant
+       overlaps appear only to fill otherwise empty positions. */
+    const workObservatoryPeersFor = projectId => {
+      const selected = projectMap.get(projectId);
+      if (!selected) return [];
+      const oneStep = new Map();
+      workNeighbourEdges.forEach(edge => {
+        const source = edge.source.slice('project-'.length);
+        const target = edge.target.slice('project-'.length);
+        if (source !== projectId && target !== projectId) return;
+        const otherId = source === projectId ? target : source;
+        oneStep.set(otherId, edge);
+      });
+      return projects.filter(project => project.id !== projectId)
+        .map(project => {
+          const common = project.lattice.filter(id => selected.lattice.includes(id));
+          const overlap = common.length / new Set([...selected.lattice, ...project.lattice]).size;
+          return { project, overlap, common, edge: oneStep.get(project.id) || null };
+        })
+        .filter(candidate => candidate.common.length > 0)
+        .sort((a, b) =>
+          Number(Boolean(b.edge)) - Number(Boolean(a.edge)) ||
+          b.overlap - a.overlap ||
+          a.project.order - b.project.order
+        )
+        .slice(0, 4);
+    };
+
+    const layoutWorkObservatory = projectId => {
+      const peers = workObservatoryPeersFor(projectId);
+      const focal = { x: 584, y: 370 };
+      const positions = new Map([
+        [profileRoot.id, { x: 180, y: 92 }],
+        [workRoot.id, { x: 265, y: 225 }],
+        ['project-' + projectId, focal]
+      ]);
+      // The inspector occupies the right-hand edge; keep all focused items
+      // in the centre-left reading field and leave the inspector unobstructed.
+      const orbitSlots = [
+        { x: 408, y: 250 }, { x: 765, y: 250 },
+        { x: 408, y: 500 }, { x: 765, y: 500 }
+      ];
+      peers.forEach((candidate, index) => {
+        positions.set('project-' + candidate.project.id, { ...orbitSlots[index] });
+      });
+      const peripheral = projects.filter(project => !positions.has('project-' + project.id));
+      const peripheralX = [365, 488, 611, 734, 857, 980];
+      peripheral.forEach((project, index) => {
+        // Nonrelated projects remain accessible rather than disappearing.
+        // Their low-priority lane is below the main local neighbourhood.
+        positions.set('project-' + project.id, {
+          x: peripheralX[index % peripheralX.length],
+          y: 625 + Math.floor(index / peripheralX.length) * 50
+        });
+      });
+      return {
+        width: 1200, height: 760, positions,
+        observatory: {
+          projectId, centre: focal,
+          relatedIds: peers.map(candidate => candidate.project.id),
+          relationCount: peers.length
+        }
+      };
+    };
+
     const layoutWorkConstellation = () => {
       const positions = new Map([
         [profileRoot.id, { x: 180, y: 92 }],
@@ -787,7 +854,11 @@
     };
 
     const layoutWork = nodes => {
-      if (workView === 'constellation') return layoutWorkConstellation();
+      if (workView === 'constellation') {
+        return state.workProjectId && projectMap.has(state.workProjectId)
+          ? layoutWorkObservatory(state.workProjectId)
+          : layoutWorkConstellation();
+      }
       const width = 1200, height = 760;
       const positions = new Map([
         [profileRoot.id, { x: 600, y: 92 }],
@@ -882,16 +953,31 @@
       layoutFocus(nodes);
 
     const graphEdges = (nodes, layout = null) => {
-      if (state.mode === 'work') return workView === 'constellation'
-        ? [
-            { source: profileRoot.id, target: workRoot.id, type: 'hierarchy' },
-            ...projects.map(project => ({
-              source: workRoot.id, target: 'project-' + project.id,
-              type: 'work-membership'
-            })),
-            ...workNeighbourEdges
-          ]
-        : workEdgesModel();
+      if (state.mode === 'work') {
+        if (workView !== 'constellation') return workEdgesModel();
+        const base = { source: profileRoot.id, target: workRoot.id, type: 'hierarchy' };
+        if (layout?.observatory) {
+          const projectId = layout.observatory.projectId;
+          const peers = workObservatoryPeersFor(projectId);
+          return [
+            base,
+            ...peers.map(({ project, common, edge }) => edge || ({
+              source: 'project-' + projectId,
+              target: 'project-' + project.id,
+              type: 'work-focus-relation',
+              sharedThemes: common
+            }))
+          ];
+        }
+        return [
+          base,
+          ...projects.map(project => ({
+            source: workRoot.id, target: 'project-' + project.id,
+            type: 'work-membership'
+          })),
+          ...workNeighbourEdges
+        ];
+      }
       const ids = new Set(nodes.map(node => node.id));
       const edges = [];
       const semanticLayout = state.mode === 'focus' && Boolean(layout?.semanticKind);
@@ -1357,6 +1443,24 @@
       renderer.lastEdges = edges;
       renderer.svg.classList.toggle('is-local-pannable', state.mode === 'focus' && Boolean(layout.semanticKind));
 
+      // A single structural orbit belongs to the Work scene, behind project
+      // nodes. It is decorative, not another project or hierarchy marker.
+      let workOrbit = renderer.decorations.querySelector(':scope > .work-observatory-orbit');
+      if (!workOrbit) {
+        workOrbit = document.createElementNS(svgNS, 'ellipse');
+        workOrbit.classList.add('work-observatory-orbit');
+        workOrbit.setAttribute('rx', '228');
+        workOrbit.setAttribute('ry', '187');
+        workOrbit.setAttribute('fill', 'none');
+        workOrbit.setAttribute('pointer-events', 'none');
+        workOrbit.setAttribute('aria-hidden', 'true');
+        renderer.decorations.prepend(workOrbit);
+      }
+      const observing = state.mode === 'work' && workView === 'constellation' && Boolean(layout.observatory);
+      workOrbit.classList.toggle('is-visible', observing);
+      workOrbit.setAttribute('cx', String(layout.observatory?.centre.x ?? 584));
+      workOrbit.setAttribute('cy', String(layout.observatory?.centre.y ?? 370));
+
       const guideModels = layout.semanticGuides || (layout.timeline
         ? [{ id: 'legacy-timeline', kind: 'axis', x1: layout.timeline.x1, y1: layout.timeline.y, x2: layout.timeline.x2, y2: layout.timeline.y }]
         : []);
@@ -1544,8 +1648,15 @@
         }
         targets.set(node.id, target);
         if (node.type === 'project') {
-          // Reuse the same canonical dot + halo system as every other branch.
+          // Reuse canonical dot/halo morphology in Overview, Work and Atlas.
           element.classList.toggle('is-work-constellation-project', state.mode === 'work' && workView === 'constellation');
+          element.classList.toggle('is-work-observatory-centre',
+            Boolean(layout.observatory) && node.id === 'project-' + layout.observatory.projectId);
+          element.classList.toggle('is-work-observatory-peer',
+            Boolean(layout.observatory) && layout.observatory.relatedIds.includes(node.id.slice('project-'.length)));
+          element.classList.toggle('is-work-observatory-peripheral',
+            Boolean(layout.observatory) && node.id !== 'project-' + layout.observatory.projectId &&
+            !layout.observatory.relatedIds.includes(node.id.slice('project-'.length)));
         }
         element.classList.toggle('is-selected',
           (node.id === state.node?.id && state.mode !== 'overview') ||
@@ -1620,13 +1731,15 @@
           element.classList.add(`is-${edge.type}`);
           if (!['hierarchy', 'hierarchy-alt', 'work-lattice', 'work-related', 'work-membership'].includes(edge.type)) element.classList.add('is-cross-link');
           if (edge.type === 'hierarchy-alt' || edge.secondary) element.classList.add('is-secondary');
-          if (edge.type === 'work-related') {
-            element.dataset.workRelation = edge.relationKind;
+          if (edge.type === 'work-related' || edge.type === 'work-focus-relation') {
+            element.dataset.workRelation = edge.relationKind || 'overlap';
             const title = document.createElementNS(svgNS, 'title');
-            title.textContent = edge.relationKind === 'peer'
-              ? 'Projects have exactly the same thematic labels'
-              : 'Projects differ in one thematic label: ' +
-                (attributeMap.get(edge.differingTheme)?.label || edge.differingTheme);
+            title.textContent = edge.type === 'work-focus-relation'
+              ? 'Shared themes: ' + edge.sharedThemes.map(id => attributeMap.get(id)?.label || id).join(', ')
+              : edge.relationKind === 'peer'
+                ? 'Projects have exactly the same thematic labels'
+                : 'Projects differ in one thematic label: ' +
+                  (attributeMap.get(edge.differingTheme)?.label || edge.differingTheme);
             element.appendChild(title);
           }
           renderer.edgeElements.set(key, element);
@@ -1761,19 +1874,30 @@
     const applyConstellationHighlight = hoverId => {
       const selected = hoverId || (state.workProjectId ? 'project-' + state.workProjectId : null);
       const related = new Set(selected ? [selected] : []);
+      if (state.workProjectId && workView === 'constellation') {
+        // In Observatory all highlighted neighbours come from the exact
+        // current focus model, including fallback thematic overlaps.
+        workObservatoryPeersFor(state.workProjectId).forEach(candidate => {
+          related.add('project-' + candidate.project.id);
+        });
+      }
       // WORK is a collection anchor: hovering it reveals every member rather
       // than treating every project as unrelated to the section.
       if (selected === workRoot.id) {
         projects.forEach(project => related.add('project-' + project.id));
       }
-      workNeighbourEdges.forEach(edge => {
+      (state.workProjectId && workView === 'constellation' ? renderer.lastEdges : workNeighbourEdges).forEach(edge => {
         if (edge.source === selected) related.add(edge.target);
         if (edge.target === selected) related.add(edge.source);
       });
       renderer.nodeElements.forEach((element, id) => {
         const project = id.startsWith('project-') ? projectMap.get(id.slice(8)) : null;
         if (!project) return;
-        const matches = projectMatchesWork(project);
+        const observatoryVisible = state.workProjectId && (
+          id === 'project-' + state.workProjectId ||
+          workObservatoryPeersFor(state.workProjectId).some(candidate => candidate.project.id === project.id)
+        );
+        const matches = observatoryVisible || projectMatchesWork(project);
         element.classList.toggle('is-filtered-work', !matches);
         element.classList.toggle('is-work-soft', related.has(id) && id !== selected);
         element.classList.toggle('is-work-strong', id === selected);
@@ -1785,7 +1909,7 @@
           element.classList.toggle('is-work-strong', hoverId === workRoot.id);
           return;
         }
-        if (!edge || edge.type !== 'work-related') return;
+        if (!edge || !['work-related', 'work-focus-relation'].includes(edge.type)) return;
         const matches = [edge.source, edge.target].every(id => {
           const project = projectMap.get(id.slice(8));
           return project && projectMatchesWork(project);
@@ -2037,6 +2161,12 @@
        ---------------------------------------------------------------------- */
     let detailTimer = 0;
     const closeDetail = () => {
+      // Closing a project inspector also restores the layout; otherwise the
+      // URL would still point at a focused project with no visible detail.
+      if (state.mode === 'work' && state.workProjectId) {
+        updateHash(workView === 'lattice' ? 'work/lattice' : 'work');
+        return;
+      }
       clearTimeout(detailTimer);
       detail.classList.remove('is-open');
       detailTimer = setTimeout(() => detail.hidden = true, reducedMotion.matches ? 0 : 180);
@@ -2132,6 +2262,14 @@
       const project = projectMap.get(projectId);
       if (!project) return;
       showDetailShell(project.type, project.title, project.description);
+      if (workView === 'constellation') {
+        const back = document.createElement('button');
+        back.type = 'button';
+        back.className = 'work-observatory-return';
+        back.textContent = 'Back to all projects';
+        back.addEventListener('click', () => updateHash('work'));
+        detail.appendChild(back);
+      }
       const tech = document.createElement('p');
       tech.className = 'detail-meta';
       tech.textContent = project.tech.join(' / ');
@@ -2378,7 +2516,9 @@
         ? 'Hover to distinguish upstream, downstream and cross-links. Click to pin a node and inspect it.'
         : state.mode === 'work'
           ? (workView === 'constellation'
-              ? 'Horizontal position: Logic / Data; vertical position: Research / Education. Lines connect projects with identical labels or one differing label. Select a project or switch to FCA lattice.'
+              ? (state.workProjectId
+                ? 'Observatory: the selected project is central, with its nearest thematic neighbours around it. Close its detail to return.'
+                : 'Horizontal position: Logic / Data; vertical position: Research / Education. Select a project for Observatory or switch to FCA lattice.')
               : 'FCA concept lattice. Explore formal concepts, thematic filters and project labels; switch to Projects for the constellation.')
           : state.mode === 'overview'
             ? 'Select an area to let the map unfold around it.'
@@ -2408,6 +2548,9 @@
         if (latticeRoute) workView = 'lattice';
         else if (route === 'work') workView = 'constellation';
         document.body.dataset.workView = workView;
+        if (workView === 'constellation' && projectMatch && projectMap.has(projectMatch[1])) {
+          document.body.dataset.workFocus = projectMatch[1];
+        } else delete document.body.dataset.workFocus;
         workViewButtons.forEach((button, view) => button.setAttribute('aria-pressed', String(view === workView)));
         state = {
           route,
@@ -2444,6 +2587,7 @@
       }
 
       delete document.body.dataset.workView;
+      delete document.body.dataset.workFocus;
       const atlas = route === 'atlas';
       const target = atlas ? profileRoot : (nodeForRoute(route) || profileRoot);
       state = {
@@ -2514,6 +2658,10 @@
         conceptCount: displayConcepts.length,
         view: workView,
         relationCount: workNeighbourEdges.length,
+        observatory: state.mode === 'work' && workView === 'constellation' && Boolean(state.workProjectId),
+        focusPeerIds: state.mode === 'work' && workView === 'constellation' && state.workProjectId
+          ? workObservatoryPeersFor(state.workProjectId).map(item => item.project.id)
+          : [],
         route: state.route,
         activeProjectId: state.workProjectId
       })

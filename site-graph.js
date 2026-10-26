@@ -1458,8 +1458,14 @@
       }
       const observing = state.mode === 'work' && workView === 'constellation' && Boolean(layout.observatory);
       workOrbit.classList.toggle('is-visible', observing);
-      workOrbit.setAttribute('cx', String(layout.observatory?.centre.x ?? 584));
-      workOrbit.setAttribute('cy', String(layout.observatory?.centre.y ?? 370));
+      const orbitCentre = layout.observatory?.centre || { x: 584, y: 370 };
+      const mappedOrbitCentre = visualPoint(orbitCentre);
+      const orbitRight = visualPoint({ x: orbitCentre.x + 228, y: orbitCentre.y });
+      const orbitBottom = visualPoint({ x: orbitCentre.x, y: orbitCentre.y + 187 });
+      workOrbit.setAttribute('cx', mappedOrbitCentre.x.toFixed(1));
+      workOrbit.setAttribute('cy', mappedOrbitCentre.y.toFixed(1));
+      workOrbit.setAttribute('rx', Math.abs(orbitRight.x - mappedOrbitCentre.x).toFixed(1));
+      workOrbit.setAttribute('ry', Math.abs(orbitBottom.y - mappedOrbitCentre.y).toFixed(1));
 
       const guideModels = layout.semanticGuides || (layout.timeline
         ? [{ id: 'legacy-timeline', kind: 'axis', x1: layout.timeline.x1, y1: layout.timeline.y, x2: layout.timeline.x2, y2: layout.timeline.y }]

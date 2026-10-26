@@ -683,3 +683,117 @@ body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-edges p
   body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project[data-halo-state="idle"] > .site-graph-halo--primary{animation:none!important}
   .integrated-work-rail .work-view-button{transition:none}
 }
+
+
+/* Work Observatory — one graph, three spatial states: atlas-like overview,
+   focused project and its local context. The orbit is a navigation scaffold;
+   all project nodes still use ProfileHaloRenderer and existing semantics. */
+body[data-graph-mode="work"][data-work-view="constellation"] .work-observatory-orbit{
+  stroke:var(--teal);
+  stroke-width:1.05;
+  stroke-dasharray:4 11;
+  opacity:0;
+  transform-box:fill-box;
+  transform-origin:center;
+  transition:opacity .35s ease;
+  pointer-events:none
+}
+body[data-graph-mode="work"][data-work-focus] .work-observatory-orbit.is-visible{
+  opacity:.25;
+  animation:work-observatory-orbit-flow 24s linear infinite
+}
+@keyframes work-observatory-orbit-flow{
+  from{stroke-dashoffset:0}
+  to{stroke-dashoffset:-120}
+}
+body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-node.is-work-observatory-centre{
+  opacity:1!important
+}
+body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-node.is-work-observatory-centre > .site-graph-dot{
+  r:10.5px;
+  stroke-width:2.7;
+  fill:color-mix(in srgb,var(--teal) 22%,var(--paper));
+  filter:drop-shadow(0 0 5px color-mix(in srgb,var(--teal) 29%,transparent))
+}
+body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-node.is-work-observatory-centre > .site-graph-halo--primary{
+  r:21px;
+  opacity:.72;
+  stroke-width:1.9;
+  stroke-dasharray:none;
+  animation:none
+}
+body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-node.is-work-observatory-centre > .site-graph-label{
+  fill:var(--teal);
+  font-size:17px;
+  font-weight:835;
+  stroke-width:6px
+}
+body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-node.is-work-observatory-peer > .site-graph-dot{
+  r:7px;
+  stroke-width:2
+}
+body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-node.is-work-observatory-peer > .site-graph-label{
+  font-size:12px;
+  font-weight:750
+}
+body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-node.is-work-observatory-peripheral{
+  opacity:.25;
+}
+body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-node.is-work-observatory-peripheral > .site-graph-label{
+  font-size:9px;
+  opacity:.65
+}
+body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-node.is-work-observatory-peripheral:hover,
+body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-node.is-work-observatory-peripheral:focus-visible{
+  opacity:1
+}
+body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-edges path.is-work-related,
+body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-edges path.is-work-focus-relation{
+  stroke:var(--teal);
+  stroke-width:1.5;
+  stroke-dasharray:none;
+  opacity:.66
+}
+body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-edges path.is-work-focus-relation{
+  stroke-dasharray:3 5;
+  opacity:.46
+}
+body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-edges path.is-work-related.is-work-strong,
+body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-edges path.is-work-focus-relation.is-work-strong{
+  stroke:var(--teal)!important;
+  stroke-width:2!important;
+  opacity:.95!important
+}
+body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-edges path.is-muted-soft{
+  opacity:.12!important
+}
+body[data-graph-mode="work"][data-work-focus] .site-graph-help{
+  max-width:480px!important
+}
+body[data-graph-mode="work"][data-work-focus] .work-observatory-return{
+  display:inline-flex;
+  align-items:center;
+  margin:16px 0 12px;
+  padding:7px 0;
+  border:0;
+  border-bottom:1px solid currentColor;
+  background:none;
+  color:var(--teal);
+  font:700 11px/1.3 var(--sans);
+  cursor:pointer
+}
+body[data-graph-mode="work"][data-work-focus] .work-observatory-return:hover,
+body[data-graph-mode="work"][data-work-focus] .work-observatory-return:focus-visible{
+  color:var(--ink)
+}
+@media (max-width:900px){
+  body[data-graph-mode="work"][data-work-focus] .site-graph-node.is-work-observatory-centre > .site-graph-label{
+    font-size:15px!important
+  }
+}
+@media (prefers-reduced-motion:reduce){
+  body[data-graph-mode="work"] .work-observatory-orbit{
+    animation:none!important;
+    transition:none!important
+  }
+}

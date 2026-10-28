@@ -884,10 +884,10 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:is
   content:"";
   position:absolute;
   z-index:1;
-  width:min(47vw,840px);
+  width:min(37vw,680px);
   aspect-ratio:1100/658;
-  left:50%;
-  top:51%;
+  left:var(--home-a18-root-x,50%);
+  top:var(--home-a18-root-y,50%);
   transform:translate(-50%,-50%) rotate(-5deg);
   background:url("assets/a18-home-hasse.svg") center/contain no-repeat;
   opacity:.23;

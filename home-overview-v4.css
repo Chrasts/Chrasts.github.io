@@ -1055,3 +1055,19 @@ html[data-theme="dark"] .home-v4-shell::before{
   .home-v4-current{margin-top:clamp(35px,5vh,48px)}
   .home-v4-identity{transform:translateY(-8px)}
 }
+
+/* Home: heading and project menu share one actual centering axis. */
+.home-v4-work-head,
+.home-v4-project-list{
+  width:max-content;
+  max-width:100%;
+  margin-left:auto;
+  margin-right:auto;
+}
+.home-v4-work-head{display:block;padding:0}
+.home-v4-work-title{width:auto;text-align:center;white-space:nowrap}
+.home-v4-project-list{display:grid;justify-content:initial}
+.home-v4-project-choice{width:100%}
+@media(max-width:1280px) and (min-width:901px){
+  .home-v4-project-list{margin-left:auto;margin-right:auto}
+}

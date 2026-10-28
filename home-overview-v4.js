@@ -101,10 +101,9 @@
     if (!preview || !project) return;
     preview.replaceChildren();
 
-    const meta = element('p', 'home-v4-project-meta', project.type || 'Selected project');
     const title = element('h3', 'home-v4-project-title', project.title || project.graphLabel);
     const summary = element('p', 'home-v4-project-summary', project.caseStudy?.oneLine || project.description || '');
-    preview.append(meta, title, summary);
+    preview.append(title, summary);
 
     const facts = element('dl', 'home-v4-project-facts');
     const appendFact = (term, value) => {

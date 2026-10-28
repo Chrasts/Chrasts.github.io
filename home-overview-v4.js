@@ -252,6 +252,9 @@
     const py = portraitRect.top + portraitRect.height / 2 - hostRect.top;
     const rx = rootRect.left + rootRect.width / 2 - hostRect.left;
     const ry = rootRect.top + rootRect.height / 2 - hostRect.top;
+    // Align the A18 watermark with the actual canonical root in this viewport.
+    shell.style.setProperty('--home-a18-root-x', `${rx}px`);
+    shell.style.setProperty('--home-a18-root-y', `${ry}px`);
     const dx = rx - px;
     const dy = ry - py;
     const distance = Math.hypot(dx, dy) || 1;

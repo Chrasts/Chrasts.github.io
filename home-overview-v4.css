@@ -1013,3 +1013,41 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:is
 @media(max-height:720px) and (min-width:901px){
   .home-v4-current{margin-top:clamp(25px,3.7vh,36px)}
 }
+
+/* Home-only composition tune: centered work heading, quieter identity, lower current context. */
+.home-v4-work-head{
+  padding-left:0;
+  text-align:center;
+}
+.home-v4-work-title{
+  display:block;
+  width:100%;
+  text-align:center;
+}
+.home-v4-identity{
+  transform:translateY(-19px);
+}
+.home-v4-name{
+  font-size:clamp(27px,2.15vw,39px);
+  line-height:1.09;
+}
+.home-v4-role{margin-top:1px}
+.home-v4-current{
+  margin-top:clamp(76px,9vh,113px);
+  margin-left:clamp(37px,3.5vw,65px);
+}
+.home-v4-current-item--education .home-v4-current-kind{
+  color:var(--brown);
+}
+@media(max-width:1280px) and (min-width:901px){
+  .home-v4-name{font-size:clamp(25px,2.4vw,34px)}
+  .home-v4-identity{transform:translateY(-13px)}
+  .home-v4-current{
+    margin-top:clamp(58px,7vh,79px);
+    margin-left:clamp(27px,2.8vw,42px);
+  }
+}
+@media(max-height:720px) and (min-width:901px){
+  .home-v4-current{margin-top:clamp(35px,5vh,48px)}
+  .home-v4-identity{transform:translateY(-8px)}
+}

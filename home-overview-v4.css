@@ -857,3 +857,24 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:is
 @media(max-height:720px) and (min-width:901px){
   .home-v4-summary{margin-top:15px}
 }
+
+/* Home-only: diamond project selectors, no redundant project detail bullet. */
+.home-v4-project-node{
+  border-radius:0;
+  transform:rotate(45deg);
+}
+.home-v4-project-choice:hover .home-v4-project-node,
+.home-v4-project-choice:focus-visible .home-v4-project-node{
+  transform:rotate(45deg) scale(1.08);
+}
+.home-v4-project-choice.is-active .home-v4-project-node{
+  transform:rotate(45deg);
+}
+.home-v4-project-choice:nth-child(even) .home-v4-project-node{
+  transform:rotate(45deg);
+}
+.home-v4-project-choice:nth-child(even):hover .home-v4-project-node,
+.home-v4-project-choice:nth-child(even):focus-visible .home-v4-project-node{
+  transform:rotate(45deg) scale(1.08);
+}
+.home-v4-project-meta::before{display:none}

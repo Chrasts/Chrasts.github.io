@@ -144,7 +144,7 @@
     identity.append(
       name,
       element('p', 'home-v4-role', 'Data Analysis · Research · Mathematical Logic'),
-      element('p', 'home-v4-summary', '“Sometimes, I can't do basic arithmetic without a calculator, but I can prove that arithmetic is incomplete and undecidable.”')
+      element('p', 'home-v4-summary', "“Sometimes, I can\'t do basic arithmetic without a calculator, but I can prove that arithmetic is incomplete and undecidable.”")
     );
 
     const portrait = element('figure', 'home-v4-static-portrait');

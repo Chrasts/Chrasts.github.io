@@ -179,7 +179,7 @@
       item.append(
         element('span', 'home-v4-current-kind', 'Studying at'),
         element('strong', '', currentEducation.organisation || 'Charles University'),
-        element('span', '', currentEducation.label || currentEducation.programme || 'MSc in Logic'),
+        element('span', 'home-v4-current-degree', currentEducation.label || currentEducation.programme || 'MSc in Logic'),
         element('span', 'home-v4-current-minor', 'prg.ai Minor')
       );
       currentGrid.appendChild(item);

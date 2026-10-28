@@ -883,15 +883,19 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:is
 .home-v4-shell::before{
   content:"";
   position:absolute;
-  z-index:-1;
+  z-index:1;
   width:min(47vw,840px);
   aspect-ratio:1100/658;
   left:50%;
   top:51%;
   transform:translate(-50%,-50%) rotate(-5deg);
   background:url("assets/a18-home-hasse.svg") center/contain no-repeat;
-  opacity:.115;
+  opacity:.23;
   pointer-events:none;
+}
+html[data-theme="dark"] .home-v4-shell::before{
+  opacity:.42;
+  filter:brightness(1.65);
 }
 .home-v4-profile,.home-v4-work{isolation:isolate}
 .home-v4-current{margin-left:clamp(22px,2.3vw,42px)}

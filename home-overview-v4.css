@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600&family=IM+Fell+English:ital@0;1&display=swap');
+
 /* V4 professional-first Home: one viewport, three information zones.
    The canonical SVG remains the central navigation surface; profile context and
    selected evidence live in fixed side stages and never change page height. */
@@ -612,4 +614,206 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:is
   .is-home-interactive-exiting
 ) .home-v4-portrait-edge{
   opacity:0!important
+}
+
+
+/* Home-only editorial research folio. No shared design tokens or graph styles are changed. */
+.home-v4-shell{
+  --home-folio-serif:'IM Fell English', 'Iowan Old Style', Georgia, serif;
+  --home-folio-script:'Caveat','Segoe Print',cursive;
+}
+.home-v4-profile{
+  top:48%;
+  align-items:start;
+  grid-template-areas:"identity portrait" "current current";
+}
+.home-v4-identity{gap:9px;position:relative}
+.home-v4-manuscript-note{
+  font:500 clamp(15px,1.15vw,20px)/1 var(--home-folio-script);
+  letter-spacing:.015em;
+  color:var(--brown);
+  margin:0 0 6px 2px;
+  transform:rotate(-2deg);
+  transform-origin:left bottom;
+}
+.home-v4-name{
+  font:400 clamp(38px,3.12vw,60px)/1.02 var(--home-folio-serif);
+  letter-spacing:-.012em;
+  max-width:11ch;
+  text-wrap:balance;
+}
+.home-v4-role{
+  max-width:33ch;
+  font:540 clamp(10px,.77vw,12px)/1.55 var(--mono,var(--sans));
+  letter-spacing:.015em;
+}
+.home-v4-summary{
+  margin-top:12px;
+  max-width:36ch;
+  font:400 clamp(13px,.94vw,16px)/1.51 var(--home-folio-serif);
+  text-wrap:pretty;
+}
+.home-v4-static-portrait{
+  margin-top:31px;
+  transform:rotate(2deg);
+  box-shadow:0 0 0 6px color-mix(in srgb,var(--brown) 5%,transparent)
+}
+.home-v4-current{
+  margin-top:clamp(26px,3.3vh,43px);
+  padding-left:clamp(11px,1.15vw,20px);
+  border-left:1px solid color-mix(in srgb,var(--brown) 40%,transparent);
+}
+.home-v4-eyebrow{
+  font:500 9px/1.3 var(--mono,var(--sans));
+  text-transform:none;
+  letter-spacing:.04em;
+}
+.home-v4-current-grid{gap:clamp(12px,1.8vw,24px);margin-top:12px}
+.home-v4-current-item strong{
+  font:400 clamp(14px,1.03vw,18px)/1.18 var(--home-folio-serif);
+}
+.home-v4-current-kind{
+  font:500 8px/1.3 var(--mono,var(--sans));
+  letter-spacing:.01em;
+}
+.home-v4-current-item>span:last-child{
+  font:450 clamp(9px,.68vw,11px)/1.4 var(--sans);
+}
+.home-v4-work{
+  top:47%;
+  right:clamp(58px,7.6vw,140px);
+  width:min(420px,28.5vw);
+}
+.home-v4-work-head{
+  padding-left:clamp(0px,.6vw,12px);
+  padding-bottom:9px;
+}
+.home-v4-work-index{
+  margin:0 0 7px;
+  color:var(--brown);
+  font:500 9px/1.2 var(--mono,var(--sans));
+  letter-spacing:.02em;
+}
+.home-v4-work-title{
+  font:400 clamp(28px,2.15vw,39px)/1.08 var(--home-folio-serif);
+  letter-spacing:0;
+}
+.home-v4-project-list{
+  position:relative;
+  gap:0;
+  margin-top:14px;
+  padding-bottom:11px;
+}
+.home-v4-project-list::before{
+  content:"";
+  position:absolute;
+  top:12px;
+  bottom:20px;
+  left:4px;
+  width:1px;
+  background:color-mix(in srgb,var(--brown) 26%,transparent);
+  pointer-events:none;
+}
+.home-v4-project-choice{
+  grid-template-columns:9px 19px minmax(0,1fr);
+  column-gap:clamp(9px,1.1vw,18px);
+  min-height:38px;
+  padding:5px 0;
+}
+.home-v4-project-choice:nth-child(even){padding-left:clamp(4px,.5vw,10px)}
+.home-v4-project-choice:nth-child(even) .home-v4-project-node{
+  transform:translateX(calc(-1 * clamp(4px,.5vw,10px)));
+}
+.home-v4-project-node{
+  z-index:1;
+}
+.home-v4-project-choice-index{
+  color:var(--brown);
+  font:400 9px/1.3 var(--mono,var(--sans));
+  opacity:.74;
+}
+.home-v4-project-choice-label{
+  font:400 clamp(14px,1.03vw,18px)/1.15 var(--home-folio-serif);
+  white-space:normal;
+  text-overflow:clip;
+}
+.home-v4-project-choice.is-active .home-v4-project-choice-label{
+  font-style:italic;
+}
+.home-v4-project-node::after{width:clamp(8px,.8vw,14px)}
+.home-v4-project-preview{
+  position:relative;
+  min-height:245px;
+  margin-top:10px;
+  margin-left:clamp(16px,1.9vw,33px);
+  padding:13px 0 0 clamp(12px,1.35vw,24px);
+  border-left:1px solid color-mix(in srgb,var(--brown) 37%,transparent);
+}
+.home-v4-project-preview::before{
+  content:"";
+  position:absolute;
+  width:10px;
+  top:0;
+  left:-1px;
+  border-top:1px solid var(--brown);
+}
+.home-v4-project-meta{
+  font:500 9px/1.3 var(--mono,var(--sans));
+  letter-spacing:0;
+  text-transform:none;
+  margin-bottom:8px;
+}
+.home-v4-project-title{
+  font:400 clamp(22px,1.65vw,30px)/1.08 var(--home-folio-serif);
+  letter-spacing:0;
+}
+.home-v4-project-summary{
+  font:400 clamp(12px,.88vw,15px)/1.42 var(--home-folio-serif);
+  margin-top:8px;
+}
+.home-v4-project-facts{
+  margin-top:14px;
+  gap:8px
+}
+.home-v4-project-fact{
+  grid-template-columns:42px minmax(0,1fr);
+  gap:10px;
+}
+.home-v4-project-fact dt{
+  font:500 8px/1.4 var(--mono,var(--sans));
+  letter-spacing:0;
+  text-transform:lowercase;
+}
+.home-v4-project-fact dd{
+  font:440 clamp(9px,.67vw,11px)/1.45 var(--sans);
+}
+.home-v4-project-tech{
+  font:450 9px/1.4 var(--mono,var(--sans));
+}
+.home-v4-open-project{
+  font:500 10px/1.4 var(--mono,var(--sans));
+}
+@media(max-width:1280px) and (min-width:901px){
+  .home-v4-name{font-size:clamp(32px,3vw,43px)}
+  .home-v4-summary{font-size:clamp(11px,.95vw,13px)}
+  .home-v4-project-choice-label{font-size:clamp(12px,1.12vw,15px)}
+  .home-v4-project-title{font-size:clamp(20px,1.8vw,25px)}
+  .home-v4-project-summary{font-size:clamp(10px,.85vw,12px)}
+  .home-v4-project-preview{margin-left:15px;padding-left:13px}
+  .home-v4-current{margin-top:19px}
+}
+@media(max-height:720px) and (min-width:901px){
+  .home-v4-profile{top:49%}
+  .home-v4-work{top:49%}
+  .home-v4-manuscript-note{margin-bottom:0}
+  .home-v4-summary{margin-top:6px}
+  .home-v4-current{margin-top:14px}
+  .home-v4-project-list{margin-top:5px}
+  .home-v4-project-choice{min-height:29px;padding-top:2px;padding-bottom:2px}
+  .home-v4-project-preview{min-height:170px;margin-top:3px;padding-top:8px}
+  .home-v4-project-summary{font-size:10px}
+  .home-v4-project-facts{margin-top:6px;gap:4px}
+}
+@media(max-width:900px){
+  .home-v4-shell{display:none!important}
 }

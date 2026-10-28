@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="658" viewBox="0 0 1100 658" role="img" aria-label="Hasse diagram of the 18-element lattice A18"><g fill="none" stroke="#9c8c80" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round"><path d="M550 56 L197 165" />
+<path d="M550 56 L550 165" />
+<path d="M550 56 L904 165" />
+<path d="M197 165 L79 274" />
+<path d="M197 165 L550 274" />
+<path d="M550 165 L374 274" />
+<path d="M550 165 L727 274" />
+<path d="M904 165 L550 274" />
+<path d="M904 165 L1021 274" />
+<path d="M79 274 L79 383" />
+<path d="M79 274 L374 383" />
+<path d="M374 274 L79 383" />
+<path d="M374 274 L550 383" />
+<path d="M550 274 L374 383" />
+<path d="M550 274 L727 383" />
+<path d="M727 274 L550 383" />
+<path d="M727 274 L1021 383" />
+<path d="M1021 274 L727 383" />
+<path d="M1021 274 L1021 383" />
+<path d="M79 383 L197 492" />
+<path d="M374 383 L550 492" />
+<path d="M550 383 L197 492" />
+<path d="M550 383 L904 492" />
+<path d="M727 383 L550 492" />
+<path d="M1021 383 L904 492" />
+<path d="M197 492 L550 601" />
+<path d="M550 492 L550 601" />
+<path d="M904 492 L550 601" /></g><g fill="#101819" stroke="#9c8c80" stroke-width="1.8"><circle cx="550" cy="56" r="5.1"/>
+<circle cx="197" cy="165" r="5.1"/>
+<circle cx="550" cy="165" r="5.1"/>
+<circle cx="904" cy="165" r="5.1"/>
+<circle cx="79" cy="274" r="5.1"/>
+<circle cx="374" cy="274" r="5.1"/>
+<circle cx="550" cy="274" r="5.1"/>
+<circle cx="727" cy="274" r="5.1"/>
+<circle cx="1021" cy="274" r="5.1"/>
+<circle cx="79" cy="383" r="5.1"/>
+<circle cx="374" cy="383" r="5.1"/>
+<circle cx="550" cy="383" r="5.1"/>
+<circle cx="727" cy="383" r="5.1"/>
+<circle cx="1021" cy="383" r="5.1"/>
+<circle cx="197" cy="492" r="5.1"/>
+<circle cx="550" cy="492" r="5.1"/>
+<circle cx="904" cy="492" r="5.1"/>
+<circle cx="550" cy="601" r="5.1"/></g><g fill="#9c8c80" font-family="Georgia,serif" font-size="20" font-style="italic"><text x="550" y="37" text-anchor="middle">1</text>
+<text x="180" y="151" text-anchor="middle">pr</text>
+<text x="562" y="151" text-anchor="middle">pq</text>
+<text x="917" y="151" text-anchor="middle">qr</text>
+<text x="64" y="264" text-anchor="middle">upr</text>
+<text x="358" y="258" text-anchor="middle">vᵣₚ</text>
+<text x="550" y="255" text-anchor="middle">r</text>
+<text x="727" y="258" text-anchor="middle">vᵣq</text>
+<text x="1036" y="264" text-anchor="middle">uqr</text>
+<text x="62" y="387" text-anchor="middle">p</text>
+<text x="374" y="409" text-anchor="middle">tᵣq</text>
+<text x="550" y="408" text-anchor="middle">upq</text>
+<text x="727" y="409" text-anchor="middle">tᵣₚ</text>
+<text x="1038" y="388" text-anchor="middle">q</text>
+<text x="179" y="515" text-anchor="middle">up</text>
+<text x="568" y="500" text-anchor="middle">ur</text>
+<text x="920" y="514" text-anchor="middle">uq</text>
+<text x="550" y="625" text-anchor="middle">0</text></g></svg>

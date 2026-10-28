@@ -889,7 +889,7 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:is
   left:var(--home-a18-root-x,50%);
   top:var(--home-a18-root-y,50%);
   transform:translate(-50%,-50%) rotate(-5deg);
-  background:url("assets/a18-home-hasse.svg") center/contain no-repeat;
+  background:url("assets/w-post-home-diagram.svg") center/contain no-repeat;
   opacity:.23;
   pointer-events:none;
 }
@@ -1094,3 +1094,25 @@ html[data-theme="dark"] .home-v4-shell::before{
 
 /* Home introduction quotation only. */
 .home-v4-shell .home-v4-summary{font-style:italic}
+
+/* Home only: large bilateral W(Post) lattice replacing the A18 watermark.
+   Side fade keeps the text columns legible without hiding the central graph. */
+.home-v4-shell::before{
+  width:min(89vw,1580px);
+  max-height:90%;
+  aspect-ratio:1600/1022;
+  left:var(--home-a18-root-x,50%);
+  top:var(--home-a18-root-y,50%);
+  transform:translate(-50%,-50%);
+  opacity:.31;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.24) 13%,#000 32%,#000 68%,rgba(0,0,0,.24) 87%,transparent 100%);
+  mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.24) 13%,#000 32%,#000 68%,rgba(0,0,0,.24) 87%,transparent 100%);
+}
+html[data-theme="dark"] .home-v4-shell::before{
+  opacity:.40;
+  filter:none;
+}
+@media(max-width:1280px) and (min-width:901px){
+  .home-v4-shell::before{width:85vw;opacity:.26}
+  html[data-theme="dark"] .home-v4-shell::before{opacity:.33}
+}

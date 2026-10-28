@@ -878,3 +878,72 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:is
   transform:rotate(45deg) scale(1.08);
 }
 .home-v4-project-meta::before{display:none}
+
+/* A18 is a non-interactive background drawing only for the practical Home. */
+.home-v4-shell::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  width:min(47vw,840px);
+  aspect-ratio:1100/658;
+  left:50%;
+  top:51%;
+  transform:translate(-50%,-50%) rotate(-5deg);
+  background:url("assets/a18-home-hasse.svg") center/contain no-repeat;
+  opacity:.115;
+  pointer-events:none;
+}
+.home-v4-profile,.home-v4-work{isolation:isolate}
+.home-v4-current{margin-left:clamp(22px,2.3vw,42px)}
+.home-v4-current-grid{margin-top:0}
+.home-v4-current-degree{
+  color:var(--muted)!important;
+  font:450 clamp(9px,.68vw,11px)/1.4 var(--sans)!important;
+}
+.home-v4-open-project{padding-left:0}
+.home-v4-open-project::before,.home-v4-open-project::after{display:none!important}
+/* Keep the outer node box unrotated. Only its ::before draws the diamond,
+   leaving the selected horizontal connector at 0deg. */
+.home-v4-project-choice .home-v4-project-node,
+.home-v4-project-choice:nth-child(even) .home-v4-project-node,
+.home-v4-project-choice.is-active .home-v4-project-node,
+.home-v4-project-choice:hover .home-v4-project-node,
+.home-v4-project-choice:focus-visible .home-v4-project-node,
+.home-v4-project-choice:nth-child(even):hover .home-v4-project-node,
+.home-v4-project-choice:nth-child(even):focus-visible .home-v4-project-node{
+  transform:none;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  overflow:visible;
+}
+.home-v4-project-node::before{
+  content:"";
+  position:absolute;
+  width:8px;height:8px;
+  left:0;top:0;
+  border:1.4px solid var(--brown);
+  background:var(--paper);
+  transform:rotate(45deg) scale(.72);
+  transform-origin:center;
+  transition:background .18s ease,transform .18s ease,border-color .18s ease;
+}
+.home-v4-project-choice:is(:hover,:focus-visible) .home-v4-project-node::before{
+  border-color:var(--home-v4-work-accent);
+  transform:rotate(45deg) scale(.82);
+}
+.home-v4-project-choice.is-active .home-v4-project-node::before{
+  border-color:var(--home-v4-work-accent);
+  background:var(--home-v4-work-accent);
+  transform:rotate(45deg) scale(.72);
+}
+.home-v4-project-node::after{
+  top:50%;left:calc(100% + 4px);
+  transform:translateY(-50%) scaleX(0);
+}
+.home-v4-project-choice.is-active .home-v4-project-node::after{
+  transform:translateY(-50%) scaleX(1);
+}
+@media(max-height:720px) and (min-width:901px){
+  .home-v4-current{margin-left:clamp(18px,2vw,36px)}
+}

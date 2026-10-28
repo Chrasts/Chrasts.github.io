@@ -993,3 +993,23 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:is
 @media(max-height:720px) and (min-width:901px){
   .home-v4-current{margin-top:clamp(20px,3vh,29px)}
 }
+
+/* Home-only optical centering of Selected Work selector above its detail. */
+.home-v4-project-list{
+  margin-left:clamp(75px,7.1vw,125px);
+  margin-right:0;
+}
+.home-v4-current{
+  margin-top:clamp(47px,5.4vh,70px);
+}
+.home-v4-current-grid{
+  column-gap:clamp(32px,3.3vw,56px);
+}
+@media(max-width:1280px) and (min-width:901px){
+  .home-v4-project-list{margin-left:clamp(44px,5vw,72px)}
+  .home-v4-current{margin-top:clamp(35px,4.3vh,53px)}
+  .home-v4-current-grid{column-gap:clamp(24px,2.7vw,39px)}
+}
+@media(max-height:720px) and (min-width:901px){
+  .home-v4-current{margin-top:clamp(25px,3.7vh,36px)}
+}

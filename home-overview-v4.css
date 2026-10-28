@@ -1071,3 +1071,19 @@ html[data-theme="dark"] .home-v4-shell::before{
 @media(max-width:1280px) and (min-width:901px){
   .home-v4-project-list{margin-left:auto;margin-right:auto}
 }
+
+/* Home only: detach portrait from the canonical root and lift it. */
+.home-v4-shell .home-v4-portrait-edge,
+.home-v4-shell .home-v4-portrait-edge[data-ready="true"]{
+  display:none!important;
+}
+.home-v4-shell .home-v4-static-portrait{
+  margin-top:0;
+  transform:translateY(-67px) rotate(2deg);
+}
+@media(max-width:1280px) and (min-width:901px){
+  .home-v4-shell .home-v4-static-portrait{transform:translateY(-52px) rotate(2deg)}
+}
+@media(max-height:720px) and (min-width:901px){
+  .home-v4-shell .home-v4-static-portrait{transform:translateY(-37px) rotate(2deg)}
+}

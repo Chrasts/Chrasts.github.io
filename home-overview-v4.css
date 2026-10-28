@@ -1087,3 +1087,7 @@ html[data-theme="dark"] .home-v4-shell::before{
 @media(max-height:720px) and (min-width:901px){
   .home-v4-shell .home-v4-static-portrait{transform:translateY(-37px) rotate(2deg)}
 }
+
+/* Home: selected-project content offset. */
+.home-v4-project-preview{margin-left:clamp(34px,3.2vw,56px)}
+@media(max-width:1280px) and (min-width:901px){.home-v4-project-preview{margin-left:clamp(23px,2.6vw,38px)}}

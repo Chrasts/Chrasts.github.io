@@ -101,7 +101,8 @@
     if (!preview || !project) return;
     preview.replaceChildren();
 
-    const meta = element('p', 'home-v4-project-meta', project.type || 'Selected project');
+    const projectIndex = featured.findIndex(item => item.id === project.id) + 1;
+    const meta = element('p', 'home-v4-project-meta', `case ${String(projectIndex).padStart(2, '0')} / ${project.type || 'selected project'}`);
     const title = element('h3', 'home-v4-project-title', project.title || project.graphLabel);
     const summary = element('p', 'home-v4-project-summary', project.caseStudy?.oneLine || project.description || '');
     preview.append(meta, title, summary);
@@ -140,12 +141,13 @@
     panel.setAttribute('aria-labelledby', 'home-v4-name');
 
     const identity = element('div', 'home-v4-identity');
+    identity.appendChild(element('p', 'home-v4-manuscript-note', 'folio 01 / a working profile'));
     const name = element('h1', 'home-v4-name', profile.name || 'Štěpán Chrast');
     name.id = 'home-v4-name';
     identity.append(
       name,
       element('p', 'home-v4-role', 'Data Analysis · Research · Mathematical Logic'),
-      element('p', 'home-v4-summary', profile.intro || '')
+      element('p', 'home-v4-summary', 'I follow the path from imperfect data to defensible evidence, working across reproducible analysis, research and mathematical logic.')
     );
 
     const portrait = element('figure', 'home-v4-static-portrait');
@@ -158,7 +160,7 @@
     portrait.appendChild(portraitImage);
 
     const current = element('section', 'home-v4-current');
-    current.appendChild(element('p', 'home-v4-eyebrow', 'Current'));
+    current.appendChild(element('p', 'home-v4-eyebrow', 'In the present / 2026'));
     const currentGrid = element('div', 'home-v4-current-grid');
 
     if (currentExperience) {
@@ -196,18 +198,19 @@
     const head = element('header', 'home-v4-work-head');
     const title = element('h2', 'home-v4-work-title', 'Selected Work');
     title.id = 'home-v4-work-title';
-    head.append(title);
+    head.append(element('p', 'home-v4-work-index', '02 / selected evidence'), title);
 
     const choices = element('div', 'home-v4-project-list');
     choices.setAttribute('role', 'group');
     choices.setAttribute('aria-label', 'Selected projects');
-    featured.forEach(project => {
+    featured.forEach((project, index) => {
       const button = element('button', 'home-v4-project-choice');
       button.type = 'button';
       button.dataset.projectId = project.id;
       button.setAttribute('aria-pressed', 'false');
       button.append(
         element('span', 'home-v4-project-node'),
+        element('span', 'home-v4-project-choice-index', String(index + 1).padStart(2, '0')),
         element('span', 'home-v4-project-choice-label', project.graphLabel || project.title)
       );
       button.addEventListener('click', () => selectProject(project.id));

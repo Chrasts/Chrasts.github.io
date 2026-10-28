@@ -947,3 +947,34 @@ body[data-graph-mode="overview"][data-root-landing="false"].is-home-v4-active:is
 @media(max-height:720px) and (min-width:901px){
   .home-v4-current{margin-left:clamp(18px,2vw,36px)}
 }
+
+/* Home-only Selected Work refinements */
+.home-v4-project-list{
+  margin-left:clamp(18px,2vw,34px);
+}
+.home-v4-project-preview{
+  margin-left:0;
+}
+.home-v4-open-project{
+  display:inline-flex;
+  align-items:center;
+  width:max-content;
+  max-width:100%;
+  border-bottom:1px solid transparent;
+  transition:color .2s ease, border-color .2s ease, transform .2s ease;
+}
+.home-v4-open-project:hover,
+.home-v4-open-project:focus-visible{
+  color:var(--home-v4-work-accent);
+  border-bottom-color:currentColor;
+  transform:translateX(4px);
+  outline-offset:5px;
+}
+@media(max-width:1280px) and (min-width:901px){
+  .home-v4-project-list{margin-left:clamp(14px,1.5vw,24px)}
+}
+@media(prefers-reduced-motion:reduce){
+  .home-v4-open-project{transition:none}
+  .home-v4-open-project:hover,
+  .home-v4-open-project:focus-visible{transform:none}
+}

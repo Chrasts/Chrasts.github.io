@@ -158,7 +158,6 @@
     portrait.appendChild(portraitImage);
 
     const current = element('section', 'home-v4-current');
-    current.appendChild(element('p', 'home-v4-eyebrow', 'In the present / 2026'));
     const currentGrid = element('div', 'home-v4-current-grid');
 
     if (currentExperience) {

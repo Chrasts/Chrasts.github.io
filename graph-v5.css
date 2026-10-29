@@ -685,115 +685,333 @@ body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-edges p
 }
 
 
-/* Work Observatory — one graph, three spatial states: atlas-like overview,
-   focused project and its local context. The orbit is a navigation scaffold;
-   all project nodes still use ProfileHaloRenderer and existing semantics. */
-body[data-graph-mode="work"][data-work-view="constellation"] .work-observatory-orbit{
-  stroke:var(--teal);
-  stroke-width:1.05;
-  stroke-dasharray:4 11;
-  opacity:0;
-  transform-box:fill-box;
-  transform-origin:center;
-  transition:opacity .35s ease;
+
+/* ==========================================================================
+   WORK / LIVING CONSTELLATION
+   The graph is the interface: no left rail, no category grid, no forced
+   orbital stage and no duplicate project labels. Modes are spatial states.
+   ========================================================================== */
+body[data-graph-mode="work"] .integrated-work-rail,
+body[data-graph-mode="work"] .integrated-work-rail.is-left,
+body[data-graph-mode="work"] #work-context-filters,
+body[data-graph-mode="work"] #work-theme-filters{display:none!important}
+
+body[data-graph-mode="work"] .site-graph-panel{
+  background:radial-gradient(
+    ellipse 42% 45% at var(--work-pointer-x,50%) var(--work-pointer-y,46%),
+    color-mix(in srgb,var(--teal) 5%,transparent),
+    transparent 75%
+  );
+  transition:background .24s ease
+}
+body[data-graph-mode="work"] .site-graph-semantic-guide:is(.is-work-row,.is-work-column){
+  display:none!important
+}
+body[data-graph-mode="work"] .integrated-work-controls{
+  z-index:29;
   pointer-events:none
 }
-body[data-graph-mode="work"][data-work-focus] .work-observatory-orbit.is-visible{
-  opacity:.25;
-  animation:work-observatory-orbit-flow 24s linear infinite
+body[data-graph-mode="work"] .work-explore-hud{
+  position:absolute;
+  top:94px;
+  right:max(28px,calc((100vw - 1430px)/2));
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  gap:9px;
+  pointer-events:auto;
+  z-index:30;
 }
-@keyframes work-observatory-orbit-flow{
-  from{stroke-dashoffset:0}
-  to{stroke-dashoffset:-120}
+body[data-graph-mode="work"] .work-hud-action{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:34px;
+  border:1px solid color-mix(in srgb,var(--line) 88%,transparent);
+  border-radius:24px;
+  padding:8px 13px;
+  background:color-mix(in srgb,var(--paper) 85%,transparent);
+  color:var(--text-soft);
+  font:700 10.5px/1.1 var(--sans);
+  cursor:pointer;
+  backdrop-filter:blur(12px);
+  transition:background .23s ease,border-color .23s ease,color .23s ease,transform .23s ease;
 }
-body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-node.is-work-observatory-centre{
+body[data-graph-mode="work"] .work-hud-action:hover,
+body[data-graph-mode="work"] .work-hud-action:focus-visible{
+  border-color:var(--teal);
+  color:var(--ink);
+  transform:translateY(-2px)
+}
+body[data-graph-mode="work"] .work-hud-action[aria-pressed="true"]{
+  background:color-mix(in srgb,var(--teal) 12%,var(--paper));
+  border-color:color-mix(in srgb,var(--teal) 65%,var(--line));
+  color:var(--teal)
+}
+body[data-graph-mode="work"] .work-hud-explore::before{
+  content:'◌';
+  font-size:15px;
+  line-height:0;
+  margin-right:5px;
+  font-weight:400
+}
+body[data-graph-mode="work"] .work-lens-picker{
+  position:absolute;
+  right:0;
+  top:43px;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(150px,1fr));
+  gap:5px;
+  width:min(384px,calc(100vw - 34px));
+  padding:14px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:color-mix(in srgb,var(--paper) 97%,var(--cream));
+  box-shadow:0 16px 42px color-mix(in srgb,var(--ink) 14%,transparent);
+}
+body[data-graph-mode="work"] .work-lens-picker[hidden]{display:none!important}
+body[data-graph-mode="work"] .work-lens-intro{
+  grid-column:1/-1;
+  margin:0 0 7px;
+  color:var(--muted);
+  font:650 10px/1.4 var(--sans)
+}
+body[data-graph-mode="work"] .work-lens-option{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  min-height:36px;
+  padding:9px;
+  border:1px solid transparent;
+  border-radius:6px;
+  background:color-mix(in srgb,var(--cream) 40%,transparent);
+  color:var(--text-soft);
+  font:680 10px var(--sans);
+  text-align:left;
+  cursor:pointer
+}
+body[data-graph-mode="work"] .work-lens-option small{color:var(--muted);font-size:9px}
+body[data-graph-mode="work"] .work-lens-option:hover,
+body[data-graph-mode="work"] .work-lens-option:focus-visible,
+body[data-graph-mode="work"] .work-lens-option[aria-pressed="true"]{
+  border-color:var(--teal);
+  color:var(--teal);
+  background:color-mix(in srgb,var(--teal) 7%,var(--paper))
+}
+body[data-graph-mode="work"][data-work-focus] .work-explore-hud{
+  right:auto;
+  left:max(270px,calc((100vw - 790px)/2 - 270px))
+}
+body[data-graph-mode="work"][data-work-focus] .work-hud-explore,
+body[data-graph-mode="work"][data-work-focus] .work-hud-lattice{display:none}
+body[data-graph-mode="work"][data-work-focus] .work-hud-all{
+  color:var(--teal);
+  border-color:var(--teal)
+}
+body[data-graph-mode="work"] .work-project-peek{
+  position:absolute;
+  z-index:25;
+  width:270px;
+  max-width:calc(100vw - 34px);
+  padding:14px 16px;
+  border:1px solid color-mix(in srgb,var(--teal) 39%,var(--line));
+  border-radius:10px;
+  background:color-mix(in srgb,var(--paper) 97%,var(--cream));
+  box-shadow:0 10px 38px color-mix(in srgb,var(--ink) 12%,transparent);
+  pointer-events:none;
+  text-align:left
+}
+body[data-graph-mode="work"] .work-project-peek[hidden]{display:none!important}
+body[data-graph-mode="work"] .work-peek-type{
+  display:block;
+  margin-bottom:6px;
+  font:750 9px var(--sans);
+  color:var(--teal);
+  text-transform:uppercase;
+  letter-spacing:.08em
+}
+body[data-graph-mode="work"] .work-project-peek strong{
+  display:block;
+  color:var(--ink);
+  font:780 14px/1.25 var(--sans)
+}
+body[data-graph-mode="work"] .work-project-peek p{
+  color:var(--text-soft);
+  font:500 11px/1.5 var(--sans);
+  margin:7px 0 0
+}
+/* Ambient field in overview, but related lines remain quiet until explored. */
+body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-edges path.is-work-related{
+  stroke:var(--teal);
+  stroke-width:1.05;
+  opacity:.14
+}
+body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-edges path.is-work-related.is-work-strong{
+  stroke-width:2.1!important;
+  opacity:.88!important
+}
+body[data-graph-mode="work"][data-work-view="constellation"] .site-graph-edges path.is-work-related.is-muted-soft{
+  opacity:.04!important
+}
+body[data-graph-mode="work"] .is-work-constellation-project:hover > .site-graph-dot,
+body[data-graph-mode="work"] .is-work-constellation-project:focus-visible > .site-graph-dot{
+  stroke-width:2.5;
+  fill:color-mix(in srgb,var(--teal) 15%,var(--paper));
+  filter:drop-shadow(0 0 4px color-mix(in srgb,var(--teal) 34%,transparent))
+}
+/* Strong but sparse project focus: only selected + authored neighbours exist. */
+body[data-graph-mode="work"][data-work-focus] .site-graph-node.is-work-observatory-centre{
   opacity:1!important
 }
 body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-node.is-work-observatory-centre > .site-graph-dot{
-  r:10.5px;
-  stroke-width:2.7;
-  fill:color-mix(in srgb,var(--teal) 22%,var(--paper));
-  filter:drop-shadow(0 0 5px color-mix(in srgb,var(--teal) 29%,transparent))
+  r:11px;
+  stroke-width:3;
+  fill:color-mix(in srgb,var(--teal) 16%,var(--paper));
+  filter:drop-shadow(0 0 6px color-mix(in srgb,var(--teal) 34%,transparent))
 }
 body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-node.is-work-observatory-centre > .site-graph-halo--primary{
-  r:21px;
-  opacity:.72;
-  stroke-width:1.9;
+  opacity:.7;
+  stroke-width:2;
   stroke-dasharray:none;
   animation:none
 }
 body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-node.is-work-observatory-centre > .site-graph-label{
   fill:var(--teal);
-  font-size:17px;
-  font-weight:835;
-  stroke-width:6px
+  font-size:18px;
+  font-weight:850;
+  stroke-width:6.5px
 }
 body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-node.is-work-observatory-peer > .site-graph-dot{
-  r:7px;
+  r:6.5px;
   stroke-width:2
 }
 body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-node.is-work-observatory-peer > .site-graph-label{
-  font-size:12px;
-  font-weight:750
+  font-size:11px;
+  font-weight:735
 }
-body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-node.is-work-observatory-peripheral{
-  opacity:.25;
-}
-body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-node.is-work-observatory-peripheral > .site-graph-label{
-  font-size:9px;
-  opacity:.65
-}
-body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-node.is-work-observatory-peripheral:hover,
-body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-node.is-work-observatory-peripheral:focus-visible{
-  opacity:1
-}
-body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-edges path.is-work-related,
-body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-edges path.is-work-focus-relation{
-  stroke:var(--teal);
-  stroke-width:1.5;
-  stroke-dasharray:none;
-  opacity:.66
-}
-body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-edges path.is-work-focus-relation{
-  stroke-dasharray:3 5;
-  opacity:.46
-}
-body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-edges path.is-work-related.is-work-strong,
-body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-edges path.is-work-focus-relation.is-work-strong{
+body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-edges path.is-work-related{
   stroke:var(--teal)!important;
-  stroke-width:2!important;
-  opacity:.95!important
+  stroke-width:1.65!important;
+  opacity:.6!important
 }
-body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-edges path.is-muted-soft{
-  opacity:.12!important
+body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-edges path.is-work-related.is-work-strong{
+  stroke-width:2.2!important;
+  opacity:.94!important
 }
-body[data-graph-mode="work"][data-work-focus] .site-graph-help{
-  max-width:480px!important
+body[data-graph-mode="work"][data-work-focus] .scene-detail{
+  width:min(438px,calc(100vw - 36px));
+  padding:24px 26px
 }
 body[data-graph-mode="work"][data-work-focus] .work-observatory-return{
-  display:inline-flex;
-  align-items:center;
-  margin:16px 0 12px;
-  padding:7px 0;
+  display:inline-block;
+  margin:13px 0 16px;
+  padding:3px 0;
   border:0;
-  border-bottom:1px solid currentColor;
+  border-bottom:1px solid var(--teal);
   background:none;
   color:var(--teal);
-  font:700 11px/1.3 var(--sans);
+  font:720 10px var(--sans);
   cursor:pointer
 }
-body[data-graph-mode="work"][data-work-focus] .work-observatory-return:hover,
-body[data-graph-mode="work"][data-work-focus] .work-observatory-return:focus-visible{
-  color:var(--ink)
+body[data-graph-mode="work"][data-work-focus] .work-focus-lede{
+  margin:0 0 16px;
+  color:var(--ink);
+  font:670 12px/1.55 var(--sans);
 }
-@media (max-width:900px){
-  body[data-graph-mode="work"][data-work-focus] .site-graph-node.is-work-observatory-centre > .site-graph-label{
-    font-size:15px!important
+body[data-graph-mode="work"][data-work-focus] .work-focus-tags{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin:0 0 16px
+}
+body[data-graph-mode="work"][data-work-focus] .work-focus-tags span{
+  padding:5px 7px;
+  border-radius:3px;
+  background:color-mix(in srgb,var(--teal) 7%,var(--paper));
+  color:var(--text-soft);
+  font:650 9px var(--sans)
+}
+body[data-graph-mode="work"][data-work-focus] .work-focus-case{
+  display:grid;
+  gap:14px;
+  margin:15px 0 5px
+}
+body[data-graph-mode="work"][data-work-focus] .work-focus-case h3,
+body[data-graph-mode="work"][data-work-focus] .work-focus-related-heading{
+  margin:0 0 4px;
+  color:var(--brown);
+  font:800 9px var(--sans);
+  text-transform:uppercase;
+  letter-spacing:.09em
+}
+body[data-graph-mode="work"][data-work-focus] .work-focus-case p{
+  margin:0;
+  color:var(--text-soft);
+  font:500 11px/1.55 var(--sans)
+}
+body[data-graph-mode="work"][data-work-focus] .work-focus-related-heading{
+  margin:22px 0 9px
+}
+body[data-graph-mode="work"][data-work-focus] .work-focus-related-list{
+  display:grid;
+  gap:6px
+}
+body[data-graph-mode="work"][data-work-focus] .work-focus-related-link{
+  display:grid;
+  gap:4px;
+  width:100%;
+  padding:10px 11px;
+  text-align:left;
+  border:1px solid var(--line);
+  border-radius:6px;
+  background:transparent;
+  cursor:pointer
+}
+body[data-graph-mode="work"][data-work-focus] .work-focus-related-link strong{
+  color:var(--teal);
+  font:750 11px var(--sans)
+}
+body[data-graph-mode="work"][data-work-focus] .work-focus-related-link span{
+  color:var(--muted);
+  font:500 10px/1.45 var(--sans)
+}
+body[data-graph-mode="work"][data-work-focus] .work-focus-related-link:hover,
+body[data-graph-mode="work"][data-work-focus] .work-focus-related-link:focus-visible{
+  border-color:var(--teal);
+  background:color-mix(in srgb,var(--teal) 5%,var(--paper))
+}
+@media(max-width:900px){
+  body[data-graph-mode="work"] .work-explore-hud{
+    top:66px;
+    right:12px;
+    gap:4px
+  }
+  body[data-graph-mode="work"] .work-hud-action{
+    padding:7px 9px;
+    min-height:31px;
+    font-size:9px
+  }
+  body[data-graph-mode="work"][data-work-focus] .work-explore-hud{left:12px}
+  body[data-graph-mode="work"] .work-project-peek{display:none!important}
+  body[data-graph-mode="work"][data-work-focus] .scene-detail{
+    width:min(438px,calc(100vw - 24px));
+    padding:18px
   }
 }
-@media (prefers-reduced-motion:reduce){
-  body[data-graph-mode="work"] .work-observatory-orbit{
-    animation:none!important;
-    transition:none!important
+@media(max-width:560px){
+  body[data-graph-mode="work"] .work-explore-hud{top:76px;left:12px;right:auto}
+  body[data-graph-mode="work"] .work-lens-picker{
+    left:0;
+    right:auto;
+    width:min(344px,calc(100vw - 24px))
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  body[data-graph-mode="work"] .work-hud-action,
+  body[data-graph-mode="work"] .work-project-peek{
+    transition:none!important;
+    animation:none!important
   }
 }

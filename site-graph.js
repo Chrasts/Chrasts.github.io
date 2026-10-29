@@ -391,6 +391,10 @@
     hudAll.textContent = 'All projects';
     hudAll.addEventListener('click', () => {
       workLensId = null;
+      workFilterState.context = 'all';
+      workFilterState.selectedThemes.clear();
+      workFilterState.mode = 'any';
+      syncWorkControls('hud-all', { render: false });
       updateHash('work');
     });
     const hudExplore = document.createElement('button');
@@ -2633,7 +2637,13 @@
       if (route === 'work' || latticeRoute || projectMatch || themeMatch || validLens) {
         if (latticeRoute) workView = 'lattice';
         else workView = 'constellation';
-        if (route === 'work') workLensId = null;
+        if (route === 'work') {
+          workLensId = null;
+          workFilterState.context = 'all';
+          workFilterState.selectedThemes.clear();
+          workFilterState.mode = 'any';
+          syncWorkControls('route-all', { render: false });
+        }
         if (validLens) workLensId = lensMatch[1];
         document.body.dataset.workView = workView;
         if (workView === 'constellation' && workLensId) document.body.dataset.workLens = workLensId;
@@ -2666,6 +2676,7 @@
         }
 
         syncWorkHud();
+        closeWorkPeek();
         setCopy(workRoot);
         renderBreadcrumb(workRoot);
         syncAtlasControls();
@@ -2680,6 +2691,7 @@
       delete document.body.dataset.workView;
       delete document.body.dataset.workFocus;
       delete document.body.dataset.workLens;
+      workLensId = null;
       const atlas = route === 'atlas';
       const target = atlas ? profileRoot : (nodeForRoute(route) || profileRoot);
       state = {

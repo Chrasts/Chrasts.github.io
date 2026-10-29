@@ -205,7 +205,7 @@ test.describe('Phase 6 cross-link travel - desktop', () => {
     await page.goto('/#work');
     await page.waitForFunction(() => document.body.dataset.graphRoute === 'work');
 
-    const project = page.locator('.work-project-anchor-v5[data-project-id="social-workers-survey"]');
+    const project = page.locator('#site-graph .site-graph-node[data-node-id="project-social-workers-survey"]');
     await expect(project).toBeVisible();
     await project.click();
 

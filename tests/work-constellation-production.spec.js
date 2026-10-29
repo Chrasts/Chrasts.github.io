@@ -1,172 +1,130 @@
 const { test, expect } = require('@playwright/test');
 
-test.describe('Production Work — project-first constellation', () => {
+test.describe('Living Work Constellation', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test('Work defaults to ten canonical project nodes with shared-theme edges', async ({ page }) => {
+  const visitWork = async page => {
     await page.goto('/#work');
-    await page.waitForFunction(() => document.body.dataset.graphMode === 'work');
-    await page.waitForFunction(() => window.ProfileWorkController?.snapshot?.().view === 'constellation');
-    await expect(page.locator('#site-graph .site-graph-node.is-work-constellation-project')).toHaveCount(10);
-    await expect(page.locator('#site-graph .site-graph-edges path.is-work-related')).toHaveCount(16);
-    await expect(page.locator('#site-graph .site-graph-edges path.is-work-membership')).toHaveCount(10);
-    await expect(page.locator('#site-graph .site-graph-semantic-guide.is-work-column')).toHaveCount(3);
-    await expect(page.locator('#site-graph .site-graph-semantic-guide.is-work-row')).toHaveCount(4);
-    await expect(page.locator('.integrated-work-rail .work-view-button[data-view="constellation"]'))
-      .toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('#site-graph .site-graph-node.is-work-concept')).toHaveCount(0);
+    await page.waitForFunction(() =>
+      document.body.dataset.graphMode === 'work' &&
+      window.ProfileWorkController?.snapshot?.().view === 'constellation'
+    );
+  };
+
+  test('opens a complete editorial constellation without left filters or an artificial root', async ({ page }) => {
+    await visitWork(page);
+    await expect(page.locator('#site-graph .is-work-constellation-project')).toHaveCount(10);
+    await expect(page.locator('#site-graph .site-graph-edges path.is-work-related')).toHaveCount(10);
+    await expect(page.locator('#site-graph .site-graph-node[data-node-id="work"]')).toHaveCount(0);
+    await expect(page.locator('#site-graph .site-graph-semantic-guide.is-work-column')).toHaveCount(0);
+    await expect(page.locator('.integrated-work-rail.is-left')).toBeHidden();
+    await expect(page.locator('.work-explore-hud')).toBeVisible();
+    await expect(page.locator('.work-hud-explore')).toBeVisible();
+    await expect(page.locator('.work-hud-lattice')).toBeVisible();
+    await expect(page.locator('#site-graph .work-observatory-orbit')).toHaveCount(0);
   });
 
-  test('thematic coordinates encode the full four-tag signature and are stable', async ({ page }) => {
-    await page.goto('/#work');
-    await page.waitForFunction(() => document.body.dataset.graphMode === 'work');
-    const coordinates = await page.evaluate(async () => {
-      await new Promise(resolve => setTimeout(resolve, 600));
-      return [...document.querySelectorAll('#site-graph .is-work-constellation-project')].map(node => ({
-        id: node.dataset.nodeId,
-        x: Math.round(Number(node.dataset.x)),
-        y: Math.round(Number(node.dataset.y))
-      }));
-    });
-    const byId = Object.fromEntries(coordinates.map(node => [node.id, node]));
-    // Every project's exact position follows its categorical coordinates.
-    expect(byId['project-bachelor-thesis'].x).toBe(440);
-    expect(byId['project-arol-lab'].x).toBe(725);
-    expect(byId['project-modal-logic-lab'].x).toBe(725);
-    expect(byId['project-sql-schema'].y).toBe(480);
-    expect(byId['project-modal-logic-lab'].y).toBe(610);
-    expect(byId['project-clp-survey'].y).toBe(355);
-    expect(byId['project-tachov-workshop'].y).toBe(355);
-    expect(byId['project-insolvency'].y).toBe(byId['project-social-workers-survey'].y);
-    expect(byId['project-insolvency'].x).not.toBe(byId['project-social-workers-survey'].x);
-    await page.locator('#work-reset').click();
-    await expect(page.locator('#site-graph .site-graph-node.is-work-constellation-project')).toHaveCount(10);
+  test('node hover shows a short case-study preview and highlighted relations', async ({ page }) => {
+    await visitWork(page);
+    await page.locator('#site-graph [data-node-id="project-bachelor-thesis"]').hover();
+    await expect(page.locator('.work-project-peek')).toBeVisible();
+    await expect(page.locator('.work-project-peek strong')).toContainText('Bachelor Thesis');
+    await expect(page.locator('#site-graph .site-graph-edges path.is-work-related.is-work-strong')).toHaveCount(2);
+    await page.locator('.work-hud-explore').hover();
+    await expect(page.locator('.work-project-peek')).toBeHidden();
   });
 
-  test('project selection opens the existing canonical Work inspector', async ({ page }) => {
-    await page.goto('/#work');
-    await page.waitForFunction(() => document.body.dataset.graphMode === 'work');
-    const node = page.locator('#site-graph .site-graph-node[data-node-id="project-modal-logic-lab"]');
-    await node.click();
-    await page.waitForFunction(() => location.hash === '#work/project/modal-logic-lab');
-    await expect(page.locator('#site-detail-panel')).not.toBeHidden();
-    await expect(page.locator('#site-detail-panel h2')).toContainText('Modal Logic Lab');
-    await expect(node).toHaveClass(/is-selected/);
+  test('a thematic lens reflows only matching projects, and All projects restores the full scene', async ({ page }) => {
+    await visitWork(page);
+    await page.locator('.work-hud-explore').click();
+    await expect(page.locator('#work-lens-picker')).toBeVisible();
+    await page.locator('.work-lens-option[data-lens="research"]').click();
+    await page.waitForFunction(() => location.hash === '#work/lens/research');
+    await expect(page.locator('#site-graph .is-work-constellation-project')).toHaveCount(6);
+    await expect(page.locator('.work-hud-explore')).toHaveAttribute('aria-pressed', 'true');
+    await expect.poll(() => page.evaluate(() => window.ProfileWorkController.snapshot().lensId)).toBe('research');
+    await page.locator('.work-hud-all').click();
+    await page.waitForFunction(() => location.hash === '#work');
+    await expect(page.locator('#site-graph .is-work-constellation-project')).toHaveCount(10);
+    await expect(page.locator('.work-hud-explore')).toHaveAttribute('aria-pressed', 'false');
   });
 
-  test('Observatory animates the selected project into the centre and restores overview', async ({ page }) => {
-    await page.goto('/#work');
-    await page.waitForFunction(() => document.body.dataset.graphMode === 'work');
-    const selected = page.locator('#site-graph [data-node-id="project-modal-logic-lab"]');
-    await selected.click();
-    await page.waitForFunction(() => document.body.dataset.workFocus === 'modal-logic-lab');
-    await page.waitForFunction(() => window.ProfileWorkController.snapshot().observatory);
-    await page.waitForFunction(() => {
-      const selectedNode = document.querySelector('#site-graph [data-node-id="project-modal-logic-lab"]');
-      return selectedNode && Math.abs(Number(selectedNode.dataset.x) - 584) < 0.5 &&
-        Math.abs(Number(selectedNode.dataset.y) - 370) < 0.5;
-    });
-    await expect(selected).toHaveClass(/is-work-observatory-centre/);
-    await expect(page.locator('#site-graph .is-work-observatory-peer')).toHaveCount(4);
-    await expect(page.locator('#site-graph .is-work-observatory-peripheral')).toHaveCount(5);
-    await expect(page.locator('#site-graph .work-observatory-orbit.is-visible')).toHaveCount(1);
-    await expect(page.locator('#site-graph .site-graph-edges path.is-work-focus-relation')).toHaveCount(3);
-    await expect(page.locator('#site-detail-panel .work-observatory-return')).toBeVisible();
-    expect(await page.evaluate(() => window.ProfileWorkController.snapshot().focusPeerIds.length)).toBe(4);
-
-    await page.locator('#site-detail-panel .work-observatory-return').click();
-    await page.waitForFunction(() => location.hash === '#work' && !document.body.dataset.workFocus);
-    await page.waitForFunction(() => {
-      const node = document.querySelector('#site-graph [data-node-id="project-modal-logic-lab"]');
-      return node && Math.abs(Number(node.dataset.x) - 725) < .5 &&
-        Math.abs(Number(node.dataset.y) - 610) < .5;
-    });
-    await expect(page.locator('#site-graph .is-work-observatory-centre')).toHaveCount(0);
-    await expect(page.locator('#site-graph .work-observatory-orbit.is-visible')).toHaveCount(0);
-    await expect(page.locator('#site-graph .site-graph-edges path.is-work-related')).toHaveCount(16);
-  });
-
-  test('supports direct focus URLs, switching between projects, and close via Escape', async ({ page }) => {
-    await page.goto('/#work/project/bachelor-thesis');
+  test('Focus replaces overview with only genuinely related projects and evidence', async ({ page }) => {
+    await visitWork(page);
+    await page.locator('#site-graph [data-node-id="project-bachelor-thesis"]').click();
+    await page.waitForFunction(() => location.hash === '#work/project/bachelor-thesis');
     await page.waitForFunction(() => document.body.dataset.workFocus === 'bachelor-thesis');
-    await expect(page.locator('#site-detail-panel h2')).toContainText('Bachelor Thesis');
+    await expect(page.locator('#site-graph .is-work-constellation-project')).toHaveCount(3);
     await expect(page.locator('#site-graph .is-work-observatory-centre')).toHaveCount(1);
-    const peers = await page.evaluate(() => window.ProfileWorkController.snapshot().focusPeerIds);
-    expect(peers).toContain('clp-survey');
-    await page.locator('#site-graph [data-node-id="project-clp-survey"]').click();
-    await page.waitForFunction(() => document.body.dataset.workFocus === 'clp-survey');
-    await expect(page.locator('#site-detail-panel h2')).toContainText('Congruence Lattice');
-    await expect(page.locator('#site-graph [data-node-id="project-clp-survey"]')).toHaveClass(/is-work-observatory-centre/);
+    await expect(page.locator('#site-graph .is-work-observatory-peer')).toHaveCount(2);
+    await expect(page.locator('#site-graph .work-observatory-orbit')).toHaveCount(0);
+    await expect(page.locator('#site-detail-panel')).toBeVisible();
+    await expect(page.locator('#site-detail-panel h2')).toContainText('Bachelor Thesis');
+    await expect(page.locator('#site-detail-panel .work-focus-lede')).toBeVisible();
+    await expect(page.locator('#site-detail-panel .work-focus-related-link')).toHaveCount(2);
+    await expect(page.locator('.work-hud-explore')).toBeHidden();
+    await expect.poll(() => page.evaluate(() => window.ProfileWorkController.snapshot().focusPeerIds))
+      .toEqual(['arol-lab','clp-survey']);
+    await page.waitForFunction(() => {
+      const node = document.querySelector('#site-graph [data-node-id="project-bachelor-thesis"]');
+      return node && Math.abs(Number(node.dataset.x) - 532) < 0.5 &&
+        Math.abs(Number(node.dataset.y) - 360) < 0.5;
+    });
+  });
+
+  test('a project without curated relations appears alone rather than inventing proximity', async ({ page }) => {
+    await page.goto('/#work/project/axiom-wilds');
+    await page.waitForFunction(() => document.body.dataset.workFocus === 'axiom-wilds');
+    await expect(page.locator('#site-graph .is-work-constellation-project')).toHaveCount(1);
+    await expect(page.locator('#site-graph .site-graph-edges path.is-work-related')).toHaveCount(0);
+    await expect(page.locator('#site-detail-panel h2')).toContainText('Axiom Wilds');
+    expect(await page.evaluate(() => window.ProfileWorkController.snapshot().focusPeerIds)).toEqual([]);
+  });
+
+  test('can navigate directly between related projects and return to a previous lens', async ({ page }) => {
+    await page.goto('/#work/lens/logic');
+    await page.waitForFunction(() => document.body.dataset.workLens === 'logic');
+    await page.locator('#site-graph [data-node-id="project-bachelor-thesis"]').click();
+    await page.waitForFunction(() => document.body.dataset.workFocus === 'bachelor-thesis');
+    await page.locator('#site-detail-panel .work-focus-related-link', { hasText: 'A-ROL Lab' }).click();
+    await page.waitForFunction(() => document.body.dataset.workFocus === 'arol-lab');
+    await expect(page.locator('#site-graph .is-work-observatory-centre')).toHaveCount(1);
+    await page.locator('#site-detail-panel .work-observatory-return').click();
+    await page.waitForFunction(() => location.hash === '#work/lens/logic');
+    await expect(page.locator('#site-graph .is-work-constellation-project')).toHaveCount(5);
+    await expect(page.locator('#site-detail-panel')).toBeHidden();
+  });
+
+  test('FCA remains a separate accessible mode, with the Work HUD still available', async ({ page }) => {
+    await visitWork(page);
+    await page.locator('.work-hud-lattice').click();
+    await page.waitForFunction(() => location.hash === '#work/lattice');
+    await expect(page.locator('#site-graph .is-work-concept')).toHaveCount(11);
+    await expect(page.locator('#site-graph .site-graph-edges path.is-work-lattice')).not.toHaveCount(0);
+    await expect(page.locator('.integrated-work-rail.is-left')).toBeHidden();
+    await page.locator('.work-hud-all').click();
+    await page.waitForFunction(() => location.hash === '#work');
+    await expect(page.locator('#site-graph .is-work-constellation-project')).toHaveCount(10);
+  });
+
+  test('escape exits Project Focus, including when opened directly', async ({ page }) => {
+    await page.goto('/#work/project/modal-logic-lab');
+    await page.waitForFunction(() => document.body.dataset.workFocus === 'modal-logic-lab');
     await page.keyboard.press('Escape');
     await page.waitForFunction(() => location.hash === '#work');
-    await expect(page.locator('#site-graph .is-work-observatory-centre')).toHaveCount(0);
+    await expect(page.locator('#site-graph .is-work-constellation-project')).toHaveCount(10);
+    await expect(page.locator('#site-detail-panel')).toBeHidden();
   });
 
-  test('switching from Observatory to FCA and Atlas resets focus styling', async ({ page }) => {
-    await page.goto('/#work/project/arol-lab');
-    await page.waitForFunction(() => document.body.dataset.workFocus === 'arol-lab');
-    await page.locator('.work-view-button[data-view="lattice"]').click();
-    await page.waitForFunction(() => location.hash === '#work/lattice');
-    await expect(page.locator('#site-graph .site-graph-node.is-work-concept')).not.toHaveCount(0);
-    await expect(page.locator('#site-graph .is-work-observatory-centre')).toHaveCount(0);
-    await page.evaluate(() => { location.hash = '#atlas'; });
-    await page.waitForFunction(() => document.body.dataset.graphMode === 'atlas');
-    await expect(page.locator('#site-graph .work-observatory-orbit.is-visible')).toHaveCount(0);
-    await expect(page.locator('#site-graph .is-work-observatory-centre')).toHaveCount(0);
-  });
-
-  test('switches to the FCA lattice and back without losing filter semantics', async ({ page }) => {
-    await page.goto('/#work');
-    await page.waitForFunction(() => document.body.dataset.graphMode === 'work');
-    const research = page.locator('#work-theme-filters input[data-theme-id="research"]');
-    const logic = page.locator('#work-theme-filters input[data-theme-id="logic"]');
-    await research.check();
-    await logic.check();
-    await expect.poll(() => page.evaluate(() => window.ProfileWorkController.snapshot().visibleProjectCount))
-      .toBe(8); // default Any semantics
-    await page.locator('.work-view-button[data-view="lattice"]').click();
-    await page.waitForFunction(() => document.body.dataset.workView === 'lattice');
-    await page.waitForFunction(() => location.hash === '#work/lattice');
-    await expect(page.locator('#site-graph .site-graph-node.is-work-concept')).toHaveCount(11);
-    await expect(page.locator('#site-graph .site-graph-edges path.is-work-lattice')).not.toHaveCount(0);
-    await expect(research).toBeChecked();
-    await expect(logic).toBeChecked();
-    await page.locator('.work-view-button[data-view="constellation"]').click();
-    await page.waitForFunction(() => document.body.dataset.workView === 'constellation');
-    await page.waitForFunction(() => location.hash === '#work');
-    await expect(page.locator('#site-graph .site-graph-node.is-work-constellation-project')).toHaveCount(10);
-    await expect(research).toBeChecked();
-    await expect(logic).toBeChecked();
-  });
-
-  test('restores project nodes when moving between Work and Atlas', async ({ page }) => {
-    await page.goto('/#work');
-    await page.waitForFunction(() => document.body.dataset.graphMode === 'work');
-    await expect(page.locator('#site-graph .site-graph-node.is-work-constellation-project > .site-graph-halo--primary')).toHaveCount(10);
-    await expect(page.locator('#site-graph .work-project-orbit, #site-graph .work-project-shell')).toHaveCount(0);
-
-    await page.evaluate(() => { location.hash = '#atlas'; });
-    await page.waitForFunction(() => document.body.dataset.graphMode === 'atlas');
-    await expect(page.locator('#site-graph .site-graph-node.is-work-constellation-project')).toHaveCount(0);
-    await expect(page.locator('#site-graph .work-project-orbit, #site-graph .work-project-shell')).toHaveCount(0);
-    await expect(page.locator('#site-graph .site-graph-node[data-node-id="project-modal-logic-lab"] .site-graph-meta'))
-      .toContainText('Interactive mathematical logic');
-
-    await page.evaluate(() => { location.hash = '#work'; });
-    await page.waitForFunction(() => document.body.dataset.graphMode === 'work');
-    await expect(page.locator('#site-graph .site-graph-node.is-work-constellation-project > .site-graph-halo--primary')).toHaveCount(10);
-  });
-
-  test('honors reduced motion and keeps all other sections accessible', async ({ page }) => {
+  test('Work-specific morphology is removed in Atlas; reduced motion disables idle halo drift', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/#work');
-    await page.waitForFunction(() => document.body.dataset.graphMode === 'work');
+    await visitWork(page);
     const halo = page.locator('#site-graph .is-work-constellation-project[data-halo-state="idle"] > .site-graph-halo--primary').first();
     await expect(halo).toHaveCount(1);
-    const animation = await halo.evaluate(el => getComputedStyle(el).animationName);
-    expect(animation).toBe('none');
-    await page.evaluate(() => { location.hash = '#education'; });
-    await page.waitForFunction(() => document.body.dataset.graphMode === 'focus');
-    await expect(page.locator('#site-graph .site-graph-node[data-node-id="education"]')).toBeVisible();
+    expect(await halo.evaluate(el => getComputedStyle(el).animationName)).toBe('none');
+    await page.evaluate(() => { location.hash = '#atlas'; });
+    await page.waitForFunction(() => document.body.dataset.graphMode === 'atlas');
+    await expect(page.locator('#site-graph .is-work-constellation-project')).toHaveCount(0);
+    await expect(page.locator('.work-explore-hud')).toBeHidden();
   });
 });

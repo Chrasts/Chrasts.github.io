@@ -492,13 +492,36 @@
         lensPicker.hidden = true;
         hudExplore.setAttribute('aria-expanded', 'false');
       }
-      if (!inWork || focusing) closeWorkPeek();
+      if (!inWork || focusing || workView === 'lattice') closeWorkPeek();
     };
     document.addEventListener('pointerdown', event => {
       if (!workHud.contains(event.target)) {
         lensPicker.hidden = true;
         hudExplore.setAttribute('aria-expanded', 'false');
       }
+    });
+    // The illumination follows the pointer; no per-node transform or layout
+    // calculation runs on hover. This remains cosmetic and motion-safe.
+    let workPointerFrame = 0;
+    let workPointer = null;
+    graphPanel.addEventListener('pointermove', event => {
+      if (state.mode !== 'work' || reducedMotion.matches || event.pointerType === 'touch') return;
+      const bounds = graphPanel.getBoundingClientRect();
+      workPointer = {
+        x: Math.min(100, Math.max(0, (event.clientX - bounds.left) / Math.max(1, bounds.width) * 100)),
+        y: Math.min(100, Math.max(0, (event.clientY - bounds.top) / Math.max(1, bounds.height) * 100))
+      };
+      if (workPointerFrame) return;
+      workPointerFrame = requestAnimationFrame(() => {
+        workPointerFrame = 0;
+        if (!workPointer) return;
+        graphPanel.style.setProperty('--work-pointer-x', workPointer.x.toFixed(1) + '%');
+        graphPanel.style.setProperty('--work-pointer-y', workPointer.y.toFixed(1) + '%');
+      });
+    }, { passive: true });
+    graphPanel.addEventListener('pointerleave', () => {
+      graphPanel.style.removeProperty('--work-pointer-x');
+      graphPanel.style.removeProperty('--work-pointer-y');
     });
 
     const readWorkState = () => ({
@@ -2355,7 +2378,7 @@
         detail.append(heading, links);
       }
       const projectNode = nodeMap.get(`project-${project.id}`);
-      if (projectNode) {
+      if (projectNode && workView !== 'constellation') {
         appendNodeButtons('Connected in the profile', graph.edges
           .filter(edge => edge.source === projectNode.id || edge.target === projectNode.id)
           .filter(edge => !['hierarchy', 'hierarchy-alt', 'work-lattice', 'skill-metadata'].includes(edge.type))

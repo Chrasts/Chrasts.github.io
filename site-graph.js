@@ -1145,9 +1145,11 @@
         group.appendChild(meta);
       }
 
+      if (node.type === 'project') group.setAttribute('aria-label', node.detailLabel || node.label);
       const preview = () => {
         if (state.mode === 'work') {
           workPreviewNode(node.id);
+          if (node.type === 'project') showWorkPeek(node.id.slice('project-'.length), group);
         } else if (state.mode === 'atlas') {
           // The root is focused programmatically after profile → Atlas motion.
           // Unless it was explicitly pinned, that focus should not make every
@@ -1162,7 +1164,10 @@
         }
       };
       const clear = () => {
-        if (state.mode === 'work') clearWorkPreview();
+        if (state.mode === 'work') {
+          clearWorkPreview();
+          closeWorkPeek();
+        }
         else if (state.mode === 'atlas') {
           if (node.id === profileRoot.id && atlasPinnedId !== profileRoot.id) clearAtlasHighlight();
           else restoreAtlasHighlight();
@@ -1477,29 +1482,9 @@
       renderer.lastEdges = edges;
       renderer.svg.classList.toggle('is-local-pannable', state.mode === 'focus' && Boolean(layout.semanticKind));
 
-      // A single structural orbit belongs to the Work scene, behind project
-      // nodes. It is decorative, not another project or hierarchy marker.
-      let workOrbit = renderer.decorations.querySelector(':scope > .work-observatory-orbit');
-      if (!workOrbit) {
-        workOrbit = document.createElementNS(svgNS, 'ellipse');
-        workOrbit.classList.add('work-observatory-orbit');
-        workOrbit.setAttribute('rx', '228');
-        workOrbit.setAttribute('ry', '187');
-        workOrbit.setAttribute('fill', 'none');
-        workOrbit.setAttribute('pointer-events', 'none');
-        workOrbit.setAttribute('aria-hidden', 'true');
-        renderer.decorations.prepend(workOrbit);
-      }
-      const observing = state.mode === 'work' && workView === 'constellation' && Boolean(layout.observatory);
-      workOrbit.classList.toggle('is-visible', observing);
-      const orbitCentre = layout.observatory?.centre || { x: 584, y: 370 };
-      const mappedOrbitCentre = visualPoint(orbitCentre);
-      const orbitRight = visualPoint({ x: orbitCentre.x + 228, y: orbitCentre.y });
-      const orbitBottom = visualPoint({ x: orbitCentre.x, y: orbitCentre.y + 187 });
-      workOrbit.setAttribute('cx', mappedOrbitCentre.x.toFixed(1));
-      workOrbit.setAttribute('cy', mappedOrbitCentre.y.toFixed(1));
-      workOrbit.setAttribute('rx', Math.abs(orbitRight.x - mappedOrbitCentre.x).toFixed(1));
-      workOrbit.setAttribute('ry', Math.abs(orbitBottom.y - mappedOrbitCentre.y).toFixed(1));
+      // No prescribed solar-system ring: attention is expressed by project
+      // scale, links and continuity of motion, not an artificial orbit.
+      renderer.decorations.querySelector('.work-observatory-orbit')?.remove();
 
       const guideModels = layout.semanticGuides || (layout.timeline
         ? [{ id: 'legacy-timeline', kind: 'axis', x1: layout.timeline.x1, y1: layout.timeline.y, x2: layout.timeline.x2, y2: layout.timeline.y }]
@@ -1694,9 +1679,8 @@
             Boolean(layout.observatory) && node.id === 'project-' + layout.observatory.projectId);
           element.classList.toggle('is-work-observatory-peer',
             Boolean(layout.observatory) && layout.observatory.relatedIds.includes(node.id.slice('project-'.length)));
-          element.classList.toggle('is-work-observatory-peripheral',
-            Boolean(layout.observatory) && node.id !== 'project-' + layout.observatory.projectId &&
-            !layout.observatory.relatedIds.includes(node.id.slice('project-'.length)));
+          element.classList.toggle('is-work-observatory-peripheral', false);
+          element.classList.toggle('is-work-lens-member', Boolean(layout.workLens));
         }
         element.classList.toggle('is-selected',
           (node.id === state.node?.id && state.mode !== 'overview') ||
@@ -1771,15 +1755,10 @@
           element.classList.add(`is-${edge.type}`);
           if (!['hierarchy', 'hierarchy-alt', 'work-lattice', 'work-related', 'work-membership'].includes(edge.type)) element.classList.add('is-cross-link');
           if (edge.type === 'hierarchy-alt' || edge.secondary) element.classList.add('is-secondary');
-          if (edge.type === 'work-related' || edge.type === 'work-focus-relation') {
-            element.dataset.workRelation = edge.relationKind || 'overlap';
+          if (edge.type === 'work-related') {
+            element.dataset.workRelation = 'curated';
             const title = document.createElementNS(svgNS, 'title');
-            title.textContent = edge.type === 'work-focus-relation'
-              ? 'Shared themes: ' + edge.sharedThemes.map(id => attributeMap.get(id)?.label || id).join(', ')
-              : edge.relationKind === 'peer'
-                ? 'Projects have exactly the same thematic labels'
-                : 'Projects differ in one thematic label: ' +
-                  (attributeMap.get(edge.differingTheme)?.label || edge.differingTheme);
+            title.textContent = edge.reason;
             element.appendChild(title);
           }
           renderer.edgeElements.set(key, element);
@@ -1915,32 +1894,23 @@
       const selected = hoverId || (state.workProjectId ? 'project-' + state.workProjectId : null);
       const related = new Set(selected ? [selected] : []);
       if (state.workProjectId && workView === 'constellation') {
-        // In Observatory all highlighted neighbours come from the exact
-        // current focus model, including fallback thematic overlaps.
-        workObservatoryPeersFor(state.workProjectId).forEach(candidate => {
-          related.add('project-' + candidate.project.id);
-        });
+        workObservatoryPeersFor(state.workProjectId).forEach(candidate =>
+          related.add('project-' + candidate.project.id));
+        related.add('project-' + state.workProjectId);
       }
-      // WORK is a collection anchor: hovering it reveals every member rather
-      // than treating every project as unrelated to the section.
-      if (selected === workRoot.id) {
-        projects.forEach(project => related.add('project-' + project.id));
-      }
-      (state.workProjectId && workView === 'constellation' ? renderer.lastEdges : workNeighbourEdges).forEach(edge => {
+      // Project-first Work has no parent node to hover, only real projects.
+      renderer.lastEdges.forEach(edge => {
         if (edge.source === selected) related.add(edge.target);
         if (edge.target === selected) related.add(edge.source);
       });
       renderer.nodeElements.forEach((element, id) => {
         const project = id.startsWith('project-') ? projectMap.get(id.slice(8)) : null;
         if (!project) return;
-        const observatoryVisible = state.workProjectId && (
-          id === 'project-' + state.workProjectId ||
-          workObservatoryPeersFor(state.workProjectId).some(candidate => candidate.project.id === project.id)
-        );
-        const matches = observatoryVisible || projectMatchesWork(project);
-        element.classList.toggle('is-filtered-work', !matches);
+        const matches = projectMatchesWork(project);
+        element.classList.toggle('is-filtered-work', !matches && !state.workProjectId && !workLensId);
         element.classList.toggle('is-work-soft', related.has(id) && id !== selected);
-        element.classList.toggle('is-work-strong', id === selected);
+        element.classList.toggle('is-work-strong',
+          id === selected || Boolean(state.workProjectId && id === 'project-' + state.workProjectId));
         element.classList.toggle('is-muted-soft', Boolean(selected) && !related.has(id));
       });
       renderer.edgeElements.forEach((element, key) => {
@@ -1949,7 +1919,7 @@
           element.classList.toggle('is-work-strong', hoverId === workRoot.id);
           return;
         }
-        if (!edge || !['work-related', 'work-focus-relation'].includes(edge.type)) return;
+        if (!edge || edge.type !== 'work-related') return;
         const matches = [edge.source, edge.target].every(id => {
           const project = projectMap.get(id.slice(8));
           return project && projectMatchesWork(project);

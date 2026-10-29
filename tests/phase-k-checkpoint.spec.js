@@ -61,59 +61,33 @@ test.describe('V3.1 Phase K accessibility checkpoint', () => {
     await expect(page.locator('#main-nav [data-route="knowledge"]')).toHaveAttribute('aria-current', 'page');
   });
 
-  test('generated Work controls project canonical filter semantics and filtered projects leave the accessibility tab order', async ({ page }) => {
+  test('Living Work exposes an accessible lens HUD without a second focusable filter tree', async ({ page }) => {
     await bypassIntro(page);
     await page.goto('/#work');
     await waitReady(page);
     await page.waitForFunction(() =>
       document.body.dataset.graphMode === 'work' &&
-      document.querySelectorAll('.work-theme-label-v5[data-theme-id]').length > 0 &&
-      document.querySelectorAll('.work-project-anchor-v5[data-project-id]').length > 0
+      document.querySelectorAll('#site-graph .is-work-constellation-project').length === 10
     );
-
-    const themeId = await page.evaluate(() => {
-      const projects = window.SITE_DATA?.work?.projects || [];
-      const attributes = window.SITE_DATA?.work?.attributes || [];
-      return attributes
-        .map(attribute => ({ id: attribute.id, count: projects.filter(project => project.lattice?.includes(attribute.id)).length }))
-        .filter(item => item.count > 0 && item.count < projects.length)
-        .sort((a, b) => a.count - b.count)[0]?.id || attributes[0]?.id;
-    });
-    expect(themeId).toBeTruthy();
-
-    const themes = page.locator('.work-theme-label-v5[data-theme-id]');
-    const projects = page.locator('.work-project-anchor-v5[data-project-id]');
-    expect(await themes.count()).toBeGreaterThan(0);
-    expect(await projects.count()).toBeGreaterThan(0);
-
-    for (let i = 0; i < await themes.count(); i += 1) {
-      const control = themes.nth(i);
-      await expect(control).toHaveAttribute('role', 'button');
-      await expect(control).toHaveAttribute('aria-label', /Toggle Work theme/i);
-      await expect(control).toHaveAttribute('aria-pressed', /true|false/);
-    }
+    await expect(page.locator('.integrated-work-rail.is-left')).toBeHidden();
+    const projects = page.locator('#site-graph .is-work-constellation-project');
+    await expect(projects).toHaveCount(10);
     for (let i = 0; i < await projects.count(); i += 1) {
-      await expect(projects.nth(i)).toHaveAttribute('aria-label', /Open project/i);
+      await expect(projects.nth(i)).toHaveAttribute('role', 'button');
+      await expect(projects.nth(i)).toHaveAttribute('aria-label', /.+/);
     }
-
-    // Drive the canonical Work filter control. The generated SVG theme label is
-    // a projection of this state; Phase K is testing that projection contract,
-    // while graph hit-testing is covered by the Work interaction suites.
-    await page.evaluate(id => {
-      const input = document.querySelector(`#work-theme-filters input[data-theme-id="${CSS.escape(id)}"]`);
-      input?.click();
-    }, themeId);
-    await page.waitForFunction(id => document.querySelector(`#work-theme-filters input[data-theme-id="${CSS.escape(id)}"]`)?.checked, themeId);
-    await expect(page.locator(`.work-theme-label-v5[data-theme-id="${themeId}"]`)).toHaveAttribute('aria-pressed', 'true');
-    await page.waitForFunction(() => document.querySelectorAll('.work-project-anchor-v5.is-filtered-out').length > 0);
-    await page.waitForFunction(() => window.ProfileAccessibility.snapshot().hiddenFocusableProjectCount === 0);
-
-    const filtered = page.locator('.work-project-anchor-v5.is-filtered-out');
-    expect(await filtered.count()).toBeGreaterThan(0);
-    for (let i = 0; i < await filtered.count(); i += 1) {
-      await expect(filtered.nth(i)).toHaveAttribute('tabindex', '-1');
-      await expect(filtered.nth(i)).toHaveAttribute('aria-hidden', 'true');
-    }
+    const explorer = page.locator('.work-hud-explore');
+    await expect(explorer).toHaveAttribute('aria-expanded', 'false');
+    await explorer.click();
+    await expect(explorer).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('#work-lens-picker')).toBeVisible();
+    await page.locator('.work-lens-option[data-lens="research"]').click();
+    await page.waitForFunction(() => document.body.dataset.workLens === 'research');
+    await expect(page.locator('#site-graph .is-work-constellation-project')).toHaveCount(6);
+    await page.waitForFunction(() => window.ProfileAccessibility?.snapshot?.().hiddenFocusableProjectCount === 0);
+    await page.locator('.work-hud-all').click();
+    await page.waitForFunction(() => document.body.dataset.graphRoute === 'work');
+    await expect(page.locator('#site-graph .is-work-constellation-project')).toHaveCount(10);
   });
 });
 

@@ -251,6 +251,7 @@
     // Work offers a project-first constellation and the original, mathematically
     // defined FCA lattice. Both views share canonical project data and filters.
     let workView = 'constellation';
+    let workLensId = null;
     let state = { route: 'overview', mode: 'overview', node: profileRoot, workProjectId: null };
     const workFilterState = {
       context: 'all',
@@ -377,8 +378,128 @@
       workViewButtons.set(view, button);
     });
     leftRail.append(workViewControl, contextControl, themeControl, matchControl, resetButton);
-    controls.append(leftRail);
+    // The legacy filter controls remain as a controller backing for existing
+    // integrations, but are not part of the visible Work experience.
+    leftRail.hidden = true;
+    leftRail.setAttribute('aria-hidden', 'true');
+    const workHud = document.createElement('nav');
+    workHud.className = 'work-explore-hud';
+    workHud.setAttribute('aria-label', 'Explore Work');
+    const hudAll = document.createElement('button');
+    hudAll.type = 'button';
+    hudAll.className = 'work-hud-action work-hud-all';
+    hudAll.textContent = 'All projects';
+    hudAll.addEventListener('click', () => {
+      workLensId = null;
+      updateHash('work');
+    });
+    const hudExplore = document.createElement('button');
+    hudExplore.type = 'button';
+    hudExplore.className = 'work-hud-action work-hud-explore';
+    hudExplore.textContent = 'Explore by…';
+    hudExplore.setAttribute('aria-expanded', 'false');
+    hudExplore.setAttribute('aria-controls', 'work-lens-picker');
+    const hudLattice = document.createElement('button');
+    hudLattice.type = 'button';
+    hudLattice.className = 'work-hud-action work-hud-lattice';
+    hudLattice.textContent = 'FCA structure';
+    hudLattice.addEventListener('click', () => updateHash('work/lattice'));
+    const lensPicker = document.createElement('div');
+    lensPicker.id = 'work-lens-picker';
+    lensPicker.className = 'work-lens-picker';
+    lensPicker.hidden = true;
+    const lensIntro = document.createElement('p');
+    lensIntro.className = 'work-lens-intro';
+    lensIntro.textContent = 'See the same projects through a different lens';
+    lensPicker.appendChild(lensIntro);
+    const workLenses = [
+      { id: 'logic', label: 'Logic & mathematics', match: p => p.lattice.includes('logic') },
+      { id: 'research', label: 'Research', match: p => p.lattice.includes('research') },
+      { id: 'computing', label: 'Data & computing', match: p => p.lattice.includes('computing-data') },
+      { id: 'systems', label: 'Built systems', match: p =>
+        ['software', 'research-software', 'database', 'automation', 'game', 'technical-prototype']
+          .some(type => p.facets?.format?.includes(type)) },
+      { id: 'education', label: 'Education & outreach', match: p => p.lattice.includes('education') },
+      { id: 'professional', label: 'Professional work', match: p => p.contexts.includes('professional') }
+    ];
+    const workLensMap = new Map(workLenses.map(lens => [lens.id, lens]));
+    const lensButtons = new Map();
+    workLenses.forEach(lens => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'work-lens-option';
+      button.dataset.lens = lens.id;
+      const label = document.createElement('span');
+      label.textContent = lens.label;
+      const count = document.createElement('small');
+      count.textContent = String(projects.filter(lens.match).length);
+      button.append(label, count);
+      button.addEventListener('click', () => {
+        lensPicker.hidden = true;
+        hudExplore.setAttribute('aria-expanded', 'false');
+        updateHash('work/lens/' + lens.id);
+      });
+      lensButtons.set(lens.id, button);
+      lensPicker.appendChild(button);
+    });
+    hudExplore.addEventListener('click', () => {
+      if (state.mode !== 'work' || state.workProjectId) return;
+      lensPicker.hidden = !lensPicker.hidden;
+      hudExplore.setAttribute('aria-expanded', String(!lensPicker.hidden));
+    });
+    workHud.append(hudAll, hudExplore, hudLattice, lensPicker);
+    controls.append(leftRail, workHud);
     scene.appendChild(controls);
+    const workPeek = document.createElement('div');
+    workPeek.className = 'work-project-peek';
+    workPeek.hidden = true;
+    workPeek.setAttribute('aria-hidden', 'true');
+    graphPanel.appendChild(workPeek);
+    const closeWorkPeek = () => {
+      workPeek.hidden = true;
+      workPeek.replaceChildren();
+    };
+    const showWorkPeek = (projectId, node) => {
+      if (state.mode !== 'work' || workView !== 'constellation' || state.workProjectId) return;
+      const project = projectMap.get(projectId);
+      if (!project || !node) return;
+      const eyebrow = document.createElement('span');
+      eyebrow.className = 'work-peek-type';
+      eyebrow.textContent = project.type;
+      const title = document.createElement('strong');
+      title.textContent = project.title;
+      const summary = document.createElement('p');
+      summary.textContent = project.caseStudy?.oneLine || project.description;
+      workPeek.replaceChildren(eyebrow, title, summary);
+      const panelRect = graphPanel.getBoundingClientRect();
+      const rect = node.getBoundingClientRect();
+      workPeek.style.left = Math.max(16, Math.min(panelRect.width - 286, rect.left - panelRect.left + 22)) + 'px';
+      workPeek.style.top = Math.max(88, Math.min(panelRect.height - 165, rect.top - panelRect.top - 134)) + 'px';
+      workPeek.hidden = false;
+    };
+    const syncWorkHud = () => {
+      const inWork = state.mode === 'work';
+      const focusing = Boolean(state.workProjectId);
+      workHud.classList.toggle('is-focused', inWork && focusing);
+      hudAll.setAttribute('aria-pressed', String(inWork && workView === 'constellation' && !workLensId && !focusing));
+      hudExplore.setAttribute('aria-pressed', String(Boolean(workLensId) && inWork && !focusing));
+      hudExplore.textContent = workLensId && workLensMap.has(workLensId)
+        ? workLensMap.get(workLensId).label + ' · change'
+        : 'Explore by…';
+      hudLattice.setAttribute('aria-pressed', String(inWork && workView === 'lattice'));
+      lensButtons.forEach((button, id) => button.setAttribute('aria-pressed', String(workLensId === id)));
+      if (!inWork || focusing || workView === 'lattice') {
+        lensPicker.hidden = true;
+        hudExplore.setAttribute('aria-expanded', 'false');
+      }
+      if (!inWork || focusing) closeWorkPeek();
+    };
+    document.addEventListener('pointerdown', event => {
+      if (!workHud.contains(event.target)) {
+        lensPicker.hidden = true;
+        hudExplore.setAttribute('aria-expanded', 'false');
+      }
+    });
 
     const readWorkState = () => ({
       context: workFilterState.context,
@@ -408,6 +529,7 @@
       workViewButtons.forEach((button, view) => {
         button.setAttribute('aria-pressed', String(workView === view));
       });
+      syncWorkHud();
       const visibleCount = projects.filter(project => projectMatchesWork(project)).length;
       resetButton.disabled = workFilterState.context === 'all' &&
         !workFilterState.selectedThemes.size && workFilterState.mode === 'any';

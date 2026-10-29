@@ -22,7 +22,7 @@ const enterProject = async (page, projectId, bindingId) => {
     await waitForWork(page);
   }
 
-  const anchor = page.locator(`.work-project-anchor-v5[data-project-id="${projectId}"]`).first();
+  const anchor = page.locator(`#site-graph .site-graph-node[data-node-id="project-${projectId}"]`).first();
   await expect(anchor).toBeVisible();
   await anchor.click();
 

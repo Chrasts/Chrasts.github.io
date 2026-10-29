@@ -31,7 +31,7 @@
       if (!mobileViewport.matches) return;
       if (!document.querySelector('script[data-profile-mobile-app]')) {
         const script = document.createElement('script');
-        script.src = 'mobile-app.js?v=20260921-dossier2';
+        script.src = 'mobile-app.js?v=20261029-livingwork1';
         script.dataset.profileMobileApp = 'true';
         document.body.appendChild(script);
       }

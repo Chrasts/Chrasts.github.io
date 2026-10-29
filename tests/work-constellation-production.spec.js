@@ -116,6 +116,27 @@ test.describe('Living Work Constellation', () => {
     await expect(page.locator('#site-detail-panel')).toBeHidden();
   });
 
+  test('mobile keeps on-canvas Work exploration and a separate optional project list', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.addInitScript(() => sessionStorage.setItem('profileIntroSeen', 'true'));
+    await visitWork(page);
+    await page.waitForFunction(() => document.body.classList.contains('mobile-app-mode'));
+    await expect(page.locator('.work-explore-hud')).toBeVisible();
+    expect(await page.locator('.integrated-work-controls').evaluate(el =>
+      el.parentElement?.classList.contains('scene-canvas'))).toBe(true);
+    await page.locator('.work-hud-explore').click();
+    await expect(page.locator('#work-lens-picker')).toBeVisible();
+    await page.locator('.work-lens-option[data-lens="education"]').click();
+    await page.waitForFunction(() => document.body.dataset.workLens === 'education');
+    await expect(page.locator('#site-graph .is-work-constellation-project')).toHaveCount(3);
+    const projectSheet = page.locator('.mobile-mode-button');
+    await expect(projectSheet).toBeVisible();
+    await projectSheet.click();
+    await expect(page.locator('.mobile-control-sheet.is-open')).toBeVisible();
+    await expect(page.locator('.mobile-work-project-picker')).toBeVisible();
+    await expect(page.locator('.integrated-work-rail.is-left')).toBeHidden();
+  });
+
   test('Work-specific morphology is removed in Atlas; reduced motion disables idle halo drift', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await visitWork(page);

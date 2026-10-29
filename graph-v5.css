@@ -872,6 +872,7 @@ body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-node.is-wo
   filter:drop-shadow(0 0 6px color-mix(in srgb,var(--teal) 34%,transparent))
 }
 body[data-graph-mode="work"][data-work-focus] #site-graph .site-graph-node.is-work-observatory-centre > .site-graph-halo--primary{
+  r:22px;
   opacity:.7;
   stroke-width:2;
   stroke-dasharray:none;

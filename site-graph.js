@@ -596,9 +596,15 @@
     const visibleGraph = () => {
       if (state.mode === 'overview') return [profileRoot, ...childrenFor(profileRoot.id)];
       if (state.mode === 'atlas') return graph.nodes;
-      if (state.mode === 'work') return workView === 'constellation'
-        ? [profileRoot, workRoot, ...projects.map(project => nodeMap.get(`project-${project.id}`)).filter(Boolean)]
-        : [profileRoot, workRoot, ...workConceptNodes];
+      if (state.mode === 'work') {
+        if (workView !== 'constellation') return [profileRoot, workRoot, ...workConceptNodes];
+        const projectIds = state.workProjectId && projectMap.has(state.workProjectId)
+          ? [state.workProjectId, ...workObservatoryPeersFor(state.workProjectId).map(item => item.project.id)]
+          : workLensId && workLensMap.has(workLensId)
+            ? projects.filter(workLensMap.get(workLensId).match).map(project => project.id)
+            : projects.map(project => project.id);
+        return projectIds.map(id => nodeMap.get('project-' + id)).filter(Boolean);
+      }
 
       // Credentials are dated evidence, not a navigational parent in the
       // Education map. Keep deep links useful by showing their milestones
@@ -811,175 +817,96 @@
        The sparse graph expresses shared thematic attributes, not FCA order.
        Positions are deterministic so navigation does not randomly reshuffle.
        ---------------------------------------------------------------------- */
-    const workNeighbourEdges = (() => {
-      // Attribute-neighbour relations are exact: the two sets either coincide
-      // (peer projects) or differ by exactly one theme. This is the one-step
-      // adjacency of B4, not a claim that the project graph is a Hasse diagram.
-      const edges = [];
-      projects.forEach((a, index) => projects.slice(index + 1).forEach(b => {
-        const aThemes = new Set(a.lattice), bThemes = new Set(b.lattice);
-        const differing = attributes
-          .map(attribute => attribute.id)
-          .filter(id => aThemes.has(id) !== bThemes.has(id));
-        if (differing.length > 1) return;
-        edges.push({
-          source: 'project-' + a.id,
-          target: 'project-' + b.id,
-          type: 'work-related',
-          relationKind: differing.length ? 'one-theme' : 'peer',
-          differingTheme: differing[0] || null,
-          sharedThemes: a.lattice.filter(theme => bThemes.has(theme))
-        });
+    const workNeighbourEdges = (work.relationships || [])
+      .filter(relation => projectMap.has(relation.source) && projectMap.has(relation.target))
+      .map(relation => ({
+        source: 'project-' + relation.source,
+        target: 'project-' + relation.target,
+        reason: relation.reason,
+        type: 'work-related',
+        relationKind: 'curated'
       }));
-      return edges;
-    })();
 
-    const workThemeProjection = (() => {
-      // A discrete semantic projection, not a force simulation:
-      // columns encode Logic / Computing memberships (10, 11, 01).
-      // rows encode Research / Education-Communication (10, 11, 00, 01).
-      // All ten current projects have at least one domain tag. A future
-      // project with neither domain will fall into the middle column.
-      const colCenters = { logic: 440, both: 725, data: 1000, neither: 725 };
-      const rowCenters = { research: 226, both: 355, neither: 480, education: 610 };
-      const rowFor = (research, education) => research && education ? 'both'
-        : research ? 'research' : education ? 'education' : 'neither';
-      const colFor = (logic, data) => logic && data ? 'both'
-        : logic ? 'logic' : data ? 'data' : 'neither';
-      const cells = new Map();
-      projects.forEach(project => {
-        const themes = new Set(project.lattice);
-        const col = colFor(themes.has('logic'), themes.has('computing-data'));
-        const row = rowFor(themes.has('research'), themes.has('education'));
-        const key = col + ':' + row;
-        if (!cells.has(key)) cells.set(key, []);
-        cells.get(key).push(project);
-      });
+    const workObservatoryPeersFor = projectId =>
+      workNeighbourEdges
+        .filter(edge => edge.source === 'project-' + projectId || edge.target === 'project-' + projectId)
+        .map(edge => ({
+          project: projectMap.get((edge.source === 'project-' + projectId ? edge.target : edge.source).slice('project-'.length)),
+          reason: edge.reason,
+          edge
+        }))
+        .filter(item => Boolean(item.project))
+        .slice(0, 3);
+
+    // Editorial composition: intentional readable clusters, but no axes,
+    // grid, category parents or invented mathematical distance metric.
+    const workOverviewCoordinates = new Map(Object.entries({
+      'bachelor-thesis': { x: 340, y: 225 },
+      'arol-lab': { x: 542, y: 178 },
+      'clp-survey': { x: 333, y: 430 },
+      'modal-logic-lab': { x: 548, y: 397 },
+      'sql-schema': { x: 574, y: 577 },
+      'insolvency': { x: 799, y: 195 },
+      'social-workers-survey': { x: 975, y: 345 },
+      'tachov-workshop': { x: 812, y: 500 },
+      'film-splitter': { x: 1004, y: 594 },
+      'axiom-wilds': { x: 777, y: 650 }
+    }));
+
+    const layoutWorkConstellation = () => {
       const positions = new Map();
-      cells.forEach((members, cell) => {
-        const [col, row] = cell.split(':');
-        members.sort((a, b) => a.order - b.order);
-        members.forEach((project, index) => {
-          // Duplicate category signatures occupy a small, predictable pair
-          // within the cell. Do not perturb semantic coordinates at random.
-          const columns = Math.ceil(Math.sqrt(members.length));
-          const rows = Math.ceil(members.length / columns);
-          const ix = index % columns, iy = Math.floor(index / columns);
-          positions.set(project.id, {
-            x: colCenters[col] + (ix - (columns - 1) / 2) * 122,
-            y: rowCenters[row] + (iy - (rows - 1) / 2) * 88
-          });
-        });
-      });
-      return positions;
-    })();
+      projects.forEach((project, index) => positions.set('project-' + project.id,
+        workOverviewCoordinates.get(project.id) || {
+          x: 335 + (index % 4) * 215, y: 210 + Math.floor(index / 4) * 190
+        }));
+      return { width: 1200, height: 760, positions };
+    };
 
-    const workProjectionGuides = [
-      ...[
-        ['logic', 440, 'LOGIC / MATHEMATICS'],
-        ['both', 725, 'LOGIC + DATA'],
-        ['data', 1000, 'DATA / COMPUTING']
-      ].map(([id, x, label]) => ({
-        id: 'work-column-' + id, kind: 'work-column',
-        x1: x, x2: x, y1: 178, y2: 655,
-        label, labelX: x, labelY: 152
-      })),
-      ...[
-        ['research', 226, 'RESEARCH'],
-        ['both', 355, 'RESEARCH + EDUCATION'],
-        ['neither', 480, 'NEITHER R / E'],
-        ['education', 610, 'EDUCATION / COMMUNICATION']
-      ].map(([id, y, label]) => ({
-        id: 'work-row-' + id, kind: 'work-row',
-        x1: 346, x2: 1127, y1: y - 52, y2: y - 52,
-        label, labelX: 555, labelY: y - 61
-      }))
-    ];
-
-    /* Observatory is a focus state of the same Work graph. "Nearest" here
-       refers to categorical overlap, not a geometric or causal relationship.
-       One-step/identical attribute neighbours are preferred; more distant
-       overlaps appear only to fill otherwise empty positions. */
-    const workObservatoryPeersFor = projectId => {
-      const selected = projectMap.get(projectId);
-      if (!selected) return [];
-      const oneStep = new Map();
-      workNeighbourEdges.forEach(edge => {
-        const source = edge.source.slice('project-'.length);
-        const target = edge.target.slice('project-'.length);
-        if (source !== projectId && target !== projectId) return;
-        const otherId = source === projectId ? target : source;
-        oneStep.set(otherId, edge);
-      });
-      return projects.filter(project => project.id !== projectId)
-        .map(project => {
-          const common = project.lattice.filter(id => selected.lattice.includes(id));
-          const overlap = common.length / new Set([...selected.lattice, ...project.lattice]).size;
-          return { project, overlap, common, edge: oneStep.get(project.id) || null };
-        })
-        .filter(candidate => candidate.common.length > 0)
-        .sort((a, b) =>
-          Number(Boolean(b.edge)) - Number(Boolean(a.edge)) ||
-          b.overlap - a.overlap ||
-          a.project.order - b.project.order
-        )
-        .slice(0, 4);
+    const layoutWorkLens = lensId => {
+      const lens = workLensMap.get(lensId);
+      const selected = projects.filter(project => lens?.match(project));
+      const positions = new Map();
+      // A spacious constellation, not a table: deliberately staggered lanes.
+      const spots = [
+        { x: 480, y: 210 }, { x: 790, y: 235 }, { x: 345, y: 385 },
+        { x: 630, y: 375 }, { x: 920, y: 420 },
+        { x: 450, y: 580 }, { x: 755, y: 585 },
+        { x: 1030, y: 620 }, { x: 1030, y: 160 }, { x: 255, y: 640 }
+      ];
+      selected.forEach((project, index) => positions.set('project-' + project.id, { ...spots[index] }));
+      return { width: 1200, height: 760, positions, workLens: lensId };
     };
 
     const layoutWorkObservatory = projectId => {
       const peers = workObservatoryPeersFor(projectId);
-      const focal = { x: 584, y: 370 };
-      const positions = new Map([
-        [profileRoot.id, { x: 180, y: 92 }],
-        [workRoot.id, { x: 265, y: 225 }],
-        ['project-' + projectId, focal]
-      ]);
-      // The inspector occupies the right-hand edge; keep all focused items
-      // in the centre-left reading field and leave the inspector unobstructed.
-      const orbitSlots = [
-        { x: 408, y: 250 }, { x: 765, y: 250 },
-        { x: 408, y: 500 }, { x: 765, y: 500 }
+      // Focus leaves an intentionally empty right edge for the case-study panel.
+      const centre = { x: 532, y: 360 };
+      const positions = new Map([['project-' + projectId, centre]]);
+      const positionsByPeer = [
+        { x: 326, y: 216 },
+        { x: 773, y: 304 },
+        { x: 424, y: 550 }
       ];
-      peers.forEach((candidate, index) => {
-        positions.set('project-' + candidate.project.id, { ...orbitSlots[index] });
-      });
-      const peripheral = projects.filter(project => !positions.has('project-' + project.id));
-      const peripheralX = [365, 488, 611, 734, 857, 980];
-      peripheral.forEach((project, index) => {
-        // Nonrelated projects remain accessible rather than disappearing.
-        // Their low-priority lane is below the main local neighbourhood.
-        positions.set('project-' + project.id, {
-          x: peripheralX[index % peripheralX.length],
-          y: 625 + Math.floor(index / peripheralX.length) * 50
-        });
+      peers.forEach(({ project }, index) => {
+        positions.set('project-' + project.id, { ...positionsByPeer[index] });
       });
       return {
         width: 1200, height: 760, positions,
         observatory: {
-          projectId, centre: focal,
-          relatedIds: peers.map(candidate => candidate.project.id),
+          projectId, centre,
+          relatedIds: peers.map(item => item.project.id),
           relationCount: peers.length
         }
       };
     };
 
-    const layoutWorkConstellation = () => {
-      const positions = new Map([
-        [profileRoot.id, { x: 180, y: 92 }],
-        [workRoot.id, { x: 265, y: 225 }]
-      ]);
-      projects.forEach(project => {
-        const point = workThemeProjection.get(project.id);
-        if (point) positions.set('project-' + project.id, { ...point });
-      });
-      return { width: 1200, height: 760, positions, semanticGuides: workProjectionGuides };
-    };
-
     const layoutWork = nodes => {
       if (workView === 'constellation') {
-        return state.workProjectId && projectMap.has(state.workProjectId)
-          ? layoutWorkObservatory(state.workProjectId)
-          : layoutWorkConstellation();
+        if (state.workProjectId && projectMap.has(state.workProjectId)) {
+          return layoutWorkObservatory(state.workProjectId);
+        }
+        return workLensId && workLensMap.has(workLensId)
+          ? layoutWorkLens(workLensId) : layoutWorkConstellation();
       }
       const width = 1200, height = 760;
       const positions = new Map([
@@ -1077,28 +1004,13 @@
     const graphEdges = (nodes, layout = null) => {
       if (state.mode === 'work') {
         if (workView !== 'constellation') return workEdgesModel();
-        const base = { source: profileRoot.id, target: workRoot.id, type: 'hierarchy' };
-        if (layout?.observatory) {
-          const projectId = layout.observatory.projectId;
-          const peers = workObservatoryPeersFor(projectId);
-          return [
-            base,
-            ...peers.map(({ project, common, edge }) => edge || ({
-              source: 'project-' + projectId,
-              target: 'project-' + project.id,
-              type: 'work-focus-relation',
-              sharedThemes: common
-            }))
-          ];
-        }
-        return [
-          base,
-          ...projects.map(project => ({
-            source: workRoot.id, target: 'project-' + project.id,
-            type: 'work-membership'
-          })),
-          ...workNeighbourEdges
-        ];
+        const ids = new Set(nodes.map(node => node.id));
+        return workNeighbourEdges.filter(edge =>
+          ids.has(edge.source) && ids.has(edge.target) &&
+          (!layout?.observatory ||
+            edge.source === 'project-' + layout.observatory.projectId ||
+            edge.target === 'project-' + layout.observatory.projectId)
+        );
       }
       const ids = new Set(nodes.map(node => node.id));
       const edges = [];

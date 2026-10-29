@@ -1134,3 +1134,16 @@ html[data-theme="dark"] .home-v4-shell::before{
     font-weight:700;
   }
 }
+
+/* The W(Post) watermark belongs exclusively to the non-interactive opening Home.
+   Hide it immediately on entry into Atlas and on every other route/state. */
+body:not([data-home-mode="home"]) .home-v4-shell::before,
+body:not(.is-home-v4-active) .home-v4-shell::before,
+body:not([data-graph-mode="overview"]) .home-v4-shell::before,
+body.is-home-interactive-entering .home-v4-shell::before,
+body.is-home-interactive .home-v4-shell::before,
+body.is-home-interactive-exiting .home-v4-shell::before,
+.home-v4-shell[hidden]::before{
+  content:none!important;
+  display:none!important;
+}

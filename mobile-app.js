@@ -682,7 +682,7 @@
   const toggleModeSheet = () => {
     if (!state.sheet || !state.modeButton) return;
     if (state.sheet.classList.contains('is-open')) return closeSheet();
-    if (modeNow() === 'work') openSheet('Work filters');
+    if (modeNow() === 'work') openSheet('Work projects');
     else if (modeNow() === 'atlas') openSheet('Atlas layers');
   };
 
@@ -783,7 +783,13 @@
     if (!state.sheetBody) return;
     const work = $('.integrated-work-controls');
     const atlas = $('#atlas-controls');
-    if (work && work.parentElement !== state.sheetBody) {
+    if (work?.querySelector('.work-explore-hud')) {
+      // Living Work has an on-canvas HUD, not a sidebar or a sheet filter.
+      // Keep its DOM anchored in the scene on phones as on desktop.
+      const scene = $('.scene-canvas');
+      if (scene && work.parentElement !== scene) scene.appendChild(work);
+      work.classList.remove('mobile-adopted-controls');
+    } else if (work && work.parentElement !== state.sheetBody) {
       work.classList.add('mobile-adopted-controls');
       state.sheetBody.appendChild(work);
     }
@@ -808,7 +814,8 @@
     registerSceneObject('overview', '.hero-copy', { key: 'overview-copy', slot: 'north-west' });
     registerSceneObject('overview', '.hero-visual.profile-identity', { key: 'overview-portrait', slot: 'north-east' });
     const work = $('.integrated-work-controls');
-    if (work) registerSceneObject('work', work, { key: 'work-controls', slot: 'sheet' });
+    if (work) registerSceneObject('work', work, { key: 'work-controls',
+      slot: work.querySelector('.work-explore-hud') ? 'stage' : 'sheet' });
     const atlas = $('#atlas-controls');
     if (atlas) registerSceneObject('atlas', atlas, { key: 'atlas-controls', slot: 'sheet' });
   };
@@ -823,7 +830,7 @@
     if (state.modeButton) {
       const hasSheet = modeNow() === 'work' || modeNow() === 'atlas';
       state.modeButton.hidden = !hasSheet;
-      state.modeButton.textContent = 'Browse';
+      state.modeButton.textContent = modeNow() === 'work' ? 'Projects' : 'Browse';
     }
     if (state.branchPicker) state.branchPicker.hidden = modeNow() !== 'atlas';
     if (state.workPicker) state.workPicker.hidden = modeNow() !== 'work';

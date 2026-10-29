@@ -12,7 +12,7 @@ const waitForWork = async page => {
     document.body.dataset.graphMode === 'work' &&
     document.body.dataset.graphRoute === 'work' &&
     !document.body.classList.contains('is-v9-transitioning') &&
-    document.querySelectorAll('.work-project-anchor-v5[data-project-id]').length
+    document.querySelectorAll('.site-graph-node.is-work-constellation-project').length
   ));
 };
 

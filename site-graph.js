@@ -2174,7 +2174,7 @@
       // Closing a project inspector also restores the layout; otherwise the
       // URL would still point at a focused project with no visible detail.
       if (state.mode === 'work' && state.workProjectId) {
-        updateHash(workView === 'lattice' ? 'work/lattice' : 'work');
+        updateHash(workLensId ? 'work/lens/' + workLensId : 'work');
         return;
       }
       clearTimeout(detailTimer);
@@ -2276,14 +2276,62 @@
         const back = document.createElement('button');
         back.type = 'button';
         back.className = 'work-observatory-return';
-        back.textContent = 'Back to all projects';
-        back.addEventListener('click', () => updateHash('work'));
+        back.textContent = workLensId ? '← Back to ' + workLensMap.get(workLensId)?.label : '← All projects';
+        back.addEventListener('click', () => updateHash(workLensId ? 'work/lens/' + workLensId : 'work'));
         detail.appendChild(back);
       }
-      const tech = document.createElement('p');
-      tech.className = 'detail-meta';
-      tech.textContent = project.tech.join(' / ');
+      if (project.caseStudy?.oneLine) {
+        const lead = document.createElement('p');
+        lead.className = 'work-focus-lede';
+        lead.textContent = project.caseStudy.oneLine;
+        detail.appendChild(lead);
+      }
+      const tech = document.createElement('div');
+      tech.className = 'work-focus-tags';
+      project.tech.slice(0, 6).forEach(item => {
+        const chip = document.createElement('span');
+        chip.textContent = item;
+        tech.appendChild(chip);
+      });
       detail.appendChild(tech);
+      if (project.caseStudy) {
+        const caseStudy = document.createElement('div');
+        caseStudy.className = 'work-focus-case';
+        [['Role', project.caseStudy.role], ['Method', project.caseStudy.method], ['Outcome', project.caseStudy.result]]
+          .filter(([, value]) => value).forEach(([headingText, body]) => {
+            const section = document.createElement('section');
+            const heading = document.createElement('h3');
+            heading.textContent = headingText;
+            const content = document.createElement('p');
+            content.textContent = body;
+            section.append(heading, content);
+            caseStudy.appendChild(section);
+          });
+        detail.appendChild(caseStudy);
+      }
+      if (workView === 'constellation') {
+        const peers = workObservatoryPeersFor(project.id);
+        if (peers.length) {
+          const label = document.createElement('h3');
+          label.className = 'work-focus-related-heading';
+          label.textContent = 'Explore connected work';
+          const list = document.createElement('div');
+          list.className = 'work-focus-related-list';
+          peers.forEach(({ project: peer, reason }) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'work-focus-related-link';
+            const name = document.createElement('strong');
+            name.textContent = peer.graphLabel;
+            const why = document.createElement('span');
+            why.textContent = reason;
+            button.append(name, why);
+            button.addEventListener('click', () => updateHash('work/project/' + peer.id));
+            list.appendChild(button);
+          });
+          detail.append(label, list);
+        }
+      }
       if (project.note) {
         const note = document.createElement('p');
         note.className = 'detail-summary detail-note';
@@ -2491,7 +2539,8 @@
       const path = state.mode === 'atlas'
         ? [profileRoot, { label: 'Atlas', route: 'atlas' }]
         : state.mode === 'work'
-          ? [profileRoot, workRoot]
+          ? [profileRoot, workRoot, ...(state.workProjectId && projectMap.has(state.workProjectId)
+            ? [{ label: projectMap.get(state.workProjectId).graphLabel, route: state.route }] : [])]
           : primaryPath(target);
       path.forEach((item, index) => {
         const button = document.createElement('button');
@@ -2527,9 +2576,11 @@
         : state.mode === 'work'
           ? (workView === 'constellation'
               ? (state.workProjectId
-                ? 'Observatory: the selected project is central, with its nearest thematic neighbours around it. Close its detail to return.'
-                : 'Horizontal position: Logic / Data; vertical position: Research / Education. Select a project for Observatory or switch to FCA lattice.')
-              : 'FCA concept lattice. Explore formal concepts, thematic filters and project labels; switch to Projects for the constellation.')
+                ? 'Project focus · Select a connected node to explore its relationship, or return to all projects.'
+                : workLensId
+                  ? 'A thematic lens rearranges the portfolio. Select a project, choose another lens or return to all projects.'
+                  : 'Explore projects directly. Hover for a quick preview, select for a case study, or choose a thematic lens.')
+              : 'Formal Concept Analysis · A structural view of the portfolio. Return to Projects for interactive exploration.')
           : state.mode === 'overview'
             ? 'Select an area to let the map unfold around it.'
             : 'Select a connected node to move deeper. Ancestors remain in the graph.';
@@ -2553,11 +2604,17 @@
       const projectMatch = route.match(/^work\/project\/([^/]+)$/);
       const themeMatch = route.match(/^work\/theme\/([^/]+)$/);
       const latticeRoute = route === 'work/lattice';
+      const lensMatch = route.match(/^work\/lens\/([^/]+)$/);
+      const validLens = lensMatch && workLensMap.has(lensMatch[1]);
 
-      if (route === 'work' || latticeRoute || projectMatch || themeMatch) {
+      if (route === 'work' || latticeRoute || projectMatch || themeMatch || validLens) {
         if (latticeRoute) workView = 'lattice';
-        else if (route === 'work') workView = 'constellation';
+        else workView = 'constellation';
+        if (route === 'work') workLensId = null;
+        if (validLens) workLensId = lensMatch[1];
         document.body.dataset.workView = workView;
+        if (workView === 'constellation' && workLensId) document.body.dataset.workLens = workLensId;
+        else delete document.body.dataset.workLens;
         if (workView === 'constellation' && projectMatch && projectMap.has(projectMatch[1])) {
           document.body.dataset.workFocus = projectMatch[1];
         } else delete document.body.dataset.workFocus;
@@ -2585,6 +2642,7 @@
           if (attributeMap.has(themeId)) setThemesViaControls([themeId], 'any', { render: false });
         }
 
+        syncWorkHud();
         setCopy(workRoot);
         renderBreadcrumb(workRoot);
         syncAtlasControls();
@@ -2598,6 +2656,7 @@
 
       delete document.body.dataset.workView;
       delete document.body.dataset.workFocus;
+      delete document.body.dataset.workLens;
       const atlas = route === 'atlas';
       const target = atlas ? profileRoot : (nodeForRoute(route) || profileRoot);
       state = {
@@ -2616,6 +2675,7 @@
       graphPanel.hidden = false;
       routebar.hidden = false;
       controls.hidden = true;
+      syncWorkHud();
       setCopy(target);
       renderBreadcrumb(target);
       syncAtlasControls();
@@ -2668,6 +2728,7 @@
         conceptCount: displayConcepts.length,
         view: workView,
         relationCount: workNeighbourEdges.length,
+        lensId: workLensId,
         observatory: state.mode === 'work' && workView === 'constellation' && Boolean(state.workProjectId),
         focusPeerIds: state.mode === 'work' && workView === 'constellation' && state.workProjectId
           ? workObservatoryPeersFor(state.workProjectId).map(item => item.project.id)
@@ -2748,6 +2809,13 @@
     document.addEventListener('keydown', event => {
       if (event.key !== 'Escape') return;
       if (event.defaultPrevented || event.target.closest?.('.mobile-control-sheet[aria-hidden="false"]')) return;
+      if (!lensPicker.hidden) {
+        event.preventDefault();
+        lensPicker.hidden = true;
+        hudExplore.setAttribute('aria-expanded', 'false');
+        hudExplore.focus();
+        return;
+      }
       if (!detail.hidden) {
         event.preventDefault();
         if (state.mode === 'atlas' && atlasPinnedId) {

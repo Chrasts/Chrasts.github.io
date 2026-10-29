@@ -1098,7 +1098,7 @@ html[data-theme="dark"] .home-v4-shell::before{
 /* Home only: large bilateral W(Post) lattice replacing the A18 watermark.
    Side fade keeps the text columns legible without hiding the central graph. */
 .home-v4-shell::before{
-  width:min(102vw,1850px);
+  width:min(80vw,1480px);
   max-height:none;
   aspect-ratio:1600/1022;
   left:var(--home-a18-root-x,50%);
@@ -1113,11 +1113,24 @@ html[data-theme="dark"] .home-v4-shell::before{
   filter:invert(.88) hue-rotate(180deg) saturate(.7);
 }
 @media(max-width:1280px) and (min-width:901px){
-  .home-v4-shell::before{width:98vw;opacity:.33}
+  .home-v4-shell::before{width:78vw;opacity:.33}
   html[data-theme="dark"] .home-v4-shell::before{opacity:.44}
 }
 
 /* Smaller, quieter identity on desktop, without changing mobile layouts. */
 @media(min-width:901px){
   .home-v4-shell .home-v4-name{font-size:clamp(19px,1.55vw,27px);line-height:1.12}
+}
+
+/* Home desktop: compact single-line name and upright bold active work item. */
+@media(min-width:901px){
+  .home-v4-shell .home-v4-name{
+    font-size:clamp(15px,1.14vw,20px);
+    white-space:nowrap;
+    line-height:1.2;
+  }
+  .home-v4-shell .home-v4-project-choice.is-active .home-v4-project-choice-label{
+    font-style:normal;
+    font-weight:700;
+  }
 }

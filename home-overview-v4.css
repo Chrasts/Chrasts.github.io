@@ -1072,20 +1072,20 @@ html[data-theme="dark"] .home-v4-shell::before{
   .home-v4-project-list{margin-left:auto;margin-right:auto}
 }
 
-/* Home only: detach portrait from the canonical root and lift it. */
+/* Home: restore the live portrait connector and move portrait further up/right. */
 .home-v4-shell .home-v4-portrait-edge,
 .home-v4-shell .home-v4-portrait-edge[data-ready="true"]{
-  display:none!important;
+  display:block;
 }
 .home-v4-shell .home-v4-static-portrait{
   margin-top:0;
-  transform:translateY(-67px) rotate(2deg);
+  transform:translate(42px,-104px) rotate(2deg);
 }
 @media(max-width:1280px) and (min-width:901px){
-  .home-v4-shell .home-v4-static-portrait{transform:translateY(-52px) rotate(2deg)}
+  .home-v4-shell .home-v4-static-portrait{transform:translate(27px,-80px) rotate(2deg)}
 }
 @media(max-height:720px) and (min-width:901px){
-  .home-v4-shell .home-v4-static-portrait{transform:translateY(-37px) rotate(2deg)}
+  .home-v4-shell .home-v4-static-portrait{transform:translate(25px,-58px) rotate(2deg)}
 }
 
 /* Home: selected-project content offset. */
@@ -1098,7 +1098,7 @@ html[data-theme="dark"] .home-v4-shell::before{
 /* Home only: large bilateral W(Post) lattice replacing the A18 watermark.
    Side fade keeps the text columns legible without hiding the central graph. */
 .home-v4-shell::before{
-  width:min(113vw,2050px);
+  width:min(102vw,1850px);
   max-height:none;
   aspect-ratio:1600/1022;
   left:var(--home-a18-root-x,50%);
@@ -1113,6 +1113,11 @@ html[data-theme="dark"] .home-v4-shell::before{
   filter:invert(.88) hue-rotate(180deg) saturate(.7);
 }
 @media(max-width:1280px) and (min-width:901px){
-  .home-v4-shell::before{width:108vw;opacity:.33}
+  .home-v4-shell::before{width:98vw;opacity:.33}
   html[data-theme="dark"] .home-v4-shell::before{opacity:.44}
+}
+
+/* Smaller, quieter identity on desktop, without changing mobile layouts. */
+@media(min-width:901px){
+  .home-v4-shell .home-v4-name{font-size:clamp(19px,1.55vw,27px);line-height:1.12}
 }

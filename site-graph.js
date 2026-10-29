@@ -2382,6 +2382,16 @@
         detail.append(heading, links);
       }
       const projectNode = nodeMap.get(`project-${project.id}`);
+      if (projectNode && workView === 'constellation') {
+        // Preserve real cross-territory navigation (e.g. Work → Experience)
+        // without the dense, mostly academic cross-link list in the new
+        // focused dossier. Knowledge links remain discoverable via Atlas.
+        appendNodeButtons('Connected in the profile', graph.edges
+          .filter(edge => edge.type === 'role-project' &&
+            (edge.source === projectNode.id || edge.target === projectNode.id))
+          .map(edge => nodeMap.get(edge.source === projectNode.id ? edge.target : edge.source))
+          .filter(Boolean));
+      }
       if (projectNode && workView !== 'constellation') {
         appendNodeButtons('Connected in the profile', graph.edges
           .filter(edge => edge.source === projectNode.id || edge.target === projectNode.id)

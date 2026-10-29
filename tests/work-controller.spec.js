@@ -11,7 +11,7 @@ test('Work uses one canonical controller without the retired hidden renderer', a
   await page.waitForFunction(() => Boolean(
     window.ProfileWorkController &&
     document.body.dataset.graphMode === 'work' &&
-    document.querySelectorAll('.work-project-anchor-v5[data-project-id]').length
+    document.querySelectorAll('.site-graph-node.is-work-constellation-project').length
   ));
 
   await expect(page.locator('#work')).toHaveCount(0);
@@ -35,14 +35,14 @@ test('Work uses one canonical controller without the retired hidden renderer', a
   });
   await page.evaluate(id => window.ProfileWorkController.setThemes([id], 'any'), themeId);
   await page.waitForFunction(() => window.ProfileWorkController.snapshot().visibleProjectCount < window.ProfileWorkController.snapshot().projectCount);
-  await page.waitForFunction(() => document.querySelectorAll('.work-project-anchor-v5.is-filtered-out').length > 0);
+  await page.waitForFunction(() => document.querySelectorAll('.site-graph-node.is-work-constellation-project.is-filtered-work').length > 0);
 
   const filtered = await page.evaluate(() => window.ProfileWorkController.snapshot());
   expect(filtered.selectedThemes).toEqual([themeId]);
-  expect(await page.locator('.work-project-anchor-v5.is-filtered-out').count()).toBeGreaterThan(0);
+  expect(await page.locator('.site-graph-node.is-work-constellation-project.is-filtered-work').count()).toBeGreaterThan(0);
 
   await page.evaluate(() => window.ProfileWorkController.reset());
   await page.waitForFunction(() => window.ProfileWorkController.snapshot().visibleProjectCount === window.ProfileWorkController.snapshot().projectCount);
-  await page.waitForFunction(() => document.querySelectorAll('.work-project-anchor-v5.is-filtered-out').length === 0);
+  await page.waitForFunction(() => document.querySelectorAll('.site-graph-node.is-work-constellation-project.is-filtered-work').length === 0);
   expect((await page.evaluate(() => window.ProfileWorkController.snapshot())).selectedThemes).toEqual([]);
 });

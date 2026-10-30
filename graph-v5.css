@@ -713,10 +713,11 @@ body[data-graph-mode="work"] .integrated-work-controls{
 }
 body[data-graph-mode="work"] .work-explore-hud{
   position:absolute;
-  top:94px;
-  right:max(28px,calc((100vw - 1430px)/2));
+  top:134px;
+  left:max(28px,calc((100vw - 1430px)/2));
+  right:auto;
   display:flex;
-  justify-content:flex-end;
+  justify-content:flex-start;
   align-items:center;
   gap:9px;
   pointer-events:auto;
@@ -758,7 +759,8 @@ body[data-graph-mode="work"] .work-hud-explore::before{
 }
 body[data-graph-mode="work"] .work-lens-picker{
   position:absolute;
-  right:0;
+  left:0;
+  right:auto;
   top:43px;
   display:grid;
   grid-template-columns:repeat(2,minmax(150px,1fr));
@@ -801,8 +803,8 @@ body[data-graph-mode="work"] .work-lens-option[aria-pressed="true"]{
   background:color-mix(in srgb,var(--teal) 7%,var(--paper))
 }
 body[data-graph-mode="work"][data-work-focus] .work-explore-hud{
-  right:auto;
-  left:max(270px,calc((100vw - 790px)/2 - 270px))
+  left:max(28px,calc((100vw - 1430px)/2));
+  right:auto
 }
 body[data-graph-mode="work"][data-work-focus] .work-hud-explore,
 body[data-graph-mode="work"][data-work-focus] .work-hud-lattice{display:none}
@@ -985,8 +987,9 @@ body[data-graph-mode="work"][data-work-focus] .work-focus-related-link:focus-vis
 }
 @media(max-width:900px){
   body[data-graph-mode="work"] .work-explore-hud{
-    top:66px;
-    right:12px;
+    top:108px;
+    left:12px;
+    right:auto;
     gap:4px
   }
   body[data-graph-mode="work"] .work-hud-action{
@@ -994,7 +997,7 @@ body[data-graph-mode="work"][data-work-focus] .work-focus-related-link:focus-vis
     min-height:31px;
     font-size:9px
   }
-  body[data-graph-mode="work"][data-work-focus] .work-explore-hud{left:12px}
+  body[data-graph-mode="work"][data-work-focus] .work-explore-hud{left:12px;right:auto}
   body[data-graph-mode="work"] .work-project-peek{display:none!important}
   body[data-graph-mode="work"][data-work-focus] .scene-detail{
     width:min(438px,calc(100vw - 24px));
@@ -1002,7 +1005,7 @@ body[data-graph-mode="work"][data-work-focus] .work-focus-related-link:focus-vis
   }
 }
 @media(max-width:560px){
-  body[data-graph-mode="work"] .work-explore-hud{top:76px;left:12px;right:auto}
+  body[data-graph-mode="work"] .work-explore-hud{top:112px;left:12px;right:auto}
   body[data-graph-mode="work"] .work-lens-picker{
     left:0;
     right:auto;

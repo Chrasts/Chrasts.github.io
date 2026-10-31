@@ -134,6 +134,22 @@ test.describe('Living Work Constellation', () => {
     await expect(page.locator('#site-graph .site-graph-edges path')).toHaveCount(0);
   });
 
+  test('pointer parallax changes projected positions without changing world coordinates', async ({ page }) => {
+    await visitWork(page);
+    await page.waitForFunction(() => window.ProfileWorkSpatial?.snapshot()?.active &&
+      !window.ProfileWorkSpatial.snapshot().transitioning);
+    const rect = await page.locator('.site-graph-panel').boundingBox();
+    await page.mouse.move(rect.x + rect.width * .23, rect.y + rect.height * .45);
+    await page.waitForTimeout(320);
+    const left = await page.evaluate(() => window.ProfileWorkSpatial.snapshot());
+    await page.mouse.move(rect.x + rect.width * .78, rect.y + rect.height * .45);
+    await page.waitForTimeout(360);
+    const right = await page.evaluate(() => window.ProfileWorkSpatial.snapshot());
+    expect(right.world).toEqual(left.world);
+    expect(Math.abs(right.visible.insolvency.x - left.visible.insolvency.x)).toBeGreaterThan(6);
+    expect(right.camera).toEqual(left.camera);
+  });
+
   test('FCA is isolated from perspective camera and project depth transforms', async ({ page }) => {
     await visitWork(page);
     await page.evaluate(() => { location.hash = '#work/lattice'; });

@@ -1043,3 +1043,35 @@ body[data-graph-mode="work"][data-work-focus] .work-focus-related-link:focus-vis
     animation:none!important
   }
 }
+
+
+/* Work-only perspective cues. The SVG group transform is owned by the
+   camera projection in site-graph.js. CSS must never independently
+   reposition or rotate project groups, or depth and hit areas will diverge.
+   z is editorial prominence, not an additional project category. */
+body[data-graph-mode="work"][data-work-view="constellation"]
+  .is-work-constellation-project[data-space-layer="near"] > .site-graph-dot{
+  filter:drop-shadow(0 0 3px color-mix(in srgb,var(--teal) 17%,transparent))
+}
+body[data-graph-mode="work"][data-work-view="constellation"]
+  .is-work-constellation-project[data-space-layer="near"][data-halo-state="idle"] > .site-graph-halo--primary{
+  opacity:.39;
+  stroke-width:1.35
+}
+body[data-graph-mode="work"][data-work-view="constellation"]
+  .is-work-constellation-project[data-space-layer="far"][data-halo-state="idle"] > .site-graph-halo--primary{
+  opacity:.14
+}
+body[data-graph-mode="work"][data-work-view="constellation"]
+  .is-work-constellation-project[data-space-layer="far"]:not(.is-work-strong):not(.is-work-observatory-centre) > .site-graph-label{
+  opacity:.79
+}
+body[data-graph-mode="work"][data-work-view="constellation"]
+  .is-work-constellation-project[data-space-layer="far"]:is(:hover,:focus-visible) > .site-graph-label{
+  opacity:1
+}
+@media (prefers-reduced-motion:reduce){
+  body[data-graph-mode="work"][data-work-view="constellation"] .is-work-constellation-project{
+    transition:none!important
+  }
+}

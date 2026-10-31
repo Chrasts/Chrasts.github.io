@@ -364,7 +364,7 @@
 
     const workViewControl = makeControlGroup('work-view-control', 'View', 'work-view-title');
     const workViewButtons = new Map();
-    [['constellation', 'Projects'], ['lattice', 'FCA lattice']].forEach(([view, label]) => {
+    [['constellation', 'Constellation'], ['lattice', 'FCA lattice']].forEach(([view, label]) => {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'work-view-button';
@@ -388,7 +388,7 @@
     const hudAll = document.createElement('button');
     hudAll.type = 'button';
     hudAll.className = 'work-hud-action work-hud-all';
-    hudAll.textContent = 'All projects';
+    hudAll.textContent = 'Constellation';
     hudAll.addEventListener('click', () => {
       workLensId = null;
       workFilterState.context = 'all';
@@ -406,7 +406,7 @@
     const hudLattice = document.createElement('button');
     hudLattice.type = 'button';
     hudLattice.className = 'work-hud-action work-hud-lattice';
-    hudLattice.textContent = 'FCA structure';
+    hudLattice.textContent = 'FCA lattice';
     hudLattice.addEventListener('click', () => updateHash('work/lattice'));
     const lensPicker = document.createElement('div');
     lensPicker.id = 'work-lens-picker';
@@ -485,7 +485,9 @@
       const inWork = state.mode === 'work';
       const focusing = Boolean(state.workProjectId);
       workHud.classList.toggle('is-focused', inWork && focusing);
-      hudAll.setAttribute('aria-pressed', String(inWork && workView === 'constellation' && !workLensId && !focusing));
+      // Constellation is the primary structure for overview, lenses and
+      // focused project scenes. The lens is a modifier, not a third view.
+      hudAll.setAttribute('aria-pressed', String(inWork && workView === 'constellation'));
       hudExplore.setAttribute('aria-pressed', String(Boolean(workLensId) && inWork && !focusing));
       hudExplore.textContent = workLensId && workLensMap.has(workLensId)
         ? workLensMap.get(workLensId).label + ' · change'
@@ -1030,14 +1032,11 @@
 
     const graphEdges = (nodes, layout = null) => {
       if (state.mode === 'work') {
-        if (workView !== 'constellation') return workEdgesModel();
-        const ids = new Set(nodes.map(node => node.id));
-        return workNeighbourEdges.filter(edge =>
-          ids.has(edge.source) && ids.has(edge.target) &&
-          (!layout?.observatory ||
-            edge.source === 'project-' + layout.observatory.projectId ||
-            edge.target === 'project-' + layout.observatory.projectId)
-        );
+        // Two explicit structures: the open Constellation is intentionally
+        // edgeless; only the formal FCA view renders relation paths.
+        // Editorial project relationships remain data for previews and
+        // project-focus neighbours, awaiting stricter link curation.
+        return workView === 'lattice' ? workEdgesModel() : [];
       }
       const ids = new Set(nodes.map(node => node.id));
       const edges = [];
@@ -1926,7 +1925,9 @@
         related.add('project-' + state.workProjectId);
       }
       // Project-first Work has no parent node to hover, only real projects.
-      renderer.lastEdges.forEach(edge => {
+      // Neighbourhood highlighting uses editorial relationships independently
+      // of SVG paths: no lines are drawn in Constellation, even on hover.
+      workNeighbourEdges.forEach(edge => {
         if (edge.source === selected) related.add(edge.target);
         if (edge.target === selected) related.add(edge.source);
       });
@@ -2613,11 +2614,11 @@
         : state.mode === 'work'
           ? (workView === 'constellation'
               ? (state.workProjectId
-                ? 'Project focus · Select a connected node to explore its relationship, or return to all projects.'
+                ? 'Project focus · Explore related projects or return to the Constellation.'
                 : workLensId
                   ? 'A thematic lens rearranges the portfolio. Select a project, choose another lens or return to all projects.'
                   : 'Explore projects directly. Hover for a quick preview, select for a case study, or choose a thematic lens.')
-              : 'Formal Concept Analysis · A structural view of the portfolio. Return to Projects for interactive exploration.')
+              : 'FCA lattice · A formal concept structure of the same project data. Return to Constellation for free exploration.')
           : state.mode === 'overview'
             ? 'Select an area to let the map unfold around it.'
             : 'Select a connected node to move deeper. Ancestors remain in the graph.';

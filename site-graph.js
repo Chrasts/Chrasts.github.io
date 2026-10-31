@@ -1619,7 +1619,14 @@
 
     const renderGraph = () => {
       const wasSpatial = workSpace.active;
-      const cameraStart = { ...workSpace.current };
+      // Carry the actual observed camera orientation into the next flight,
+      // including any current cursor parallax. Otherwise a click during
+      // hover would snap the scene before the transition begins.
+      const cameraStart = {
+        ...workSpace.current,
+        yaw: workSpace.current.yaw + workSpace.hover.yaw,
+        pitch: workSpace.current.pitch + workSpace.hover.pitch
+      };
       const nodes = visibleGraph();
       const layout = layoutGraph(nodes);
       const edges = graphEdges(nodes, layout);

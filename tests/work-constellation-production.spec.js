@@ -11,25 +11,29 @@ test.describe('Living Work Constellation', () => {
     );
   };
 
-  test('opens a complete editorial constellation without left filters or an artificial root', async ({ page }) => {
+  test('offers two primary Work views and a line-free Constellation', async ({ page }) => {
     await visitWork(page);
     await expect(page.locator('#site-graph .is-work-constellation-project')).toHaveCount(10);
-    await expect(page.locator('#site-graph .site-graph-edges path.is-work-related')).toHaveCount(10);
+    await expect(page.locator('#site-graph .site-graph-edges path')).toHaveCount(0);
     await expect(page.locator('#site-graph .site-graph-node[data-node-id="work"]')).toHaveCount(0);
     await expect(page.locator('#site-graph .site-graph-semantic-guide.is-work-column')).toHaveCount(0);
     await expect(page.locator('.integrated-work-rail.is-left')).toBeHidden();
     await expect(page.locator('.work-explore-hud')).toBeVisible();
+    await expect(page.locator('.work-hud-all')).toHaveText('Constellation');
+    await expect(page.locator('.work-hud-all')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('.work-hud-explore')).toBeVisible();
+    await expect(page.locator('.work-hud-lattice')).toHaveText('FCA lattice');
     await expect(page.locator('.work-hud-lattice')).toBeVisible();
     await expect(page.locator('#site-graph .work-observatory-orbit')).toHaveCount(0);
   });
 
-  test('node hover shows a short case-study preview and highlighted relations', async ({ page }) => {
+  test('hover reveals neighbouring nodes and preview without drawing paths', async ({ page }) => {
     await visitWork(page);
     await page.locator('#site-graph [data-node-id="project-bachelor-thesis"]').hover();
     await expect(page.locator('.work-project-peek')).toBeVisible();
     await expect(page.locator('.work-project-peek strong')).toContainText('Bachelor Thesis');
-    await expect(page.locator('#site-graph .site-graph-edges path.is-work-related.is-work-strong')).toHaveCount(2);
+    await expect(page.locator('#site-graph .site-graph-node.is-work-soft')).toHaveCount(2);
+    await expect(page.locator('#site-graph .site-graph-edges path')).toHaveCount(0);
     await page.locator('.work-hud-explore').hover();
     await expect(page.locator('.work-project-peek')).toBeHidden();
   });
@@ -42,6 +46,8 @@ test.describe('Living Work Constellation', () => {
     await page.waitForFunction(() => location.hash === '#work/lens/research');
     await expect(page.locator('#site-graph .is-work-constellation-project')).toHaveCount(6);
     await expect(page.locator('.work-hud-explore')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.work-hud-all')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#site-graph .site-graph-edges path')).toHaveCount(0);
     await expect.poll(() => page.evaluate(() => window.ProfileWorkController.snapshot().lensId)).toBe('research');
     await page.locator('.work-hud-all').click();
     await page.waitForFunction(() => location.hash === '#work');
@@ -58,6 +64,7 @@ test.describe('Living Work Constellation', () => {
     await expect(page.locator('#site-graph .is-work-observatory-centre')).toHaveCount(1);
     await expect(page.locator('#site-graph .is-work-observatory-peer')).toHaveCount(2);
     await expect(page.locator('#site-graph .work-observatory-orbit')).toHaveCount(0);
+    await expect(page.locator('#site-graph .site-graph-edges path')).toHaveCount(0);
     await expect(page.locator('#site-detail-panel')).toBeVisible();
     await expect(page.locator('#site-detail-panel h2')).toContainText('Bachelor Thesis');
     await expect(page.locator('#site-detail-panel .work-focus-lede')).toBeVisible();
@@ -101,10 +108,13 @@ test.describe('Living Work Constellation', () => {
     await page.waitForFunction(() => location.hash === '#work/lattice');
     await expect(page.locator('#site-graph .is-work-concept')).toHaveCount(11);
     await expect(page.locator('#site-graph .site-graph-edges path.is-work-lattice')).not.toHaveCount(0);
+    await expect(page.locator('.work-hud-lattice')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.work-hud-all')).toHaveAttribute('aria-pressed', 'false');
     await expect(page.locator('.integrated-work-rail.is-left')).toBeHidden();
     await page.locator('.work-hud-all').click();
     await page.waitForFunction(() => location.hash === '#work');
     await expect(page.locator('#site-graph .is-work-constellation-project')).toHaveCount(10);
+    await expect(page.locator('#site-graph .site-graph-edges path')).toHaveCount(0);
   });
 
   test('escape exits Project Focus, including when opened directly', async ({ page }) => {

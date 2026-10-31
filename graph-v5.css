@@ -723,6 +723,30 @@ body[data-graph-mode="work"] .work-explore-hud{
   pointer-events:auto;
   z-index:30;
 }
+/* The two genuine structure modes share a compact segmented switch.
+   The thematic lens is a secondary modifier outside that pair. */
+body[data-graph-mode="work"] .work-view-switcher{
+  display:inline-flex;
+  align-items:stretch;
+  overflow:hidden;
+  flex-shrink:0;
+  border:1px solid color-mix(in srgb,var(--teal) 37%,var(--line));
+  border-radius:22px;
+  background:color-mix(in srgb,var(--paper) 92%,transparent);
+}
+body[data-graph-mode="work"] .work-view-switcher > .work-hud-action{
+  border:0;
+  border-radius:0;
+  background:transparent;
+  backdrop-filter:none;
+  transform:none
+}
+body[data-graph-mode="work"] .work-view-switcher > .work-hud-action + .work-hud-action{
+  border-left:1px solid var(--line)
+}
+body[data-graph-mode="work"] .work-view-switcher > .work-hud-action[aria-pressed="true"]{
+  background:color-mix(in srgb,var(--teal) 13%,var(--paper));
+}
 body[data-graph-mode="work"] .work-hud-action{
   position:relative;
   display:inline-flex;

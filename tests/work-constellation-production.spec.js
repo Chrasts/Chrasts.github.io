@@ -19,6 +19,8 @@ test.describe('Living Work Constellation', () => {
     await expect(page.locator('#site-graph .site-graph-semantic-guide.is-work-column')).toHaveCount(0);
     await expect(page.locator('.integrated-work-rail.is-left')).toBeHidden();
     await expect(page.locator('.work-explore-hud')).toBeVisible();
+    await expect(page.locator('.work-view-switcher')).toHaveAttribute('role', 'group');
+    await expect(page.locator('.work-view-switcher .work-hud-action')).toHaveCount(2);
     await expect(page.locator('.work-hud-all')).toHaveText('Constellation');
     await expect(page.locator('.work-hud-all')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('.work-hud-explore')).toBeVisible();

@@ -75,9 +75,12 @@ test.describe('Living Work Constellation', () => {
     await expect.poll(() => page.evaluate(() => window.ProfileWorkController.snapshot().focusPeerIds))
       .toEqual(['arol-lab','clp-survey']);
     await page.waitForFunction(() => {
+      const snapshot = window.ProfileWorkSpatial?.snapshot();
       const node = document.querySelector('#site-graph [data-node-id="project-bachelor-thesis"]');
-      return node && Math.abs(Number(node.dataset.x) - 532) < 0.5 &&
-        Math.abs(Number(node.dataset.y) - 360) < 0.5;
+      return snapshot?.active && !snapshot.transitioning && node &&
+        Number(node.dataset.spaceScale) > 1.05 &&
+        Number(node.dataset.x) > 170 && Number(node.dataset.x) < 780 &&
+        Number(node.dataset.y) > 150 && Number(node.dataset.y) < 610;
     });
   });
 
@@ -102,6 +105,43 @@ test.describe('Living Work Constellation', () => {
     await page.waitForFunction(() => location.hash === '#work/lens/logic');
     await expect(page.locator('#site-graph .is-work-constellation-project')).toHaveCount(5);
     await expect(page.locator('#site-detail-panel')).toBeHidden();
+  });
+
+  test('spatial depth is real perspective, with fixed world coordinates through lenses and focus', async ({ page }) => {
+    await visitWork(page);
+    await page.waitForFunction(() => window.ProfileWorkSpatial?.snapshot()?.active &&
+      !window.ProfileWorkSpatial.snapshot().transitioning);
+    const overview = await page.evaluate(() => window.ProfileWorkSpatial.snapshot());
+    expect(Object.keys(overview.world)).toHaveLength(10);
+    expect(new Set(Object.values(overview.world).map(point => point.z)).size).toBeGreaterThan(4);
+    expect(Math.abs(overview.visible.insolvency.scale - overview.visible['film-splitter'].scale)).toBeGreaterThan(.15);
+
+    await page.evaluate(() => { location.hash = '#work/lens/research'; });
+    await page.waitForFunction(() => document.body.dataset.workLens === 'research' &&
+      !window.ProfileWorkSpatial.snapshot().transitioning);
+    const lens = await page.evaluate(() => window.ProfileWorkSpatial.snapshot());
+    expect(lens.world).toEqual(overview.world);
+    expect(lens.camera.x).not.toBe(overview.camera.x);
+
+    await page.evaluate(() => { location.hash = '#work/project/bachelor-thesis'; });
+    await page.waitForFunction(() => document.body.dataset.workFocus === 'bachelor-thesis' &&
+      !window.ProfileWorkSpatial.snapshot().transitioning);
+    const focus = await page.evaluate(() => window.ProfileWorkSpatial.snapshot());
+    expect(focus.world).toEqual(overview.world);
+    expect(focus.camera.z).toBeGreaterThan(overview.camera.z);
+    expect(focus.visible['bachelor-thesis'].scale).toBeGreaterThan(overview.visible['bachelor-thesis'].scale);
+    expect(Object.keys(focus.visible)).toHaveLength(3);
+    await expect(page.locator('#site-graph .site-graph-edges path')).toHaveCount(0);
+  });
+
+  test('FCA is isolated from perspective camera and project depth transforms', async ({ page }) => {
+    await visitWork(page);
+    await page.evaluate(() => { location.hash = '#work/lattice'; });
+    await page.waitForFunction(() => document.body.dataset.workView === 'lattice' &&
+      !window.ProfileWorkSpatial.snapshot().active);
+    await expect(page.locator('#site-graph .site-graph-edges path.is-work-lattice')).not.toHaveCount(0);
+    await expect(page.locator('#site-graph .site-graph-node[data-space-layer]')).toHaveCount(0);
+    await expect(page.locator('#site-graph .site-graph-node[data-space-scale]')).toHaveCount(0);
   });
 
   test('FCA remains a separate accessible mode, with the Work HUD still available', async ({ page }) => {

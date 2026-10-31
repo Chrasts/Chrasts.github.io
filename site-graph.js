@@ -528,11 +528,19 @@
         if (!workPointer) return;
         graphPanel.style.setProperty('--work-pointer-x', workPointer.x.toFixed(1) + '%');
         graphPanel.style.setProperty('--work-pointer-y', workPointer.y.toFixed(1) + '%');
+        if (workSpaceMotionEnabled()) {
+          workSpace.hoverTarget.yaw = (workPointer.x / 100 - .5) * .060;
+          workSpace.hoverTarget.pitch = (workPointer.y / 100 - .5) * .036;
+          startWorkSpaceParallax();
+        }
       });
     }, { passive: true });
     graphPanel.addEventListener('pointerleave', () => {
       graphPanel.style.removeProperty('--work-pointer-x');
       graphPanel.style.removeProperty('--work-pointer-y');
+      workSpace.hoverTarget.yaw = 0;
+      workSpace.hoverTarget.pitch = 0;
+      startWorkSpaceParallax();
     });
 
     const readWorkState = () => ({
@@ -1142,19 +1150,73 @@
        SVG renderer
        ---------------------------------------------------------------------- */
     const edgeKey = edge => `${edge.source}|${edge.target}|${edge.type}`;
-    const pointOf = element => ({ x: Number(element?.dataset.x || 0), y: Number(element?.dataset.y || 0) });
+    const pointOf = element => ({
+      x: Number(element?.dataset.x || 0),
+      y: Number(element?.dataset.y || 0),
+      scale: Number(element?.dataset.spaceScale || 1)
+    });
     const visualPoint = point => {
       const projection = window.ProfileMobileProjection;
       return projection?.activeFor?.(state.mode) ? projection.mapPoint(point, state.mode) : point;
     };
     const setVisualTransform = (element, point) => {
       const visual = visualPoint(point);
-      element.setAttribute('transform', `translate(${visual.x.toFixed(1)} ${visual.y.toFixed(1)})`);
+      // Scale project groups as depth changes; no new duplicate SVG nodes.
+      // This branch is strictly absent in Atlas, FCA and ordinary routes.
+      const spatial = workSpaceEnabled() &&
+        element.classList.contains('site-graph-node') &&
+        element.dataset.nodeId?.startsWith('project-');
+      const scale = spatial && Number.isFinite(point.scale) ? point.scale : 1;
+      element.setAttribute('transform',
+        `translate(${visual.x.toFixed(1)} ${visual.y.toFixed(1)})` +
+        (spatial ? ` scale(${scale.toFixed(4)})` : ''));
     };
     const setPoint = (element, point) => {
       setVisualTransform(element, point);
       element.dataset.x = point.x;
       element.dataset.y = point.y;
+      if (workSpaceEnabled() && element.dataset.nodeId?.startsWith('project-')) {
+        element.dataset.spaceScale = Number.isFinite(point.scale) ? point.scale.toFixed(4) : '1';
+        if (Number.isFinite(point.depth)) element.dataset.spaceDepth = point.depth.toFixed(1);
+      } else {
+        delete element.dataset.spaceScale;
+        delete element.dataset.spaceDepth;
+      }
+    };
+    const workSpaceMotionEnabled = () => workSpaceEnabled() &&
+      !reducedMotion.matches && !matchMedia('(max-width:900px)').matches &&
+      !window.ProfileMotionPolicy?.snapshot?.().forceSnap;
+
+    // The idle camera tilt is independent of route animations. Per-frame
+    // projection updates only project transforms and never rebuilds SVG.
+    const startWorkSpaceParallax = () => {
+      if (workSpace.frame || !workSpaceMotionEnabled() || workSpace.transitioning) return;
+      const tick = () => {
+        workSpace.frame = 0;
+        if (!workSpaceMotionEnabled() || workSpace.transitioning || document.hidden) return;
+        const approach = .115;
+        workSpace.hover.yaw += (workSpace.hoverTarget.yaw - workSpace.hover.yaw) * approach;
+        workSpace.hover.pitch += (workSpace.hoverTarget.pitch - workSpace.hover.pitch) * approach;
+        renderer.nodeElements.forEach((element, nodeId) => {
+          if (!nodeId.startsWith('project-')) return;
+          const point = workWorld.get(nodeId.slice(8));
+          if (!point) return;
+          const projected = projectWorkPoint(point, workSpace.current, workSpace.hover);
+          setPoint(element, projected);
+        });
+        const offset = Math.max(
+          Math.abs(workSpace.hover.yaw - workSpace.hoverTarget.yaw),
+          Math.abs(workSpace.hover.pitch - workSpace.hoverTarget.pitch)
+        );
+        if (offset > .00015) workSpace.frame = requestAnimationFrame(tick);
+      };
+      workSpace.frame = requestAnimationFrame(tick);
+    };
+    const clearWorkSpaceParallax = () => {
+      if (workSpace.frame) cancelAnimationFrame(workSpace.frame);
+      workSpace.frame = 0;
+      workSpace.hover = { yaw: 0, pitch: 0 };
+      workSpace.hoverTarget = { yaw: 0, pitch: 0 };
     };
     const edgePath = (from, to, key) => {
       const dx = to.x - from.x, dy = to.y - from.y;

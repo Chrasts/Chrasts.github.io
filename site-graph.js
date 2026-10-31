@@ -451,7 +451,12 @@
       lensPicker.hidden = !lensPicker.hidden;
       hudExplore.setAttribute('aria-expanded', String(!lensPicker.hidden));
     });
-    workHud.append(hudAll, hudExplore, hudLattice, lensPicker);
+    const workModeSwitch = document.createElement('div');
+    workModeSwitch.className = 'work-view-switcher';
+    workModeSwitch.setAttribute('role', 'group');
+    workModeSwitch.setAttribute('aria-label', 'Work visualization');
+    workModeSwitch.append(hudAll, hudLattice);
+    workHud.append(workModeSwitch, hudExplore, lensPicker);
     controls.append(leftRail, workHud);
     scene.appendChild(controls);
     const workPeek = document.createElement('div');

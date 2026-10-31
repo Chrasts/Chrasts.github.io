@@ -948,7 +948,7 @@
       const yMax = Math.max(...positions.map(p => p.y));
       const averageZ = positions.reduce((sum, p) => sum + p.z, 0) / positions.length;
       const distance = focus
-        ? Math.max(730, (xMax - xMin) * 1.6, (yMax - yMin) * 1.95)
+        ? Math.max(730, (xMax - xMin) * 1.6, (yMax - yMin) * 2.6)
         : Math.max(920, (xMax - xMin) * 1.5, (yMax - yMin) * 1.7);
       return {
         x: (xMin + xMax) / 2 + (focus ? 105 : 0),
@@ -1838,6 +1838,11 @@
             Boolean(layout.observatory) && layout.observatory.relatedIds.includes(node.id.slice('project-'.length)));
           element.classList.toggle('is-work-observatory-peripheral', false);
           element.classList.toggle('is-work-lens-member', Boolean(layout.workLens));
+          const layerDepth = workWorld.get(node.id.slice(8))?.z ?? 0;
+          if (isSpatial) {
+            element.dataset.spaceLayer = layerDepth < -75 ? 'near'
+              : layerDepth > 100 ? 'far' : 'middle';
+          } else delete element.dataset.spaceLayer;
         }
         element.classList.toggle('is-selected',
           (node.id === state.node?.id && state.mode !== 'overview') ||
@@ -2783,10 +2788,10 @@
         : state.mode === 'work'
           ? (workView === 'constellation'
               ? (state.workProjectId
-                ? 'Project focus · Explore related projects or return to the Constellation.'
+                ? 'Spatial focus · Camera approaching a selected project. Explore nearby projects or return to the Constellation.'
                 : workLensId
-                  ? 'A thematic lens rearranges the portfolio. Select a project, choose another lens or return to all projects.'
-                  : 'Explore projects directly. Hover for a quick preview, select for a case study, or choose a thematic lens.')
+                  ? 'A thematic lens frames the same 3D constellation, without relocating projects. Choose another lens or return to all.'
+                  : 'Explore a spatial constellation of projects. Move the pointer for depth, or select a project to approach it.')
               : 'FCA lattice · A formal concept structure of the same project data. Return to Constellation for free exploration.')
           : state.mode === 'overview'
             ? 'Select an area to let the map unfold around it.'
@@ -2955,6 +2960,25 @@
     dispatchEvent(new CustomEvent('profile:work-controller-ready', {
       detail: window.ProfileWorkController.snapshot()
     }));
+
+    // Read-only diagnostics for spatial regression tests and future camera UI.
+    // FCA and Atlas never activate this projection.
+    window.ProfileWorkSpatial = Object.freeze({
+      snapshot: () => ({
+        active: workSpaceEnabled(),
+        camera: { ...workSpace.current },
+        targetCamera: { ...workSpace.target },
+        transitioning: workSpace.transitioning,
+        route: state.route,
+        world: Object.fromEntries([...workWorld].map(([id, position]) => [id, { ...position }])),
+        visible: Object.fromEntries([...renderer.nodeElements]
+          .filter(([id]) => id.startsWith('project-'))
+          .map(([id, element]) => [id.slice(8), {
+            x: Number(element.dataset.x), y: Number(element.dataset.y),
+            scale: Number(element.dataset.spaceScale || 1)
+          }]))
+      })
+    });
 
     /* Canonical geometry ownership. Consumers may ask the renderer to
        invalidate/recompose the current route; they must not simulate unrelated

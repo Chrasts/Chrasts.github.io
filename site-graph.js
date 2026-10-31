@@ -1618,9 +1618,21 @@
     };
 
     const renderGraph = () => {
+      const wasSpatial = workSpace.active;
+      const cameraStart = { ...workSpace.current };
       const nodes = visibleGraph();
       const layout = layoutGraph(nodes);
       const edges = graphEdges(nodes, layout);
+      const isSpatial = Boolean(layout.spatialCamera);
+      clearWorkSpaceParallax();
+      workSpace.active = isSpatial;
+      if (isSpatial) {
+        workSpace.target = { ...layout.spatialCamera };
+        // On entry from Atlas/FCA, preserve ordinary scene-crossfade behavior.
+        // Subsequent Constellation routes are actual camera flights.
+        if (!wasSpatial) workSpace.current = { ...layout.spatialCamera };
+      }
+      workSpace.transitioning = isSpatial;
       ensureRenderer(layout);
       renderer.svg.setAttribute('viewBox', `0 0 ${layout.width} ${layout.height}`);
       renderer.lastLayout = layout;
@@ -1879,6 +1891,18 @@
         }
       });
 
+      // SVG painter's order represents depth, far objects first. Unlike
+      // semantic grouping, this ordering has no effect on FCA hierarchy.
+      if (isSpatial) {
+        nodes.filter(node => node.type === 'project')
+          .sort((a, b) =>
+            (workWorld.get(b.id.slice(8))?.z || 0) -
+            (workWorld.get(a.id.slice(8))?.z || 0))
+          .forEach(node => {
+            const element = renderer.nodeElements.get(node.id);
+            if (element) renderer.nodes.appendChild(element);
+          });
+      }
       // New local nodes can be appended during the same render. Re-append the
       // thematic controls afterwards so they remain the final/topmost SVG
       // interaction plane for ordinary pointer input.
@@ -1933,22 +1957,37 @@
 
       const leavingEdges = [...renderer.edgeElements].filter(([key]) => !edgeIds.has(key));
       cancelAnimationFrame(renderer.frame);
-      const duration = reducedMotion.matches || window.ProfileMotionPolicy?.snapshot?.().forceSnap ? 0 : 450;
+      const duration = reducedMotion.matches || window.ProfileMotionPolicy?.snapshot?.().forceSnap
+        ? 0 : wasSpatial && isSpatial ? 740 : 450;
+      const cameraFlight = wasSpatial && isSpatial && duration > 0;
       const started = performance.now();
       const ease = t => 1 - Math.pow(1 - t, 3);
 
       const frame = now => {
         const raw = duration ? Math.min(1, (now - started) / duration) : 1;
         const progress = ease(raw);
+        const movingCamera = cameraFlight ? Object.fromEntries(
+          Object.keys(workSpace.target).map(key => [
+            key, cameraStart[key] + (workSpace.target[key] - cameraStart[key]) * progress
+          ])
+        ) : workSpace.target;
+        if (cameraFlight) workSpace.current = movingCamera;
 
         nodes.forEach(node => {
           const element = renderer.nodeElements.get(node.id);
           const from = starts.get(node.id), to = targets.get(node.id);
           if (!element || !from || !to) return;
-          setPoint(element, {
-            x: from.x + (to.x - from.x) * progress,
-            y: from.y + (to.y - from.y) * progress
-          });
+          const worldPoint = cameraFlight && node.type === 'project'
+            ? workWorldPoint(projectMap.get(node.id.slice(8))) : null;
+          const position = worldPoint
+            ? projectWorkPoint(worldPoint, movingCamera)
+            : {
+              x: from.x + (to.x - from.x) * progress,
+              y: from.y + (to.y - from.y) * progress,
+              scale: (from.scale ?? 1) + ((to.scale ?? 1) - (from.scale ?? 1)) * progress,
+              depth: to.depth
+            };
+          setPoint(element, position);
           if (entering.has(node.id)) element.style.opacity = String(progress);
         });
 
@@ -1995,6 +2034,16 @@
         });
         renderer.nodeElements.forEach(element => element.style.opacity = '');
         renderer.edgeElements.forEach(element => element.style.opacity = '');
+        workSpace.transitioning = false;
+        if (isSpatial) {
+          workSpace.current = { ...workSpace.target };
+          // Force exact projected endpoints after the last eased frame.
+          nodes.filter(node => node.type === 'project').forEach(node => {
+            const element = renderer.nodeElements.get(node.id);
+            if (element) setPoint(element,
+              projectWorkPoint(workWorldPoint(projectMap.get(node.id.slice(8))), workSpace.current));
+          });
+        }
 
         if (state.mode === 'atlas') {
           paintAtlas();
@@ -2003,6 +2052,7 @@
           paintLocalCamera();
         }
         syncWorkDecorations(layout);
+        if (isSpatial) startWorkSpaceParallax();
         window.dispatchEvent(new CustomEvent('profile:graph-render-settled', {
           detail: {
             route: state.route,

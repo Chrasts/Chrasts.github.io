@@ -949,7 +949,7 @@
       const averageZ = positions.reduce((sum, p) => sum + p.z, 0) / positions.length;
       const distance = focus
         ? Math.max(730, (xMax - xMin) * 1.6, (yMax - yMin) * 2.6)
-        : Math.max(920, (xMax - xMin) * 1.5, (yMax - yMin) * 1.7);
+        : Math.max(1070, (xMax - xMin) * 1.5, (yMax - yMin) * 2.4);
       return {
         x: (xMin + xMax) / 2 + (focus ? 105 : 0),
         y: (yMin + yMax) / 2,

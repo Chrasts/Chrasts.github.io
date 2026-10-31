@@ -872,66 +872,118 @@
         .filter(item => Boolean(item.project))
         .slice(0, 3);
 
-    // Editorial composition: intentional readable clusters, but no axes,
-    // grid, category parents or invented mathematical distance metric.
-    const workOverviewCoordinates = new Map(Object.entries({
-      'bachelor-thesis': { x: 340, y: 225 },
-      'arol-lab': { x: 542, y: 178 },
-      'clp-survey': { x: 333, y: 430 },
-      'modal-logic-lab': { x: 548, y: 397 },
-      'sql-schema': { x: 574, y: 577 },
-      'insolvency': { x: 799, y: 195 },
-      'social-workers-survey': { x: 975, y: 345 },
-      'tachov-workshop': { x: 812, y: 500 },
-      'film-splitter': { x: 1004, y: 594 },
-      'axiom-wilds': { x: 777, y: 650 }
+    /* ----------------------------------------------------------------------
+       Work Constellation / pseudo-3D world (independent of FCA)
+       ----------------------------------------------------------------------
+       These are stable WORLD coordinates. There is no new project hierarchy:
+       z is editorial depth/visual prominence, never a category or proof of
+       similarity. Every Work mode projects the same points through a camera.
+       FCA retains its original, unprojected concept-lattice geometry.
+       ---------------------------------------------------------------------- */
+    const workWorld = new Map(Object.entries({
+      'bachelor-thesis':       { x: 340, y: 225, z: -130 },
+      'arol-lab':              { x: 542, y: 178, z:   15 },
+      'clp-survey':            { x: 333, y: 430, z:  130 },
+      'modal-logic-lab':       { x: 548, y: 397, z: -150 },
+      'sql-schema':            { x: 574, y: 577, z:   95 },
+      'insolvency':            { x: 799, y: 195, z: -170 },
+      'social-workers-survey':{ x: 975, y: 345, z:  -95 },
+      'tachov-workshop':      { x: 812, y: 500, z:  110 },
+      'film-splitter':         { x:1004, y: 594, z:  155 },
+      'axiom-wilds':          { x: 777, y: 650, z:  175 }
     }));
-
-    const layoutWorkConstellation = () => {
-      const positions = new Map();
-      projects.forEach((project, index) => positions.set('project-' + project.id,
-        workOverviewCoordinates.get(project.id) || {
-          x: 335 + (index % 4) * 215, y: 210 + Math.floor(index / 4) * 190
-        }));
-      return { width: 1200, height: 760, positions };
+    const workWorldPoint = (project, index = 0) => workWorld.get(project.id) || {
+      x: 330 + (index % 4) * 210,
+      y: 210 + Math.floor(index / 4) * 185,
+      z: 90 + (index % 3) * 40
     };
+    const workSpace = {
+      current: { x: 600, y: 380, z: -980, yaw: 0, pitch: 0 },
+      target:  { x: 600, y: 380, z: -980, yaw: 0, pitch: 0 },
+      hover: { yaw: 0, pitch: 0 },
+      hoverTarget: { yaw: 0, pitch: 0 },
+      frame: 0,
+      transitioning: false,
+      active: false
+    };
+    const workSpaceEnabled = () =>
+      state.mode === 'work' && workView === 'constellation';
 
+    // Perspective projection of a world-space point into the existing SVG.
+    // A bounded camera distance avoids extreme scaling and near-plane flips.
+    const projectWorkPoint = (point, camera, parallax = null) => {
+      const yaw = camera.yaw + (parallax?.yaw || 0);
+      const pitch = camera.pitch + (parallax?.pitch || 0);
+      const dx = point.x - camera.x, dy = point.y - camera.y, dz = point.z - camera.z;
+      const cosineYaw = Math.cos(yaw), sineYaw = Math.sin(yaw);
+      const projectedX = dx * cosineYaw - dz * sineYaw;
+      const yawDepth = dx * sineYaw + dz * cosineYaw;
+      const projectedY = dy * Math.cos(pitch) - yawDepth * Math.sin(pitch);
+      const depth = dy * Math.sin(pitch) + yawDepth * Math.cos(pitch);
+      const scale = Math.max(.73, Math.min(1.62, 960 / Math.max(470, depth)));
+      return {
+        x: 600 + projectedX * scale,
+        y: 380 + projectedY * scale,
+        scale,
+        depth
+      };
+    };
+    const cameraForWork = (projectIds, { focus = false } = {}) => {
+      const positions = projectIds
+        .map(id => projectMap.get(id))
+        .filter(Boolean)
+        .map(project => workWorldPoint(project, project.order));
+      if (!positions.length) return { x: 600, y: 380, z: -980, yaw: 0, pitch: 0 };
+      const xMin = Math.min(...positions.map(p => p.x));
+      const xMax = Math.max(...positions.map(p => p.x));
+      const yMin = Math.min(...positions.map(p => p.y));
+      const yMax = Math.max(...positions.map(p => p.y));
+      const averageZ = positions.reduce((sum, p) => sum + p.z, 0) / positions.length;
+      const distance = focus
+        ? Math.max(730, (xMax - xMin) * 1.6, (yMax - yMin) * 1.95)
+        : Math.max(920, (xMax - xMin) * 1.5, (yMax - yMin) * 1.7);
+      return {
+        x: (xMin + xMax) / 2 + (focus ? 105 : 0),
+        y: (yMin + yMax) / 2,
+        z: averageZ - distance,
+        yaw: 0, pitch: 0
+      };
+    };
+    const projectWorkLayout = (projectIds, camera, extras = {}) => {
+      const positions = new Map(projectIds.map(id => {
+        const project = projectMap.get(id);
+        return ['project-' + id, projectWorkPoint(workWorldPoint(project, project.order), camera)];
+      }));
+      return {
+        width: 1200, height: 760, positions,
+        spatialCamera: camera, spatialIds: projectIds,
+        ...extras
+      };
+    };
+    const layoutWorkConstellation = () =>
+      projectWorkLayout(projects.map(p => p.id), cameraForWork([]));
+
+    // Lenses change the camera's framing and visibility, not project
+    // coordinates. They do not introduce a second spatial map.
     const layoutWorkLens = lensId => {
       const lens = workLensMap.get(lensId);
       const selected = projects.filter(project => lens?.match(project));
-      const positions = new Map();
-      // A spacious constellation, not a table: deliberately staggered lanes.
-      const spots = [
-        { x: 480, y: 210 }, { x: 790, y: 235 }, { x: 345, y: 385 },
-        { x: 630, y: 375 }, { x: 920, y: 420 },
-        { x: 450, y: 580 }, { x: 755, y: 585 },
-        { x: 1030, y: 620 }, { x: 1030, y: 160 }, { x: 255, y: 640 }
-      ];
-      selected.forEach((project, index) => positions.set('project-' + project.id, { ...spots[index] }));
-      return { width: 1200, height: 760, positions, workLens: lensId };
+      const ids = selected.map(project => project.id);
+      return projectWorkLayout(ids, cameraForWork(ids), { workLens: lensId });
     };
 
     const layoutWorkObservatory = projectId => {
       const peers = workObservatoryPeersFor(projectId);
-      // Focus leaves an intentionally empty right edge for the case-study panel.
-      const centre = { x: 532, y: 360 };
-      const positions = new Map([['project-' + projectId, centre]]);
-      const positionsByPeer = [
-        { x: 326, y: 216 },
-        { x: 773, y: 304 },
-        { x: 424, y: 550 }
-      ];
-      peers.forEach(({ project }, index) => {
-        positions.set('project-' + project.id, { ...positionsByPeer[index] });
-      });
-      return {
-        width: 1200, height: 760, positions,
+      const ids = [projectId, ...peers.map(item => item.project.id)];
+      const camera = cameraForWork(ids, { focus: true });
+      return projectWorkLayout(ids, camera, {
         observatory: {
-          projectId, centre,
+          projectId,
+          centre: projectWorkPoint(workWorldPoint(projectMap.get(projectId)), camera),
           relatedIds: peers.map(item => item.project.id),
           relationCount: peers.length
         }
-      };
+      });
     };
 
     const layoutWork = nodes => {

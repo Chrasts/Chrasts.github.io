@@ -250,7 +250,7 @@
        ---------------------------------------------------------------------- */
     // Work offers a project-first constellation and the original, mathematically
     // defined FCA lattice. Both views share canonical project data and filters.
-    let workView = 'constellation';
+    let workView = 'lattice';
     let workLensId = null;
     let state = { route: 'overview', mode: 'overview', node: profileRoot, workProjectId: null };
     const workFilterState = {
@@ -372,7 +372,7 @@
       button.textContent = label;
       button.addEventListener('click', () => {
         if (workView === view) return;
-        updateHash(view === 'lattice' ? 'work/lattice' : 'work');
+        updateHash(view === 'lattice' ? 'work/lattice' : 'work/constellation');
       });
       workViewControl.appendChild(button);
       workViewButtons.set(view, button);
@@ -395,7 +395,7 @@
       workFilterState.selectedThemes.clear();
       workFilterState.mode = 'any';
       syncWorkControls('hud-all', { render: false });
-      updateHash('work');
+      updateHash('work/constellation');
     });
     const hudExplore = document.createElement('button');
     hudExplore.type = 'button';
@@ -1333,7 +1333,7 @@
           }
           else if (node.id === workRoot.id) {
             if (workView === 'lattice') setThemesViaControls([]);
-            else updateHash('work');
+            else updateHash('work/constellation');
           } else if (workView === 'constellation' && node.type === 'project') {
             updateHash(node.route);
           } else {
@@ -2383,7 +2383,7 @@
       // Closing a project inspector also restores the layout; otherwise the
       // URL would still point at a focused project with no visible detail.
       if (state.mode === 'work' && state.workProjectId) {
-        updateHash(workLensId ? 'work/lens/' + workLensId : 'work');
+        updateHash(workLensId ? 'work/lens/' + workLensId : 'work/constellation');
         return;
       }
       clearTimeout(detailTimer);
@@ -2486,7 +2486,7 @@
         back.type = 'button';
         back.className = 'work-observatory-return';
         back.textContent = workLensId ? '← Back to ' + workLensMap.get(workLensId)?.label : '← All projects';
-        back.addEventListener('click', () => updateHash(workLensId ? 'work/lens/' + workLensId : 'work'));
+        back.addEventListener('click', () => updateHash(workLensId ? 'work/lens/' + workLensId : 'work/constellation'));
         detail.appendChild(back);
       }
       if (project.caseStudy?.oneLine) {
@@ -2822,14 +2822,15 @@
       const route = normaliseRoute(rawRoute);
       const projectMatch = route.match(/^work\/project\/([^/]+)$/);
       const themeMatch = route.match(/^work\/theme\/([^/]+)$/);
-      const latticeRoute = route === 'work/lattice';
+      const latticeRoute = route === 'work' || route === 'work/lattice';
+      const constellationRoute = route === 'work/constellation';
       const lensMatch = route.match(/^work\/lens\/([^/]+)$/);
       const validLens = lensMatch && workLensMap.has(lensMatch[1]);
 
-      if (route === 'work' || latticeRoute || projectMatch || themeMatch || validLens) {
+      if (latticeRoute || constellationRoute || projectMatch || themeMatch || validLens) {
         if (latticeRoute) workView = 'lattice';
         else workView = 'constellation';
-        if (route === 'work') {
+        if (route === 'work' || constellationRoute) {
           workLensId = null;
           workFilterState.context = 'all';
           workFilterState.selectedThemes.clear();

@@ -143,7 +143,7 @@
     name.id = 'home-v4-name';
     identity.append(
       name,
-      element('p', 'home-v4-role', 'Data Analysis · Research · Mathematical Logic'),
+      element('p', 'home-v4-role', '– Data Analysis  – Research  – Mathematical Logic'),
       element('p', 'home-v4-summary', "“Sometimes, I can\'t do basic arithmetic without a calculator, but I can prove that arithmetic is incomplete and undecidable.”")
     );
 
@@ -166,7 +166,7 @@
       item.append(
         element('span', 'home-v4-current-kind', 'Working at'),
         element('strong', '', currentExperience.label || currentExperience.organisation || currentExperience.role || ''),
-        element('span', '', currentExperience.role || '')
+        element('span', '', currentExperience.role ? '– ' + currentExperience.role : '')
       );
       currentGrid.appendChild(item);
     }

@@ -4,12 +4,28 @@ test.describe('Living Work Constellation', () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
   const visitWork = async page => {
-    await page.goto('/#work');
+    await page.goto('/#work/constellation');
     await page.waitForFunction(() =>
       document.body.dataset.graphMode === 'work' &&
       window.ProfileWorkController?.snapshot?.().view === 'constellation'
     );
   };
+
+  test('direct Work entry defaults to FCA and Constellation requires an explicit switch', async ({ page }) => {
+    await page.goto('/#work');
+    await page.waitForFunction(() => document.body.dataset.graphMode === 'work' &&
+      document.body.dataset.workView === 'lattice');
+    await expect(page.locator('#site-graph .site-graph-edges path.is-work-lattice')).not.toHaveCount(0);
+    await expect(page.locator('.work-hud-lattice')).toHaveAttribute('aria-pressed', 'true');
+    await page.locator('.work-hud-all').click();
+    await page.waitForFunction(() => location.hash === '#work/constellation' &&
+      document.body.dataset.workView === 'constellation');
+    await expect(page.locator('#site-graph .is-work-constellation-project')).toHaveCount(10);
+    await expect(page.locator('#site-graph .site-graph-edges path')).toHaveCount(0);
+    await page.locator('.work-hud-lattice').click();
+    await page.waitForFunction(() => location.hash === '#work/lattice' &&
+      document.body.dataset.workView === 'lattice');
+  });
 
   test('offers two primary Work views and a line-free Constellation', async ({ page }) => {
     await visitWork(page);
@@ -52,7 +68,7 @@ test.describe('Living Work Constellation', () => {
     await expect(page.locator('#site-graph .site-graph-edges path')).toHaveCount(0);
     await expect.poll(() => page.evaluate(() => window.ProfileWorkController.snapshot().lensId)).toBe('research');
     await page.locator('.work-hud-all').click();
-    await page.waitForFunction(() => location.hash === '#work');
+    await page.waitForFunction(() => location.hash === '#work/constellation');
     await expect(page.locator('#site-graph .is-work-constellation-project')).toHaveCount(10);
     await expect(page.locator('.work-hud-explore')).toHaveAttribute('aria-pressed', 'false');
   });
@@ -170,7 +186,7 @@ test.describe('Living Work Constellation', () => {
     await expect(page.locator('.work-hud-all')).toHaveAttribute('aria-pressed', 'false');
     await expect(page.locator('.integrated-work-rail.is-left')).toBeHidden();
     await page.locator('.work-hud-all').click();
-    await page.waitForFunction(() => location.hash === '#work');
+    await page.waitForFunction(() => location.hash === '#work/constellation');
     await expect(page.locator('#site-graph .is-work-constellation-project')).toHaveCount(10);
     await expect(page.locator('#site-graph .site-graph-edges path')).toHaveCount(0);
   });
@@ -179,7 +195,7 @@ test.describe('Living Work Constellation', () => {
     await page.goto('/#work/project/modal-logic-lab');
     await page.waitForFunction(() => document.body.dataset.workFocus === 'modal-logic-lab');
     await page.keyboard.press('Escape');
-    await page.waitForFunction(() => location.hash === '#work');
+    await page.waitForFunction(() => location.hash === '#work/constellation');
     await expect(page.locator('#site-graph .is-work-constellation-project')).toHaveCount(10);
     await expect(page.locator('#site-detail-panel')).toBeHidden();
   });
